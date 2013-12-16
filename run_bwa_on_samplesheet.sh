@@ -1,19 +1,7 @@
 #!/bin/bash
 
-# Get the scripts
-scripts="scripts"
-# Do some git stuff to ensure we have the latest scripts
-if [ ! -d $scripts ]
-then
-    git clone /home/EIDRUdata/Tyghe/Dev/undocumented.git $scripts > /dev/null
-else
-    cd $scripts
-    git reset --hard origin/master > /dev/null
-    cd ..
-fi
-
 # We actually want the full path to scripts
-scripts=$(cd $scripts && pwd)
+scripts=$(cd $(dirname $0) && pwd)
 # Where be the miseq run data
 rawdata="/home/EIDRUdata/NGSData/RawData/MiSeq"
 # What MiSeq run
@@ -62,7 +50,7 @@ do
     # Get into the samplename directory
     pushd $sample > /dev/null
     # Map the samplename
-    ${scripts}/run_bwa_on_samplename.sh $sample $reference
+    ${scripts}/run_bwa_on_samplename.sh $sample $reference | tee -a bwa.log
     ret=$?
     # Get out of the sample directory
     popd > /dev/null
