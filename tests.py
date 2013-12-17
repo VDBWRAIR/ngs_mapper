@@ -1,6 +1,6 @@
 from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
-from mock import Mock, patch
+from mock import Mock, MagicMock, patch
 
 import tempfile
 import shutil
