@@ -52,11 +52,13 @@ do
     # Map the samplename
     ${scripts}/run_bwa_on_samplename.sh $sample $reference | tee -a bwa.log
     ret=$?
-    # Get out of the sample directory
-    popd > /dev/null
     # Detect if bwa didn't run correctly
     if [ $ret -ne 0 ]
     then
         echo "bwa did not run successfully for ${sample}"
+    else
+        ${scripts}/gen_consensus.sh $reference ${sample}.bam > ${sample}.consensus.fastq
     fi
+    # Get out of the sample directory
+    popd > /dev/null
 done
