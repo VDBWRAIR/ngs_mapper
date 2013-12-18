@@ -4,26 +4,36 @@ from mock import Mock, MagicMock, patch
 
 from .common import BaseClass
 
-reads = {
-    'Roche454': [
-        '1514A00101984N_CP2__1__TI5__2010_03_19__pH1N1.sff',
-    ],
-    'IonTorrent': [
-        'Denv1_45AZ5_Virus_Lot1_82__1__IX031__2013_09_23__Den1.sff',
-    ],
-    'Sanger': [
-        '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.fastq',
-    ],
-    'MiSeq': [
-        '1090-01_S22_L001_R1_001_2013_12_10.fastq',
-    ]
-}
 
 class Base(BaseClass):
-    def mock_reads_dir(self,platforms=reads.keys()):
+    def setUp(self):
+        super(Base,self).setUp()
+        self.reads = {
+            'Roche454': [
+                '1514A00101984N_CP2__1__TI5__2010_03_19__pH1N1.sff',
+            ],
+            'IonTorrent': [
+                'Denv1_45AZ5_Virus_Lot1_82__1__IX031__2013_09_23__Den1.sff',
+            ],
+            'Sanger': [
+                '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.fastq',
+                '1517010460_F1425_2011_08_24_H3N2_HA_0151_D09.fastq',
+            ],
+            'MiSeq': [
+                '1090-01_S22_L001_R1_001_2013_12_10.fastq',
+                '1090-01_S22_L001_R2_001_2013_12_10.fastq',
+            ]
+        }
+
+    def tearDown(self):
+        super(Base,self).tearDown()
+
+    def mock_reads_dir(self,platforms=None):
+        if platforms is None:
+            platforms = self.reads.keys()
         readsdir = self.tempdir
         listing = {}
-        for plat,readfiles in reads.items():
+        for plat,readfiles in self.reads.items():
             listing[plat] = sorted(readfiles)
             # Create the files
             for readfile in listing[plat]:
@@ -32,7 +42,7 @@ class Base(BaseClass):
 
     def reads_for_platforms(self):
         mapping = {}
-        for plat, readfiles in reads.items():
+        for plat, readfiles in self.reads.items():
             for readfile in readfiles:
                 mapping[readfile] = plat
         return mapping
@@ -43,12 +53,15 @@ class TestFunctional(Base):
         # no files so empty dict returned
         eq_( {}, rbp( self.tempdir ) )
 
+    @attr('current')
     def test_reads_by_plat(self):
-        import data
         with patch('data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]) as a:
-            with patch('data.filter_reads_by_platform', lambda path,plat: reads[plat]) as b:
-                for plat, readfiles in reads.items():
-                    eq_( readfiles, sorted(data.reads_by_plat( '' )[plat]) )
+            with patch('data.filter_reads_by_platform', lambda path,plat: self.reads[plat]) as b:
+                import data
+                for plat, readfiles in self.reads.items():
+                    if plat == 'MiSeq':
+                        readfiles = [tuple(readfiles),]
+                    eq_( sorted(readfiles), sorted(data.reads_by_plat( '' )[plat]) )
 
     def test_filter_reads_by_platform_all(self):
         from data import filter_reads_by_platform as frbp
@@ -72,17 +85,56 @@ class TestFunctional(Base):
         except NoPlatformFound as e:
             pass
 
+    def test_platform_has_paired_reads(self):
+        reads = ['read1_r1','read1_r2','read2_r1','read3_r1','read3_r2']
+        mates = [1,-1,4]
+        with patch('data.find_mate', MagicMock(side_effect=mates)):
+            from data import pair_reads
+            expected = [('read1_r1','read1_r2'),'read2_r1',('read3_r1','read3_r2')]
+            eq_( expected, pair_reads(reads) )
+
+    def test_find_mate_read_has_mate(self):
+        from data import find_mate
+        eq_( 1, find_mate(self.reads['MiSeq'][0], self.reads['MiSeq']) )
+
+    def test_find_mate_single_item_list(self):
+        from data import find_mate
+        eq_( -1, find_mate(self.reads['Roche454'][0], self.reads['Roche454']) )
+
+    def test_find_mate_does_not_have_mate(self):
+        from data import find_mate
+        eq_( -1, find_mate(self.reads['Sanger'][0], self.reads['Sanger']) )
+
 class TestIntegration(Base):
     def test_platform_for_read( self ):
         from data import platform_for_read as pfr
         for readfile, plat in self.reads_for_platforms().items():
             eq_( plat, pfr( readfile ) )
 
-    def test_reads_by_plat(self):
+    def test_reads_by_plat_individual(self):
         from data import reads_by_plat as rdp
         # Test each platform's file format
         expected = self.mock_reads_dir()
         result = rdp( self.tempdir )
         for plat,readfiles in expected.items():
             assert plat in result, "platform {} not in result".format(plat)
+            if plat == 'MiSeq':
+                readfiles = [tuple(readfiles),]
             eq_( readfiles, sorted(result[plat]) )
+
+    def test_reads_by_all(self):
+        from data import reads_by_plat as rdp
+        # Test each platform's file format
+        expected = self.mock_reads_dir()
+        expected['MiSeq'] = [tuple(expected['MiSeq']),]
+        result = rdp( self.tempdir )
+        eq_( expected, result )
+
+    def test_platform_has_paired_reads(self):
+        from data import pair_reads
+        eq_( [tuple(self.reads['MiSeq']),], pair_reads( self.reads['MiSeq'] ) )
+
+    def test_platform_does_not_have_paired_reads(self):
+        from data import pair_reads
+        eq_( self.reads['Sanger'], pair_reads( self.reads['Sanger'] ) )
+

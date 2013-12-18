@@ -3,6 +3,10 @@ from os.path import *
 import os
 import sys
 import re
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Exception when no platform can be found for a read
 class NoPlatformFound(Exception): pass
@@ -38,6 +42,7 @@ def platform_for_read( filepath ):
 def reads_by_plat( path ):
     '''
         Returns a mapping of Platform => [reads for platform] for the given path
+        If there are paired end read files they will be paired inside of a tuple in the list
 
         @returns a dictionary {'Platform': [reads for platform(basename)]
     '''
@@ -46,6 +51,70 @@ def reads_by_plat( path ):
         reads = filter_reads_by_platform( path, platform )
         # Don't add them if there were none
         if reads:
-            reads_for_plat[platform] = reads
-    print reads_for_plat
+            reads_for_plat[platform] = pair_reads( reads )
     return reads_for_plat
+
+def pair_reads( readlist ):
+    '''
+        Pairs paired-end read files inside of readlist into 2 item tuples
+        Specific to MiSeq filenames at this point
+
+        @param readlist - List of read file paths
+        
+        @returns the readlist with any reads that are paired end inside of a 2 item tuple with the first(forward) in [0]
+            and the second(reverse) in [1]
+    '''
+    paired_reads = []
+    skiplist = []
+    for i in range(len(readlist)):
+        logger.debug("paired_reads: {}".format(paired_reads))
+        logger.debug("i: {}".format(i))
+        # Don't do anything with reads that have been mated already
+        if not readlist[i] in skiplist:
+            # Is there a mate file?
+            index = find_mate( readlist[i], readlist )
+            logger.debug("Index in readlist for {} is {}".format(readlist[i],index))
+            # No mate found so just add it to list
+            if index == -1:
+                logger.debug("Index was -1 so appending readfile")
+                paired_reads.append(readlist[i])
+            else:
+                # Append mate pair
+                logger.debug("Appending mated pairs ({},{})".format(readlist[i],readlist[index]))
+                paired_reads.append( (readlist[i],readlist[index]) )
+                # Append mate to be skipped so we don't re-add it again
+                skiplist.append(readlist[index])
+                logger.debug("Skiplist {}".format(skiplist))
+        else:
+            logger.debug("Skipping {} because it is in skiplist".format(readlist[i]))
+    return paired_reads
+
+def find_mate( filepath, readlist ):
+    '''
+        Finds the index of the mate file for filepath given a readlist
+    
+        @param filepath - Path to a read file
+        @param readlist - List of paths to reads
+
+        @returns the index in readlist for the mate for filepath or -1 if none are found
+    '''
+    cp = re.compile( '(?P<samplename>\S+?)_S\d+_L\d{3}_(?P<fr>R\d)_\d{3}_\d{4}_\d{2}_\d{2}.fastq' )
+    m = cp.match( basename(filepath) )
+    if not m:
+        return -1
+    else:
+        i = m.groupdict()
+        sn = i['samplename']
+        fr = i['fr']
+        fri = fr[1]
+        if fri == '1':
+            fri = '2'
+        elif fri == '2':
+            fri = '1'
+        else:
+            return -1
+        matefn = filepath.replace(fr, 'R'+fri)
+        try:
+            return readlist.index(matefn)
+        except ValueError as e:
+            return -1
