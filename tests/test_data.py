@@ -2,9 +2,7 @@ from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
 from mock import Mock, MagicMock, patch
 
-import tempfile
-import shutil
-import os
+from .common import BaseClass
 
 reads = {
     'Roche454': [
@@ -21,15 +19,7 @@ reads = {
     ]
 }
 
-class BaseClass( object ):
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp(prefix='test')
-        os.chdir(self.tempdir)
-
-    def tearDown(self):
-        os.chdir('/')
-        shutil.rmtree(self.tempdir)
-
+class Base(BaseClass):
     def mock_reads_dir(self,platforms=reads.keys()):
         readsdir = self.tempdir
         listing = {}
@@ -47,7 +37,7 @@ class BaseClass( object ):
                 mapping[readfile] = plat
         return mapping
 
-class TestFunctional(BaseClass):
+class TestFunctional(Base):
     def test_reads_by_plat_emptydir(self):
         from data import reads_by_plat as rbp
         # no files so empty dict returned
@@ -82,7 +72,7 @@ class TestFunctional(BaseClass):
         except NoPlatformFound as e:
             pass
 
-class TestIntegration(BaseClass):
+class TestIntegration(Base):
     def test_platform_for_read( self ):
         from data import platform_for_read as pfr
         for readfile, plat in self.reads_for_platforms().items():
