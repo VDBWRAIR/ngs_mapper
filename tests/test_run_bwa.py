@@ -68,90 +68,84 @@ class TestIntegrateRunBWA(Base):
         assert exists( 'file.bam' ), "Did not create a bam file"
         assert os.stat('file.bam').st_size != 0, "Bam file created is zero bytes"
 
+@patch('bwa.seqio.concat_files')
 class TestFunctionalCompileReads(Base):
-    def test_compile_reads_paired_and_unpaired(self):
-        with patch('bwa.seqio.concat_files', MagicMock('bwa.seqio')) as cf:
-            from run_bwa import compile_reads
-            outputdir = 'output'
-            outputdir = join(self.tempdir,outputdir)
-            # Should return/create 3 files
-            reads = [('p1_1.fastq','p1_2.fastq'),'np1.fastq',('p2_1.fastq.fastq','p2_1.fastq.fastq'),'np2.fastq']
-            files = ['F.fq','R.fq','NP.fq']
-            expected = {
-                'F':join(outputdir,files[0]),
-                'R':join(outputdir,files[1]),
-                'NP':join(outputdir,files[2])
-            }
-            eq_( expected, compile_reads( reads, outputdir ) )
-            eq_( len(cf.call_args_list), 3 )
-
-    def test_compile_reads_paired_only_single(self):
-        with patch('bwa.seqio.concat_files', MagicMock('bwa.seqio')) as cf:
-            from run_bwa import compile_reads
-            outputdir = 'output'
-            outputdir = join(self.tempdir,outputdir)
-            # Should return/create 3 files
-            reads = [('p1_1.fastq','p1_2.fastq')]
-            files = ['F.fq','R.fq','NP.fq']
-            expected = {
-                'F':join(outputdir,files[0]),
-                'R':join(outputdir,files[1]),
-                'NP':None
-            }
-            eq_( expected, compile_reads( reads, outputdir ) )
-            eq_( len(cf.call_args_list), 2 )
-
-    def test_compile_reads_paired_only_multiple(self):
-        with patch('bwa.seqio.concat_files', MagicMock('bwa.seqio')) as cf:
-            from run_bwa import compile_reads
-            outputdir = 'output'
-            outputdir = join(self.tempdir,outputdir)
-            # Should return/create 3 files
-            reads = [('p1_1.fastq','p1_2.fastq'),('p2_1.fastq','p2_2.fastq')]
-            files = ['F.fq','R.fq','NP.fq']
-            expected = {
-                'F':join(outputdir,files[0]),
-                'R':join(outputdir,files[1]),
-                'NP':None
-            }
-            eq_( expected, compile_reads( reads, outputdir ) )
-            print cf.call_args_list
-            eq_( len(cf.call_args_list), 2 )
-
-    def test_compile_reads_unpaired_only_single(self):
+    def test_compile_reads_paired_and_unpaired(self,mock):
         from run_bwa import compile_reads
-        with patch('bwa.seqio.concat_files', MagicMock('bwa.seqio')) as cf:
-            from run_bwa import compile_reads
-            outputdir = 'output'
-            outputdir = join(self.tempdir,outputdir)
-            # Should return/create 3 files
-            reads = ['p1.fastq']
-            files = ['F.fq','R.fq','NP.fq']
-            expected = {
-                'F':None,
-                'R':None,
-                'NP':join(outputdir,files[2])
-            }
-            eq_( expected, compile_reads( reads, outputdir ) )
-            eq_( len(cf.call_args_list), 1 )
+        outputdir = 'output'
+        outputdir = join(self.tempdir,outputdir)
+        # Should return/create 3 files
+        reads = [('p1_1.fastq','p1_2.fastq'),'np1.fastq',('p2_1.fastq.fastq','p2_1.fastq.fastq'),'np2.fastq']
+        files = ['F.fq','R.fq','NP.fq']
+        expected = {
+            'F':join(outputdir,files[0]),
+            'R':join(outputdir,files[1]),
+            'NP':join(outputdir,files[2])
+        }
+        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( len(mock.call_args_list), 3 )
 
-    def test_compile_reads_unpaired_only_multiple(self):
+    def test_compile_reads_paired_only_single(self,mock):
         from run_bwa import compile_reads
-        with patch('bwa.seqio.concat_files', MagicMock('bwa.seqio')) as cf:
-            from run_bwa import compile_reads
-            outputdir = 'output'
-            outputdir = join(self.tempdir,outputdir)
-            reads = ['p1.fastq','p2.fastq']
-            files = ['F.fq','R.fq','NP.fq']
-            expected = {
-                'F':None,
-                'R':None,
-                'NP':join(outputdir,files[2])
-            }
-            eq_( expected, compile_reads( reads, outputdir ) )
-            eq_( len(cf.call_args_list), 1 )
+        outputdir = 'output'
+        outputdir = join(self.tempdir,outputdir)
+        # Should return/create 3 files
+        reads = [('p1_1.fastq','p1_2.fastq')]
+        files = ['F.fq','R.fq','NP.fq']
+        expected = {
+            'F':join(outputdir,files[0]),
+            'R':join(outputdir,files[1]),
+            'NP':None
+        }
+        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( len(mock.call_args_list), 2 )
 
-    def test_compile_reads_non_fastq(self):
+    def test_compile_reads_paired_only_multiple(self,mock):
+        from run_bwa import compile_reads
+        outputdir = 'output'
+        outputdir = join(self.tempdir,outputdir)
+        # Should return/create 3 files
+        reads = [('p1_1.fastq','p1_2.fastq'),('p2_1.fastq','p2_2.fastq')]
+        files = ['F.fq','R.fq','NP.fq']
+        expected = {
+            'F':join(outputdir,files[0]),
+            'R':join(outputdir,files[1]),
+            'NP':None
+        }
+        eq_( expected, compile_reads( reads, outputdir ) )
+        print mock.call_args_list
+        eq_( len(mock.call_args_list), 2 )
+
+    def test_compile_reads_unpaired_only_single(self,mock):
+        from run_bwa import compile_reads
+        outputdir = 'output'
+        outputdir = join(self.tempdir,outputdir)
+        # Should return/create 3 files
+        reads = ['p1.fastq']
+        files = ['F.fq','R.fq','NP.fq']
+        expected = {
+            'F':None,
+            'R':None,
+            'NP':join(outputdir,files[2])
+        }
+        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( len(mock.call_args_list), 1 )
+
+    def test_compile_reads_unpaired_only_multiple(self,mock):
+        from run_bwa import compile_reads
+        outputdir = 'output'
+        outputdir = join(self.tempdir,outputdir)
+        reads = ['p1.fastq','p2.fastq']
+        files = ['F.fq','R.fq','NP.fq']
+        expected = {
+            'F':None,
+            'R':None,
+            'NP':join(outputdir,files[2])
+        }
+        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( len(mock.call_args_list), 1 )
+
+    def test_compile_reads_non_fastq(self,mock):
         from run_bwa import compile_reads, InvalidReadFile
         outputdir = join(self.tempdir,'output')
         reads = ['np.sff','np.ab1','np.fastq.gz']
@@ -163,7 +157,7 @@ class TestFunctionalCompileReads(Base):
         except Exception as e:
             assert False, "Did not raise InvalidReadFile"
 
-    def test_compile_reads_three_item_tuple(self):
+    def test_compile_reads_three_item_tuple(self,mock):
         from run_bwa import compile_reads, InvalidReadFile
         outputdir = join(self.tempdir,'output')
         reads = [('one.fastq','two.fastq','three.fastq')]
@@ -173,7 +167,7 @@ class TestFunctionalCompileReads(Base):
         except ValueError as e:
             pass
 
-    def test_compile_reads_emptyreadfilelist(self):
+    def test_compile_reads_emptyreadfilelist(self,mock):
         from run_bwa import compile_reads, InvalidReadFile
         outputdir = join(self.tempdir,'output')
         reads = ['np.sff','np.ab1','np.fastq.gz']
