@@ -1,16 +1,74 @@
 from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
-from mock import MagicMock, patch
+from mock import MagicMock, patch, Mock
 
 from common import BaseClass
+import fixtures
 
 import os
 from os.path import *
 
 class Base(BaseClass):
-    pass
+    def create_file(self,filepath,contents):
+        linecount = 0
+        with open(filepath,'w') as fh:
+            for line in contents.splitlines(True):
+                fh.write(line)
+                linecount += 1
+        return linecount
 
-class TestFunctional(Base):
+@attr('current')
+@patch('bwa.BWAMem',spec=True,run=Mock(return_value=0))
+@patch('bwa.index_ref',spec=True,return_value=True)
+class TestFunctionalRunBWA(Base):
+    def test_bwa_mem_nonpaired(self,index_ref,bwamem):
+        from run_bwa import bwa_mem
+        result = bwa_mem( 'F.fq', mate=None, ref='ref.fna' )
+        eq_( 'bwa.bam', result )
+
+    def test_bwa_mem_paired(self,index_ref,bwamem):
+        from run_bwa import bwa_mem
+        result = bwa_mem( 'F.fq', mate='R.fq', ref='ref.fna' )
+        eq_( 'bwa.bam', result )
+
+    def test_bwa_mem_output_arg(self,index_ref,bwamem):
+        from run_bwa import bwa_mem
+        result = bwa_mem( 'F.fq', mate='R.fq', ref='ref.fna', output='file.bam' )
+        eq_( 'file.bam', result )
+
+    def test_bwa_mem_fails(self,index_ref,bwamem):
+        from run_bwa import bwa_mem
+        result = bwa_mem( 'F.fq', mate='R.fq', ref='ref.fna', output='file.bam' )
+        eq_( -1, result )
+
+    def test_ref_index_fails(self,index_ref,bwamem):
+        from run_bwa import bwa_mem
+        result = bwa_mem( 'F.fq', mate='R.fq', ref='ref.fna', output='file.bam' )
+        eq_( -1, result )
+
+class TestIntegrateRunBWA(Base):
+    def setUp(self):
+        self.read1,self.read2,self.ref = fixtures.get_sample_paired_reads()
+
+    def test_maps_reads_paired(self):
+        from run_bwa import bwa_mem
+        eq_( 'bwa.bam', bwa_mem( self.read1, self.read2, ref=self.ref ) )
+        assert exists( 'bwa.bam' ), "Did not create a bam file"
+        assert os.stat('bwa.bam').st_size != 0, "Bam file created is zero bytes"
+
+    def test_maps_reads_single(self):
+        from run_bwa import bwa_mem
+        eq_( 'bwa.bam', bwa_mem( self.read1, ref=self.ref ) )
+        assert exists( 'bwa.bam' ), "Did not create a bam file"
+        assert os.stat('bwa.bam').st_size != 0, "Bam file created is zero bytes"
+
+    def test_output_param(self):
+        from run_bwa import bwa_mem
+        eq_( 'bwa.bam', bwa_mem( self.read1, ref=self.ref, output='file.bam' ) )
+        assert exists( 'file.bam' ), "Did not create a bam file"
+        assert os.stat('file.bam').st_size != 0, "Bam file created is zero bytes"
+
+class TestFunctionalCompileReads(Base):
     def test_compile_reads_paired_and_unpaired(self):
         with patch('bwa.seqio.concat_files', MagicMock('bwa.seqio')) as cf:
             from run_bwa import compile_reads
@@ -121,15 +179,7 @@ class TestFunctional(Base):
         reads = ['np.sff','np.ab1','np.fastq.gz']
         eq_({'F':None,'R':None,'NP':None}, compile_reads( [], outputdir ) )
 
-class TestIntegration(Base):
-    def create_file(self,filepath,contents):
-        linecount = 0
-        with open(filepath,'w') as fh:
-            for line in contents.splitlines(True):
-                fh.write(line)
-                linecount += 1
-        return linecount
-
+class TestIntegrationCompileReads(Base):
     def test_compile_reads_outputdir_not_exist(self):
         outputdir = join(self.tempdir,'output')
         self.run_compile_reads(outputdir)
