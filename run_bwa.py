@@ -35,16 +35,16 @@ def compile_reads( readfilelist, outputdir ):
             if read.endswith('.fastq'):
                 files_written['NP'].append(read)
             else:
-                raise InvalidReadFile("Only fastq files are supported at this time.")
+                raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read))
         elif isinstance(read,tuple) and len(read) == 2:
             if read[0].endswith('.fastq'):
                 files_written['F'].append(read[0])
             else:
-                raise InvalidReadFile("Only fastq files are supported at this time.")
+                raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read[0]))
             if read[1].endswith('.fastq'):
                 files_written['R'].append(read[1])
             else:
-                raise InvalidReadFile("Only fastq files are supported at this time.")
+                raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read[1]))
         else:
             raise ValueError("Somehow neither got 1 or 2 items for a read in readfilelist")
     

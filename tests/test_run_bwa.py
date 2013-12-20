@@ -7,6 +7,7 @@ import fixtures
 
 import os
 from os.path import *
+from glob import glob
 
 class Base(BaseClass):
     def create_file(self,filepath,contents):
@@ -17,7 +18,6 @@ class Base(BaseClass):
                 linecount += 1
         return linecount
 
-@attr('current')
 class TestFunctionalRunBWA(Base):
     #@attr('current')
     def test_bwa_mem_nonpaired(self):
@@ -58,7 +58,6 @@ class TestFunctionalRunBWA(Base):
         else:
             assert False, "Did not raise InvalidReference"
 
-@attr('current')
 class TestIntegrateRunBWA(Base):
     def setUp(self):
         self.read1,self.read2,self.ref = fixtures.get_sample_paired_reads()
@@ -81,8 +80,24 @@ class TestIntegrateRunBWA(Base):
         assert exists( 'file.sai' ), "Did not create a sai file"
         assert os.stat('file.sai').st_size != 0, "sai file created is zero bytes"
 
+@attr('current')
 @patch('bwa.seqio.concat_files')
 class TestFunctionalCompileReads(Base):
+    def test_reads_abspath_basepath_relpath(self,mock):
+        from run_bwa import compile_reads
+        outputdir = 'output'
+        outputdir = join(self.tempdir,outputdir)
+        # Should return/create 3 files
+        reads = [('p1_1.fastq','p1_2.fastq'),'/path/to/np1.fastq',('/path/to/p2_1.fastq.fastq','../p2_1.fastq.fastq'),'../np2.fastq']
+        files = ['F.fq','R.fq','NP.fq']
+        expected = {
+            'F':join(outputdir,files[0]),
+            'R':join(outputdir,files[1]),
+            'NP':join(outputdir,files[2])
+        }
+        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( len(mock.call_args_list), 3 )
+
     def test_compile_reads_paired_and_unpaired(self,mock):
         from run_bwa import compile_reads
         outputdir = 'output'
@@ -186,6 +201,7 @@ class TestFunctionalCompileReads(Base):
         reads = ['np.sff','np.ab1','np.fastq.gz']
         eq_({'F':None,'R':None,'NP':None}, compile_reads( [], outputdir ) )
 
+@attr('current')
 class TestIntegrationCompileReads(Base):
     def test_compile_reads_outputdir_not_exist(self):
         outputdir = join(self.tempdir,'output')
@@ -198,7 +214,16 @@ class TestIntegrationCompileReads(Base):
 
     def run_compile_reads(self,outputdir):
         from run_bwa import compile_reads
-        reads = [('p1_1.fastq','p1_2.fastq'),'np1.fastq',('p2_1.fastq','p2_2.fastq'),'np2.fastq']
+        # Read dir will allow relative and abspath testing
+        readdir = 'reads'
+        os.mkdir(readdir)
+        reads = [
+            ('p1_1.fastq','p1_2.fastq'), # current dir paired
+            'np1.fastq', # Current dir np
+            (join(readdir,'p2_1.fastq'), abspath(join(readdir,'p2_2.fastq'))), # relative and abs paired
+            join(readdir,'np2.fastq'), # relative np
+            join(abspath(readdir),'np2.fastq') # relative np
+        ]
         read_contents = '@Read1\nATGCATGCATGC\n+\n111111111111\n'
         # Create all the files
         expected_linecounts = {'F':0,'R':0,'NP':0}
