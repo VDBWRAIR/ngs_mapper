@@ -4,6 +4,9 @@ from mock import Mock, MagicMock, patch
 
 from .common import BaseClass
 
+import os
+from os.path import *
+from glob import glob
 
 class Base(BaseClass):
     def setUp(self):

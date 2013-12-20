@@ -19,3 +19,11 @@ class BaseClass( object ):
 
     def tearDown(self):
         os.chdir(tdir)
+
+    def create_file(self,filepath,contents):
+        linecount = 0
+        with open(filepath,'w') as fh:
+            for line in contents.splitlines(True):
+                fh.write(line)
+                linecount += 1
+        return linecount
