@@ -13,7 +13,6 @@ class Base(BaseClass):
     pass
 
 class TestFunctionalRunBWA(Base):
-    #@attr('current')
     def test_bwa_mem_nonpaired(self):
         with patch('run_bwa.BWAMem', return_value=Mock( run=Mock( return_value=0 ) ) ) as b:
             with patch('run_bwa.index_ref',Mock(return_value=True)) as a:
@@ -73,4 +72,3 @@ class TestIntegrateRunBWA(Base):
         eq_( 'file.sai', bwa_mem( self.read1, ref=self.ref, output='file.sai' ) )
         assert exists( 'file.sai' ), "Did not create a sai file"
         assert os.stat('file.sai').st_size != 0, "sai file created is zero bytes"
-
