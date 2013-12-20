@@ -42,3 +42,34 @@ def samtobam( sam, outbam ):
     else:
         log.debug("Returning processes stdout value")
         return p.stdout
+
+def sortbam( bam, outbam ):
+    '''
+        Sorts a bam file using samtools
+        outbam cannot be a pipe because samtools index won't allow it
+        outbam will be overwritten if it already exists
+
+        @sam - file path or file object(even pipe) of sam file input to convert
+        @outbam - file path
+
+        @returns outbam or the file descriptor of the object
+    '''
+    cmd = ['samtools','sort','-f','-']
+    log.info('Running {}'.format(' '.join(cmd)))
+
+    # Determine if sam is a filepath or file like object
+    if isinstance(bam,str):
+        input = open(bam)
+    else:
+        input = bam
+
+    # Determine if outbam is a filepath or file like object
+    if isinstance(outbam,str):
+        cmd.append( outbam )
+    else:
+        raise ValueError("Output file for sortbam has to be a path not {}".format(outbam))
+
+    log.debug("CMD: {} STDIN: {}".format(cmd,input))
+    p = Popen( cmd, stdin=input )
+    p.wait()
+    return outbam
