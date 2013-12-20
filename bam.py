@@ -73,3 +73,19 @@ def sortbam( bam, outbam ):
     p = Popen( cmd, stdin=input )
     p.wait()
     return outbam
+
+def indexbam( sortedbam ):
+    '''
+        Indexes a sorted bam file
+
+        @sortedbam - file path to a sorted bam file
+
+        @returns the path to the index file for sortedbam(probably sortedbam+'.bai')
+    '''
+    cmd = ['samtools','index',sortedbam]
+    log.info('Running {}'.format(' '.join(cmd)))
+
+    p = Popen( cmd )
+    p.wait()
+
+    return sortedbam + '.bai'

@@ -13,6 +13,16 @@ class Base(BaseClass):
     pass
 
 @patch('bam.Popen')
+class TestFunctionalIndexBam(Base):
+    samtools_cmd = ['samtools','index']
+
+    def test_input_existing_bam(self,popen_mock):
+        from bam import indexbam
+        res = indexbam( 'sorted.bam' )
+        eq_( [call(self.samtools_cmd+['sorted.bam'])], popen_mock.call_args_list )
+        eq_( 'sorted.bam.bai', res )
+
+@patch('bam.Popen')
 @patch('__builtin__.open')
 class TestFunctionalSortBam(Base):
     samtools_cmd = ['samtools','sort','-f','-']
@@ -162,3 +172,10 @@ class TestIntegrate(Base):
         convert = samtobam( cat.stdout, PIPE )
         sorted = sortbam( convert, 'sorted.bam' )
         self._fe( self.sortedbam, 'sorted.bam' )
+
+    def test_convert_sort_index( self ):
+        self.test_convert_then_sort()
+        from bam import indexbam
+        index = indexbam( 'sorted.bam' )
+        eq_( 'sorted.bam.bai', index )
+        self._fe( self.bamindex, 'sorted.bam.bai' )
