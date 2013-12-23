@@ -42,7 +42,7 @@ def platform_for_read( filepath ):
 def reads_by_plat( path ):
     '''
         Returns a mapping of Platform => [reads for platform] for the given path
-        If there are paired end read files they will be paired inside of a tuple in the list
+        If there are paired end read files they will be paired inside of a tuple in the list(MiSeq only now)
 
         @returns a dictionary {'Platform': [reads for platform(basename)]
     '''

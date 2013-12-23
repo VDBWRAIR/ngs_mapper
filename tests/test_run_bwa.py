@@ -62,10 +62,44 @@ class TestUnitBWAMem(Base):
         ret = bwa_mem( 'F.fq', mate='R.fq', ref='ref_compiled.fna', output='file.sai' )
         eq_( 1, ret )
 
-class TestUnitArgs(Base):
+class TestUnitParseArgs(Base):
+    def _CPA( self, argv ):
+        from run_bwa import parse_args
+        return parse_args( argv )
+
+    @raises(SystemExit)
+    def test_ref_reads_required( self ):
+        res = self._CPA( [] )
+
+    def test_ref_reads_set( self ):
+        res = self._CPA( ['fake_read', 'fake_ref'] )
+        eq_( res.reads, 'fake_read' )
+        eq_( res.reference, 'fake_ref' )
+
+    def test_platform_select_none( self ):
+        res = self._CPA( ['fake_read', 'fake_ref'] )
+        eq_( res.platforms, ['MiSeq','Sanger'] )
+
+    def test_platform_select_single( self ):
+        res = self._CPA( ['fake_read', 'fake_ref', '--platforms', 'Sanger'] )
+        eq_( res.platforms, ['Sanger'] )
+
+    @raises(SystemExit)
+    def test_invalid_platform( self ):
+        res = self._CPA( ['fake_read', 'fake_ref', '--platforms', 'invalid'] )
+
+    def test_keep_temp_defaultoff( self ):
+        res = self._CPA( ['fake_read', 'fake_ref'] )
+        eq_( res.keep_temp, False )
+
+    def test_keep_temp_set( self ):
+        res = self._CPA( ['fake_read', 'fake_ref', '--keep-temp'] )
+        eq_( res.keep_temp, True )
+
+class TestIntegrateMainArgs(Base):
     pass
 
-class TestIntegrateRunBWA(Base):
+class TestFunctionalRunBWA(Base):
     def setUp(self):
         self.read1,self.read2,self.ref = fixtures.get_sample_paired_reads()
 
