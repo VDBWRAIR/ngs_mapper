@@ -12,7 +12,7 @@ from glob import glob
 class Base(BaseClass):
     pass
 
-class TestFunctionalRunBWA(Base):
+class TestUnitBWAMem(Base):
     def test_bwa_mem_nonpaired(self):
         with patch('run_bwa.BWAMem', return_value=Mock( run=Mock( return_value=0 ) ) ) as b:
             with patch('run_bwa.index_ref',Mock(return_value=True)) as a:
@@ -51,6 +51,20 @@ class TestFunctionalRunBWA(Base):
         else:
             assert False, "Did not raise InvalidReference"
 
+    @patch('run_bwa.index_ref')
+    @patch('run_bwa.compile_refs')
+    @patch('run_bwa.BWAMem')
+    def test_ref_index_directory(self, bwamem_mock, compile_refs_mock, index_ref_mock ):
+        bwamem_mock.return_value.run.return_value = 1
+        compile_refs_mock.return_value = 'ref_compiled.fna'
+        index_ref_mock.return_value = 1
+        from run_bwa import bwa_mem, InvalidReference
+        ret = bwa_mem( 'F.fq', mate='R.fq', ref='ref_compiled.fna', output='file.sai' )
+        eq_( 1, ret )
+
+class TestUnitArgs(Base):
+    pass
+
 class TestIntegrateRunBWA(Base):
     def setUp(self):
         self.read1,self.read2,self.ref = fixtures.get_sample_paired_reads()
@@ -72,3 +86,16 @@ class TestIntegrateRunBWA(Base):
         eq_( 'file.sai', bwa_mem( self.read1, ref=self.ref, output='file.sai' ) )
         assert exists( 'file.sai' ), "Did not create a sai file"
         assert os.stat('file.sai').st_size != 0, "sai file created is zero bytes"
+
+    def test_ref_is_directory(self):
+        from run_bwa import bwa_mem
+        import shutil
+        os.mkdir( 'refs' )
+        r1 = join('refs','ref1.fna')
+        r2 = join('refs','ref2.fna')
+        shutil.copy( self.ref, r1 )
+        shutil.copy( self.ref, r2 )
+        tot_size = os.stat(r1).st_size + os.stat(r2).st_size
+        eq_( 'bwa.sai', bwa_mem( self.read1, self.read2, ref='refs' ) ) 
+        # bwa.bwa.compile_refs produces reference.fa inside of current directory
+        eq_( tot_size, os.stat( 'reference.fa' ).st_size )

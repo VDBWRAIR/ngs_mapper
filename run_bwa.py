@@ -1,4 +1,4 @@
-from bwa.bwa import BWAMem, index_ref, which_bwa
+from bwa.bwa import BWAMem, index_ref, which_bwa, compile_refs
 
 import os
 from os.path import *
@@ -18,11 +18,14 @@ def bwa_mem( read1, mate=None, ref=None, output='bwa.sai' ):
 
         @param read1 - File path to read
         @param mate - Mate file path
-        @param ref - Reference file path
+        @param ref - Reference file path or directory of references
         @param output - The output destination
 
         @returns the output path if sucessful or -1 if something went wrong
     '''
+    if os.path.isdir( ref ):
+        # Compile ref directory
+        ref = compile_refs( ref )
     # First, make sure the reference is indexed
     if not index_ref(ref):
         raise InvalidReference("{} cannot be indexed by bwa")
