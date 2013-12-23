@@ -13,7 +13,43 @@ class Base(BaseClass):
     pass
 
 @patch('bam.Popen')
-class TestFunctionalIndexBam(Base):
+class TestUnitMergeBam(Base):
+    samtools_cmd = ['samtools','merge','merged.bam']
+
+    def test_input_files(self, popen_mock):
+        from bam import mergebams
+        files = ['in'+str(i) for i in range(1,3)]
+        res = mergebams( files, 'merged.bam' )
+        eq_( [call(self.samtools_cmd+files)], popen_mock.call_args_list )
+
+    def test_input_files_more_than_2(self, popen_mock):
+        from bam import mergebams
+        files = ['in'+str(i) for i in range(1,5)]
+        res = mergebams( files, 'merged.bam' )
+        eq_( [call(self.samtools_cmd+files)], popen_mock.call_args_list )
+
+    def test_input_files_lt_2(self, popen_mock):
+        from bam import mergebams
+        files = ['in1.bam']
+        try:
+            res = mergebams( files, 'merged.bam' )
+        except ValueError as e:
+            pass
+        else:
+            assert False, "Did not raise ValueError with less than 2 bam files to merge"
+
+    def test_input_not_list(self, popen_mock):
+        from bam import mergebams
+        files = 'in1.bam'
+        try:
+            res = mergebams( files, 'merged.bam' )
+        except ValueError as e:
+            pass
+        else:
+            assert False, "Did not raise ValueError with non list item as argument for sortedbams"
+
+@patch('bam.Popen')
+class TestUnitIndexBam(Base):
     samtools_cmd = ['samtools','index']
 
     def test_input_existing_bam(self,popen_mock):
@@ -24,7 +60,7 @@ class TestFunctionalIndexBam(Base):
 
 @patch('bam.Popen')
 @patch('__builtin__.open')
-class TestFunctionalSortBam(Base):
+class TestUnitSortBam(Base):
     samtools_cmd = ['samtools','sort','-f','-']
 
     def test_input_file(self,open_mock, popen_mock):
@@ -58,7 +94,7 @@ class TestFunctionalSortBam(Base):
 
 @patch('bam.Popen')
 @patch('__builtin__.open')
-class TestFunctionalSamToBam(Base):
+class TestUnitSamToBam(Base):
     samtools_cmd = ['samtools','view','-Sb','-']
 
     def test_input_file(self,open_mock, popen_mock):
@@ -105,6 +141,8 @@ class TestIntegrate(Base):
     unsortedbam = join(THIS,'fixtures','bam','unsorted.bam.gz')
     sortedbam = join(THIS,'fixtures','bam','sorted.bam.gz')
     bamindex = join(THIS,'fixtures','bam','sorted.bam.bai.gz')
+    mergedbam = join(THIS,'fixtures','bam','merged.bam.gz')
+    mergedbamindex = join(THIS,'fixtures','bam','merged.bam.bai.gz')
     mytempdir = ''
 
     @classmethod
@@ -116,6 +154,8 @@ class TestIntegrate(Base):
         TestIntegrate.unsortedbam = ungiz(klass.unsortedbam,klass.mytempdir)
         TestIntegrate.sortedbam = ungiz(klass.sortedbam,klass.mytempdir)
         TestIntegrate.bamindex = ungiz(klass.bamindex,klass.mytempdir)
+        TestIntegrate.mergedbam = ungiz(klass.mergedbam,klass.mytempdir)
+        TestIntegrate.mergedbamindex = ungiz(klass.mergedbamindex,klass.mytempdir)
 
     @classmethod
     def tearDownClass(klass):
@@ -179,3 +219,19 @@ class TestIntegrate(Base):
         index = indexbam( 'sorted.bam' )
         eq_( 'sorted.bam.bai', index )
         self._fe( self.bamindex, 'sorted.bam.bai' )
+
+    def test_convert_sort_merge_index( self ):
+        self.test_convert_then_sort()
+        from bam import mergebams, indexbam
+        merged = mergebams( ['sorted.bam', 'sorted.bam'], 'merged.bam' )
+        index = indexbam( merged )
+        self._fe( self.mergedbam, 'merged.bam' )
+        self._fe( self.mergedbamindex, 'merged.bam.bai' )
+
+    def test_convert_sort_index_merge_index( self ):
+        self.test_convert_sort_index()
+        from bam import mergebams, indexbam
+        merged = mergebams( ['sorted.bam', 'sorted.bam'], 'merged.bam' )
+        index = indexbam( merged )
+        self._fe( self.mergedbam, 'merged.bam' )
+        self._fe( self.mergedbamindex, 'merged.bam.bai' )

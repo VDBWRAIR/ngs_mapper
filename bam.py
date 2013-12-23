@@ -74,6 +74,27 @@ def sortbam( bam, outbam ):
     p.wait()
     return outbam
 
+def mergebams( sortedbams, mergedbam ):
+    '''
+        Merges the given sortedbams into a file specified by mergedbam
+
+        @param sortedbams - List of sorted bam files to merge(Maybe don't even need to sort them?)
+        @param mergedbam - Output file for samtools merge
+
+        @returns the path to mergedbam
+    '''
+    if not isinstance( sortedbams, list ) or len( sortedbams ) < 2:
+        raise ValueError( "Merging bams requires >= 2 bam files to merge. {} was given".format(sortedbams) )
+
+    print sortedbams
+    cmd = ['samtools','merge',mergedbam] + sortedbams
+    log.info('Running {}'.format(' '.join(cmd)))
+
+    p = Popen( cmd )
+    p.wait()
+
+    return mergedbam
+
 def indexbam( sortedbam ):
     '''
         Indexes a sorted bam file
