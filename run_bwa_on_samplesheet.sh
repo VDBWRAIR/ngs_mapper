@@ -2,13 +2,17 @@
 
 # We actually want the full path to scripts
 scripts=$(cd $(dirname $0) && pwd)
-# Where be the miseq run data
-rawdata="/home/EIDRUdata/NGSData/RawData/MiSeq"
-# What MiSeq run
-miseq_run="131210_M02261_0004_000000000-A6FWH"
+
+# Where are the read files at?
+reads_by_sample=$1
+if [ -z "$reads_by_sample" ]
+then
+    echo "Please give me the location to the directory that holds all reads by sample"
+    exit 1
+fi
 
 # Where is the sample/reference mapping file that the user gave us
-sample_ref_map_file=$1
+sample_ref_map_file=$2
 if [ -z "$sample_ref_map_file" ]
 then
     echo "Give me a file that is space delimited with samplename reference one per line"
@@ -50,7 +54,7 @@ do
     # Get into the samplename directory
     pushd $sample > /dev/null
     # Map the samplename
-    ${scripts}/run_bwa_on_samplename.sh $sample $reference | tee -a bwa.log
+    ${scripts}/run_bwa_on_samplename.py ${reads_by_sample}/$sample $reference | tee -a bwa.log
     ret=$?
     # Detect if bwa didn't run correctly
     if [ $ret -ne 0 ]

@@ -54,13 +54,13 @@ def main():
 
     if reads['F'] is not None:
         merge += 1
-        pairedsai = bwa_mem( reads['F'], reads['R'], ref, join(tdir, 'paired.sai') )
+        pairedsai = bwa_mem( reads['F'], reads['R'], ref, join(tdir, 'paired.sai'), t=args.threads )
         pairedbam = bam.sortbam( bam.samtobam( pairedsai, PIPE ), join(tdir, 'paired.bam') )
         #bam.indexbam( pairedbam )
 
     if reads['NP'] is not None:
         merge += 2
-        nonpairedsai = bwa_mem( reads['NP'], ref=ref, output=join(tdir, 'nonpaired.sai') )
+        nonpairedsai = bwa_mem( reads['NP'], ref=ref, output=join(tdir, 'nonpaired.sai'), t=args.threads )
         nonpairedbam = bam.sortbam( bam.samtobam( nonpairedsai, PIPE ), join(tdir, 'nonpaired.bam') )
         #bam.indexbam( nonpairedbam )
 
@@ -143,11 +143,21 @@ def parse_args( args=sys.argv[1:] ):
         help='Flag to indicate that you want the temporary files kept instead of removing them which is the default action'
     )
 
+    import multiprocessing
+    default_threads = multiprocessing.cpu_count()
+    parser.add_argument(
+        '-t',
+        dest='threads',
+        default=default_threads,
+        type=int,
+        help='How many threads to use[Default: {}]'.format(default_threads)
+    )
+
     return parser.parse_args( args )
 
 class InvalidReference(Exception): pass
 
-def bwa_mem( read1, mate=None, ref=None, output='bwa.sai' ):
+def bwa_mem( read1, mate=None, ref=None, output='bwa.sai', **kwargs ):
     '''
         Runs the bwa mem algorithm on read1 against ref. If mate is given then run that file with the read1 file
         so paired alignment is done.
@@ -172,9 +182,9 @@ def bwa_mem( read1, mate=None, ref=None, output='bwa.sai' ):
     # Setup BWA Mem
     mem = None
     if mate:
-        mem = BWAMem( ref, read1, mate, bwa_path=which_bwa() )
+        mem = BWAMem( ref, read1, mate, bwa_path=which_bwa(), **kwargs )
     else:
-        mem = BWAMem( ref, read1, bwa_path=which_bwa() )
+        mem = BWAMem( ref, read1, bwa_path=which_bwa(), **kwargs )
 
     ret = mem.run( output )
     print "Ret: " + str(ret)

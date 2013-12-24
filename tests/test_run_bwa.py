@@ -62,6 +62,20 @@ class TestUnitBWAMem(Base):
         ret = bwa_mem( 'F.fq', mate='R.fq', ref='ref_compiled.fna', output='file.sai' )
         eq_( 1, ret )
 
+    @patch('run_bwa.index_ref')
+    @patch('run_bwa.BWAMem')
+    @patch('run_bwa.which_bwa',Mock(return_value='bwa'))
+    def test_set_threads(self, bwamem_mock,index_ref_mock ):
+        bwamem_mock.return_value.run.return_value = 1
+        index_ref_mock.return_value = 1
+        from run_bwa import bwa_mem, InvalidReference
+
+        ret = bwa_mem( 'F.fq', mate='R.fq', ref='ref.fna', output='file.sai', t=8 )
+        bwamem_mock.assert_called_with( 'ref.fna', 'F.fq', 'R.fq', bwa_path='bwa', t=8 )
+
+        ret = bwa_mem( 'F.fq', ref='ref.fna', output='file.sai', t=8 )
+        bwamem_mock.assert_called_with( 'ref.fna', 'F.fq', bwa_path='bwa', t=8 )
+
 class TestUnitParseArgs(Base):
     def _CPA( self, argv ):
         from run_bwa import parse_args
@@ -108,6 +122,16 @@ class TestUnitParseArgs(Base):
         res = self._CPA( ['fake_read', 'fake_ref', '--keep-temp'] )
         eq_( res.keep_temp, True )
 
+    @patch('multiprocessing.cpu_count',Mock(return_value=8))
+    def test_threads_default( self ):
+        res = self._CPA( ['fake_read', 'fake_ref'] )
+        eq_( res.threads, 8 )
+
+    def test_threads_set( self ):
+        res = self._CPA( ['fake_read', 'fake_ref', '-t', '5'] )
+        eq_( res.threads, 5 )
+
+# Pretty sure this isn't the way to do this, but I'm learning here
 @patch('shutil.move')
 @patch('shutil.rmtree')
 @patch('run_bwa.parse_args')
@@ -128,11 +152,11 @@ class TestUnitMain(Base):
         ref_mock.return_value = 'reference.fa'
         reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')]}
         compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':None}
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False)
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
         bwa_mem_mock.return_value = 'bwa_mem.bam'
         from run_bwa import main
         res = main()
-        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai')], bwa_mem_mock.call_args_list )
+        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai',t=1)], bwa_mem_mock.call_args_list )
         eq_( [call([('r1.fq','r2.fq')],'tdir/reads')], compile_reads_mock.call_args_list )
         eq_( [call('/reads')], reads_mock.call_args_list )
         eq_( sort.call_count, 1 )
@@ -147,11 +171,11 @@ class TestUnitMain(Base):
         ref_mock.return_value = 'reference.fa'
         reads_mock.return_value = {'Sanger':['r1.fq']}
         compile_reads_mock.return_value = {'F':None,'R':None,'NP':'NP.fq'}
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False)
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
         bwa_mem_mock.return_value = 'bwa_mem.bam'
         from run_bwa import main
         res = main()
-        eq_( [call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai')], bwa_mem_mock.call_args_list )
+        eq_( [call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai',t=1)], bwa_mem_mock.call_args_list )
         eq_( [call(['r1.fq'],'tdir/reads')], compile_reads_mock.call_args_list )
         eq_( [call('/reads')], reads_mock.call_args_list )
         eq_( sort.call_count, 1 )
@@ -165,11 +189,11 @@ class TestUnitMain(Base):
         ref_mock.return_value = 'reference.fa'
         reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')],'Sanger':['r3.fq']}
         compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':'NP.fq'}
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False)
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
         bwa_mem_mock.return_value = 'bwa_mem.bam'
         from run_bwa import main
         res = main()
-        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai'),call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai')], bwa_mem_mock.call_args_list )
+        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai',t=1),call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai',t=1)], bwa_mem_mock.call_args_list )
         eq_( [call([('r1.fq','r2.fq'),'r3.fq'],'tdir/reads')], compile_reads_mock.call_args_list )
         eq_( [call('/reads')], reads_mock.call_args_list )
         eq_( 2, sort.call_count )
@@ -182,10 +206,22 @@ class TestUnitMain(Base):
         tmp_mock.return_value = 'tdir'
         os.mkdir('tdir')
         shrmtree.side_effect = AssertionError("Should not remove files with keeptemp option")
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=True)
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=True, threads=1)
         from run_bwa import main
         res = main()
         eq_( 0, shrmtree.call_count )
+
+    def test_utilizes_thread_arg(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
+        tmp_mock.return_value = 'tdir'
+        os.mkdir('tdir')
+        ref_mock.return_value = 'reference.fa'
+        reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')],'Sanger':['r3.fq']}
+        compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':'NP.fq'}
+        bwa_mem_mock.return_value = 'bwa_mem.bam'
+        parse_args.return_value = Mock(reads='reads', reference='reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=8)
+        from run_bwa import main
+        res = main()
+        bwa_mem_mock.assert_called_with('NP.fq', ref='reference.fa', output='tdir/nonpaired.sai', t=8)
 
 class TestIntegrateMainArgs(Base):
     def setUp(self):
