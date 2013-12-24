@@ -80,6 +80,8 @@ def main():
 
     if not args.keep_temp:
         shutil.rmtree( tdir )
+    else:
+        log.info( "Keeping temporary directory {}. You will probably want to delete it yourself or move it".format(tdir) )
 
     return bampath
 
