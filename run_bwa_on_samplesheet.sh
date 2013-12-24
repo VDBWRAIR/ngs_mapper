@@ -1,5 +1,13 @@
 #!/bin/bash
 
+if [ -z "$VIRTUAL_ENV" ]
+then
+    echo "Please activate a virtual environment"
+    echo "Usually you do this as follows:"
+    echo ". /path/to/bin/activate>"
+    exit 1
+fi
+
 # We actually want the full path to scripts
 scripts=$(cd $(dirname $0) && pwd)
 
