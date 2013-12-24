@@ -5,7 +5,6 @@ import sys
 import re
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Exception when no platform can be found for a read
@@ -67,7 +66,7 @@ def pair_reads( readlist ):
     paired_reads = []
     skiplist = []
     for i in range(len(readlist)):
-        logger.debug("paired_reads: {}".format(paired_reads))
+        logger.info("paired_reads: {}".format(paired_reads))
         logger.debug("i: {}".format(i))
         # Don't do anything with reads that have been mated already
         if not readlist[i] in skiplist:

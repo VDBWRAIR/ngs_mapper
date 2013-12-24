@@ -4,7 +4,7 @@ if [ -z "$VIRTUAL_ENV" ]
 then
     echo "Please activate a virtual environment"
     echo "Usually you do this as follows:"
-    echo ". /path/to/bin/activate>"
+    echo ". /path/to/bin/activate"
     exit 1
 fi
 
@@ -62,7 +62,7 @@ do
     # Get into the samplename directory
     pushd $sample > /dev/null
     # Map the samplename
-    ${scripts}/run_bwa_on_samplename.py ${reads_by_sample}/$sample $reference -o ${sample}.bam | tee -a bwa.log
+    ${scripts}/run_bwa_on_samplename.py ${reads_by_sample}/$sample $reference -o ${sample}.bam 2>&1 | tee -a bwa.log
     ret=$?
     # Detect if bwa didn't run correctly
     if [ $ret -ne 0 ]
