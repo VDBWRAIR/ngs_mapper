@@ -174,12 +174,12 @@ def bwa_mem( read1, mate=None, ref=None, output='bwa.sai', **kwargs ):
     '''
     if os.path.isdir( ref ):
         # Compile ref directory
-        logger.debug( "Compiling references inside of {}".format(ref) )
+        log.debug( "Compiling references inside of {}".format(ref) )
         ref = compile_refs( ref )
-        logger.info( "Refs are all compiled into {}".format(ref) )
+        log.info( "Refs are all compiled into {}".format(ref) )
 
     # First, make sure the reference is indexed
-    logger.debug( "Ensuring {} is indexed".format(ref) )
+    log.debug( "Ensuring {} is indexed".format(ref) )
     if not index_ref(ref):
         raise InvalidReference("{} cannot be indexed by bwa")
 
