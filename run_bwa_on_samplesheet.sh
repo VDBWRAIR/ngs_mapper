@@ -54,7 +54,7 @@ do
     # Get into the samplename directory
     pushd $sample > /dev/null
     # Map the samplename
-    ${scripts}/run_bwa_on_samplename.py ${reads_by_sample}/$sample $reference | tee -a bwa.log
+    ${scripts}/run_bwa_on_samplename.py ${reads_by_sample}/$sample $reference -o ${sample}.bam | tee -a bwa.log
     ret=$?
     # Detect if bwa didn't run correctly
     if [ $ret -ne 0 ]
