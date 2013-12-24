@@ -1,6 +1,6 @@
 from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
-from mock import MagicMock, patch, Mock
+from mock import MagicMock, patch, Mock, call
 
 from common import BaseClass
 import fixtures
@@ -84,6 +84,18 @@ class TestUnitParseArgs(Base):
         res = self._CPA( ['fake_read', 'fake_ref', '--platforms', 'Sanger'] )
         eq_( res.platforms, ['Sanger'] )
 
+    def test_output_path( self ):
+        res = self._CPA( ['fake_read', 'fake_ref', '-o', 'out.bam'] )
+        eq_( res.output, 'out.bam' )
+
+    def test_output_path_long( self ):
+        res = self._CPA( ['fake_read', 'fake_ref', '--output', 'out.bam'] )
+        eq_( res.output, 'out.bam' )
+
+    def test_output_path_default( self ):
+        res = self._CPA( ['fake_read', 'fake_ref'] )
+        eq_( res.output, 'bwa_mem.bam' )
+
     @raises(SystemExit)
     def test_invalid_platform( self ):
         res = self._CPA( ['fake_read', 'fake_ref', '--platforms', 'invalid'] )
@@ -96,11 +108,152 @@ class TestUnitParseArgs(Base):
         res = self._CPA( ['fake_read', 'fake_ref', '--keep-temp'] )
         eq_( res.keep_temp, True )
 
+@patch('shutil.move')
+@patch('shutil.rmtree')
+@patch('run_bwa.parse_args')
+@patch('bam.mergebams')
+@patch('bam.indexbam')
+@patch('bam.samtobam')
+@patch('bam.sortbam')
+@patch('run_bwa.bwa_mem')
+@patch('run_bwa.compile_reads')
+@patch('run_bwa.reads_by_plat')
+@patch('run_bwa.compile_refs')
+@patch('tempfile.mkdtemp')
+class TestUnitMain(Base):
+    def test_paired_readfiles(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
+        merge.side_effect = AssertionError("Should not merge single files")
+        tmp_mock.return_value = 'tdir'
+        os.mkdir('tdir')
+        ref_mock.return_value = 'reference.fa'
+        reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')]}
+        compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':None}
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False)
+        bwa_mem_mock.return_value = 'bwa_mem.bam'
+        from run_bwa import main
+        res = main()
+        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai')], bwa_mem_mock.call_args_list )
+        eq_( [call([('r1.fq','r2.fq')],'tdir/reads')], compile_reads_mock.call_args_list )
+        eq_( [call('/reads')], reads_mock.call_args_list )
+        eq_( sort.call_count, 1 )
+        eq_( convert.call_count, 1 )
+        eq_( index.call_count, 1 )
+        eq_( 1, shrmtree.call_count )
+
+    def test_nonpaired_readfiles(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
+        merge.side_effect = AssertionError("Should not merge single files")
+        tmp_mock.return_value = 'tdir'
+        os.mkdir('tdir')
+        ref_mock.return_value = 'reference.fa'
+        reads_mock.return_value = {'Sanger':['r1.fq']}
+        compile_reads_mock.return_value = {'F':None,'R':None,'NP':'NP.fq'}
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False)
+        bwa_mem_mock.return_value = 'bwa_mem.bam'
+        from run_bwa import main
+        res = main()
+        eq_( [call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai')], bwa_mem_mock.call_args_list )
+        eq_( [call(['r1.fq'],'tdir/reads')], compile_reads_mock.call_args_list )
+        eq_( [call('/reads')], reads_mock.call_args_list )
+        eq_( sort.call_count, 1 )
+        eq_( convert.call_count, 1 )
+        eq_( index.call_count, 1 )
+        eq_( 1, shrmtree.call_count )
+    
+    def test_paired_and_nonpaired_readfiles(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
+        tmp_mock.return_value = 'tdir'
+        os.mkdir('tdir')
+        ref_mock.return_value = 'reference.fa'
+        reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')],'Sanger':['r3.fq']}
+        compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':'NP.fq'}
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False)
+        bwa_mem_mock.return_value = 'bwa_mem.bam'
+        from run_bwa import main
+        res = main()
+        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai'),call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai')], bwa_mem_mock.call_args_list )
+        eq_( [call([('r1.fq','r2.fq'),'r3.fq'],'tdir/reads')], compile_reads_mock.call_args_list )
+        eq_( [call('/reads')], reads_mock.call_args_list )
+        eq_( 2, sort.call_count )
+        eq_( 2, convert.call_count )
+        eq_( 3, index.call_count )
+        eq_( 1, merge.call_count )
+        eq_( 1, shrmtree.call_count )
+
+    def test_keeptemp(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
+        tmp_mock.return_value = 'tdir'
+        os.mkdir('tdir')
+        shrmtree.side_effect = AssertionError("Should not remove files with keeptemp option")
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=True)
+        from run_bwa import main
+        res = main()
+        eq_( 0, shrmtree.call_count )
+
 class TestIntegrateMainArgs(Base):
-    pass
+    def setUp(self):
+        super(TestIntegrateMainArgs,self).setUp()
+        os.mkdir( 'expected' )
+        # Gives us easy access to some files to map against a reference and then
+        # also have the expected bam files for paired, nonpaired and merged 
+        # Keys of interest:
+        #  NP - nonpaired
+        #  P - paired
+        #  REF - reference
+        #  paired.bam
+        #  nonpaired.bam
+        #  merged.bam
+        #  merged.bam.bai
+        self.fixture_files = fixtures.unpack_integrated( 'expected' )
+
+    def _CM( self, arglist ):
+        # Workaround for the whole unittest using sys.argv
+        from run_bwa import parse_args
+        ns = parse_args( arglist )
+        # Just ensure a static path for mkdtemp so we can ensure it exists or doesn't exist
+        with patch( 'tempfile.mkdtemp' ) as mkdtemp:
+            with patch( 'run_bwa.parse_args' ) as parse_args:
+                mkdtemp.return_value = join(self.tempdir, 'tmpdir1')
+                os.mkdir( join(self.tempdir,'tmpdir1') )
+                parse_args.return_value = ns
+                from run_bwa import main
+                return main()
+
+    def test_paired_and_nonpaired_get_merged(self):
+        ff = self.fixture_files
+        argv = ['expected/reads', ff['REF'], '--keep-temp']
+        res = self._CM( argv )
+        eq_( 'bwa_mem.bam', res )
+        eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
+        eq_( os.stat(ff['merged.bam.bai']).st_size, os.stat(res+'.bai').st_size )
+        assert os.path.exists( 'tmpdir1' ), "Did not keep temp directory"
+
+    def test_paired_only(self):
+        ff = self.fixture_files
+        argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'MiSeq']
+        res = self._CM( argv )
+        eq_( 'bwa_mem.bam', res )
+        eq_( os.stat(ff['paired.bam']).st_size, os.stat(res).st_size )
+        assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+
+    def test_nonpaired_only(self):
+        ff = self.fixture_files
+        print ff
+        argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'Sanger']
+        res = self._CM( argv )
+        eq_( 'bwa_mem.bam', res )
+        eq_( os.stat(ff['nonpaired.bam']).st_size, os.stat(res).st_size )
+        assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+
+    def test_output_path(self):
+        ff = self.fixture_files
+        argv = ['expected/reads', self.fixture_files['REF'], '-o', 'merged.bam']
+        res = self._CM( argv )
+        eq_( 'merged.bam', res )
+        eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
+        assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+
 
 class TestFunctionalRunBWA(Base):
     def setUp(self):
+        super(TestFunctionalRunBWA,self).setUp()
         self.read1,self.read2,self.ref = fixtures.get_sample_paired_reads()
 
     def test_maps_reads_paired(self):

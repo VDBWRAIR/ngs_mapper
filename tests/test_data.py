@@ -31,13 +31,13 @@ class Base(BaseClass):
     def tearDown(self):
         super(Base,self).tearDown()
 
-    def mock_reads_dir(self,platforms=None):
+    def mock_reads_dir(self,path,platforms=None):
         if platforms is None:
             platforms = self.reads.keys()
         readsdir = self.tempdir
         listing = {}
         for plat,readfiles in self.reads.items():
-            listing[plat] = sorted(readfiles)
+            listing[plat] = sorted([join(path,r) for r in readfiles])
             # Create the files
             for readfile in listing[plat]:
                 open(readfile,'w').close()
@@ -68,7 +68,7 @@ class TestFunctional(Base):
 
     def test_filter_reads_by_platform_all(self):
         from data import filter_reads_by_platform as frbp
-        expected = self.mock_reads_dir()
+        expected = self.mock_reads_dir(self.tempdir)
         for plat, readfiles in expected.items():
             result = frbp( self.tempdir, plat )
             eq_( readfiles, sorted(result) )
@@ -117,7 +117,7 @@ class TestIntegration(Base):
     def test_reads_by_plat_individual(self):
         from data import reads_by_plat as rdp
         # Test each platform's file format
-        expected = self.mock_reads_dir()
+        expected = self.mock_reads_dir(self.tempdir)
         result = rdp( self.tempdir )
         for plat,readfiles in expected.items():
             assert plat in result, "platform {} not in result".format(plat)
@@ -128,10 +128,13 @@ class TestIntegration(Base):
     def test_reads_by_all(self):
         from data import reads_by_plat as rdp
         # Test each platform's file format
-        expected = self.mock_reads_dir()
+        expected = self.mock_reads_dir(self.tempdir)
         expected['MiSeq'] = [tuple(expected['MiSeq']),]
         result = rdp( self.tempdir )
-        eq_( expected, result )
+        ex = {}
+        for plat, reads in expected.items():
+            ex[plat] = reads
+        eq_( ex, result )
 
     def test_platform_has_paired_reads(self):
         from data import pair_reads

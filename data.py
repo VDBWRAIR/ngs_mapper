@@ -18,7 +18,7 @@ def filter_reads_by_platform( path, platform ):
         @returns list of reads inside of path(basename)
     '''
     # All files in path
-    files = [basename(f) for f in glob( join(path,'*') ) if platform_for_read(f) == platform]
+    files = [f for f in glob( join(path,'*') ) if platform_for_read(f) == platform]
     return files
 
 def platform_for_read( filepath ):
