@@ -56,19 +56,18 @@ def main():
         merge += 1
         pairedsai = bwa_mem( reads['F'], reads['R'], ref, join(tdir, 'paired.sai') )
         pairedbam = bam.sortbam( bam.samtobam( pairedsai, PIPE ), join(tdir, 'paired.bam') )
-        bam.indexbam( pairedbam )
+        #bam.indexbam( pairedbam )
 
     if reads['NP'] is not None:
         merge += 2
         nonpairedsai = bwa_mem( reads['NP'], ref=ref, output=join(tdir, 'nonpaired.sai') )
         nonpairedbam = bam.sortbam( bam.samtobam( nonpairedsai, PIPE ), join(tdir, 'nonpaired.bam') )
-        bam.indexbam( nonpairedbam )
+        #bam.indexbam( nonpairedbam )
 
     # Now decide if any merging needs to happen
     bampath = args.output
     if merge == 3:
         bam.mergebams( [pairedbam, nonpairedbam], args.output )
-        bam.indexbam( bampath )
     elif merge == 1:
         log.debug( "Paired only. Moving result file {} to {}".format(pairedbam, bampath) )
         shutil.move( pairedbam, bampath )
@@ -77,6 +76,9 @@ def main():
         shutil.move( nonpairedbam, bampath )
     else:
         raise Exception( "Somehow no reads were compiled" )
+
+    # Index the resulting bam
+    bam.indexbam( bampath )
 
     if not args.keep_temp:
         shutil.rmtree( tdir )

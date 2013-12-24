@@ -174,7 +174,7 @@ class TestUnitMain(Base):
         eq_( [call('/reads')], reads_mock.call_args_list )
         eq_( 2, sort.call_count )
         eq_( 2, convert.call_count )
-        eq_( 3, index.call_count )
+        eq_( 1, index.call_count )
         eq_( 1, merge.call_count )
         eq_( 1, shrmtree.call_count )
 
@@ -232,6 +232,7 @@ class TestIntegrateMainArgs(Base):
         eq_( 'bwa_mem.bam', res )
         eq_( os.stat(ff['paired.bam']).st_size, os.stat(res).st_size )
         assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+        assert os.path.exists( 'bwa_mem.bam.bai' )
 
     def test_nonpaired_only(self):
         ff = self.fixture_files
@@ -241,6 +242,7 @@ class TestIntegrateMainArgs(Base):
         eq_( 'bwa_mem.bam', res )
         eq_( os.stat(ff['nonpaired.bam']).st_size, os.stat(res).st_size )
         assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+        assert os.path.exists( 'bwa_mem.bam.bai' )
 
     def test_output_path(self):
         ff = self.fixture_files
@@ -249,7 +251,7 @@ class TestIntegrateMainArgs(Base):
         eq_( 'merged.bam', res )
         eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
         assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
-
+        assert os.path.exists( 'merged.bam.bai' )
 
 class TestFunctionalRunBWA(Base):
     def setUp(self):
