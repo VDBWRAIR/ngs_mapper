@@ -2,10 +2,12 @@
 
 # Sets permissions on all created files
 umask 0002
+find . -type d -exec chmod 775 {} \;
+find . -type f -exec chmod 664 {} \;
 
 # Sets setgid bit so all created files and folders
 #  have same group
 chmod g+s ./
 
 # Sets the group for all files/folders
-chown :changeme ./
+chown -R :changeme ./
