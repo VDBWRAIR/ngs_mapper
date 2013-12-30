@@ -211,6 +211,14 @@ class TestUnitMain(Base):
         res = main()
         eq_( 0, shrmtree.call_count )
 
+    def test_keeptemp_false(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
+        tmp_mock.return_value = 'tdir'
+        os.mkdir('tdir')
+        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
+        from run_bwa import main
+        res = main()
+        eq_( [call('tdir')], shrmtree.call_args_list )
+
     def test_utilizes_thread_arg(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
         tmp_mock.return_value = 'tdir'
         os.mkdir('tdir')
@@ -287,6 +295,15 @@ class TestIntegrateMainArgs(Base):
         eq_( 'merged.bam', res )
         eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
         assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+        assert os.path.exists( 'merged.bam.bai' )
+
+    def test_keepfiles(self):
+        ff = self.fixture_files
+        argv = ['expected/reads', self.fixture_files['REF'], '-o', 'merged.bam', '--keep-temp']
+        res = self._CM( argv )
+        eq_( 'merged.bam', res )
+        eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
+        assert os.path.exists( 'tmpdir1' ), "Temp directory still exists"
         assert os.path.exists( 'merged.bam.bai' )
 
 class TestFunctionalRunBWA(Base):
