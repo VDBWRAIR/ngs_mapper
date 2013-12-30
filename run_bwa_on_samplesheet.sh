@@ -8,16 +8,6 @@ then
     exit 1
 fi
 
-if [ ! -e perms.sh ]
-then
-    echo "Please setup perms.sh first"
-    echo "You can copy perms.sh-example to perms.sh and then modify it"
-    exit 1
-fi
-
-# Call perms.sh to setup the permissions environment
-bash perms.sh
-
 # We actually want the full path to scripts
 scripts=$(cd $(dirname $0) && pwd)
 
@@ -36,6 +26,16 @@ then
     echo "Give me a file that is space delimited with samplename reference one per line"
     exit 1
 fi
+
+if [ ! -e ${scripts}/perms.sh ]
+then
+    echo "Please setup perms.sh first"
+    echo "You can copy perms.sh-example to perms.sh and then modify it"
+    exit 1
+fi
+
+# Call perms.sh to setup the permissions environment
+bash ${scripts}/perms.sh
 
 # Loop over each of our samplenames and references
 # File needs to be either space or tab delimeted
