@@ -29,7 +29,7 @@ def parse_args(args=sys.argv[1:]):
         '--min-qual',
         dest='minqual',
         default=25,
-        help='Minimum read quality to be included in stats'
+        help='Minimum read quality to be included in stats[Default: 25]'
     )
 
     parser.add_argument(
@@ -37,12 +37,12 @@ def parse_args(args=sys.argv[1:]):
         '--max-depth',
         dest='maxd',
         default=100000,
-        help='Maximum read depth at position to use'
+        help='Maximum read depth at position to use[Default: 100000]'
     )
     
     return parser.parse_args(args)
 
-def mpileup( bamfile, regionstr=None, minqual=25, maxd=50000 ):
+def mpileup( bamfile, regionstr=None, minqual=25, maxd=100000 ):
     cmd = ['samtools','mpileup','-Q','{}'.format(minqual),'-d','{}'.format(maxd)]
     if regionstr:
         cmd += ['-r',regionstr]
@@ -57,12 +57,21 @@ def stats_at_pos( refpos, bamfile, minqual, maxd ):
         line = line.rstrip().split()
         pos = int(line[1])
         depth = int(line[3])
-        quals = [ord(q)-33 for q in line[5]]
-        bases = [b for b in line[4] if b.upper() in 'ATGC' ]
         if pos != refpos:
             continue
+        quals = [ord(q)-33 for q in line[5]]
+        bases = []
+        '''
+        for i in range(len(line[4])):
+            b = line[4][i]
+            if b.upper() not in 'ATGC':
+                print "Skipping unknown base '{}'".format(b)
+                print "Surrounding area '{}'".format(line[4][i-4:i+4])
+            bases.append(b)
+        '''
+        bases = [b for b in line[4] if b.upper() in 'ATGC*' ]
         bq = [x for x in itertools.izip_longest(bases,quals, fillvalue='!')]
-        assert len(quals) == len(bases), "{} != {}\n{}".format(len(quals),len(bases),bq)
+        assert len(quals) == len(bases), "Number of quals {} !=  number of bases {}\n".format(len(quals),len(bases))
 
         # Stats
         stats = {
