@@ -6,6 +6,7 @@ from subprocess import Popen, PIPE
 import argparse
 import sys
 import itertools
+from collections import OrderedDict
 
 def main(args):
     stats_at_pos( args.refpos, args.bamfile, args.minqual, args.maxd )
@@ -98,8 +99,24 @@ def indel( sequence, pos, quallist, qualpadding=0 ):
     return quallist
 
 def stats_at_pos( refpos, bamfile, minqual, maxd ):
+    stats = stats_at_pos_popen( refpos, bamfile, minqual, maxd )
+    print "Maximum Depth: {}".format(maxd)
+    print "Minumum Quality Threshold: {}".format(minqual)
+    base_stats = compile_stats( stats )
+    print "Average Mapping? Quality: {}".format(base_stats['AvgMapQ'])
+    print "Depth: {}".format(base_stats['TotalDepth'])
+    for base, bstats in base_stats['Bases'].iteritems():
+        print "Base: {}".format(base)
+        print "\tDepth: {}".format( bstats['Depth'] )
+        print "\tAverage Mapping Quality: {}".format( bstats['AvgMapQ'] )
+        print "\tAverage Read Quality: {}".format( bstats['AvgReadQ'] )
+        print "\t% of Total: {}".format( bstats['PctTotal'] )
+
+    return base_stats
+
+def stats_at_pos_popen( refpos, bamfile, minqual, maxd ):
     base_stats = {}
-    pile = mpileup( bamfile )
+    pile = mpileup( bamfile, minqual=minqual, maxd=maxd )
     for line in pile:
         line = line.rstrip().split()
         pos = int(line[1])
@@ -110,9 +127,8 @@ def stats_at_pos( refpos, bamfile, minqual, maxd ):
         quals = [ord(q)-33 for q in line[5]]
         for i in range(len(line[4])):
             b = line[4][i]
-            if b.upper() not in 'ATGC*':
+            if b.upper() not in 'ATGC*N':
                 #print "Skipping unknown base '{}'".format(b)
-                #print "Surrounding area '{}'".format(line[4][i-4:i+4])
                 # Do insert/delete
                 if b in '+-':
                     quals = indel( line[4], i, quals )
@@ -124,7 +140,7 @@ def stats_at_pos( refpos, bamfile, minqual, maxd ):
         # Stats
         stats = {
             'depth': 0,
-            'avgqual': 0.0
+            'qualsum': 0.0
         }
         for base, qual in bq:
             base = base.upper()
@@ -132,20 +148,33 @@ def stats_at_pos( refpos, bamfile, minqual, maxd ):
                 stats[base] = []
             stats[base].append( qual )
             stats['depth'] += 1
-            stats['avgqual'] += float(qual)
+            stats['qualsum'] += float(qual)
 
-        print "Minumum Quality Threshold: {}".format(minqual)
-        print "Maximum Depth: {}".format(maxd)
-        print "Average Mapping? Quality: {}".format(stats['avgqual']/stats['depth'])
-        for base, quals in stats.iteritems():
-            if base not in ('depth','avgqual'):
-                print "Base: {}".format(base)
-                print "\tDepth: {}".format(len(quals))
-                print "\tAverage Mapping? Quality: {}".format(float(sum(quals)) / len(quals))
-                print "\t% of Total: {}".format((float(len(quals))/stats['depth'])*100)
+        return stats
 
-        # Quit out of loop we are done
-        break
+def compile_stats( stats ):
+    '''
+        @param stats - {'A': [quals], 'depth': 0, 'avgqual': 0.0}
+    '''
+    base_stats = {}
+    base_stats['TotalDepth'] = stats['depth']
+    base_stats['AvgMapQ'] = round(stats['qualsum']/stats['depth'],2)
+    base_stats['AvgReadQ'] = round(0.0,2)
+    base_stats['Bases'] = {}
+    for base, quals in stats.iteritems():
+        if base not in ('depth','qualsum'):
+            if base not in base_stats['Bases']:
+                base_stats['Bases'][base] = {}
+            base_stats['Bases'][base]['Depth'] = len(quals)
+            base_stats['Bases'][base]['AvgMapQ'] = round(float(sum(quals))/len(quals),2)
+            base_stats['Bases'][base]['AvgReadQ'] = round(0.0,2)
+            base_stats['Bases'][base]['PctTotal'] = round((float(len(quals))/stats['depth'])*100,2)
+
+    # Quit out of loop we are done
+    # Order bases by PctTotal descending
+    sorted_bases = sorted( base_stats['Bases'].items(), key=lambda x: x[1]['PctTotal'], reverse=True )
+    base_stats['Bases'] = OrderedDict(sorted_bases)
+    return base_stats
 
 if __name__ == '__main__':
     main(parse_args())

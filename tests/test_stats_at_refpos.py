@@ -29,6 +29,7 @@ class Base(common.BaseClass):
 
     def setUp( self ):
         super(Base,self).setUp()
+        self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}
         self.bam = Base.bam
 
 class TestMpileup(Base):
@@ -47,32 +48,33 @@ class TestMpileup(Base):
         popen.assert_called_with(['samtools','mpileup','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1)
 
 class TestStatsAtPos(Base):
-    def setUp( self ):
-        super(TestStatsAtPos,self).setUp()
-        self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}
-
     def _C( self, pos, bam, minmq=0, maxd=100000 ):
         from stats_at_refpos import stats_at_pos
         return stats_at_pos( pos, bam, minmq, maxd )
 
     @patch('stats_at_refpos.mpileup')
     def test_func_works( self, mpileup ):
+        from collections import OrderedDict
         # Patch mpileup with expected stuffs
         mpileup.return_value = open(self.mp[1046])
         res = self._C( 1046, self.bam )
-        eb = {
-                'A':{'AvgReadQ':0.0,'AvgMapQ':36.02,'Depth':1349,'AvgReadQ':0.0,'PctTotal':25.49},
-                'C':{'AvgReadQ':0.0,'AvgMapQ':14.25,'Depth':4,'AvgReadQ':0.0,'PctTotal':0.08},
-                '*':{'AvgReadQ':0.0,'AvgMapQ':39.0,'Depth':1,'AvgReadQ':0.0,'PctTotal':0.02},
-                'T':{'AvgReadQ':0.0,'AvgMapQ':17.5,'Depth':4,'AvgReadQ':0.0,'PctTotal':0.08},
-                'G':{'AvgReadQ':0.0,'AvgMapQ':36.75,'Depth':3934,'AvgReadQ':0.0,'PctTotal':74.34}
-            }
+        eb = OrderedDict([
+                ('G',{'AvgReadQ':0.0,'AvgMapQ':36.74,'Depth':3936,'AvgReadQ':0.0,'PctTotal':74.32}),
+                ('A',{'AvgReadQ':0.0,'AvgMapQ':36.01,'Depth':1350,'AvgReadQ':0.0,'PctTotal':25.49}),
+                ('C',{'AvgReadQ':0.0,'AvgMapQ':14.25,'Depth':4,'AvgReadQ':0.0,'PctTotal':0.08}),
+                ('T',{'AvgReadQ':0.0,'AvgMapQ':17.5,'Depth':4,'AvgReadQ':0.0,'PctTotal':0.08}),
+                ('*',{'AvgReadQ':0.0,'AvgMapQ':39.0,'Depth':1,'AvgReadQ':0.0,'PctTotal':0.02}),
+                ('N',{'AvgReadQ':0.0,'AvgMapQ':2.0,'Depth':1,'AvgReadQ':0.0,'PctTotal':0.02})
+            ])
         e = {
             'Bases': eb,
-            'AvgMapQ': 36.54,
+            'AvgMapQ': 36.52,
             'AvgReadQ': 0.0,
-            'TotalDepth': 5292
+            'TotalDepth': 5296
         }
+
+        # Ensure keys are same and in same order
+        eq_( eb.keys(), res['Bases'].keys() )
 
         for base, valuesd in eb.iteritems():
             for k,v in valuesd.items():
