@@ -92,8 +92,8 @@ class TestPysamCol(Base):
 
 class TestMpileupPopen(Base):
     def _CM( self, bamfile, regionstr, minqual, maxd ):
-        from stats_at_refpos import mpileup
-        return mpileup( bamfile, regionstr, minqual, maxd )
+        from stats_at_refpos import mpileup_popen
+        return mpileup_popen( bamfile, regionstr, minqual, maxd )
 
     @patch('stats_at_refpos.Popen')
     def test_unit_popencall( self, popen ):
@@ -107,19 +107,17 @@ class TestMpileupPopen(Base):
 
 class StatsAtPos(Base):
     def _do( self, res ):
+        #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
         eb = OrderedDict([
-                ('G',{'AvgReadQ':0.0,'AvgMapQ':36.74,'Depth':3936,'PctTotal':74.32}),
-                ('A',{'AvgReadQ':0.0,'AvgMapQ':36.01,'Depth':1350,'PctTotal':25.49}),
-                ('C',{'AvgReadQ':0.0,'AvgMapQ':14.25,'Depth':4,'PctTotal':0.08}),
-                ('T',{'AvgReadQ':0.0,'AvgMapQ':17.5,'Depth':4,'PctTotal':0.08}),
-                ('*',{'AvgReadQ':0.0,'AvgMapQ':39.0,'Depth':1,'PctTotal':0.02}),
-                ('N',{'AvgReadQ':0.0,'AvgMapQ':2.0,'Depth':1,'PctTotal':0.02})
+                ('G',{'AvgReadQ':0.0,'AvgMapQ':37.73,'Depth':11,'PctTotal':84.62}),
+                ('T',{'AvgReadQ':0.0,'AvgMapQ':17.0,'Depth':1,'PctTotal':7.69}),
+                ('N',{'AvgReadQ':0.0,'AvgMapQ':2.0,'Depth':1,'PctTotal':7.69})
             ])
         e = {
             'Bases': eb,
-            'AvgMapQ': 36.52,
+            'AvgMapQ': 33.38,
             'AvgReadQ': 0.0,
-            'TotalDepth': 5296
+            'TotalDepth': 13
         }
 
         # Ensure keys are same and in same order
@@ -132,16 +130,16 @@ class StatsAtPos(Base):
         for k in e:
             eq_( e[k], res[k] )
 
-class TestStatsAtPosPopen(StatsAtPos):
-    def _C( self, pos, bam, minmq=0, maxd=100000 ):
+class TestStatsAtPos(StatsAtPos):
+    def _C( self, bam, regionstr, minmq=0, minbq=0, maxd=100000 ):
         from stats_at_refpos import stats_at_pos
-        return stats_at_pos( pos, bam, minmq, maxd )
+        return stats_at_pos( bam, regionstr, minmq, minbq, maxd )
 
-    @patch('stats_at_refpos.mpileup')
-    def test_func_works( self, mpileup ):
-        # Patch mpileup with expected stuffs
-        mpileup.return_value = open(self.mp[1046])
-        res = self._C( 1046, self.bam )
+    def test_func_works( self ):
+        ref = 'Den1/U88535_1/WestPac/1997/Den1_1'
+        pos = '6109'
+        regionstr = '{}:{}-{}'.format(ref,pos,pos)
+        res = self._C( self.bam, regionstr, 0, 0, 100000 )
         self._do( res )
 
 class TestCompileStats(Base):
@@ -174,3 +172,30 @@ class TestCompileStats(Base):
         eq_( 40.0, a['AvgMapQ'] )
         eq_( 0.0, a['AvgReadQ'] )
         eq_( 10.0, a['PctTotal'] )
+
+class TestMain(StatsAtPos):
+    def _CM( self, args ):
+        from stats_at_refpos import main
+        return main( args )
+
+    @patch('stats_at_refpos.stats_at_pos')
+    def test_unit_runs( self, stats_at_pos ):
+        args = Mock(
+            regionstr='ref1:1-1',
+            bamfile='somefile.bam',
+            minmq=0,
+            minbq=0,
+            maxd=100000
+        )
+        self._CM( args )
+
+    def test_func_runs( self ):
+        args = Mock(
+            bamfile=self.bam,
+            regionstr='Den1/U88535_1/WestPac/1997/Den1_1:6109-6109',
+            minmq=0,
+            minbq=0,
+            maxd=100000
+        )
+        res = self._CM( args )
+        self._do( res )

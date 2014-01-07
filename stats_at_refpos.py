@@ -9,25 +9,15 @@ import itertools
 from collections import OrderedDict
 
 def main(args):
-    stats_at_pos( args.refpos, args.bamfile, args.minqual, args.maxd )
+    return stats_at_pos( args.bamfile, args.regionstr, args.minmq, args.minbq, args.maxd )
 
 def parse_args(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(
         description='''Gives stats about a given site in a bam file''',
-        epilog=u'''
-            Some things to note at this time:
-             Still confused about how the samtools manpage for mpileup says that the output should
-             be:
-                In the pileup format (without -uor-g), each line represents a genomic position, consisting of chromosome name, coordinate, reference base, read bases, read qualities and alignment mapping qualities. Information on match, mismatch, indel, strand,  mapping  quality  and
-                 start  and  end of a read are all encoded at the read base column. At this column, a dot stands for a match to the reference base on the forward strand, a comma for a match on the reverse strand, a '>' or '<' for a reference skip, 'ACGTN' for a mismatch on the forward
-                 strand and 'acgtn' for a mismatch on the reverse strand. A pattern '\+[0-9]+[ACGTNacgtn]+' indicates there is an insertion between this reference position and the next reference position. The length of the insertion is given by the integer in the pattern, followed  by
-                 the inserted sequence. Similarly, a pattern '-[0-9]+[ACGTNacgtn]+' represents a deletion from the reference. The deleted bases will be presented as '*' in the following lines. Also at the read base column, a symbol '^' marks the start of a read. The ASCII of the char-
-                 acter following '^' minus 33 gives the mapping quality. A symbol '$' marks the end of a read segment.
-            However, instead it seems you get chromosome name, coordinate, reference base, read depth, read bases, mapping quality
-            Not sure how to get read base qualities as well like it says, but that would be great
-            
-            Insertions and deletions in the read bases (+/-[0-9][a-zA-Z]+) will simply have mapping quality 0 inserted for them by this script. Good idea or not...
-        '''
+        epilog='''You might use this command to get a list of available reference 
+names to use for the regionstr. In the future there will be a list command for this
+but for now use this:                                                 
+samtools idxstats <in.bam> | awk '!/^*/ {print $1}' | sort | uniq'''
     )
 
     parser.add_argument(
@@ -36,17 +26,28 @@ def parse_args(args=sys.argv[1:]):
     )
 
     parser.add_argument(
-        dest='refpos',
-        type=int,
-        help='Position on reference to get stats for'
+        dest='regionstr',
+        help='Region string to use in format of {refname}:{start}-{stop} where ' \
+            'refname should be a reference identifier inside of the bamfile, ' \
+            'start and stop are the reference position to look at. Example: ' \
+            'Den1Reference:1046-1046. You can see more about regionstr in the ' \
+            ' samtools documentation.'
     )
 
     parser.add_argument(
-        '-Q',
-        '--min-qual',
-        dest='minqual',
+        '-mmq',
+        '--min-mapping-qual',
+        dest='minmq',
         default=25,
-        help='Minimum read quality to be included in stats[Default: 25]'
+        help='Minimum mapping quality to be included in stats[Default: 25]'
+    )
+
+    parser.add_argument(
+        '-mbq',
+        '--min-base-qual',
+        dest='minbq',
+        default=20,
+        help='Minimum base quality to be included in stats[Default: 20]'
     )
 
     parser.add_argument(
@@ -59,7 +60,7 @@ def parse_args(args=sys.argv[1:]):
     
     return parser.parse_args(args)
 
-def mpileup_pysam( bamfile, regionstr, minqual=25, maxd=10000 ):
+def mpileup_pysam( bamfile, regionstr, minmq=25, maxd=10000 ):
     import pysam
     samfile = pysam.Samfile( bamfile )
     #samfile.pileup( region=regionstr )
@@ -113,8 +114,8 @@ def mpileup_popen( bamfile, regionstr=None, minqual=25, maxd=100000 ):
     p = Popen( cmd, stdout=PIPE )
     return p.stdout
 
-def mpileup( bamfile, regionstr=None, minqual=25, maxd=100000 ):
-    return mpileup_popen( bamfile, regionstr, minqual, maxd )
+def mpileup( bamfile, regionstr=None, minmq=25, minbq=20, maxd=100000 ):
+    return mpileup_pysam( bamfile, regionstr, minmq, maxd )
 
 def indel( sequence, pos, quallist, qualpadding=0 ):
     ''' 
@@ -147,13 +148,13 @@ def indel( sequence, pos, quallist, qualpadding=0 ):
 
     return quallist
 
-def stats_at_pos( refpos, bamfile, minqual, maxd ):
-    stats = stats_at_pos_popen( refpos, bamfile, minqual, maxd )
+def stats_at_pos( bamfile, regionstr, minmq, minbq, maxd ):
+    base_stats = compile_stats( stats( bamfile, regionstr, minmq, minbq, maxd ) )
     print "Maximum Depth: {}".format(maxd)
-    print "Minumum Quality Threshold: {}".format(minqual)
-    base_stats = compile_stats( stats )
+    print "Minumum Mapping Quality Threshold: {}".format(minmq)
+    print "Minumum Base Quality Threshold: {}".format(minbq)
     print "Average Mapping Quality: {}".format(base_stats['AvgMapQ'])
-    print "Average Read Quality: {}".format(base_stats['AvgReadQ'])
+    print "Average Base Quality: {}".format(base_stats['AvgReadQ'])
     print "Depth: {}".format(base_stats['TotalDepth'])
     for base, bstats in base_stats['Bases'].iteritems():
         print "Base: {}".format(base)
@@ -164,15 +165,15 @@ def stats_at_pos( refpos, bamfile, minqual, maxd ):
 
     return base_stats
 
-def stats_at_pos_popen( refpos, bamfile, minqual, maxd ):
+def stats( bamfile, regionstr, minmq, minbq, maxd ):
     base_stats = {}
-    pile = mpileup( bamfile, minqual=minqual, maxd=maxd )
+    pile = mpileup( bamfile, regionstr, minmq=minmq, maxd=maxd )
     for line in pile:
         line = line.rstrip().split()
         pos = int(line[1])
         depth = int(line[3])
-        if pos != refpos:
-            continue
+        #if pos != refpos:
+        #    continue
         bases = []
         quals = [ord(q)-33 for q in line[5]]
         for i in range(len(line[4])):
