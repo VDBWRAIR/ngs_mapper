@@ -30,9 +30,20 @@ class Base(common.BaseClass):
     def setUp( self ):
         super(Base,self).setUp()
         self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}
-        self.bam = Base.bam
+        self.bam = self.__class__.bam
 
-class TestMpileup(Base):
+class TestMpileupPySam(Base):
+    def _CM( self, bamfile, regionstr, minqual, maxd ):
+        from stats_at_refpos import mpileup_pysam
+        return mpileup_pysam( bamfile, regionstr, minqual, maxd )
+
+    @patch('pysam.Samfile')
+    def test_unit_call( self, samfile ):
+        self._CM( self.bam, '', 25, 100000 )
+        samfile.assert_called_with(self.bam)
+        samfile.return_value.pileup.assert_called_with(region='')
+
+class TestMpileupPopen(Base):
     def _CM( self, bamfile, regionstr, minqual, maxd ):
         from stats_at_refpos import mpileup
         return mpileup( bamfile, regionstr, minqual, maxd )
@@ -47,17 +58,9 @@ class TestMpileup(Base):
         eq_( 'tested', res )
         popen.assert_called_with(['samtools','mpileup','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1)
 
-class TestStatsAtPos(Base):
-    def _C( self, pos, bam, minmq=0, maxd=100000 ):
-        from stats_at_refpos import stats_at_pos
-        return stats_at_pos( pos, bam, minmq, maxd )
-
-    @patch('stats_at_refpos.mpileup')
-    def test_func_works( self, mpileup ):
+class StatsAtPos(Base):
+    def _do( self, res ):
         from collections import OrderedDict
-        # Patch mpileup with expected stuffs
-        mpileup.return_value = open(self.mp[1046])
-        res = self._C( 1046, self.bam )
         eb = OrderedDict([
                 ('G',{'AvgReadQ':0.0,'AvgMapQ':36.74,'Depth':3936,'AvgReadQ':0.0,'PctTotal':74.32}),
                 ('A',{'AvgReadQ':0.0,'AvgMapQ':36.01,'Depth':1350,'AvgReadQ':0.0,'PctTotal':25.49}),
@@ -82,3 +85,20 @@ class TestStatsAtPos(Base):
 
         for k in e:
             eq_( e[k], res[k] )
+
+class TestStatsAtPosPysam(StatsAtPos):
+    def _C( self, regionstr, bam, minmq=0, maxd=100000 ):
+        from stats_at_refpos import stats_at_pos_pysam
+        return stats_at_pos_pysam( regionstr, bam, minmq, maxd=100000 )
+
+class TestStatsAtPosPopen(StatsAtPos):
+    def _C( self, pos, bam, minmq=0, maxd=100000 ):
+        from stats_at_refpos import stats_at_pos
+        return stats_at_pos( pos, bam, minmq, maxd )
+
+    @patch('stats_at_refpos.mpileup')
+    def test_func_works( self, mpileup ):
+        # Patch mpileup with expected stuffs
+        mpileup.return_value = open(self.mp[1046])
+        res = self._C( 1046, self.bam )
+        self._do( res )
