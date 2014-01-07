@@ -62,7 +62,48 @@ def parse_args(args=sys.argv[1:]):
 def mpileup_pysam( bamfile, regionstr, minqual=25, maxd=10000 ):
     import pysam
     samfile = pysam.Samfile( bamfile )
-    return samfile.pileup( region=regionstr )
+    #samfile.pileup( region=regionstr )
+    reference,reg = regionstr.split(':')
+    start,stop = reg.split('-')
+    rng = range(int(start),int(stop)+1)
+    for col in samfile.pileup(region=regionstr):
+         if col.pos in rng:
+            yield pysam_col( col.pileups, reference )
+
+def pysam_col( pysamcol, reference ):
+    '''
+        @param pysamcol - pysam.PileupProxy.pileups
+        @param reference - Reference(chrm) name
+        @returns 'chrm pos N depth readbases readquals mapquals'
+    '''
+    from StringIO import StringIO
+    depth = len(pysamcol)
+    readseq = StringIO()
+    readquals = StringIO()
+    mapquals = StringIO()
+    # Position on reference for the column we are looking at
+    refpos = pysamcol[0].alignment.pos + pysamcol[0].qpos
+    for pread in pysamcol:
+        qpos = pread.qpos-1
+        aread = pread.alignment
+        mapq = aread.mapq
+        # Sometimes mapq is a character and sometimes an int??
+        if type(mapq) in (int,long):
+            mapq = chr(mapq)
+        mapquals.write(mapq)
+        readquals.write(aread.qual[qpos])
+        seq = aread.seq[qpos]
+        readseq.write( aread.seq[qpos] )
+
+    return '\t'.join([
+        reference,
+        str(refpos),
+        'N',
+        str(depth),
+        readseq.getvalue(),
+        readquals.getvalue(),
+        mapquals.getvalue()
+    ])
 
 def mpileup_popen( bamfile, regionstr=None, minqual=25, maxd=100000 ):
     cmd = ['samtools','mpileup','-Q','{}'.format(minqual),'-d','{}'.format(maxd)]
@@ -111,7 +152,8 @@ def stats_at_pos( refpos, bamfile, minqual, maxd ):
     print "Maximum Depth: {}".format(maxd)
     print "Minumum Quality Threshold: {}".format(minqual)
     base_stats = compile_stats( stats )
-    print "Average Mapping? Quality: {}".format(base_stats['AvgMapQ'])
+    print "Average Mapping Quality: {}".format(base_stats['AvgMapQ'])
+    print "Average Read Quality: {}".format(base_stats['AvgReadQ'])
     print "Depth: {}".format(base_stats['TotalDepth'])
     for base, bstats in base_stats['Bases'].iteritems():
         print "Base: {}".format(base)
