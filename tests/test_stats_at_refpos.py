@@ -53,9 +53,9 @@ class TestMpileupPySam(Base):
         eq_( e, next(res) )
 
 class TestPysamCol(Base):
-    def _C( self, pysamcol, refname ):
+    def _C( self, pysamcol, refname, minmq ):
         from stats_at_refpos import pysam_col
-        return pysam_col( pysamcol, refname )
+        return pysam_col( pysamcol, refname, minmq )
 
     def mock_pileup_read( self, qpos, mapq, quals, seq, pos ):
         return Mock(
@@ -68,10 +68,13 @@ class TestPysamCol(Base):
             )
         )
 
-    def test_func_pysamcol( self ):
+    def test_func_allreads( self ):
         # Mock spot 10 on mock ref
         ref = 'Ref1'
         # 2 A, 8 G
+        # ord('<') == 60
+        # ord('I') == 73
+        # ord('!') == 33
         col = [
             self.mock_pileup_read( 2, '<', 'I'*10, 'A'*8+'G'*2, 8 ),
             self.mock_pileup_read( 2, '<', 'I'*10, 'A'*8+'G'*2, 8 ),
@@ -84,9 +87,32 @@ class TestPysamCol(Base):
             self.mock_pileup_read( 9, '<', 'I'*10, 'A'*8+'G'*2, 1 ), 
             self.mock_pileup_read( 9, '<', 'I'*10, 'A'*8+'G'*2, 1 ), 
         ]
-        res = self._C( col, ref )
+        res = self._C( col, ref, 0 )
         eq_( 
             '\t'.join( [ref,'10','N','10','AAGGGGGGGG','I'*10,'<'*10] ),
+            res
+        )
+
+    def test_func_minmq( self ):
+        ref = 'Ref1'
+        minmq = 25
+        keepmq = chr(minmq+33) # Should be a :
+        filtermq = chr(minmq+32)
+        col = [
+            self.mock_pileup_read( 2, keepmq, 'I'*10, 'A'*8+'G'*2, 8 ),
+            self.mock_pileup_read( 2, keepmq, 'I'*10, 'A'*8+'G'*2, 8 ),
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+            self.mock_pileup_read( 9, filtermq, 'I'*10, 'A'*8+'G'*2, 1 ), 
+        ]
+        res = self._C( col, ref, keepmq )
+        eq_( 
+            '\t'.join( [ref,'10','N','2','AA','I'*2,keepmq*2] ),
             res
         )
 
@@ -106,20 +132,7 @@ class TestMpileupPopen(Base):
         popen.assert_called_with(['samtools','mpileup','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1)
 
 class StatsAtPos(Base):
-    def _do( self, res ):
-        #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
-        eb = OrderedDict([
-                ('G',{'AvgReadQ':0.0,'AvgMapQ':37.73,'Depth':11,'PctTotal':84.62}),
-                ('T',{'AvgReadQ':0.0,'AvgMapQ':17.0,'Depth':1,'PctTotal':7.69}),
-                ('N',{'AvgReadQ':0.0,'AvgMapQ':2.0,'Depth':1,'PctTotal':7.69})
-            ])
-        e = {
-            'Bases': eb,
-            'AvgMapQ': 33.38,
-            'AvgReadQ': 0.0,
-            'TotalDepth': 13
-        }
-
+    def _doit( self, res, eb, e ):
         # Ensure keys are same and in same order
         eq_( eb.keys(), res['Bases'].keys() )
 
@@ -140,7 +153,22 @@ class TestStatsAtPos(StatsAtPos):
         pos = '6109'
         regionstr = '{}:{}-{}'.format(ref,pos,pos)
         res = self._C( self.bam, regionstr, 0, 0, 100000 )
-        self._do( res )
+        #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
+        eb = OrderedDict([
+                #('G',{'AvgReadQ':0.0,'AvgMapQ':37.73,'Depth':11,'PctTotal':84.62}),
+                #('T',{'AvgReadQ':0.0,'AvgMapQ':17.0,'Depth':1,'PctTotal':7.69}),
+                #('N',{'AvgReadQ':0.0,'AvgMapQ':2.0,'Depth':1,'PctTotal':7.69})
+                ('G',{'AvgReadQ':0.0,'AvgMapQ':60.0,'Depth':11,'PctTotal':84.62}),
+                ('T',{'AvgReadQ':0.0,'AvgMapQ':60.0,'Depth':1,'PctTotal':7.69}),
+                ('N',{'AvgReadQ':0.0,'AvgMapQ':60.0,'Depth':1,'PctTotal':7.69})
+            ])
+        e = {
+            'Bases': eb,
+            'AvgMapQ': 60.0,
+            'AvgReadQ': 0.0,
+            'TotalDepth': 13
+        }
+        self._doit( res, eb, e )
 
 class TestCompileStats(Base):
     def _C( self, stats ):
@@ -197,5 +225,42 @@ class TestMain(StatsAtPos):
             minbq=0,
             maxd=100000
         )
+        eb = OrderedDict([
+                #('G',{'AvgReadQ':0.0,'AvgMapQ':37.73,'Depth':11,'PctTotal':84.62}),
+                #('T',{'AvgReadQ':0.0,'AvgMapQ':17.0,'Depth':1,'PctTotal':7.69}),
+                #('N',{'AvgReadQ':0.0,'AvgMapQ':2.0,'Depth':1,'PctTotal':7.69})
+                ('G',{'AvgReadQ':0.0,'AvgMapQ':60.0,'Depth':11,'PctTotal':84.62}),
+                ('T',{'AvgReadQ':0.0,'AvgMapQ':60.0,'Depth':1,'PctTotal':7.69}),
+                ('N',{'AvgReadQ':0.0,'AvgMapQ':60.0,'Depth':1,'PctTotal':7.69})
+            ])
+        e = {
+            'Bases': eb,
+            'AvgMapQ': 60.0,
+            'AvgReadQ': 0.0,
+            'TotalDepth': 13
+        }
         res = self._CM( args )
-        self._do( res )
+        self._doit( res, eb, e )
+
+    def test_func_runs2( self ):
+        args = Mock(
+            bamfile=self.bam,
+            regionstr='Den1/U88535_1/WestPac/1997/Den1_1:6109-6109',
+            minmq=61,
+            minbq=0,
+            maxd=100000
+        )
+        res = self._CM( args )
+        #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
+        eb = OrderedDict([
+                #('G',{'AvgReadQ':0.0,'AvgMapQ':37.73,'Depth':11,'PctTotal':84.62}),
+                #('T',{'AvgReadQ':0.0,'AvgMapQ':17.0,'Depth':1,'PctTotal':7.69}),
+                #('N',{'AvgReadQ':0.0,'AvgMapQ':2.0,'Depth':1,'PctTotal':7.69})
+            ])
+        e = {
+            'Bases': eb,
+            'AvgMapQ': 0.0,
+            'AvgReadQ': 0.0,
+            'TotalDepth': 0
+        }
+        self._doit( res, eb, e )

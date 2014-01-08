@@ -39,7 +39,7 @@ samtools idxstats <in.bam> | awk '!/^*/ {print $1}' | sort | uniq'''
         '--min-mapping-qual',
         dest='minmq',
         default=25,
-        help='Minimum mapping quality to be included in stats[Default: 25]'
+        help='Minimum mapping quality to be included in stats. That is, keep reads that are >= [Default: 25]'
     )
 
     parser.add_argument(
@@ -69,16 +69,17 @@ def mpileup_pysam( bamfile, regionstr, minmq=25, maxd=10000 ):
     rng = range(int(start),int(stop)+1)
     for col in samfile.pileup(region=regionstr):
          if col.pos in rng:
-            yield pysam_col( col.pileups, reference )
+            yield pysam_col( col.pileups, reference, minmq )
 
-def pysam_col( pysamcol, reference ):
+def pysam_col( pysamcol, reference, minmq ):
     '''
         @param pysamcol - pysam.PileupProxy.pileups
         @param reference - Reference(chrm) name
+        @param minmq - Filter reads with minmq < minmq
         @returns 'chrm pos N depth readbases readquals mapquals'
     '''
     from StringIO import StringIO
-    depth = len(pysamcol)
+    depth = 0
     readseq = StringIO()
     readquals = StringIO()
     mapquals = StringIO()
@@ -88,6 +89,11 @@ def pysam_col( pysamcol, reference ):
         qpos = pread.qpos-1
         aread = pread.alignment
         mapq = aread.mapq
+        print mapq
+        # Ignore any reads with minmq below minmq
+        if mapq < minmq:
+            print 'skipping'
+            continue
         # Sometimes mapq is a character and sometimes an int??
         if type(mapq) in (int,long):
             mapq = chr(mapq)
@@ -95,6 +101,7 @@ def pysam_col( pysamcol, reference ):
         readquals.write(aread.qual[qpos])
         seq = aread.seq[qpos]
         readseq.write( aread.seq[qpos] )
+        depth += 1
 
     return '\t'.join([
         reference,
@@ -172,19 +179,21 @@ def stats( bamfile, regionstr, minmq, minbq, maxd ):
         line = line.rstrip().split()
         pos = int(line[1])
         depth = int(line[3])
-        #if pos != refpos:
-        #    continue
         bases = []
-        quals = [ord(q)-33 for q in line[5]]
-        for i in range(len(line[4])):
-            b = line[4][i]
-            if b.upper() not in 'ATGC*N':
-                #print "Skipping unknown base '{}'".format(b)
-                # Do insert/delete
-                if b in '+-':
-                    quals = indel( line[4], i, quals )
-                continue
-            bases.append(b)
+        if depth > 0:
+            print line[6]
+            quals = [ord(q) for q in line[6]]
+            for i in range(len(line[4])):
+                b = line[4][i]
+                if b.upper() not in 'ATGC*N':
+                    #print "Skipping unknown base '{}'".format(b)
+                    # Do insert/delete
+                    if b in '+-':
+                        quals = indel( line[4], i, quals )
+                    continue
+                bases.append(b)
+        else:
+            quals = []
         bq = [x for x in itertools.izip_longest(bases,quals, fillvalue='!')]
         assert len(quals) == len(bases), "Number of quals {} !=  number of bases {}\n{}".format(len(quals),len(bases),line)
 
@@ -209,6 +218,13 @@ def compile_stats( stats ):
         @param stats - {'depth': 0, 'mqualsum': 0, 'rqualsum': 0, 'ATGCN*..': [quals]} depth is total depth at a position and qualsum is sum of all quality scores rqualsum is read quality sums ATGCN* will be keys for each base seen and the list of quality scores for them
         @return - Dictionary of stats at each base and overall stats {'Bases': {'A': [quals], 'depth': 0, 'avgqual': 0.0}}
     '''
+    if stats['depth'] == 0:
+        return {
+            'TotalDepth': 0,
+            'AvgMapQ': 0,
+            'AvgReadQ': 0,
+            'Bases': {}
+        }
     base_stats = {}
     base_stats['TotalDepth'] = stats['depth']
     base_stats['AvgMapQ'] = round(stats['mqualsum']/stats['depth'],2)
