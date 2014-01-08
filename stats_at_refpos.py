@@ -9,7 +9,6 @@ import itertools
 from collections import OrderedDict
 
 def main(args):
-    print args.minbq
     return stats_at_pos( args.bamfile, args.regionstr, args.minmq, args.minbq, args.maxd )
 
 def parse_args(args=sys.argv[1:]):
@@ -102,7 +101,7 @@ def pysam_col( pysamcol, reference, minmq, minbq ):
         if mapq < minmq:
             #print 'skipping mq'
             continue
-        print "{} < {}?".format(ord(bq)-33,minbq)
+        #print "{} < {}?".format(ord(bq)-33,minbq)
         if ord(bq)-33 < minbq:
             #print 'skipping bq'
             continue
@@ -188,7 +187,7 @@ def stats( bamfile, regionstr, minmq, minbq, maxd ):
     base_stats = {}
     pile = mpileup( bamfile, regionstr, minmq=minmq, minbq=minbq, maxd=maxd )
     for line in pile:
-        line = line.rstrip().split()
+        line = line.rstrip().split('\t')
         pos = int(line[1])
         depth = int(line[3])
         bases = []
@@ -197,17 +196,16 @@ def stats( bamfile, regionstr, minmq, minbq, maxd ):
         if depth > 0:
             mapq = [ord(q) for q in line[6]]
             baseq = [ord(q)-33 for q in line[5]]
-            for i in range(len(line[4])):
-                b = line[4][i]
-                if b.upper() not in 'ATGC*N':
-                    #print "Skipping unknown base '{}'".format(b)
-                    # Do insert/delete
-                    if b in '+-':
-                        quals = indel( line[4], i, quals )
-                    continue
-                bases.append(b)
+            bases = [b for b in line[4]]
         bq = [x for x in itertools.izip_longest(bases, mapq, baseq, fillvalue='!')]
-        assert len(mapq) == len(bases) == len(baseq), "Number of mapquals {} readquals {} !=  number of bases {}\n{}".format(len(mapq),len(baseq),len(bases),line)
+        lmq = len(mapq)
+        lb = len(bases)
+        lbq = len(baseq)
+        if lmq != lb and lmq != lbq:
+            sys.stderr.write( "Number of mapquals {} basequals {} !=  number of bases {}\n".format(lmq, lbq, lb) )
+            sys.stderr.write( "Line that caused error:\n{}\n".format(line) )
+            #sys.stderr.write( "(base,mapq,baseq) all together:\n{}\n".format(bq) )
+            sys.exit( -1 )
 
         # Stats
         stats = {
