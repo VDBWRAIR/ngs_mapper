@@ -83,7 +83,7 @@ def pysam_col( pysamcol, reference, minmq, minbq ):
         @param reference - Reference(chrm) name
         @param minmq - Filter reads with minmq < minmq
         @param minbq - Filter bases with minbq < minbq
-        @returns 'chrm pos N depth readbases readquals mapquals'
+        @returns 'chrm pos N depth readbases basequals mapquals'
     '''
     from StringIO import StringIO
     depth = 0
