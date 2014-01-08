@@ -9,6 +9,7 @@ import itertools
 from collections import OrderedDict
 
 def main(args):
+    print args.minbq
     return stats_at_pos( args.bamfile, args.regionstr, args.minmq, args.minbq, args.maxd )
 
 def parse_args(args=sys.argv[1:]):
@@ -34,33 +35,39 @@ samtools idxstats <in.bam> | awk '!/^*/ {print $1}' | sort | uniq'''
             ' samtools documentation.'
     )
 
+    default_minmq = 25.0
     parser.add_argument(
         '-mmq',
         '--min-mapping-qual',
         dest='minmq',
-        default=25,
-        help='Minimum mapping quality to be included in stats. That is, keep reads that are >= [Default: 25]'
+        type=float,
+        default=default_minmq,
+        help='Minimum mapping quality to be included in stats. Keep reads that are >= [Default: {}]'.format(default_minmq)
     )
 
+    default_minbq = 20.0
     parser.add_argument(
         '-mbq',
         '--min-base-qual',
         dest='minbq',
-        default=20,
-        help='Minimum base quality to be included in stats[Default: 20]'
+        type=float,
+        default=default_minbq,
+        help='Minimum base quality to be included in stats. Keep bases that are >= [Default: {}]'.format(default_minbq)
     )
 
+    default_maxdepth = 100000
     parser.add_argument(
         '-m',
         '--max-depth',
         dest='maxd',
-        default=100000,
-        help='Maximum read depth at position to use[Default: 100000]'
+        type=int,
+        default=default_maxdepth,
+        help='Maximum read depth at position to use[Default: {}]'.format(default_maxdepth)
     )
     
     return parser.parse_args(args)
 
-def mpileup_pysam( bamfile, regionstr, minmq=25, maxd=10000 ):
+def mpileup_pysam( bamfile, regionstr, minmq=25, minbq=20, maxd=10000 ):
     import pysam
     samfile = pysam.Samfile( bamfile )
     #samfile.pileup( region=regionstr )
@@ -69,13 +76,14 @@ def mpileup_pysam( bamfile, regionstr, minmq=25, maxd=10000 ):
     rng = range(int(start),int(stop)+1)
     for col in samfile.pileup(region=regionstr):
          if col.pos in rng:
-            yield pysam_col( col.pileups, reference, minmq )
+            yield pysam_col( col.pileups, reference, minmq, minbq )
 
-def pysam_col( pysamcol, reference, minmq ):
+def pysam_col( pysamcol, reference, minmq, minbq ):
     '''
         @param pysamcol - pysam.PileupProxy.pileups
         @param reference - Reference(chrm) name
         @param minmq - Filter reads with minmq < minmq
+        @param minbq - Filter bases with minbq < minbq
         @returns 'chrm pos N depth readbases readquals mapquals'
     '''
     from StringIO import StringIO
@@ -89,16 +97,20 @@ def pysam_col( pysamcol, reference, minmq ):
         qpos = pread.qpos-1
         aread = pread.alignment
         mapq = aread.mapq
-        print mapq
+        bq = aread.qual[qpos]
         # Ignore any reads with minmq below minmq
         if mapq < minmq:
-            print 'skipping'
+            #print 'skipping mq'
+            continue
+        print "{} < {}?".format(ord(bq)-33,minbq)
+        if ord(bq)-33 < minbq:
+            #print 'skipping bq'
             continue
         # Sometimes mapq is a character and sometimes an int??
         if type(mapq) in (int,long):
             mapq = chr(mapq)
         mapquals.write(mapq)
-        readquals.write(aread.qual[qpos])
+        readquals.write(bq)
         seq = aread.seq[qpos]
         readseq.write( aread.seq[qpos] )
         depth += 1
@@ -122,7 +134,7 @@ def mpileup_popen( bamfile, regionstr=None, minqual=25, maxd=100000 ):
     return p.stdout
 
 def mpileup( bamfile, regionstr=None, minmq=25, minbq=20, maxd=100000 ):
-    return mpileup_pysam( bamfile, regionstr, minmq, maxd )
+    return mpileup_pysam( bamfile, regionstr, minmq, minbq, maxd )
 
 def indel( sequence, pos, quallist, qualpadding=0 ):
     ''' 
@@ -161,28 +173,30 @@ def stats_at_pos( bamfile, regionstr, minmq, minbq, maxd ):
     print "Minumum Mapping Quality Threshold: {}".format(minmq)
     print "Minumum Base Quality Threshold: {}".format(minbq)
     print "Average Mapping Quality: {}".format(base_stats['AvgMapQ'])
-    print "Average Base Quality: {}".format(base_stats['AvgReadQ'])
+    print "Average Base Quality: {}".format(base_stats['AvgBaseQ'])
     print "Depth: {}".format(base_stats['TotalDepth'])
     for base, bstats in base_stats['Bases'].iteritems():
         print "Base: {}".format(base)
         print "\tDepth: {}".format( bstats['Depth'] )
         print "\tAverage Mapping Quality: {}".format( bstats['AvgMapQ'] )
-        print "\tAverage Read Quality: {}".format( bstats['AvgReadQ'] )
+        print "\tAverage Base Quality: {}".format( bstats['AvgBaseQ'] )
         print "\t% of Total: {}".format( bstats['PctTotal'] )
 
     return base_stats
 
 def stats( bamfile, regionstr, minmq, minbq, maxd ):
     base_stats = {}
-    pile = mpileup( bamfile, regionstr, minmq=minmq, maxd=maxd )
+    pile = mpileup( bamfile, regionstr, minmq=minmq, minbq=minbq, maxd=maxd )
     for line in pile:
         line = line.rstrip().split()
         pos = int(line[1])
         depth = int(line[3])
         bases = []
+        mapq = []
+        baseq = []
         if depth > 0:
-            print line[6]
-            quals = [ord(q) for q in line[6]]
+            mapq = [ord(q) for q in line[6]]
+            baseq = [ord(q)-33 for q in line[5]]
             for i in range(len(line[4])):
                 b = line[4][i]
                 if b.upper() not in 'ATGC*N':
@@ -192,52 +206,55 @@ def stats( bamfile, regionstr, minmq, minbq, maxd ):
                         quals = indel( line[4], i, quals )
                     continue
                 bases.append(b)
-        else:
-            quals = []
-        bq = [x for x in itertools.izip_longest(bases,quals, fillvalue='!')]
-        assert len(quals) == len(bases), "Number of quals {} !=  number of bases {}\n{}".format(len(quals),len(bases),line)
+        bq = [x for x in itertools.izip_longest(bases, mapq, baseq, fillvalue='!')]
+        assert len(mapq) == len(bases) == len(baseq), "Number of mapquals {} readquals {} !=  number of bases {}\n{}".format(len(mapq),len(baseq),len(bases),line)
 
         # Stats
         stats = {
             'depth': 0,
             'mqualsum': 0.0,
-            'rqualsum': 0.0
+            'bqualsum': 0.0
         }
-        for base, qual in bq:
+        for base, mq, bq in bq:
             base = base.upper()
             if base not in stats:
-                stats[base] = []
-            stats[base].append( qual )
+                stats[base] = {'baseq':[], 'mapq': []}
+            stats[base]['mapq'].append( mq )
+            stats[base]['baseq'].append( bq )
             stats['depth'] += 1
-            stats['mqualsum'] += float(qual)
+            stats['mqualsum'] += float(mq)
+            stats['bqualsum'] += float(bq)
 
         return stats
 
 def compile_stats( stats ):
     '''
-        @param stats - {'depth': 0, 'mqualsum': 0, 'rqualsum': 0, 'ATGCN*..': [quals]} depth is total depth at a position and qualsum is sum of all quality scores rqualsum is read quality sums ATGCN* will be keys for each base seen and the list of quality scores for them
+        @param stats - {'depth': 0, 'mqualsum': 0, 'bqualsum': 0, 'ATGCN*..': [quals]} depth is total depth at a position and qualsum is sum of all quality scores bqualsum is read quality sums ATGCN* will be keys for each base seen and the list of quality scores for them
         @return - Dictionary of stats at each base and overall stats {'Bases': {'A': [quals], 'depth': 0, 'avgqual': 0.0}}
     '''
     if stats['depth'] == 0:
         return {
             'TotalDepth': 0,
             'AvgMapQ': 0,
-            'AvgReadQ': 0,
+            'AvgBaseQ': 0,
             'Bases': {}
         }
     base_stats = {}
     base_stats['TotalDepth'] = stats['depth']
     base_stats['AvgMapQ'] = round(stats['mqualsum']/stats['depth'],2)
-    base_stats['AvgReadQ'] = round(stats['rqualsum']/stats['depth'],2)
+    base_stats['AvgBaseQ'] = round(stats['bqualsum']/stats['depth'],2)
     base_stats['Bases'] = {}
     for base, quals in stats.iteritems():
-        if base not in ('depth','mqualsum','rqualsum'):
+        # Only interested in base stats in this loop
+        if base not in ('depth','mqualsum','bqualsum'):
             if base not in base_stats['Bases']:
                 base_stats['Bases'][base] = {}
-            base_stats['Bases'][base]['Depth'] = len(quals)
-            base_stats['Bases'][base]['AvgMapQ'] = round(float(sum(quals))/len(quals),2)
-            base_stats['Bases'][base]['AvgReadQ'] = round(0.0,2)
-            base_stats['Bases'][base]['PctTotal'] = round((float(len(quals))/stats['depth'])*100,2)
+            mquals = quals['mapq']
+            bquals = quals['baseq']
+            base_stats['Bases'][base]['Depth'] = len(mquals)
+            base_stats['Bases'][base]['AvgMapQ'] = round(float(sum(mquals))/len(mquals),2)
+            base_stats['Bases'][base]['AvgBaseQ'] = round(float(sum(bquals))/len(bquals),2)
+            base_stats['Bases'][base]['PctTotal'] = round((float(len(mquals))/stats['depth'])*100,2)
 
     # Quit out of loop we are done
     # Order bases by PctTotal descending
