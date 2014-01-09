@@ -27,3 +27,26 @@ class BaseClass( object ):
                 fh.write(line)
                 linecount += 1
         return linecount
+
+import fixtures
+from bam import indexbam
+class BaseBamRef(BaseClass):
+    bam = join(fixtures.THIS,'fixtures','varcaller','paired.bam.gz')
+    ref = join(fixtures.THIS,'fixtures','varcaller','ref.fasta.gz')
+    mytempdir = ''
+
+    @classmethod
+    def setUpClass(klass):
+        # Unpacks everything once so it doesn't slow down so much
+        super(BaseBamRef,klass).setUpClass()
+        import tempfile
+        klass.mytempdir = tempfile.mkdtemp()
+        klass.bam = fixtures.ungiz(klass.bam,klass.mytempdir)
+        klass.ref = fixtures.ungiz(klass.ref,klass.mytempdir)
+        klass.bamindex = indexbam( klass.bam )
+
+    @classmethod
+    def tearDownClass(klass):
+        super(BaseBamRef,klass).tearDownClass()
+        import shutil
+        shutil.rmtree(klass.mytempdir)

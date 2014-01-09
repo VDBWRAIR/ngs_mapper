@@ -1,6 +1,5 @@
-import fixtures
 import common
-from bam import indexbam
+import fixtures
 
 from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
@@ -10,24 +9,7 @@ from os.path import *
 import os
 from collections import OrderedDict
 
-class Base(common.BaseClass):
-    bam = join(fixtures.THIS,'fixtures','integrated','paired.bam.gz')
-    mytempdir = ''
-
-    @classmethod
-    def setUpClass(klass):
-        super(Base,klass).setUpClass()
-        import tempfile
-        klass.mytempdir = tempfile.mkdtemp()
-        klass.bam = fixtures.ungiz(klass.bam,klass.mytempdir)
-        klass.bamindex = indexbam( klass.bam )
-
-    @classmethod
-    def tearDownClass(klass):
-        super(Base,klass).tearDownClass()
-        import shutil
-        shutil.rmtree(klass.mytempdir)
-
+class Base(common.BaseBamRef):
     def setUp( self ):
         super(Base,self).setUp()
         self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}

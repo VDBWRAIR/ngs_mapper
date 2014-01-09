@@ -13,25 +13,8 @@ import filecmp
 import common
 import fixtures
 
-class Base(common.BaseClass):
-    bam = join(fixtures.THIS,'fixtures','varcaller','paired.bam.gz')
-    ref = join(fixtures.THIS,'fixtures','varcaller','ref.fasta.gz')
-    mytempdir = ''
-
-    @classmethod
-    def setUpClass(klass):
-        # Unpacks everything once so it doesn't slow down so much
-        super(Base,klass).setUpClass()
-        import tempfile
-        klass.mytempdir = tempfile.mkdtemp()
-        klass.bam = fixtures.ungiz(klass.bam,klass.mytempdir)
-        klass.ref = fixtures.ungiz(klass.ref,klass.mytempdir)
-
-    @classmethod
-    def tearDownClass(klass):
-        super(Base,klass).tearDownClass()
-        import shutil
-        shutil.rmtree(klass.mytempdir)
+class Base(common.BaseBamRef):
+    pass
 
 class TestFunctional(Base):
     expected_extensions = (

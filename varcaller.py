@@ -26,8 +26,8 @@ parser.add_argument(
 parser.add_argument(
 	'-o',
 	dest='output',
-	help='Output file name',
-	default='varient_called_file.vcf'
+	default='varient_called_file.vcf',
+	help='Output file name[Default: varient_called_file.vcf]'
 )
 
 
@@ -41,7 +41,7 @@ parser.add_argument(
 	'-b',
 	dest='Alt_Ref_Ratio',
 	default=0.19,
-	help='Require the ratio of alt/ref above a specified threashold'
+	help='Require the ratio of alt/ref above a specified threashold[Default: 0.19]'
 )
 
 
@@ -49,7 +49,7 @@ parser.add_argument(
 	'-bq',
 	dest='base_quality',
 	default=20,
-	help='Require the base quality threashold'
+	help='Require the base quality threashold[Default: 20]'
 )
 
 
@@ -57,7 +57,7 @@ parser.add_argument(
 	'-mq',
 	dest='map_quality',
 	default=25,
-	help='Require the map quality threashold'
+	help='Require the map quality threashold[Default: 25]'
 )
 
 
@@ -65,7 +65,7 @@ parser.add_argument(
 	'-s',
 	dest='strand_bias',
 	default=0.0001,
-	help='Require the map strand bias threashold'
+	help='Require the map strand bias threashold[Default: 0.0001]'
 )
 
 
@@ -73,7 +73,7 @@ parser.add_argument(
 	'-a',
 	dest='reads',
 	default=10,
-	help='Require the least number of reads supporting each strand for alternative allele'
+	help='Require the least number of reads supporting each strand for alternative allele[Default: 10]'
 )
 
 
