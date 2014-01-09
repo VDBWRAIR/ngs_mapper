@@ -62,6 +62,7 @@ class TestFunctional(Base):
     def _ensure_expected_files_exist( self, outfile ):
         # List of expected filenames
         efiles = self._expfiles( outfile )
+        print "List of output files that exist"
         print glob( join( dirname( outfile ), '*' ) )
         for f in efiles:
             assert os.path.isfile( f ), "Expected output file {} was not created".format(f)
