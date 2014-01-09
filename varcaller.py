@@ -129,13 +129,7 @@ from subprocess import call
 
 # java jar SNVerIndividual -i xxxx.bam -o output_vcf -r xxxx.fa -b 0.19 -bq 20 -mq 25 -s 0.0001 -a 10
 
-for command in ["java -jar SNVerIndividual.jar -i {} -o {} -r {} -b {} -bq {} -mq {} -s {} -a {}".format(alignment_bam,output_VCF_File,ref_fa,alt_ref,base,mapq,strand,read)]:
-               
-
-    # shell=True is so you can handle redirects like in the 3rd command
-    print command
-    call(command, shell=True)
-
-
-
-
+command = "SNVer -i {} -o {} -r {} -b {} -bq {} -mq {} -s {} -a {}".format(alignment_bam,output_VCF_File,ref_fa,alt_ref,base,mapq,strand,read)
+# shell=True is so you can handle redirects like in the 3rd command
+print command
+call(command, shell=True)
