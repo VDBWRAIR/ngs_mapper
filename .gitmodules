@@ -1,6 +1,3 @@
-[submodule "submodules/bedtools2"]
-	path = submodules/bedtools2
-	url = https://github.com/arq5x/bedtools2.git
 [submodule "BamCoverage"]
 	path = BamCoverage
 	url = /home/EIDRUdata/Tyghe/Dev/python/BamCoverage.git
