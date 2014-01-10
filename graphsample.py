@@ -6,6 +6,7 @@ from os.path import *
 from subprocess import check_output, PIPE
 import argparse
 from BamCoverage import bqd, mkg
+from BamCoverage.bam_to_qualdepth import set_unmapped_mapped_reads
 import json
 
 def main( args ):
@@ -16,6 +17,7 @@ def main( args ):
 def make_json( bamfile, outpathprefix ):
     pileup = bqd.mpileup( bamfile )
     stats = bqd.parse_pileup( pileup )
+    set_unmapped_mapped_reads( bamfile, stats )
     outfile = outpathprefix + '.qualdepth.json'
     with open( outfile, 'w' ) as fh:
         json.dump( stats, fh )
@@ -24,7 +26,7 @@ def make_json( bamfile, outpathprefix ):
 
 def make_image( jfile, outpathprefix ):
     outfile = outpathprefix + '.qualdepth.png'
-    mkg.make_graphic( jfile, outfile, basename(outpathprefix) )
+    mkg.make_graphic( jfile, outfile, titleprefix=basename(outpathprefix) )
     return outfile
     
 def handle_args( args ):

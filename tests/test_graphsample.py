@@ -19,7 +19,6 @@ class TestUnitHandleArgs(Base):
         args = Mock()
         args.outprefix = None
         args.outdir = self.tempdir
-        args.reffile = 'ref.fasta'
         args.bamfile = 'bamfile.bam'
         return args
 
