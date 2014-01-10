@@ -24,7 +24,7 @@ def make_json( bamfile, outpathprefix ):
 
 def make_image( jfile, outpathprefix ):
     outfile = outpathprefix + '.qualdepth.png'
-    mkg.make_graphic( jfile, outfile )
+    mkg.make_graphic( jfile, outfile, basename(outpathprefix) )
     return outfile
     
 def handle_args( args ):
