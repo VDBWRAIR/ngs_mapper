@@ -87,3 +87,11 @@ class TestFunctional(Base):
         os.mkdir( 'outdir' )
         res = self._rungraphsample( self.bam, od='outdir', op='outfile' )
         self._files_exist( 'outdir', 'outfile' )
+
+    def test_no_recreate_json( self ):
+        os.mkdir( 'outdir' )
+        self._rungraphsample( self.bam, od='outdir', op='res' )
+        es = os.stat( join('outdir','res'+self.outfiles[1]) )
+        self._rungraphsample( self.bam, od='outdir', op='res', qualdepth=join('outdir','res'+self.outfiles[1]) )
+        rs = os.stat( join('outdir','res'+self.outfiles[1]) )
+        eq_( es, rs )

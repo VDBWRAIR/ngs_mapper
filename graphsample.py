@@ -11,7 +11,10 @@ import json
 
 def main( args ):
     args = handle_args( args )
-    jfile = make_json( args.bamfile, args.outpath )
+    if not args.qualdepth:
+        jfile = make_json( args.bamfile, args.outpath )
+    else:
+        jfile = args.qualdepth
     pngfile = make_image( jfile, args.outpath )
 
 def make_json( bamfile, outpathprefix ):
@@ -63,6 +66,13 @@ def parse_args( args=sys.argv[1:] ):
         dest='outprefix',
         default=None,
         help='How to name the output files. Default is to prefix with the bamfile name'
+    )
+
+    parser.add_argument(
+        '-qualdepth',
+        dest='qualdepth',
+        default=None,
+        help='Specify an already existing qualdepth.json file so it doesn\'t have to be recreated'
     )
 
     return parser.parse_args( args )
