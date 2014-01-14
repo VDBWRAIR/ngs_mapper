@@ -5,7 +5,7 @@ import os
 from os.path import *
 from subprocess import check_output, PIPE
 import argparse
-from BamCoverage import bqd, mkg
+from BamCoverage import bqd, graph_qualdepth as qd
 from BamCoverage.bam_to_qualdepth import set_unmapped_mapped_reads
 import json
 
@@ -29,7 +29,7 @@ def make_json( bamfile, outpathprefix ):
 
 def make_image( jfile, outpathprefix ):
     outfile = outpathprefix + '.qualdepth.png'
-    mkg.make_graphic( jfile, outfile, titleprefix=basename(outpathprefix) )
+    qd.make_graphic( jfile, outfile, titleprefix=basename(outpathprefix) )
     return outfile
     
 def handle_args( args ):
@@ -45,7 +45,7 @@ def handle_args( args ):
 
 def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
-        description='Runs bam_to_qualdepth.py as well as mkg.py from BamCoverage'
+        description='Runs bam_to_qualdepth.py as well as graph_qualdepth.py from BamCoverage'
     )
 
     parser.add_argument(
