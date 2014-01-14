@@ -1,5 +1,6 @@
 import common
 from nose.tools import eq_
+from nose.plugins.attrib import attr
 from mock import Mock
 from os.path import *
 import os
@@ -66,13 +67,28 @@ class TestFunctional(Base):
 
     def _files_exist( self, outdir, outprefix ):
         out = join( outdir, outprefix )
+        expected_files = []
         for of in self.outfiles:
             o = out + of
+            expected_files.append( o )
             assert os.path.isfile( o ), "Did not produce {}".format(o)
+        return expected_files
 
     def test_createsfiles( self ):
         res = self._rungraphsample( self.bam )
         self._files_exist( os.getcwd(), basename(self.bam) )
+
+    def test_outfiles_are_expected_size( self ):
+        # Now just check filesizes against known
+        # to make sure the graphics are correct?
+        res = self._rungraphsample( self.bam )
+        for f in self._files_exist( os.getcwd(), basename(self.bam) ):
+            esize = 0
+            if f.endswith( '.png' ):
+                esize = 148131
+            elif f.endswith( '.json' ):
+                esize = 197213
+            eq_( esize, os.stat( f ).st_size )
 
     def test_createsfiles_outdir_set( self ):
         os.mkdir( 'outdir' )
