@@ -10,4 +10,5 @@ do
     fi
 done | xargs -n 5 -P 12 -I CMD bash -c CMD
 
+miseqpipeline/graph_mapunmap.py Projects/*/*.qualdepth.json -o MapUnmapReads.png
 convert -quality 25 -compress JPEG Projects/*/*.png QualDepth.pdf
