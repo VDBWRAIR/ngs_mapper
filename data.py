@@ -83,9 +83,9 @@ def pair_reads( readlist ):
                 paired_reads.append( (readlist[i],readlist[index]) )
                 # Append mate to be skipped so we don't re-add it again
                 skiplist.append(readlist[index])
-                logger.debug("Skiplist {}".format(skiplist))
+                logger.debug("Mate list {}".format(skiplist))
         else:
-            logger.debug("Skipping {} because it is in skiplist".format(readlist[i]))
+            logger.debug("Ignoring {} because it has already been added to the mate list".format(readlist[i]))
     return paired_reads
 
 def find_mate( filepath, readlist ):
