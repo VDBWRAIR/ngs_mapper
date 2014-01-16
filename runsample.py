@@ -16,21 +16,16 @@ import glob
 # Ideally the entire sample would be run inside of a prefix directory under
 # /dev/shm and drop back on tmpdir if /dev/shm didn't exist
 
-# All the initial Inputs
-#READDIR=$1
-#REFERENCE=$2
-
-# The idea is that you should only have to run each script almost like just writting in a text file 
-#  run_bwa_on_samplename.py READDIR REFERENCE -o BAMFILE
-#  varcaller.py BAMFILE REFERENCE -o VARIANTS
-#  graphsample.py BAMFILE
-
 logconfig= logging.basicConfig(
-    level=logging.DEBUG
+    level=logging.DEBUG,
+    format='%(asctime)-15s %(message)s'
 )
 log = logging.getLogger(logconfig)
 
 class MissingCommand(Exception):
+    pass
+
+class AlreadyExists(Exception):
     pass
 
 def parse_args( args=sys.argv[1:] ):
@@ -50,7 +45,7 @@ def parse_args( args=sys.argv[1:] ):
 
     parser.add_argument(
         dest='prefix',
-        help='The prefix to put before every output file generated'
+        help='The prefix to put before every output file generated. Probably the samplename'
     )
 
     default_outdir = os.getcwd()
@@ -103,54 +98,72 @@ def main( args ):
     flagstats = os.path.join( tdir, 'flagstats.txt' )
     consensus = os.path.join( tdir, bamfile+'.consensus.fastq' )
     bwalog = os.path.join( tdir, 'bwa.log' )
+    logfile = os.path.join( tdir, args.prefix + '.log' )
 
-    cmd_args = {
-        'tdir': tdir,
-        'readsdir': args.readsdir,
-        'reference': args.reference,
-        'bamfile': bamfile,
-        'variantsprefix': variantsprefix,
-        'flagstats': flagstats,
-        'consensus': consensus
-    }
+    if os.path.isdir( args.outdir ):
+        if os.listdir( args.outdir ):
+            raise AlreadyExists( "{} already exists and is not empty".format(args.outdir) )
 
-    with open(bwalog, 'wb') as blog:
-        cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile}'
-        p1 = run_cmd( cmd.format(**cmd_args), stdout=blog )
-        # Wait for the sample to map
-        r1 = p1.wait()
-        if r1 != 0:
+    log.debug( "--- Starting {} --- ".format(args.prefix) )
+    with open(logfile,'wb') as lfile:
+        cmd_args = {
+            'tdir': tdir,
+            'readsdir': args.readsdir,
+            'reference': args.reference,
+            'bamfile': bamfile,
+            'variantsprefix': variantsprefix,
+            'flagstats': flagstats,
+            'consensus': consensus
+        }
+
+        # Mapping
+        with open(bwalog, 'wb') as blog:
+            cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile}'
+            p1 = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
+            # Wait for the sample to map
+            r1 = p1.wait()
+            if r1 != 0:
+                sys.exit( 1 )
+
+        # These can all run in parallel
+
+        # Variant Calling
+        cmd = 'varcaller.py {bamfile} {reference} -o {variantsprefix}'
+        p2 = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+
+        # Flagstats
+        with open(flagstats,'wb') as flagstats:
+            cmd = 'samtools flagstat {bamfile}'
+            p3 = run_cmd( cmd.format(**cmd_args), stdout=flagstats, stderr=lfile, script_dir='' )
+
+        # Graphics
+        cmd = 'graphsample.py {bamfile} -od {tdir}'
+        p4 = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+
+        # Consensus
+        with open(consensus,'wb') as consensus:
+            cmd = 'gen_consensus.sh {reference} {bamfile}'
+            p5 = run_cmd( cmd.format(**cmd_args), stdout=consensus, stderr=lfile )
+
+        # Wait for all processes to finish
+        r2 = p2.wait()
+        r3 = p3.wait()
+        r4 = p4.wait()
+        r5 = p5.wait()
+
+        if r2+r3+r4+r5 != 0:
+            log.critical( "!!! There was an error running part of the pipeline !!!" )
+            log.critical( "Please check the logfile {}".format(lfile) )
             sys.exit( 1 )
 
-    # These can all run in parallel
-    cmd = 'varcaller.py {bamfile} {reference} -o {variantsprefix}'
-    p2 = run_cmd( cmd.format(**cmd_args) )
-    with open(flagstats,'wb') as flagstats:
-        cmd = 'samtools flagstat {bamfile}'
-        p3 = run_cmd( cmd.format(**cmd_args), stdout=flagstats, script_dir='' )
-    cmd = 'graphsample.py {bamfile} -od {tdir}'
-    p4 = run_cmd( cmd.format(**cmd_args) )
-    with open(consensus,'wb') as consensus:
-        cmd = 'gen_consensus.sh {reference} {bamfile}'
-        p5 = run_cmd( cmd.format(**cmd_args), stdout=consensus )
-
-    # Wait for all processes to finish
-    r2 = p2.wait()
-    r3 = p3.wait()
-    r4 = p4.wait()
-    r5 = p5.wait()
-
-    if r2+r3+r4+r5 != 0:
-        sys.stderr.write( "\n\n!!! There was an error running part of the pipeline !!!\n\n" )
-        sys.exit( 1 )
-
-    log.debug( "Moving {} to {}".format( tdir, args.outdir ) )
-    if not os.path.isdir( args.outdir ):
-        shutil.move( tdir, args.outdir )
-    else:
-        file_list = glob.glob( os.path.join( tdir, '*' ) )
-        for f in file_list:
-            shutil.move( f, args.outdir )
+        log.debug( "Moving {} to {}".format( tdir, args.outdir ) )
+        if not os.path.isdir( args.outdir ):
+            shutil.move( tdir, args.outdir )
+        else:
+            file_list = glob.glob( os.path.join( tdir, '*' ) )
+            for f in file_list:
+                shutil.move( f, args.outdir )
+        log.debug( "--- Finished {} ---".format(args.prefix) )
 
 if __name__ == '__main__':
     main(parse_args())

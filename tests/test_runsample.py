@@ -131,8 +131,7 @@ class TestFunctional(Base):
         try:
             sout = check_output( cmd, stderr=STDOUT )
         except CalledProcessError as e:
-            print e.output
-            assert False
+            return e.output
         return sout
 
     def _ensure_expected_output_files( self, outdir, prefix ):
@@ -159,7 +158,14 @@ class TestFunctional(Base):
 
         return efiles
 
-    def test_outdir_exists( self ):
+    def test_outdir_exists_nonempty_should_skip( self ):
+        os.mkdir( 'outdir' )
+        res = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        assert 'AlreadyExists' not in res, "Raises exception when it should not have"
+        res = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        assert 'AlreadyExists' in res, "Did not raise exception"
+
+    def test_outdir_exists_empty( self ):
         os.mkdir( 'outdir' )
         out = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
         print out
