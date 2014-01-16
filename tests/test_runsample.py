@@ -24,9 +24,21 @@ class Base(common.BaseBamRef):
         klass.reads_by_sample = join(klass.mytempdir,'ReadsBySample')
         os.mkdir( klass.reads_by_sample )
         f,r,ref = fixtures.get_sample_paired_reads_compressed()
-        klass.f = fixtures.ungiz( f, klass.reads_by_sample )
-        klass.r = fixtures.ungiz( r, klass.reads_by_sample )
-        klass.ref = fixtures.ungiz( ref, klass.mytempdir )
+
+        # Rename forward to miseq name
+        f = fixtures.ungiz( f, klass.reads_by_sample )
+        klass.f = join(dirname(klass.f), 'Sample1_S01_L001_R1_001_1979_01_01.fastq' )
+        os.rename( f, klass.f )
+
+        # Rename reverse to miseq name
+        r = fixtures.ungiz( r, klass.reads_by_sample )
+        klass.r = join(dirname(r), 'Sample1_S01_L001_R2_001_1979_01_01.fastq' )
+        os.rename( r, klass.r )
+
+        # Rename ref to correct extension
+        ref = fixtures.ungiz( ref, klass.mytempdir )
+        klass.ref = join( dirname(ref), 'reference.fa' )
+        os.rename( ref, klass.ref )
 
 @attr('current')
 class TestUnitArgs(object):
@@ -50,6 +62,63 @@ class TestUnitArgs(object):
         eq_( 'Sample1', res.prefix )
         eq_( 'outdir', res.outdir )
 
+@attr('current')
+class TestUnitRunCMD(object):
+    import runsample
+    def _C( self, cmdstr, stdin=None, stdout=None, stderr=None, script_dir=None ):
+        from runsample import run_cmd
+        if script_dir is None:
+            return run_cmd( cmdstr, stdin, stdout, stderr )
+        else:
+            return run_cmd( cmdstr, stdin, stdout, stderr, script_dir )
+
+    def test_runs_command( self ):
+        import subprocess
+        res = self._C( '/bin/echo test', stdout=subprocess.PIPE )
+        eq_( ('test\n',None), res.communicate() )
+
+    def test_does_pipe( self ):
+        import subprocess
+        p1 = self._C( '/bin/echo test', stdout=subprocess.PIPE )
+        p2 = self._C( '/bin/cat -', stdin=p1.stdout, stdout=subprocess.PIPE )
+        p1.stdout.close()
+        eq_( ('test\n',None), p2.communicate() )
+
+    def test_script_dir_none( self ):
+        self._C( 'echo', script_dir='' )
+
+    def test_script_dir_somepath( self ):
+        self._C( 'echo', script_dir='/bin' )
+
+    @raises(runsample.MissingCommand)
+    def test_missing_cmd_exception_caught( self ):
+        self._C( 'missing.sh' )
+
+@patch('os.path.isdir')
+@patch('os.path.exists')
+class TestUnitTempProjdir(object):
+    def _C( self, suffix, prefix ):
+        from runsample import temp_projdir
+        return temp_projdir( suffix, prefix )
+
+    def test_has_tempfs( self, exists, isdir ):
+        exists.return_value = True
+        isdir.return_value = True
+        res = self._C( 'shmtest', 'test' )
+        d, bn = split( res )
+        eq_( '/dev/shm', d )
+        assert bn.startswith( 'shmtest' )
+        assert bn.endswith( 'test' )
+
+    def test_nothas_tempfs( self, exists, isdir ):
+        exists.return_value = False
+        isdir.return_value = False
+        res = self._C( 'shmtest', 'test' )
+        d, bn = split( res )
+        eq_( '/tmp', d )
+        assert bn.startswith( 'shmtest' )
+        assert bn.endswith( 'test' )
+
 class TestFunctional(Base):
     def _run_runsample( self, readdir, reference, fileprefix, od=None ):
         script_path = dirname( dirname( abspath( __file__ ) ) )
@@ -69,17 +138,18 @@ class TestFunctional(Base):
     def _ensure_expected_output_files( self, outdir, prefix ):
         efiles = self._expected_files( outdir, prefix )
         for ef in efiles:
+            print os.listdir( outdir )
             assert isfile( ef ), "{} was not created".format(ef)
-            assert os.stat( ef ).st_size > 100, "{} was less than 100 bytes".format(ef)
+            assert os.stat( ef ).st_size > 0, "{} was not > 0 bytes".format(ef)
 
     def _expected_files( self, outdir, prefix ):
         #00141-98.bam  00141-98.bam.bai 00141-98.bam.qualdepth.json  00141-98.bam.qualdepth.png  00141-98.bam.qualdepth.png.pdq.tsv  00141-98.consensus.fastq  bwa.log  flagstats.txt  variants.failed.log  variants.filter.vcf  variants.indel.filter.vcf  variants.indel.raw.vcf  variants.raw.vcf
         efiles = []
         bamfile = join( outdir, prefix + '.bam' )
         efiles.append( bamfile )
-        efiles.append( bamfile + '.bam.bai' )
-        efiles.append( bamfile + '.bam.qualdepth.json' )
-        efiles.append( bamfile + '.bam.qualdepth.png' )
+        efiles.append( bamfile + '.bai' )
+        efiles.append( bamfile + '.qualdepth.json' )
+        efiles.append( bamfile + '.qualdepth.png' )
         efiles.append( bamfile + '.consensus.fastq' )
         efiles.append( join( outdir, 'bwa.log' ) )
         efiles.append( join( outdir, 'flagstats.txt' ) )
@@ -91,10 +161,12 @@ class TestFunctional(Base):
 
     def test_outdir_exists( self ):
         os.mkdir( 'outdir' )
-        self._run_runsample( self.reads_by_sample, self.ref, 'outdir', 'tests' )
+        out = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        print out
         self._ensure_expected_output_files( 'outdir', 'tests' )
 
     def test_outdir_not_exist( self ):
         assert not isdir( 'outdir' )
-        self._run_runsample( self.reads_by_sample, self.ref, 'outdir', 'tests' )
+        out = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        print out
         self._ensure_expected_output_files( 'outdir', 'tests' )

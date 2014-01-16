@@ -2,8 +2,36 @@
 
 import argparse
 import subprocess
+import shlex
 import sys
 import os
+import os.path
+import tempfile
+import logging
+import shutil
+import glob
+
+# Everything to do with running a single sample
+# Geared towards running in a Grid like universe(HTCondor...)
+# Ideally the entire sample would be run inside of a prefix directory under
+# /dev/shm and drop back on tmpdir if /dev/shm didn't exist
+
+# All the initial Inputs
+#READDIR=$1
+#REFERENCE=$2
+
+# The idea is that you should only have to run each script almost like just writting in a text file 
+#  run_bwa_on_samplename.py READDIR REFERENCE -o BAMFILE
+#  varcaller.py BAMFILE REFERENCE -o VARIANTS
+#  graphsample.py BAMFILE
+
+logconfig= logging.basicConfig(
+    level=logging.DEBUG
+)
+log = logging.getLogger(logconfig)
+
+class MissingCommand(Exception):
+    pass
 
 def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
@@ -36,14 +64,93 @@ def parse_args( args=sys.argv[1:] ):
 
     return parser.parse_args( args )
 
-# Everything to do with running a single sample
-# Geared towards running in a Grid like universe(HTCondor...)
+def temp_projdir( prefix, suffix='runsample' ):
+    '''
+        Get a temporary directory that all files for the sample can be compiled into
+        Prefer /dev/shm
 
-# All the initial Inputs
-#READDIR=$1
-#REFERENCE=$2
+        @param prefix/suffix - look these up in tempdir.mkdtemp docs
 
-# The idea is that you should only have to run each script almost like just writting in a text file 
-#  run_bwa_on_samplename.py READDIR REFERENCE -o BAMFILE
-#  varcaller.py BAMFILE REFERENCE -o VARIANTS
-#  graphsample.py BAMFILE
+        @returns the temporary directory used
+    '''
+    tdir = '/dev/shm'
+    if not os.path.isdir( '/dev/shm' ):
+        tdir = '/tmp'
+
+    return tempfile.mkdtemp( suffix, prefix, dir=tdir )
+
+def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, script_dir=os.path.dirname(__file__) ):
+    '''
+        Runs a subprocess on cmdstr and logs some timing information for each command
+
+        @params stdin/out/err should be whatever is acceptable to subprocess.Popen for the same
+        
+        @returns the popen object
+    '''
+    cmd = shlex.split( cmdstr )
+    cmd[0] = os.path.join( script_dir, cmd[0] )
+    log.debug( "Running {}".format(' '.join(cmd)) )
+    try:
+        p = subprocess.Popen( cmd, stdout=stdout, stderr=stderr, stdin=stdin )
+        return p
+    except OSError as e:
+        raise MissingCommand( "{} is not an executable?".format(cmd[0]) )
+
+def main( args ):
+    tdir = temp_projdir( args.prefix )
+    bamfile = os.path.join( tdir, args.prefix + '.bam' )
+    variantsprefix = os.path.join( tdir, 'variants' )
+    flagstats = os.path.join( tdir, 'flagstats.txt' )
+    consensus = os.path.join( tdir, bamfile+'.consensus.fastq' )
+    bwalog = os.path.join( tdir, 'bwa.log' )
+
+    cmd_args = {
+        'tdir': tdir,
+        'readsdir': args.readsdir,
+        'reference': args.reference,
+        'bamfile': bamfile,
+        'variantsprefix': variantsprefix,
+        'flagstats': flagstats,
+        'consensus': consensus
+    }
+
+    with open(bwalog, 'wb') as blog:
+        cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile}'
+        p1 = run_cmd( cmd.format(**cmd_args), stdout=blog )
+        # Wait for the sample to map
+        r1 = p1.wait()
+        if r1 != 0:
+            sys.exit( 1 )
+
+    # These can all run in parallel
+    cmd = 'varcaller.py {bamfile} {reference} -o {variantsprefix}'
+    p2 = run_cmd( cmd.format(**cmd_args) )
+    with open(flagstats,'wb') as flagstats:
+        cmd = 'samtools flagstat {bamfile}'
+        p3 = run_cmd( cmd.format(**cmd_args), stdout=flagstats, script_dir='' )
+    cmd = 'graphsample.py {bamfile} -od {tdir}'
+    p4 = run_cmd( cmd.format(**cmd_args) )
+    with open(consensus,'wb') as consensus:
+        cmd = 'gen_consensus.sh {reference} {bamfile}'
+        p5 = run_cmd( cmd.format(**cmd_args), stdout=consensus )
+
+    # Wait for all processes to finish
+    r2 = p2.wait()
+    r3 = p3.wait()
+    r4 = p4.wait()
+    r5 = p5.wait()
+
+    if r2+r3+r4+r5 != 0:
+        sys.stderr.write( "\n\n!!! There was an error running part of the pipeline !!!\n\n" )
+        sys.exit( 1 )
+
+    log.debug( "Moving {} to {}".format( tdir, args.outdir ) )
+    if not os.path.isdir( args.outdir ):
+        shutil.move( tdir, args.outdir )
+    else:
+        file_list = glob.glob( os.path.join( tdir, '*' ) )
+        for f in file_list:
+            shutil.move( f, args.outdir )
+
+if __name__ == '__main__':
+    main(parse_args())
