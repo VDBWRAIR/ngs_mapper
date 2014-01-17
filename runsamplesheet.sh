@@ -68,19 +68,20 @@ do
     fi
 
     # Otherwise LETS DO THIS
-    mkdir $sample
+    #mkdir $sample
     # Get into the samplename directory
-    pushd $sample > /dev/null
+    #pushd $sample > /dev/null
     # Map the samplename
-    ${scripts}/run_bwa_on_samplename.py ${reads_by_sample}/$sample $reference -o ${sample}.bam 2>&1 | tee -a bwa.log
+    #${scripts}/run_bwa_on_samplename.py ${reads_by_sample}/$sample $reference -o ${sample}.bam 2>&1 | tee -a bwa.log
+    runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od ${sample}
     ret=$?
     # Detect if bwa didn't run correctly
     if [ $ret -ne 0 ]
     then
-        echo "bwa did not run successfully for ${sample}"
-    else
-        ${scripts}/gen_consensus.sh $reference ${sample}.bam > ${sample}.consensus.fastq
+        echo "runsample.py did not run successfully for ${sample}"
+    #else
+    #    ${scripts}/gen_consensus.sh $reference ${sample}.bam > ${sample}.consensus.fastq
     fi
     # Get out of the sample directory
-    popd > /dev/null
+    #popd > /dev/null
 done
