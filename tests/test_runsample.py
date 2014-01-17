@@ -176,3 +176,16 @@ class TestFunctional(Base):
         out = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
         print out
         self._ensure_expected_output_files( 'outdir', 'tests' )
+
+    @attr('current')
+    def test_missing_executables_exit_1( self ):
+        # Change path so tempdir is first in lookup and then duplicate
+        # some of the pipeline scripts and just have them return 1
+        with open(join(self.tempdir,'samtools'),'w') as fh:
+            fh.write( '#!/bin/bash\nexit 1\n' )
+        os.chmod( join(self.tempdir,'samtools'), 0755 )
+        import subprocess
+        script = join( dirname( dirname( abspath( __file__ ) ) ), 'runsample.py' )
+        cmd = 'export PATH={}:$PATH; {} {} {} {} -od {}'.format( self.tempdir, script, self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        ret = subprocess.call( cmd, shell=True )
+        assert ret != 0, "Return code was 0 even though some executables returned 1"
