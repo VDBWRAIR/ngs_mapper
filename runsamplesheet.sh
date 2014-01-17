@@ -67,6 +67,7 @@ do
         continue
     fi
 
+    mkdir -p Projects && cd Projects
     ${scripts}/runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od ${sample}
     ret=$?
     # Detect if bwa didn't run correctly
@@ -74,4 +75,5 @@ do
     then
         echo "runsample.py did not run successfully for ${sample}"
     fi
+    cd ..
 done
