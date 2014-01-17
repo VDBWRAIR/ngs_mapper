@@ -121,7 +121,7 @@ def main( args ):
 
         # Mapping
         with open(bwalog, 'wb') as blog:
-            cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile}'
+            cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile} -t 1'
             p1 = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
             # Wait for the sample to map
             r1 = p1.wait()
