@@ -73,6 +73,18 @@ class TestFunctional(Base):
             result = frbp( self.tempdir, plat )
             eq_( readfiles, sorted(result) )
 
+    def test_filter_reads_by_platform_bad_read_skipped(self):
+        from data import filter_reads_by_platform as frbp
+        fn = 'Sample_F1_1979_01_01_Den1_Den1_0001_A01.ab1' 
+        self.reads['Sanger'].append( fn )
+        expected = self.mock_reads_dir(self.tempdir)
+        for plat, readfiles in expected.items():
+            result = frbp( self.tempdir, plat )
+            if plat == 'Sanger':
+                # Remove the read as it should not exist
+                del readfiles[readfiles.index( join(self.tempdir,fn) )]
+            eq_( readfiles, sorted(result) )
+
     def test_platform_for_read( self ):
         from data import platform_for_read as pfr
         with patch('data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]):

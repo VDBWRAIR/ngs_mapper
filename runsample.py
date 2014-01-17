@@ -116,6 +116,9 @@ def main( args ):
             'consensus': consensus
         }
 
+        # Best not to run across multiple cpu/core/threads on any of the pipeline steps
+        # as multiple samples may be running concurrently already
+
         # Mapping
         with open(bwalog, 'wb') as blog:
             cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile}'
@@ -125,31 +128,27 @@ def main( args ):
             if r1 != 0:
                 sys.exit( 1 )
 
-        # These can all run in parallel
-
         # Variant Calling
         cmd = 'varcaller.py {bamfile} {reference} -o {variantsprefix}'
         p2 = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        r2 = p2.wait()
 
         # Flagstats
         with open(flagstats,'wb') as flagstats:
             cmd = 'samtools flagstat {bamfile}'
             p3 = run_cmd( cmd.format(**cmd_args), stdout=flagstats, stderr=lfile, script_dir='' )
+            r3 = p3.wait()
 
         # Graphics
         cmd = 'graphsample.py {bamfile} -od {tdir}'
         p4 = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        r4 = p4.wait()
 
         # Consensus
         with open(consensus,'wb') as consensus:
             cmd = 'gen_consensus.sh {reference} {bamfile}'
             p5 = run_cmd( cmd.format(**cmd_args), stdout=consensus, stderr=lfile )
-
-        # Wait for all processes to finish
-        r2 = p2.wait()
-        r3 = p3.wait()
-        r4 = p4.wait()
-        r5 = p5.wait()
+            r5 = p5.wait()
 
         if r2+r3+r4+r5 != 0:
             log.critical( "!!! There was an error running part of the pipeline !!!" )
