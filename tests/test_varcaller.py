@@ -60,6 +60,7 @@ class TestFunctional(Base):
             eq_( True, filecmp.cmp( ef, rf, 0 ), "{} and {} are not the same".format(ef,rf) )
 
     def _runcmd( self, cmd ):
+        print "Running {} in tests".format(cmd)
         cmd = shlex.split( cmd )
         p = Popen( cmd, stdout=PIPE, stderr=PIPE )
         sout, serr = p.communicate()
@@ -82,15 +83,24 @@ class TestFunctional(Base):
             mq=mq, bq=bq, s=s, a=a, b=b,
             outfile=routfile
         )
-	print rout
-	print rerr
+        print rout
+        print rerr
         self._cmp_expected_result_files( eoutfile, routfile )
         #eq_( eout, rout )
         #eq_( eerr, rerr )
         eq_( eret, rret )
+        return rret
 
     def test_default_filters(self):
         self._runtst( self.bam, self.ref, 25, 20, 0.0001, 10, 0.2 )
 
     def test_modified_filters(self):
         self._runtst( self.bam, self.ref, 0, 0, 0.0001, 1, 0.05 )
+
+    def test_missing_SNVer_command(self):
+        import subprocess
+        path = dirname( dirname( abspath( __file__ ) ) )
+        varcaller = join( path, 'varcaller.py' )
+        cmd = 'export PATH=/tmp; /usr/local/bin/python {} {} {}'.format(varcaller, self.bam, self.ref)
+        ret = subprocess.call( cmd, shell=True )
+        assert ret != 0, "Return code was 0 even though SNVer was not in path"

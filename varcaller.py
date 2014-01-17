@@ -132,4 +132,4 @@ from subprocess import call
 command = "SNVer -i {} -o {} -r {} -b {} -bq {} -mq {} -s {} -a {}".format(alignment_bam,output_VCF_File,ref_fa,alt_ref,base,mapq,strand,read)
 # shell=True is so you can handle redirects like in the 3rd command
 print command
-call(command, shell=True)
+sys.exit( call(command, shell=True) )
