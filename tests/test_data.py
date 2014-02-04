@@ -8,6 +8,8 @@ import os
 from os.path import *
 from glob import glob
 
+from data import NoPlatformFound
+
 class Base(BaseClass):
     def setUp(self):
         super(Base,self).setUp()
@@ -56,7 +58,11 @@ class TestFunctional(Base):
         # no files so empty dict returned
         eq_( {}, rbp( self.tempdir ) )
 
-    @attr('current')
+    @raises(NoPlatformFound)
+    def test_reads_by_plat_unkownfiles(self):
+        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.ab1' )
+        self.test_platform_for_read()
+
     def test_reads_by_plat(self):
         with patch('data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]) as a:
             with patch('data.filter_reads_by_platform', lambda path,plat: self.reads[plat]) as b:
@@ -75,9 +81,8 @@ class TestFunctional(Base):
 
     def test_platform_for_read( self ):
         from data import platform_for_read as pfr
-        with patch('data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]):
-            for readfile, plat in self.reads_for_platforms().items():
-                eq_( plat, pfr( readfile ) )
+        for readfile, plat in self.reads_for_platforms().items():
+            eq_( plat, pfr( readfile ) )
 
     def test_no_platform_for_read( self ):
         from data import platform_for_read as pfr
@@ -125,10 +130,21 @@ class TestIntegration(Base):
                 readfiles = [tuple(readfiles),]
             eq_( readfiles, sorted(result[plat]) )
 
+    def test_reads_by_all_unkownformats_are_skipped(self):
+        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.ab1' )
+        expected = self.mock_reads_dir(self.tempdir)
+        # remove the ab1 file from the expected as it should have been skipped
+        expected['Sanger'] = [f for f in expected['Sanger'] if not f.endswith('.ab1')]
+        print expected['Sanger']
+        self.mock_expected( expected )
+
     def test_reads_by_all(self):
-        from data import reads_by_plat as rdp
         # Test each platform's file format
         expected = self.mock_reads_dir(self.tempdir)
+        self.mock_expected( expected )
+
+    def mock_expected( self, expected ):
+        from data import reads_by_plat as rdp
         expected['MiSeq'] = [tuple(expected['MiSeq']),]
         result = rdp( self.tempdir )
         ex = {}

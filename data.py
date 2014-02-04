@@ -17,7 +17,16 @@ def filter_reads_by_platform( path, platform ):
         @returns list of reads inside of path(basename)
     '''
     # All files in path
-    files = [f for f in glob( join(path,'*') ) if platform_for_read(f) == platform]
+    files = []
+    for f in glob( join( path, '*' ) ):
+        try:
+            pfr = platform_for_read( f )
+        except NoPlatformFound as e:
+            logger.warning( "{} was skipped as the platform cannot be determined from it's name".format(f) )
+            continue
+        if pfr == platform:
+            files.append( f )
+    #files = [f for f in glob( join(path,'*') ) if platform_for_read(f) == platform]
     return files
 
 def platform_for_read( filepath ):
