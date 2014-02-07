@@ -64,6 +64,8 @@ def tag_reads( bam, hdr ):
     log.info( "Finished tagging reads for {}".format(bam) )
     log.info( "Sorting {}".format(bam) )
     pysam.sort( bam + '.tagged', bam.replace('.bam','') )
+    # Remove unsorted tagged bam
+    os.unlink( bam + '.tagged' )
     log.info( "Indexing {}".format(bam) )
     pysam.index( bam )
 

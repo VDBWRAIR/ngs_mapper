@@ -264,3 +264,10 @@ class TestIntegrate(Base):
         # Ensure each read group contains the samplename set
         for rg in rgs:
             eq_( rg['CN'], 'seqcenter' )
+
+    def test_no_extra_files( self ):
+        self.temp_copy_files()
+        efiles = glob( '*' ) + glob( join( self.tempdir, '*' ) )
+        self._C( [self.bam] )
+        rfiles = glob( '*' ) + glob( join( self.tempdir, '*' ) )
+        eq_( efiles, rfiles )
