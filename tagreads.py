@@ -5,6 +5,11 @@ import sys
 import pysam
 import re
 import shutil
+import os.path
+
+import logging
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+log = logging.getLogger('tagreads')
 
 # Exception for when headers exist
 class HeaderExists(Exception): pass
@@ -31,8 +36,13 @@ RG_TEMPLATE = {
 }
 
 def main( args ):
-    hdr = get_rg_headers( args.bamfile, args.SM, args.CN )
-    tag_reads( args.bamfile, hdr )
+    for bam in args.bamfiles:
+        tag_bam( bam, args.SM, args.CN )
+
+def tag_bam( bam, SM, CN ):
+    log.info( "Gathering existing header for {}".format(bam) )
+    hdr = get_rg_headers( bam, SM, CN )
+    tag_reads( bam, hdr )
 
 def tag_reads( bam, hdr ):
     ''' Sets header of bam and tags all reads appropriately for each platform '''
@@ -43,6 +53,7 @@ def tag_reads( bam, hdr ):
         raise HeaderExists( "Refusing to add header as RG header already exists." )
     tagged_bam = pysam.Samfile( bam + '.tagged', 'wb', header = hdr )
     # Tag the reads
+    log.info( "Tagging reads for {}".format(bam) )
     for read in untagged_bam.fetch(until_eof=True):
         rg = get_rg_for_read( read )
         # Have to modify it to get it to save according to docs
@@ -50,7 +61,10 @@ def tag_reads( bam, hdr ):
         tagged_bam.write( read )
     tagged_bam.close()
     untagged_bam.close()
+    log.info( "Finished tagging reads for {}".format(bam) )
+    log.info( "Sorting {}".format(bam) )
     pysam.sort( bam + '.tagged', bam.replace('.bam','') )
+    log.info( "Indexing {}".format(bam) )
     pysam.index( bam )
 
 def get_rg_for_read( aread ):
@@ -67,7 +81,10 @@ def get_rg_headers( bam, SM=None, CN=None ):
 
     for id, pl in zip( IDS, PLATFORMS ):
         rg = RG_TEMPLATE.copy()
-        if SM is not None: rg['SM'] = SM
+        if SM is not None:
+            rg['SM'] = SM
+        else:
+            rg['SM'] = os.path.basename(bam).replace( '.bam', '' )
         if CN is not None: rg['CN'] = CN
         rg['ID'] = id
         rg['PL'] = pl
@@ -88,7 +105,8 @@ def parse_args( args=sys.argv[1:] ):
     )
 
     parser.add_argument(
-        dest='bamfile',
+        dest='bamfiles',
+        nargs='+',
         help='Bamfile to add read groups to for platforms'
     )
 
@@ -97,7 +115,8 @@ def parse_args( args=sys.argv[1:] ):
         dest='SM',
         default=None,
         help='Sets the SM tag value inside of each read ' \
-            'group to the value specified. Default is to not include the SM tag'
+            'group to the value specified. Default is to use the portion of the filename ' \
+            'that precedes the .bam'
     )
 
     parser.add_argument(

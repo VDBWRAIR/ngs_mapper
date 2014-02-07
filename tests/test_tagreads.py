@@ -202,6 +202,12 @@ class TestUnitGetRGHeaders(Base):
             seen_id.append( id )
         eq_( sorted(self.read_group_ids), sorted(seen_id) )
 
+    def test_sets_sm_to_filename( self ):
+        self.temp_copy_files()
+        hdr = self._C( self.bam )
+        for rg in hdr['RG']:
+            eq_( rg['SM'], 'sample1.untagged' )
+
     def test_sets_sm( self ):
         self.temp_copy_files()
         hdr = self._C( self.bam, SM='sample1' )
@@ -215,20 +221,34 @@ class TestUnitGetRGHeaders(Base):
             eq_( rg['CN'], 'seqcenter' )
 
 class TestIntegrate(Base):
-    def _C( self, bamfile, options=[] ):
+    def _C( self, bamfiles, options=[] ):
         this = dirname( dirname( __file__ ) )
-        cmd = [join( this, 'tagreads.py' ), bamfile] + options
+        cmd = [join( this, 'tagreads.py' )] + bamfiles + options
         subprocess.check_call( cmd )
 
     def test_tags_reads( self ):
         self.temp_copy_files()
-        self._C( self.bam )
+        self._C( [self.bam] )
         self.check_tagreadcounts( self.bam )
+
+    def test_does_multiple_bams( self ):
+        import pysam
+        self.temp_copy_files()
+        bam2 = join( self.tempdir, 'sample2.bam' )
+        bai2 = join( self.tempdir, 'sample2.bam.bai' )
+        shutil.copy( self.bam, bam2 )
+        shutil.copy( self.bai, bai2 )
+        self._C( [self.bam, bam2] )
+        for b in [self.bam, bam2]:
+            self.check_tagreadcounts( b )
+            n = basename(b).replace('.bam','')
+            s = pysam.Samfile( b )
+            assert all( rg['SM'] == n for rg in s.header['RG'] ) == True, "Did not set {} as SM for {}".format(n,b)
 
     def test_samplename_argument( self ):
         import pysam
         self.temp_copy_files()
-        self._C( self.bam, ['-SM', 'sample1'] )
+        self._C( [self.bam], ['-SM', 'sample1'] )
         s = pysam.Samfile( self.bam )
         rgs = s.header['RG']
         # Ensure each read group contains the samplename set
@@ -238,7 +258,7 @@ class TestIntegrate(Base):
     def test_seqencingcenter_argument( self ):
         import pysam
         self.temp_copy_files()
-        self._C( self.bam, ['-CN', 'seqcenter'] )
+        self._C( [self.bam], ['-CN', 'seqcenter'] )
         s = pysam.Samfile( self.bam )
         rgs = s.header['RG']
         # Ensure each read group contains the samplename set
