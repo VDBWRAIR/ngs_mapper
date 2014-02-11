@@ -97,7 +97,7 @@ class TestUnitCaller(Base):
     def test_calls_low_coverage_n( self, mock_stats ):
         # 79% A, 21% Low Quality G should end up 21% N
         base_stats = {
-            'A': { 'baseq': [25]*79 },
+            'A': { 'baseq': [25]*78 },
             'G': { 'baseq': [24]*21 }
         }
         stats = self.make_stats( base_stats )

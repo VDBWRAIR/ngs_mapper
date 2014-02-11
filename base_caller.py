@@ -41,7 +41,7 @@ def label_N( stats, minbq ):
                 # adds the N to the nucleotides (A C G T and N)
                 if k not in stats2:
                     stats2[k] = {'baseq':[]}
-                    stats2[k] ['baseq'].append( q )
+                stats2[k] ['baseq'].append( q )
 
 
     return stats2
@@ -75,15 +75,16 @@ def caller( bamfile, regionstr, minbq, maxd, mind=10, minth=0.8 ):
 
     # if the depth is >= min depth then just remove the N's
     if stats2['depth'] >= mind:
-        del stats2['N']
+        if 'N' in stats2:        
+            del stats2['N']
     else:
         # Else we will determine if the N's are the majority now
         # defines if the base is an N
         np = len(stats2['N']['baseq'])/(stats2['depth']*1.0)
-        if np > (1-min_th):
+        if np > (1-minth):
             return 'N'
 
-    return call_on_pct(stats2, min_th)
+    return call_on_pct(stats2, minth)
 
 
 
@@ -100,22 +101,21 @@ def call_on_pct( stats, minth=0.8 ):
     '''
     nt_list = []
 
-    stats = stats(bamfile, regionstr, minmq, minbq, maxd):
-    stats2 = label_N(stats, minbq)
 
-        for base, quals in stats.iteritems():
-            # Only interested in base stats in this loop
-            if base not in ('depth','mqualsum','bqualsum'):
+
+    for base, quals in stats.iteritems():
+        # Only interested in base stats in this loop
+        if base not in ('depth','mqualsum','bqualsum'):
 
             # generates a list called bquals
             bquals = quals['baseq']
 
             for q in bquals:
-                k = base
+               
 
-                np_2 = len(stats2[base]['baseq'])/(stats2['depth']*1.0)
-                    if np_2 > (1-minth):
-                        return base
+                np_2 = len(stats[base]['baseq'])/(stats['depth']*1.0)
+                if np_2 > (1-minth):
+                    return base
 
 
     dnalist = ''.join(sorted(nt_list))
