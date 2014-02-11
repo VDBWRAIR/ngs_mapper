@@ -1,6 +1,18 @@
+from stats_at_refpos import stats
+
 def label_N( stats, minbq ):
     '''
         Labels all qualities < minbq as N
+        Goes through all keys in the stats dictionary that are not in ('depth','mqualsum','bqualsum')
+        which should be keys that represent nucleotide bases. Those keys then point to a dictionary
+        that contain 'mapq': [] and 'baseq': []
+
+        This script loops through baseq and for any value less than minbq it will remove that quality score
+        and place it in a new base key for 'N'.
+
+        Essentially creating a new base N with all < minbq base qualities.
+
+        This means that the mapq scores are all removed in the returned dictionary
 
         @param stats - Stats dictionary returned from stats_at_refpos.stats
         @param minbq - The mininum base quality to determine if a quality should belong to N
@@ -12,7 +24,7 @@ def label_N( stats, minbq ):
 def caller( bamfile, refstr, minbq, maxd, mind=10, minth=0.8 ):
     '''
         Calls a given base at refstr inside of bamfile. At this time refstr has to be a single
-        base position. The base is determined by first labeling all bases less than minbq as N and then
+        base position('refname':N-N). The base is determined by first labeling all bases less than minbq as N and then
         determining if the depth is < mind or >= mind.
         If < and the % of N is > minth then call it an N as it is the majority.
         If >= 10 then remove all N
