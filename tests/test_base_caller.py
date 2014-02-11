@@ -83,6 +83,16 @@ class TestUnitCaller(Base):
         from base_caller import caller
         return caller( bamfile, refstr, minbq, maxd, mind, minth )
 
+    def test_no_majority( self, mock_stats ):
+        base_stats = {
+            'A': { 'baseq': [25]*76 },
+            'G': { 'baseq': [25]*12 },
+            'C': { 'baseq': [25]*12 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        eq_( 'A', self._C( '', '', 25, 100000, 10, 0.8 ) )
+
     def test_calls_multiple_ambiguous( self, mock_stats ):
         # 33% A, 33% G, 33% C should end up V
         base_stats = {
@@ -177,3 +187,13 @@ class TestUnitCallOnPct(Base):
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.8 )
         eq_( 'V', r )
+
+    def test_no_majority( self ):
+        base_stats = {
+            'G': { 'baseq': [40]*76 },
+            'A': { 'baseq': [40]*12 },
+            'C': { 'baseq': [40]*12 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.8 )
+        eq_( 'G', r )
