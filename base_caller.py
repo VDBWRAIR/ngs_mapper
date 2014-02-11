@@ -26,12 +26,11 @@ def label_N( stats, minbq ):
 
 
     for base, quals in stats.iteritems():
-            # Only interested in base stats in this loop
-            if base not in ('depth','mqualsum','bqualsum'):
+        # Only interested in base stats in this loop
+        if base not in ('depth','mqualsum','bqualsum'):
 
             # generates a list called bquals
             bquals = quals['baseq']
-            
 
             # loop to examine the quality score and identifyes bases with a quality score less than the minbq of 25
             for q in bquals:
@@ -49,7 +48,7 @@ def label_N( stats, minbq ):
 
 
 
-def caller( bamfile, refstr, minbq, maxd, mind=10, minth=0.8 ):
+def caller( bamfile, regionstr, minbq, maxd, mind=10, minth=0.8 ):
     '''
         Calls a given base at refstr inside of bamfile. At this time refstr has to be a single
         base position('refname':N-N). The base is determined by first labeling all bases less than minbq as N and then
@@ -70,15 +69,15 @@ def caller( bamfile, refstr, minbq, maxd, mind=10, minth=0.8 ):
     '''
     # call the nucleotides
 
-    stats = stats(bamfile, regionstr, minmq, minbq, maxd):
-    stast2 = label_N(stats, minbq)
+    s = stats(bamfile, regionstr, 1, 1, maxd)
+    stats2 = label_N(s, minbq)
 
 
-    # if the quality is 25 or greater ignore the N bases
-    if stats2['depth'] >= mindp:
+    # if the depth is >= min depth then just remove the N's
+    if stats2['depth'] >= mind:
         del stats2['N']
-
     else:
+        # Else we will determine if the N's are the majority now
         # defines if the base is an N
         np = len(stats2['N']['baseq'])/(stats2['depth']*1.0)
         if np > (1-min_th):
@@ -96,12 +95,10 @@ def call_on_pct( stats, minth=0.8 ):
 
         @returns the called base based on the percentages in the given stats
     '''
-    
-
     nt_list = []
 
-    stats = stats(bamfile, regionstr, minmq, minbq, maxd):
-    stast2 = label_N(stats, minbq)
+    s = stats(bamfile, regionstr, minmq, minbq, maxd)
+    stast2 = label_N(s, minbq)
 
     np_2 = len(stats2[base]['baseq'])/(stats2['depth']*1.0)
     if np_2 > (1-minth):
@@ -113,12 +110,4 @@ def call_on_pct( stats, minth=0.8 ):
 
 
 def iupac_amb( dnalist ):
-
     return (iupac.get(dnalist))
-
-
-
-
-
-
-
