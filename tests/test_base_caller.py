@@ -83,6 +83,16 @@ class TestUnitCaller(Base):
         from base_caller import caller
         return caller( bamfile, refstr, minbq, maxd, mind, minth )
 
+    def test_no_majority( self, mock_stats ):
+        base_stats = {
+            'A': { 'baseq': [25]*76 },
+            'G': { 'baseq': [25]*12 },
+            'C': { 'baseq': [25]*12 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        eq_( 'A', self._C( '', '', 25, 100000, 10, 0.8 ) )
+
     def test_calls_multiple_ambiguous( self, mock_stats ):
         # 33% A, 33% G, 33% C should end up V
         base_stats = {
@@ -125,4 +135,65 @@ class TestUnitCaller(Base):
         eq_( 'R', self._C( '', '', 25, 100000, 10, 0.8 ) )
 
 class TestUnitCallOnPct(Base):
-    pass
+    def _C( self, stats, minth ):
+        from base_caller import call_on_pct
+        return self.call_on_pct( stats, minth )
+
+    def test_called_ambigious( self ):
+        base_stats = {
+            'A': { 'baseq': [40]*80 },
+            'C': { 'baseq': [40]*20 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.9 )
+        eq_( 'M', r )
+
+    def test_gt_minth_gets_called( self ):
+        base_stats = {
+            'A': { 'baseq': [40]*80 },
+            'C': { 'baseq': [40]*20 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.8 )
+        eq_( 'A', r )
+
+    def test_calls_n( self ):
+        base_stats = {
+            'A': { 'baseq': [40]*10 },
+            'C': { 'baseq': [40]*10 },
+            'N': { 'baseq': [40]*80 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.8 )
+        eq_( 'N', r )
+
+    def test_calls_correct_amb( self ):
+        base_stats = {
+            'A': { 'baseq': [40]*33 },
+            'C': { 'baseq': [40]*33 },
+            'G': { 'baseq': [40]*19 },
+            'N': { 'baseq': [40]*15 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.8 )
+        eq_( 'M', r )
+
+    def test_multiple_amb_called( self ):
+        base_stats = {
+            'A': { 'baseq': [40]*33 },
+            'C': { 'baseq': [40]*33 },
+            'G': { 'baseq': [40]*34 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.8 )
+        eq_( 'V', r )
+
+    def test_no_majority( self ):
+        base_stats = {
+            'G': { 'baseq': [40]*76 },
+            'A': { 'baseq': [40]*12 },
+            'C': { 'baseq': [40]*12 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.8 )
+        eq_( 'G', r )

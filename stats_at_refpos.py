@@ -44,7 +44,7 @@ samtools idxstats <in.bam> | awk '!/^*/ {print $1}' | sort | uniq'''
         help='Minimum mapping quality to be included in stats. Keep reads that are >= [Default: {}]'.format(default_minmq)
     )
 
-    default_minbq = 20.0
+    default_minbq = 25.0
     parser.add_argument(
         '-mbq',
         '--min-base-qual',

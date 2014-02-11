@@ -86,13 +86,14 @@ def caller( bamfile, regionstr, minbq, maxd, mind=10, minth=0.8 ):
 
     return call_on_pct(stats2, minth)
 
-
-
-
 def call_on_pct( stats, minth=0.8 ):
     '''
         Calls a base from the given stats dictionary if it is the majority. A majority base is
         any base where it is in %total >= minth.
+
+        Base quality is not used to make the determination, but instead the number of quality scores
+        in the baseq list is used as it depicts the depth of that base. The quality scores are not used
+        as the stats dictionary should already be run through the label_n function.
 
         @param stats2 - Stats dictionary returned from label_N or stats_at_refpos.stats
         @param minth - minimum percentage that a base needs to be present in order to be called non-ambiguous
