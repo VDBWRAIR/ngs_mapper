@@ -74,6 +74,9 @@ def caller( bamfile, refstr, minbq, maxd, mind=10, minth=0.8 ):
 
     return call_on_pct(stats2, min_th)
 
+
+
+
 def call_on_pct( stats, minth=0.8 ):
     '''
         Calls a base from the given stats dictionary if it is the majority. A majority base is
@@ -88,12 +91,25 @@ def call_on_pct( stats, minth=0.8 ):
 
     nt_list = []
 
-    stats = stats(bamfile, regionstr, minmq, minbq, maxd):
-    stast2 = label_N(stats, minbq)
 
-    np_2 = len(stats2[base]['baseq'])/(stats2['depth']*1.0)
-    if np_2 > (1-minth):
-        return base
+    stats = stats(bamfile, regionstr, minmq, minbq, maxd):
+    stats2 = label_N(stats, minbq)
+
+        for base, quals in stats.iteritems():
+            # Only interested in base stats in this loop
+            if base not in ('depth','mqualsum','bqualsum'):
+
+            # generates a list called bquals
+            bquals = quals['baseq']
+
+            for q in bquals:
+                k = base
+
+                np_2 = len(stats2[base]['baseq'])/(stats2['depth']*1.0)
+                    if np_2 > (1-minth):
+                        return base
+
+
 
 
 
