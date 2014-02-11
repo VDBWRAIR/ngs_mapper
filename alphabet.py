@@ -25,3 +25,5 @@ def iupac_amb( dnalist ):
 
         @returns - The ambiguous base
     '''
+
+

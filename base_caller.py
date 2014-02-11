@@ -19,7 +19,35 @@ def label_N( stats, minbq ):
 
         @returns stats dictionary with baseq subkey for each base in the dictionary.
     '''
-    pass
+    stats2 = {}
+    stats2['depth'] = stats['depth']
+    stats2['mqualsum'] = stats['mqualsum']
+    stats2['bqualsum'] = stats['bqualsum']
+
+
+    for base, quals in stats.iteritems():
+            # Only interested in base stats in this loop
+            if base not in ('depth','mqualsum','bqualsum'):
+
+            # generates a list called bquals
+            bquals = quals['baseq']
+            
+
+            # loop to examine the quality score and identifyes bases with a quality score less than the minbq of 25
+            for q in bquals:
+                k = base
+                if q < minbq:
+                    k = 'N'
+
+                # adds the N to the nucleotides (A C G T and N)
+                if k not in stats2:
+                    stats2[k] = {'baseq':[]}
+                    stats2[k] ['baseq'].append( q )
+
+
+    return stats2
+
+
 
 def caller( bamfile, refstr, minbq, maxd, mind=10, minth=0.8 ):
     '''
@@ -40,7 +68,23 @@ def caller( bamfile, refstr, minbq, maxd, mind=10, minth=0.8 ):
 
         @returns one of the items from the set( 'ATGCMRWSYKVHDBN' )
     '''
-    pass
+    # call the nucleotides
+
+    stats = stats(bamfile, regionstr, minmq, minbq, maxd):
+    stast2 = label_N(stats, minbq)
+
+
+    # if the quality is 25 or greater ignore the N bases
+    if stats2['depth'] >= mindp:
+        del stats2['N']
+
+    else:
+        # defines if the base is an N
+        np = len(stats2['N']['baseq'])/(stats2['depth']*1.0)
+        if np > (1-min_th):
+            return 'N'
+
+    return call_on_pct(stats2, min_th)
 
 def call_on_pct( stats, minth=0.8 ):
     '''
@@ -52,4 +96,29 @@ def call_on_pct( stats, minth=0.8 ):
 
         @returns the called base based on the percentages in the given stats
     '''
-    pass
+    
+
+    nt_list = []
+
+    stats = stats(bamfile, regionstr, minmq, minbq, maxd):
+    stast2 = label_N(stats, minbq)
+
+    np_2 = len(stats2[base]['baseq'])/(stats2['depth']*1.0)
+    if np_2 > (1-minth):
+        return base
+
+
+
+    dnalist = ''.join(sorted(nt_list))
+
+
+def iupac_amb( dnalist ):
+
+    return (iupac.get(dnalist))
+
+
+
+
+
+
+
