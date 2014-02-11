@@ -1,0 +1,13 @@
+# If _OLDPATH set PATH to it
+# sort of like deactivate
+if [ -n "$_OLDPATH" ]
+then
+    export PATH=$_OLDPATH
+fi
+
+# Deactivate if possible
+deactivate
+. /home/EIDRUdata/programs/vdbapps/bin/activate
+
+_OLDPATH=$PATH
+export PATH=$(pwd)/miseqpipeline:$(pwd)/miseqpipeline/BamCoverage:$PATH
