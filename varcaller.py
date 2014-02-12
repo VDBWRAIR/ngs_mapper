@@ -88,7 +88,7 @@ def main( args ):
     command = "SNVer -i {} -o {} -r {} -b {} -bq {} -mq {} -s {} -a {}".format(alignment_bam,output_VCF_File,ref_fa,alt_ref,base,mapq,strand,read)
     # shell=True is so you can handle redirects like in the 3rd command
     print command
-    call(command, shell=True)
+    exit( call(command, shell=True) )
 
 if __name__ == '__main__':
     args = parse_args()

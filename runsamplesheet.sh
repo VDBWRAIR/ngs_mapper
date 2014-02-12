@@ -50,7 +50,7 @@ do
         echo "${sample_ref_map_file} must have an incorrect line. Could not read samplename"
         continue
     fi
-    # Make sure that sample was set
+    # Make sure that reference was set
     if [ -z "${reference}" ]
     then
         echo "${sample_ref_map_file} must have an incorrect line. Could not read reference"

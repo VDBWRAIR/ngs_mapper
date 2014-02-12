@@ -102,5 +102,6 @@ class TestFunctional(Base):
         path = dirname( dirname( abspath( __file__ ) ) )
         varcaller = join( path, 'varcaller.py' )
         cmd = 'export PATH=/tmp; /usr/local/bin/python {} {} {}'.format(varcaller, self.bam, self.ref)
+        print cmd
         ret = subprocess.call( cmd, shell=True )
         assert ret != 0, "Return code was 0 even though SNVer was not in path"
