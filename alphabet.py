@@ -3,6 +3,7 @@ AMBIGUITY_TABLE = {
     'T': 'T',
     'G': 'G',
     'C': 'C',
+    'N': 'N',
     'AC': 'M',
     'AG': 'R',
     'AT': 'W',
@@ -13,7 +14,7 @@ AMBIGUITY_TABLE = {
     'ACT': 'H',
     'AGT': 'D',
     'CGT': 'B',
-    'GATC': 'N'
+    'ACGT': 'N'
 }
 
 def iupac_amb( dnalist ):
@@ -25,5 +26,7 @@ def iupac_amb( dnalist ):
 
         @returns - The ambiguous base
     '''
-
+    if not isinstance( dnalist, str ):
+        dnalist = ''.join( sorted( dnalist ) )
+    return AMBIGUITY_TABLE.get(dnalist)
 

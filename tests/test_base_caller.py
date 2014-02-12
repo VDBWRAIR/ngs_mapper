@@ -137,7 +137,7 @@ class TestUnitCaller(Base):
 class TestUnitCallOnPct(Base):
     def _C( self, stats, minth ):
         from base_caller import call_on_pct
-        return self.call_on_pct( stats, minth )
+        return call_on_pct( stats, minth )
 
     def test_called_ambigious( self ):
         base_stats = {

@@ -15,4 +15,4 @@ class TestUnitAmbTable(common.BaseClass):
 
     def tst_permutation( self, t, v ):
         r = self._C( t )
-        eq_( r, v )
+        eq_( v, r )

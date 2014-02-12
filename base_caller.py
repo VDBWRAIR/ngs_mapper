@@ -1,4 +1,5 @@
 from stats_at_refpos import stats
+from alphabet import iupac_amb
 
 def label_N( stats, minbq ):
     '''
@@ -80,9 +81,11 @@ def caller( bamfile, regionstr, minbq, maxd, mind=10, minth=0.8 ):
     else:
         # Else we will determine if the N's are the majority now
         # defines if the base is an N
-        np = len(stats2['N']['baseq'])/(stats2['depth']*1.0)
-        if np > (1-minth):
-            return 'N'
+
+        if 'N' in stats2:
+            np = len(stats2['N']['baseq'])/(stats2['depth']*1.0)
+            if np > (1-minth):
+                return 'N'
 
     return call_on_pct(stats2, minth)
 
@@ -109,18 +112,18 @@ def call_on_pct( stats, minth=0.8 ):
         if base not in ('depth','mqualsum','bqualsum'):
 
             # generates a list called bquals
-            bquals = quals['baseq']
+            bquals = quals['baseq']    
 
-            for q in bquals:
-               
 
-                np_2 = len(stats[base]['baseq'])/(stats['depth']*1.0)
-                if np_2 > (1-minth):
-                    return base
+            np_2 = len(bquals)/(stats['depth']*1.0)
 
+            if np_2 > round((1-minth),1): # fix for proper calculations with float
+                nt_list.append( base )
 
     dnalist = ''.join(sorted(nt_list))
 
 
-def iupac_amb( dnalist ):
-    return (iupac.get(dnalist))
+
+    return iupac_amb(dnalist)
+
+
