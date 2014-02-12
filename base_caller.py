@@ -41,7 +41,7 @@ def label_N( stats, minbq ):
                 stats2[k] ['baseq'].append( q )
     return stats2
 
-def generate_vcf( bamfile, regionstr, vcf_output_file, minbq, maxd, vcf_template, mind=10, minth=0.8 ):
+def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf_template, mind=10, minth=0.8 ):
     '''
         Generates a vcf file from a given vcf_template file
 
@@ -51,9 +51,17 @@ def generate_vcf( bamfile, regionstr, vcf_output_file, minbq, maxd, vcf_template
     '''
     pass
 
-def generate_vcf_row( bamfile, regionstr, minbq, maxd, mind=10, minth=0.8 ):
+def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
     '''
         Generates a vcf row and returns it as a string
+
+        @param bam - pysam.Samfile object
+        @param regionstr - samtools regionstring to look at for a specific base(aka refname:N-N)
+        @param refseq - Bio.Seq.Seq object representing the reference sequence
+        @param minbq - minimum base quality to be considered
+        @param maxd - Maximum depth for pileup
+        @param mind - Minimum depth decides if low quality bases are N's or if they are removed
+        @param minth - Minimum percentage to call a base(unless no bases have > minth then the maximum pct base would be called
 
         @returns a vcf.model._Record
     '''

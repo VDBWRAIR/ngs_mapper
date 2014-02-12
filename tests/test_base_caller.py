@@ -191,3 +191,148 @@ class TestUnitCallOnPct(Base):
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.8 )
         eq_( 'G', r )
+
+@patch('base_caller.stats')
+class TestUnitGenerateVcfRow(Base):
+    def _C( self, bam, regionstr, refseq, minbq, maxd, mind, minth ):
+        from base_caller import generate_vcf_row
+        return generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind, minth )
+
+    def mock_record( self, chrom, pos, id, ref, alt, qual, filter, info, format ):
+        from vcf.model import _Record
+        return _Record( chrom, pos, id, ref, alt, qual, filter, info, format )
+
+    def test_regionstr_not_1( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*70 },
+            'A': { 'baseq': [40]*10 },
+            'C': { 'baseq': [40]*10 }
+            'T': { 'baseq': [40]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:3-3', 'ACGT'*100, 25, 1000, 10, 0.8 )
+        eq_( 70, r.info['DP'] )
+
+    def test_depth_set( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*70 },
+            'A': { 'baseq': [40]*10 },
+            'C': { 'baseq': [40]*10 }
+            'T': { 'baseq': [40]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 100, r.info['DP'] )
+
+    def test_refstats_set( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*70 },
+            'A': { 'baseq': [40]*10 },
+            'C': { 'baseq': [40]*10 }
+            'T': { 'baseq': [40]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 10, r.info['RC'] )
+        eq_( 0.10, r.info['PRC'] )
+        eq_( 40.0, r.info['ARQ'] )
+
+    def test_calledbase_amb( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*60 },
+            'A': { 'baseq': [39]*9 },
+            'C': { 'baseq': [38]*21 }
+            'T': { 'baseq': [37]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 100, 0.8 )
+        eq_( [60,21,9], r.info['AC'] )
+        eq_( [0.6,0.21,0.1], r.info['PAC'] )
+        eq_( [40.0,38.0,37.0], r.info['AAQ'] )
+        eq_( ['G','C','T'], r.ALT )
+        eq_( 'S', r.info['CB'] )
+
+    def test_alternatestats_same_order( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*60 },
+            'A': { 'baseq': [39]*10 },
+            'C': { 'baseq': [38]*20 }
+            'T': { 'baseq': [37]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( [60,20,10], r.info['AC'] )
+        eq_( [0.6,0.2,0.1], r.info['PAC'] )
+        eq_( [40.0,38.0,37.0], r.info['AAQ'] )
+        eq_( ['G','C','T'], r.ALT )
+
+    def test_alternatestats_multiple_set( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*70 },
+            'A': { 'baseq': [40]*10 },
+            'C': { 'baseq': [40]*10 }
+            'T': { 'baseq': [40]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( [70,10,10], r.info['AC'] )
+        eq_( [0.7,0.1,0.1], r.info['PAC'] )
+        eq_( [40.0,40.0,40.0], r.info['AAQ'] )
+
+    def test_alternatestats_single_set( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*80 },
+            'A': { 'baseq': [40]*10 },
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( [80], r.info['AC'] )
+        eq_( [0.8], r.info['PAC'] )
+        eq_( [40.0], r.info['AAQ'] )
+
+    def test_calledbase_set( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*70 },
+            'A': { 'baseq': [40]*10 },
+            'C': { 'baseq': [40]*10 }
+            'T': { 'baseq': [40]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 'G', r.info['CB'] )
+
+    def test_fields_set_multiple( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*70 },
+            'A': { 'baseq': [40]*10 },
+            'C': { 'baseq': [40]*10 }
+            'T': { 'baseq': [40]*10 }
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 'ref', r.CHROM )
+        eq_( 1, r.POS )
+        eq_( 'A', r.REF )
+        eq_( ['G','C','T'], r.ALT )
+
+    def test_fields_set_single( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [40]*80 },
+            'A': { 'baseq': [40]*10 },
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 'ref', r.CHROM )
+        eq_( 1, r.POS )
+        eq_( 'A', r.REF )
+        eq_( ['G'], r.ALT )
