@@ -6,7 +6,7 @@ then
 fi
 
 # Deactivate if possible
-deactivate
+deactivate 2>/dev/null
 . /home/EIDRUdata/programs/vdbapps/bin/activate
 
 _OLDPATH=$PATH
