@@ -1,6 +1,9 @@
 import os
 from os.path import *
 
+import logging
+log = logging.getLogger(__name__)
+
 class InvalidReadFile(Exception): pass
 
 def compile_reads( readfilelist, outputdir ):
@@ -41,11 +44,12 @@ def compile_reads( readfilelist, outputdir ):
                 raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read[1]))
         else:
             raise ValueError("Somehow neither got 1 or 2 items for a read in readfilelist")
-    
+
     # Now concat the files to their respective output file
     for f,files in files_written.items():
         if files:
             outfile = join(outputdir,f+'.fq')
+            log.info( "Compiling reads from {} into {}".format( files, outfile ) )
             seqio.concat_files(files, outfile)
             files_written[f] = outfile
         else:
