@@ -308,6 +308,38 @@ class TestUnitGenerateVcfRow(Base):
         eq_( 'A', r.REF )
         eq_( ['G'], r.ALT )
 
+class TestUnitGenerateVCF(Base):
+    # Hard to test each thing without generating sam files and vcf manually so
+    # just going to let the integration tests do it...
+    pass
+
+from base_caller import InvalidRegionString
+@attr('current')
+class TestUnitParseRegionString(object):
+    def _C( self, regionstr ):
+        from base_caller import parse_regionstring
+        return parse_regionstring( regionstr )
+
+    @raises(InvalidRegionString)
+    def test_start_gt_stop( self ):
+        self._C( 'ref1:2-1' )
+
+    @raises(InvalidRegionString)
+    def test_incorrect_format( self ):
+        self._C( 'sometext' )
+        self._C( 'sometext:1' )
+        self._C( 'sometext:1-' )
+        self._C( 'sometext:1- ' )
+        self._C( 'sometext:a-b' )
+
+    def test_correct_singlebase( self ):
+        r = self._C( 'ref:1-1' )
+        eq_( ('ref',1,1), r )
+
+    def test_correct_multibase( self ):
+        r = self._C( 'ref:1-2' )
+        eq_( ('ref',1,2), r )
+
 @attr('current')
 class TestIntegrate(Base):
     def setUp( self ):
@@ -326,15 +358,16 @@ class TestIntegrate(Base):
                 minbq, maxd, vcf_template, mind=10, minth=10 ) 
 
     def _C( self, bamfile, reffile, regionstr, vcf_output_file, 
-            minbq, maxd, vcf_template, mind=10, minth=10 ):
+            minbq, maxd, mind=10, minth=10 ):
         import subprocess
         script_path = join( dirname( dirname( __file__ ) ) )
         script_path = join( script_path, 'base_caller.py' )
         cmd = [script_path, bamfile, reffile]
         if regionstr:
             cmd += ['-r', regionstr]
-        cmd += ['-o', vcf_output_file, '-minbq', minbq, '-maxd', maxd, 
-                '-t', vcf_template, '-mind', mind, '-minth', minth]
+        if vcf_output_file:
+            cmd += ['-o', vcf_output_file]
+        cmd += ['-minbq', minbq, '-maxd', maxd, '-mind', mind, '-minth', minth]
         cmd = [str(x) for x in cmd]
         print cmd
         return subprocess.call( cmd )
@@ -342,5 +375,14 @@ class TestIntegrate(Base):
     def test_correct_vcf( self ):
         import filecmp
         out_vcf = join( self.tempdir, 'out.vcf' )
-        r = self._C( self.bam, self.ref, 'ref1:1-8', out_vcf, 25, 100, self.template, 10, 0.8 )
+        r = self._C( self.bam, self.ref, None, out_vcf, 25, 100, 10, 0.8 )
+        assert filecmp.cmp( self.vcf, out_vcf, False ), "Outputted VCF was not the same as expected VCF"
+
+    def test_default_outfile( self ):
+        import filecmp
+        import shutil
+        tbam = join( self.tempdir, self.bam )
+        shutil.copy( self.bam, tbam )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        r = self._C( tbam, self.ref, None, None, 25, 100, 10, 0.8 )
         assert filecmp.cmp( self.vcf, out_vcf, False ), "Outputted VCF was not the same as expected VCF"

@@ -2,6 +2,129 @@
 
 from stats_at_refpos import stats
 from alphabet import iupac_amb
+import sys
+import argparse
+import re
+import pysam
+from Bio import SeqIO
+import vcf
+from StringIO import StringIO
+
+# The header for the vcf
+VCF_HEAD = '''##fileformat=VCFv4.2
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##INFO=<ID=RC,Number=1,Type=Integer,Description="Reference Count">
+##INFO=<ID=ARQ,Number=1,Type=Float,Description="Average Reference Quality">
+##INFO=<ID=PRC,Number=1,Type=Integer,Description="Percentage Reference Count">
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Alternative Alternate Count">
+##INFO=<ID=AAQ,Number=A,Type=Float,Description="Alternate Average Quality">
+##INFO=<ID=PAC,Number=A,Type=Integer,Description="Percentage Alternate Count">
+##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
+##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT'''
+
+def main( args ):
+    generate_vcf(
+        args.bamfile,
+        args.reffile,
+        args.regionstr,
+        args.vcf_output_file,
+        args.minbq,
+        args.maxd,
+        VCF_HEAD,
+        args.mind,
+        args.minth
+    )
+
+def parse_args( args=sys.argv[1:] ):
+    parser = argparse.ArgumentParser(
+        description = 'Generates a VCF that has called bases in it which follow ' \
+            'the WRAIR VDB SOP for calling bases',
+        epilog = '''WRAIR VDB Base Calling SOP:
+            Depth < 10:
+                All bases with base quality < 25 get set to N
+                Then the base is called on the percentage(See below)
+            Depth > 10:
+                All bases with base quality < 25 get removed
+                Then the base is called on the percentage(See below)
+
+            Calling on Percentage:
+                Any base with >= 80% majority is called
+                    - or -
+                N is called if the depth was < 10 and N is > 20%
+                    - or -
+                The specific IUPAC ambiguious base is called for all bases over
+                 20%
+                    - or -
+                The majority base is called
+        '''
+    )
+
+    parser.add_argument(
+        dest='bamfile',
+        help='The bam file to generate the vcf for'
+    )
+
+    parser.add_argument(
+        dest='reffile',
+        help='The reference file(has to have an fai index already built)'
+    )
+
+    parser.add_argument(
+        '-o',
+        dest='vcf_output_file',
+        default=None,
+        help='Where to save the vcf'
+    )
+
+    parser.add_argument(
+        '-r',
+        '--regionstr',
+        dest='regionstr',
+        default=None,
+        help='See the samtools documentation for how to specify a region string.' \
+            'Essentially: \'refname\':START-STOP'
+    )
+
+    parser.add_argument(
+        '-minbq',
+        dest='minbq',
+        default=25,
+        type=int,
+        help='The minimum base quality to be considered high quality[Default: 25]'
+    )
+
+    parser.add_argument(
+        '-maxd',
+        dest='maxd',
+        default=100000,
+        type=int,
+        help='Maximum depth to use for the pileup[Default: 100000]'
+    )
+
+    parser.add_argument(
+        '-mind',
+        dest='mind',
+        default=10,
+        type=int,
+        help='Minimum depth for base trimming. Below this depth low quality bases' \
+            ' will be called N.[Default: 10]'
+    )
+
+    parser.add_argument(
+        '-minth',
+        dest='minth',
+        default=0.8,
+        type=float,
+        help='Minimum fraction of all remaining bases after trimming/N calling that ' \
+            'will trigger a base to be called.[Default: 0.8]'
+    )
+
+    args = parser.parse_args( args )
+    if args.vcf_output_file is None:
+        args.vcf_output_file = args.bamfile + '.vcf'
+
+    return args
 
 def label_N( stats, minbq ):
     '''
@@ -59,7 +182,54 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
 
         @returns path to vcf_output_file
     '''
-    pass
+    refseqs = SeqIO.index( reffile, 'fasta' )
+    # Do all references
+    if regionstr is None:
+        regions = [(r,1,len(seq.seq)) for r,seq in refseqs]
+    else: # Do only single reference
+        region = parse_regionstring( regionstr )
+        regions = [region]
+    # Open the bamfile object
+    bam = pysam.Samfile( bamfile, 'rb' )
+    # Our pretend file object that has vcf stuff in it
+    vcf_head = StringIO( VCF_HEAD )
+    vcf_head.name = 'header.vcf'
+    # The vcf writer object
+    out_vcf = vcf.Writer( open( vcf_output_file, 'w' ), 
+                            template = vcf.Reader( vcf_head )
+    )
+    # Loop through all the positions in regionstr
+    for ref, start, end in regions:
+        for i in range( start, end+1 ):
+            # Generate the new region string
+            regionstr = region[0] + ':' + str(i) + '-' + str(i)
+            refseq = refseqs[region[0]]
+            row = generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind, minth )
+            out_vcf.write( row )
+
+    return vcf_output_file
+
+# Exception for when invalid region strings are given
+class InvalidRegionString(Exception): pass
+
+def parse_regionstring( regionstr ):
+    '''
+        Parses a region string into a 3 item tuple and checks it for errors
+
+        @param regionstr - samtools region string format
+
+        @returns (ref, start, stop)
+        @raises InvalidRegionString
+    '''
+    m = re.match( '(\S+):(\d+)-(\d+)', regionstr )
+    if not m:
+        raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )
+
+    region = (m.group(1), int(m.group(2)), int(m.group(3)))
+    if region[1] > region[2]:
+        raise InvalidRegionString( "Start cannot be > stop in a region string: {}".format(regionstr) )
+
+    return region
 
 def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
     '''
@@ -137,3 +307,7 @@ def call_on_pct( stats, minth=0.8 ):
                 nt_list.append( base )
     dnalist = ''.join(sorted(nt_list))
     return iupac_amb(dnalist)
+
+if __name__ == '__main__':
+    main( parse_args() )
+
