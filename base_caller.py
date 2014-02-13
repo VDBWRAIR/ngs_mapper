@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from stats_at_refpos import stats
 from alphabet import iupac_amb
 
@@ -45,7 +47,15 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
     '''
         Generates a vcf file from a given vcf_template file
 
-        @param bamfile - 
+        @param bamfile - Path to bamfile
+        @param reffile - Indexed reference path
+        @param regionstr - samtools region string or None for all
+        @param vcf_output_file - Where to write the output vcf
+        @param minbq - Minumum base quality to determine if it should be turned into an N
+        @param maxd - maximum depth to use
+        @param vcf_template - VCF Header template(string)
+        @param mind - Minimum depth to decide if low quality bases should be called N
+        @param minth - Minimum percentage for a base to be called
 
         @returns path to vcf_output_file
     '''

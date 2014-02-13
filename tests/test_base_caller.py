@@ -2,6 +2,8 @@ import common
 from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
 from mock import patch, Mock, MagicMock
+from os.path import join, dirname, basename
+import fixtures
 
 class Base( common.BaseClass ):
     def mock_stats( self ):
@@ -198,43 +200,27 @@ class TestUnitGenerateVcfRow(Base):
         from base_caller import generate_vcf_row
         return generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind, minth )
 
-    def mock_record( self, chrom, pos, id, ref, alt, qual, filter, info, format ):
-        from vcf.model import _Record
-        return _Record( chrom, pos, id, ref, alt, qual, filter, info, format )
-
-    def test_regionstr_not_1( self, mock_stats ):
+    def mock_stats( self ):
         base_stats = {
             'G': { 'baseq': [40]*70 },
             'A': { 'baseq': [40]*10 },
-            'C': { 'baseq': [40]*10 }
+            'C': { 'baseq': [40]*10 },
             'T': { 'baseq': [40]*10 }
         }
-        stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        return self.make_stats( base_stats )
+
+    def test_regionstr_not_1( self, mock_stats ):
+        mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:3-3', 'ACGT'*100, 25, 1000, 10, 0.8 )
         eq_( 70, r.info['DP'] )
 
     def test_depth_set( self, mock_stats ):
-        base_stats = {
-            'G': { 'baseq': [40]*70 },
-            'A': { 'baseq': [40]*10 },
-            'C': { 'baseq': [40]*10 }
-            'T': { 'baseq': [40]*10 }
-        }
-        stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 100, r.info['DP'] )
 
     def test_refstats_set( self, mock_stats ):
-        base_stats = {
-            'G': { 'baseq': [40]*70 },
-            'A': { 'baseq': [40]*10 },
-            'C': { 'baseq': [40]*10 }
-            'T': { 'baseq': [40]*10 }
-        }
-        stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 10, r.info['RC'] )
         eq_( 0.10, r.info['PRC'] )
@@ -244,7 +230,7 @@ class TestUnitGenerateVcfRow(Base):
         base_stats = {
             'G': { 'baseq': [40]*60 },
             'A': { 'baseq': [39]*9 },
-            'C': { 'baseq': [38]*21 }
+            'C': { 'baseq': [38]*21 },
             'T': { 'baseq': [37]*10 }
         }
         stats = self.make_stats( base_stats )
@@ -260,7 +246,7 @@ class TestUnitGenerateVcfRow(Base):
         base_stats = {
             'G': { 'baseq': [40]*60 },
             'A': { 'baseq': [39]*10 },
-            'C': { 'baseq': [38]*20 }
+            'C': { 'baseq': [38]*20 },
             'T': { 'baseq': [37]*10 }
         }
         stats = self.make_stats( base_stats )
@@ -272,14 +258,8 @@ class TestUnitGenerateVcfRow(Base):
         eq_( ['G','C','T'], r.ALT )
 
     def test_alternatestats_multiple_set( self, mock_stats ):
-        base_stats = {
-            'G': { 'baseq': [40]*70 },
-            'A': { 'baseq': [40]*10 },
-            'C': { 'baseq': [40]*10 }
-            'T': { 'baseq': [40]*10 }
-        }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( [70,10,10], r.info['AC'] )
         eq_( [0.7,0.1,0.1], r.info['PAC'] )
@@ -298,26 +278,17 @@ class TestUnitGenerateVcfRow(Base):
         eq_( [40.0], r.info['AAQ'] )
 
     def test_calledbase_set( self, mock_stats ):
-        base_stats = {
-            'G': { 'baseq': [40]*70 },
-            'A': { 'baseq': [40]*10 },
-            'C': { 'baseq': [40]*10 }
-            'T': { 'baseq': [40]*10 }
-        }
-        stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 'G', r.info['CB'] )
 
+    def test_calledbasedepth_set( self, mock_stats ):
+        mock_stats.return_value = self.mock_stats()
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 70, r.info['CBD'] )
+
     def test_fields_set_multiple( self, mock_stats ):
-        base_stats = {
-            'G': { 'baseq': [40]*70 },
-            'A': { 'baseq': [40]*10 },
-            'C': { 'baseq': [40]*10 }
-            'T': { 'baseq': [40]*10 }
-        }
-        stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 'ref', r.CHROM )
         eq_( 1, r.POS )
@@ -327,7 +298,7 @@ class TestUnitGenerateVcfRow(Base):
     def test_fields_set_single( self, mock_stats ):
         base_stats = {
             'G': { 'baseq': [40]*80 },
-            'A': { 'baseq': [40]*10 },
+            'A': { 'baseq': [40]*10 }
         }
         stats = self.make_stats( base_stats )
         mock_stats.return_value = stats
@@ -336,3 +307,40 @@ class TestUnitGenerateVcfRow(Base):
         eq_( 1, r.POS )
         eq_( 'A', r.REF )
         eq_( ['G'], r.ALT )
+
+@attr('current')
+class TestIntegrate(Base):
+    def setUp( self ):
+        super( TestIntegrate, self ).setUp()
+        fixpath = join( fixtures.THIS, 'fixtures', 'base_caller' )
+        self.bam = join( fixpath, 'test.bam' )
+        self.ref = join( fixpath, 'testref.fasta' )
+        self.sam = join( fixpath, 'test.sam' )
+        self.vcf = join( fixpath, 'test.vcf' )
+        self.template = join( fixpath, 'template.vcf' )
+
+    def _C1( self, bamfile, reffile, regionstr, vcf_output_file, 
+            minbq, maxd, vcf_template, mind=10, minth=10 ):
+        from base_caller import generate_vcf
+        return generate_vcf( bamfile, reffile, regionstr, vcf_output_file, 
+                minbq, maxd, vcf_template, mind=10, minth=10 ) 
+
+    def _C( self, bamfile, reffile, regionstr, vcf_output_file, 
+            minbq, maxd, vcf_template, mind=10, minth=10 ):
+        import subprocess
+        script_path = join( dirname( dirname( __file__ ) ) )
+        script_path = join( script_path, 'base_caller.py' )
+        cmd = [script_path, bamfile, reffile]
+        if regionstr:
+            cmd += ['-r', regionstr]
+        cmd += ['-o', vcf_output_file, '-minbq', minbq, '-maxd', maxd, 
+                '-t', vcf_template, '-mind', mind, '-minth', minth]
+        cmd = [str(x) for x in cmd]
+        print cmd
+        return subprocess.call( cmd )
+
+    def test_correct_vcf( self ):
+        import filecmp
+        out_vcf = join( self.tempdir, 'out.vcf' )
+        r = self._C( self.bam, self.ref, 'ref1:1-8', out_vcf, 25, 100, self.template, 10, 0.8 )
+        assert filecmp.cmp( self.vcf, out_vcf, False ), "Outputted VCF was not the same as expected VCF"

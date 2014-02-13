@@ -5,9 +5,15 @@ then
     export PATH=$_OLDPATH
 fi
 
+# This gives us the current directory that this script is in
+THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Deactivate if possible
 deactivate 2>/dev/null
+
+# Activate vdbapps for now, but soon we will remove this in favor
+# of git submodules for all the necessary apps
 . /home/EIDRUdata/programs/vdbapps/bin/activate
 
 _OLDPATH=$PATH
-export PATH=$(pwd)/miseqpipeline:$(pwd)/miseqpipeline/BamCoverage:$PATH
+export PATH=${THIS}:${THIS}/BamCoverage:${THIS}/bwa:$PATH

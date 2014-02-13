@@ -1,0 +1,11 @@
+##fileformat=VCFv4.2
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##INFO=<ID=RC,Number=1,Type=Integer,Description="Reference Count">
+##INFO=<ID=ARQ,Number=1,Type=Float,Description="Average Reference Quality">
+##INFO=<ID=PRC,Number=1,Type=Integer,Description="Percentage Reference Count">
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Alternative Alternate Count">
+##INFO=<ID=AAQ,Number=A,Type=Float,Description="Alternate Average Quality">
+##INFO=<ID=PAC,Number=A,Type=Integer,Description="Percentage Alternate Count">
+##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
+##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT
