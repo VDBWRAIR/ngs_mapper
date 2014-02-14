@@ -189,8 +189,6 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
     else: # Do only single reference
         region = parse_regionstring( regionstr )
         regions = [region]
-    # Open the bamfile object
-    bam = pysam.Samfile( bamfile, 'rb' )
     # Our pretend file object that has vcf stuff in it
     vcf_head = StringIO( VCF_HEAD )
     vcf_head.name = 'header.vcf'
@@ -204,7 +202,9 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
             # Generate the new region string
             regionstr = region[0] + ':' + str(i) + '-' + str(i)
             refseq = refseqs[region[0]]
-            row = generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind, minth )
+            # Probably inefficient that we are sending in the bamfile that has to be opened over and
+            # over, but for now we will do that
+            row = generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind, minth )
             out_vcf.write( row )
 
     return vcf_output_file
