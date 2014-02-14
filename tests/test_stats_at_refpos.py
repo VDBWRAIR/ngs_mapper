@@ -49,6 +49,20 @@ class TestPysamCol(Base):
                 pos = pos
             )
         )
+    
+    def test_missing_mq( self ):
+        # Sometimes the mapping quality is missing for some reason
+        ref = 'Ref1'
+        col = [
+            self.mock_pileup_read( 2, None, 'I'*10, 'A'*10, 8 ),
+            self.mock_pileup_read( 2, '', 'I'*10, 'A'*10, 8 ),
+            self.mock_pileup_read( 2, 32, 'I'*10, 'A'*10, 8 ),
+            self.mock_pileup_read( 2, ']', 'I'*10, 'A'*10, 8 ),
+            self.mock_pileup_read( 2, ']', 'I'*10, 'A'*10, 8 ),
+        ]
+        r = self._C( col, ref, 0, 0 )
+        e = '\t'.join( [ref,'10','N','5','A'*5,'I'*5,'!!!]]'] )
+        eq_( e, r )
 
     def test_func_allreads( self ):
         # Mock spot 10 on mock ref
