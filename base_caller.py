@@ -189,8 +189,6 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
     else: # Do only single reference
         region = parse_regionstring( regionstr )
         regions = [region]
-    # Open the bamfile object
-    bam = pysam.Samfile( bamfile, 'rb' )
     # Our pretend file object that has vcf stuff in it
     vcf_head = StringIO( VCF_HEAD )
     vcf_head.name = 'header.vcf'
@@ -204,7 +202,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
             # Generate the new region string
             regionstr = region[0] + ':' + str(i) + '-' + str(i)
             refseq = refseqs[region[0]]
-            row = generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind, minth )
+            row = generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind, minth )
             out_vcf.write( row )
 
     return vcf_output_file
@@ -245,8 +243,71 @@ def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
 
         @returns a vcf.model._Record
     '''
+
+
+
+   stats2 = label_N( stats (bamfile, regionstr, minmq, minbq, maxd ):
+ 
+
+
+
+    # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
+    info = {
+        'DP': 0,
+        'RC': 0,
+        'RAQ': 0,
+        'PRC': 0,
+        'AC': 0,
+        'AAQ': 0,
+        'PAC': 0,
+        'CB': 0,
+        'CBQ': 0,
+    }
+
+
+    # retrieve the info directly from the stats2 dictionary
+    info['DP'] = stats2['depth']
+    
+    # find the base on the reference file - use this by the parse command ensure selection of the base    
+    r = parse_regionstr(regionstr)
+    rb = refseq[r[1]]
+
+
+    # data for the depth
+    info['DP'] = stats['depth']
+
+    # data for the reference count
+    info['RC'] = len(stats[rb])
+
+    # data for the reference average quality
+    info['RAQ'] = sum(stats[rb]['baseq'])/len(stats[rb]['baseq'])
+
+    # data for the percentage reference count
+    info['PRC'] = len(stats[rb])/(stats['depth']*1.0)
+
+
+
+    # need to generate the stats2 information for the alternitive nucleotide - 
+    # need to remove the data that is linked to the reference nucleotide
+
+
+
+
+ 
+
+    
+
+
+    # need to record each line of the vcf file.
+    record = vcf._Record( 
+
+
+        
+    
+
+
     # call the nucleotides
-    #s = stats(bamfile, regionstr, 1, 1, maxd)
+    #s stats(bamfile, regionstr, 1, 1, maxd)
     pass
 
 def caller( stats, minbq, maxd, mind=10, minth=0.8 ):
@@ -307,7 +368,47 @@ def call_on_pct( stats, minth=0.8 ):
                 nt_list.append( base )
     dnalist = ''.join(sorted(nt_list))
     return iupac_amb(dnalist)
+    
 
+def info_alt_stats( stats2, rb)
+
+
+    info = {
+        'AC' : [], 
+        'AAQ' : [],
+        'PAC' : [],
+        'bases' : []
+        }
+
+     # the alternitive base = ab
+    alt_nt = []
+    for base, quals in stats.intritems():
+        if not in ('depth','rb')
+            ab = base  
+
+
+    # identify the alternitive bases in stats 2        
+
+            # data for the alternitive count
+            info['AC'].append(len(quals['baseq']))
+
+
+            # data for the alternitive avarage quality
+            info['AAQ'].append(sum(quals['baseq'])/quals['baseq']))
+
+        
+            # data for the percentage reference count
+            info['PAC'].append(len(quals)/(quals['depth']*1.0))
+ 
+
+            # base data
+            info['bases'].append(base)
+                                     
+    return info
+
+
+
+ 
 if __name__ == '__main__':
     main( parse_args() )
 
