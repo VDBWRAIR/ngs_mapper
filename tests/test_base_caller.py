@@ -314,7 +314,6 @@ class TestUnitGenerateVCF(Base):
     pass
 
 from base_caller import InvalidRegionString
-@attr('current')
 class TestUnitParseRegionString(object):
     def _C( self, regionstr ):
         from base_caller import parse_regionstring
@@ -341,6 +340,34 @@ class TestUnitParseRegionString(object):
         eq_( ('ref',1,2), r )
 
 @attr('current')
+class TestUnitInfoStats(Base):
+    def setUp( self ):
+        self.mock_stats2()
+
+    def _C( self, stats2, refbase ):
+        from base_caller import info_stats
+        return info_stats( stats2, refbase )
+
+    def mock_stats2( self ):
+        ''' Every base and each base has length 20 with 40 quality so depth 100 '''
+        s = { 'baseq': [40]*20 }
+        self.stats2 = self.make_stats({
+            b: s.copy() for b in 'ACGNT'
+        })
+
+    def test_ensure_expected( self ):
+        ''' Order of the bases must be preserved '''
+        self.stats2['A']['baseq'] = [40]*200
+        self.stats2['C']['baseq'] = [39]*200
+        self.stats2['G']['baseq'] = [38]*42
+        self.stats2['N']['baseq'] = [37]*58
+        self.stats2['T']['baseq'] = [36]*500
+        r = self._C( self.stats2, 'A' )
+        eq_( [200,42,58,500], r['AC'] )
+        eq_( [20,4,6,50], r['PAC'] )
+        eq_( [39,38,37,36], r['AAQ'] )
+        eq_( ['CGNT'], r['bases'] )
+
 class TestIntegrate(Base):
     def setUp( self ):
         super( TestIntegrate, self ).setUp()
