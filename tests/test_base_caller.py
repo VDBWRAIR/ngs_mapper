@@ -76,7 +76,6 @@ class TestUnitLabelN(Base):
         r = self._C( self.stats, 25 )
         assert 'N' not in r, 'N was added to stats when it should not have'
 
-@attr('current')
 class TestUnitCaller(Base):
     def setUp( self ):
         super( TestUnitCaller, self ).setUp()
@@ -131,7 +130,6 @@ class TestUnitCaller(Base):
         stats = self.make_stats( base_stats )
         eq_( ('R',100), self._C( stats, 25, 100000, 10, 0.8 ) )
 
-@attr('current')
 class TestUnitCallOnPct(Base):
     def _C( self, stats, minth ):
         from base_caller import call_on_pct
@@ -196,6 +194,7 @@ class TestUnitCallOnPct(Base):
         r = self._C( stats, 0.8 )
         eq_( ('G',76), r )
 
+@attr('current')
 @patch('base_caller.stats')
 class TestUnitGenerateVcfRow(Base):
     def _C( self, bam, regionstr, refseq, minbq, maxd, mind, minth ):
@@ -225,8 +224,8 @@ class TestUnitGenerateVcfRow(Base):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 10, r.info['RC'] )
-        eq_( 0.10, r.info['PRC'] )
-        eq_( 40.0, r.info['ARQ'] )
+        eq_( 10, r.info['PRC'] )
+        eq_( 40, r.info['ARQ'] )
 
     def test_calledbase_amb( self, mock_stats ):
         base_stats = {
@@ -239,8 +238,8 @@ class TestUnitGenerateVcfRow(Base):
         mock_stats.return_value = stats
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 100, 0.8 )
         eq_( [60,21,9], r.info['AC'] )
-        eq_( [0.6,0.21,0.1], r.info['PAC'] )
-        eq_( [40.0,38.0,37.0], r.info['AAQ'] )
+        eq_( [60,21,10], r.info['PAC'] )
+        eq_( [40,38,37], r.info['AAQ'] )
         eq_( ['G','C','T'], r.ALT )
         eq_( 'S', r.info['CB'] )
 
@@ -255,8 +254,8 @@ class TestUnitGenerateVcfRow(Base):
         mock_stats.return_value = stats
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( [60,20,10], r.info['AC'] )
-        eq_( [0.6,0.2,0.1], r.info['PAC'] )
-        eq_( [40.0,38.0,37.0], r.info['AAQ'] )
+        eq_( [60,20,10], r.info['PAC'] )
+        eq_( [40,38,37], r.info['AAQ'] )
         eq_( ['G','C','T'], r.ALT )
 
     def test_alternatestats_multiple_set( self, mock_stats ):
@@ -264,8 +263,8 @@ class TestUnitGenerateVcfRow(Base):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( [70,10,10], r.info['AC'] )
-        eq_( [0.7,0.1,0.1], r.info['PAC'] )
-        eq_( [40.0,40.0,40.0], r.info['AAQ'] )
+        eq_( [70,10,10], r.info['PAC'] )
+        eq_( [40,40,40], r.info['AAQ'] )
 
     def test_alternatestats_single_set( self, mock_stats ):
         base_stats = {
@@ -276,8 +275,8 @@ class TestUnitGenerateVcfRow(Base):
         mock_stats.return_value = stats
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( [80], r.info['AC'] )
-        eq_( [0.8], r.info['PAC'] )
-        eq_( [40.0], r.info['AAQ'] )
+        eq_( [80], r.info['PAC'] )
+        eq_( [40], r.info['AAQ'] )
 
     def test_calledbase_set( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
@@ -341,7 +340,6 @@ class TestUnitParseRegionString(object):
         r = self._C( 'ref:1-2' )
         eq_( ('ref',1,2), r )
 
-@attr('current')
 class TestUnitInfoStats(Base):
     def setUp( self ):
         self.mock_stats2()
@@ -357,6 +355,16 @@ class TestUnitInfoStats(Base):
         for b in 'ACGNT':
             self.stats2['depth'] = len(s['baseq'])
             self.stats2[b] = s.copy()
+
+    def test_excludes_keys( self ):
+        self.stats2 = {}
+        self.stats2['mqualsum'] = 1
+        self.stats2['bqualsum'] = 1
+        self.stats2['depth'] = 1
+        self.stats2['A'] = 1
+        r = self._C( self.stats2, 'A' )
+        for k in ('AC','AAQ','PAC','bases'):
+            eq_( [], r[k] )
 
     def test_ensure_expected( self ):
         ''' Order of the bases must be preserved '''

@@ -231,21 +231,22 @@ def parse_regionstring( regionstr ):
 
     return region
 
-def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
+def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
     '''
         Generates a vcf row and returns it as a string
 
-        @param bam - pysam.Samfile object
+        @param bamfile - path to a bamfile
         @param regionstr - samtools regionstring to look at for a specific base(aka refname:N-N)
         @param refseq - Bio.Seq.Seq object representing the reference sequence
-        @param minbq - minimum base quality to be considered
+        @param minbq - minimum base quality to be considered or turned into an N
         @param maxd - Maximum depth for pileup
         @param mind - Minimum depth decides if low quality bases are N's or if they are removed
         @param minth - Minimum percentage to call a base(unless no bases have > minth then the maximum pct base would be called
 
         @returns a vcf.model._Record
     '''
-    stats2 = label_N( stats (bamfile, regionstr, minmq, minbq, maxd ))
+    s = stats( bamfile, regionstr, minbq, maxd, minmq=0 )
+    stats2 = label_N( s, minbq )
 
     # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
     info = {
@@ -260,29 +261,41 @@ def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
         'CBQ': 0,
     }
 
-    # retrieve the info directly from the stats2 dictionary
+    # Parse the region string into refname, start, stop
+    r = parse_regionstring(regionstr)
+    # Get the reference base from the reference sequence
+    # Python is 0-index, biology is 1 index
+    rb = refseq[r[1]-1]
+    # Total Depth at this position
     info['DP'] = stats2['depth']
+    # Quick alias to reference statistics
+    refstats = stats2[rb]
+    # Reference Count is length of the base qualities list
+    info['RC'] = len(refstats['baseq'])
+    # Reference Average Quality is the sum of base qualities / length
+    info['RAQ'] = sum(refstats['baseq']) / len(refstats['baseq'])
+    # Percentage Reference Count is len of qualities / depth
+    info['PRC'] = len(refstats['baseq']) / stats2['depth']
+
+    # Alternate info
+    alt_info = info_stats( stats2, rb )
+    alt_bases = alt_info['bases']
+    del alt_info['bases']
     
-    # find the base on the reference file - use this by the parse command ensure selection of the base    
-    r = parse_regionstr(regionstr)
-    rb = refseq[r[1]]
-    # data for the depth
-    info['DP'] = stats['depth']
-    # data for the reference count
-    info['RC'] = len(stats[rb])
-    # data for the reference average quality
-    info['RAQ'] = sum(stats[rb]['baseq'])/len(stats[rb]['baseq'])
-    # data for the percentage reference count
-    info['PRC'] = len(stats[rb])/(stats['depth']*1.0)
-    # need to generate the stats2 information for the alternitive nucleotide - 
-    # need to remove the data that is linked to the reference nucleotide
+    # Merge existing info, with alt_info
+    info.update( alt_info )
+
+    # Get Called Base Info
+    cb, cbd = caller( s, minbq, maxd, mind, minth )
+
+    # Set the Called base
+    info['CB'] = cb
+    info['CBD'] = cbd
 
     # need to record each line of the vcf file.
-    # record = vcf._Record( 
+    record = vcf._Record( r[0], start, None, rb, alt_bases, None, None, info, None )
 
-    # call the nucleotides
-    #s stats(bamfile, regionstr, 1, 1, maxd)
-    pass
+    return record
 
 def caller( stats, minbq, maxd, mind=10, minth=0.8 ):
     '''
@@ -376,7 +389,7 @@ def info_stats( stats2, rb):
      # the alternitive base = ab
     alt_nt = []
     for base, quals in stats2.iteritems():
-        if base  not in ('depth',rb):
+        if base  not in ('depth','mqualsum','bqualsum',rb):
             # identify the alternitive bases in stats 2        
             # data for the alternitive count
             info['AC'].append(len(quals['baseq']))
