@@ -97,24 +97,32 @@ def pysam_col( pysamcol, reference, minmq, minbq ):
         aread = pread.alignment
         mapq = aread.mapq
         bq = aread.qual[qpos]
-        # Ignore any reads with minmq below minmq
+        seq = aread.seq[qpos]
+
+        # Sometimes mapq is missing
+        if not mapq or mapq == 32:
+            # Just make it a 0 quality then
+            mapq = 33
+
+        #### Filter based on minmq and minbq
+        # Ignore any reads with mapping quality below our minimum
         if mapq < minmq:
-            #print 'skipping mq'
             continue
-        #print "{} < {}?".format(ord(bq)-33,minbq)
+        # Ignore any reads with base quality below our minimum
         if ord(bq)-33 < minbq:
-            #print 'skipping bq'
             continue
+
         # Sometimes mapq is a character and sometimes an int??
         if type(mapq) in (int,long):
             mapq = chr(mapq)
+        #print "MQ:{}({}) BQ:{} B:{}".format(mapq,ord(mapq),bq,seq)
+
         mapquals.write(mapq)
         readquals.write(bq)
-        seq = aread.seq[qpos]
         readseq.write( aread.seq[qpos] )
         depth += 1
 
-    return '\t'.join([
+    col_str = '\t'.join([
         reference,
         str(refpos),
         'N',
@@ -123,6 +131,8 @@ def pysam_col( pysamcol, reference, minmq, minbq ):
         readquals.getvalue(),
         mapquals.getvalue()
     ])
+
+    return col_str
 
 def mpileup_popen( bamfile, regionstr=None, minqual=25, maxd=100000 ):
     cmd = ['samtools','mpileup','-Q','{}'.format(minqual),'-d','{}'.format(maxd)]
@@ -204,6 +214,8 @@ def stats( bamfile, regionstr, minmq, minbq, maxd ):
         if lmq != lb and lmq != lbq:
             sys.stderr.write( "Number of mapquals {} basequals {} !=  number of bases {}\n".format(lmq, lbq, lb) )
             sys.stderr.write( "Line that caused error:\n{}\n".format(line) )
+            cmd = "samtools mpileup -s -q {} -Q {} -d {} -r '{}' {}".format(minmq, minbq, maxd, regionstr, bamfile )
+            sys.stderr.write( "You can inspect this location in the bamfile for debugging as follows: {}\n".format(cmd) )
             #sys.stderr.write( "(base,mapq,baseq) all together:\n{}\n".format(bq) )
             sys.exit( -1 )
 

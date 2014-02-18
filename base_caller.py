@@ -202,6 +202,8 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
             # Generate the new region string
             regionstr = region[0] + ':' + str(i) + '-' + str(i)
             refseq = refseqs[region[0]]
+            # Probably inefficient that we are sending in the bamfile that has to be opened over and
+            # over, but for now we will do that
             row = generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind, minth )
             out_vcf.write( row )
 
