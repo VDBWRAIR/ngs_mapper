@@ -247,8 +247,7 @@ def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
     '''
 
 
-
-   stats2 = label_N( stats (bamfile, regionstr, minmq, minbq, maxd ):
+    stats2 = label_N( stats (bamfile, regionstr, minmq, minbq, maxd ))
  
 
 
@@ -301,7 +300,7 @@ def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
 
 
     # need to record each line of the vcf file.
-    record = vcf._Record( 
+    # record = vcf._Record( 
 
 
         
@@ -372,7 +371,7 @@ def call_on_pct( stats, minth=0.8 ):
     return iupac_amb(dnalist)
     
 
-def info_alt_stats( stats2, rb)
+def info_stats( stats2, rb):
 
 
     info = {
@@ -384,23 +383,22 @@ def info_alt_stats( stats2, rb)
 
      # the alternitive base = ab
     alt_nt = []
-    for base, quals in stats.intritems():
-        if not in ('depth','rb')
+    for base, quals in stats2.iteritems():
+        if base  not in ('depth',rb):
             ab = base  
 
 
-    # identify the alternitive bases in stats 2        
-
+            # identify the alternitive bases in stats 2        
             # data for the alternitive count
             info['AC'].append(len(quals['baseq']))
-
+             
 
             # data for the alternitive avarage quality
-            info['AAQ'].append(sum(quals['baseq'])/quals['baseq']))
+            info['AAQ'].append(sum(quals['baseq'])/len(quals['baseq']))
 
         
             # data for the percentage reference count
-            info['PAC'].append(len(quals)/(quals['depth']*1.0))
+            info['PAC'].append(round((len(quals['baseq'])*100.0)/(stats2['depth'])))
  
 
             # base data

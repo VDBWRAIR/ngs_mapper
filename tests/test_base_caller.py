@@ -351,9 +351,10 @@ class TestUnitInfoStats(Base):
     def mock_stats2( self ):
         ''' Every base and each base has length 20 with 40 quality so depth 100 '''
         s = { 'baseq': [40]*20 }
-        self.stats2 = self.make_stats({
-            b: s.copy() for b in 'ACGNT'
-        })
+        self.stats2 = {'depth':0}
+        for b in 'ACGNT':
+            self.stats2['depth'] = len(s['baseq'])
+            self.stats2[b] = s.copy()
 
     def test_ensure_expected( self ):
         ''' Order of the bases must be preserved '''
@@ -362,19 +363,19 @@ class TestUnitInfoStats(Base):
         self.stats2['G']['baseq'] = [38]*42
         self.stats2['N']['baseq'] = [37]*58
         self.stats2['T']['baseq'] = [36]*500
-        self.update_stats( self.stats2 )
+        self.stats2['depth'] = 1000
         r = self._C( self.stats2, 'A' )
         eq_( [200,42,58,500], r['AC'] )
         eq_( [20,4,6,50], r['PAC'] )
         eq_( [39,38,37,36], r['AAQ'] )
-        eq_( ['CGNT'], r['bases'] )
+        eq_( ['C','G','N','T'], r['bases'] )
 
     def test_ensure_exclude_ref( self ):
         self.stats2['G']['baseq'] = [10]*20
-        self.update_stats( self.stats2 )
+        self.stats2['depth'] = 100
         r = self._C( self.stats2, 'G' )
         eq_( [40]*4, r['AAQ'] )
-        eq_( ['ACNT'], r['bases'] )
+        eq_( ['A','C','N','T'], r['bases'] )
 
 class TestIntegrate(Base):
     def setUp( self ):
