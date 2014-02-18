@@ -76,6 +76,7 @@ class TestUnitLabelN(Base):
         r = self._C( self.stats, 25 )
         assert 'N' not in r, 'N was added to stats when it should not have'
 
+@attr('current')
 class TestUnitCaller(Base):
     def setUp( self ):
         super( TestUnitCaller, self ).setUp()
@@ -91,7 +92,7 @@ class TestUnitCaller(Base):
             'C': { 'baseq': [25]*12 }
         }
         stats = self.make_stats( base_stats )
-        eq_( 'A', self._C( stats, 25, 100000, 10, 0.8 ) )
+        eq_( ('A',76), self._C( stats, 25, 100000, 10, 0.8 ) )
 
     def test_calls_multiple_ambiguous( self ):
         # 33% A, 33% G, 33% C should end up V
@@ -101,7 +102,7 @@ class TestUnitCaller(Base):
             'C': { 'baseq': [25]*33 }
         }
         stats = self.make_stats( base_stats )
-        eq_( 'V', self._C( stats, 25, 100000, 100, 0.8 ) )
+        eq_( ('V',99), self._C( stats, 25, 100000, 100, 0.8 ) )
 
     def test_calls_low_coverage_n( self ):
         # 79% A, 21% Low Quality G should end up 21% N
@@ -110,7 +111,7 @@ class TestUnitCaller(Base):
             'G': { 'baseq': [24]*21 }
         }
         stats = self.make_stats( base_stats )
-        eq_( 'N', self._C( stats, 25, 100000, 100, 0.8 ) )
+        eq_( ('N',21), self._C( stats, 25, 100000, 100, 0.8 ) )
 
     def test_calls_minth( self ):
         # 80% A, 20% G should be called A
@@ -119,7 +120,7 @@ class TestUnitCaller(Base):
             'G': { 'baseq': [40]*20 }
         }
         stats = self.make_stats( base_stats )
-        eq_( 'A', self._C( stats, 25, 100000, 10, 0.8 ) )
+        eq_( ('A',80), self._C( stats, 25, 100000, 10, 0.8 ) )
 
     def test_calls_specific_ambiguious( self ):
         # 79% A, 21% G should be called R
@@ -128,8 +129,9 @@ class TestUnitCaller(Base):
             'G': { 'baseq': [40]*21 }
         }
         stats = self.make_stats( base_stats )
-        eq_( 'R', self._C( stats, 25, 100000, 10, 0.8 ) )
+        eq_( ('R',100), self._C( stats, 25, 100000, 10, 0.8 ) )
 
+@attr('current')
 class TestUnitCallOnPct(Base):
     def _C( self, stats, minth ):
         from base_caller import call_on_pct
@@ -142,7 +144,7 @@ class TestUnitCallOnPct(Base):
         }
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.9 )
-        eq_( 'M', r )
+        eq_( ('M',100), r )
 
     def test_gt_minth_gets_called( self ):
         base_stats = {
@@ -151,7 +153,7 @@ class TestUnitCallOnPct(Base):
         }
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.8 )
-        eq_( 'A', r )
+        eq_( ('A',80), r )
 
     def test_calls_n( self ):
         base_stats = {
@@ -161,7 +163,7 @@ class TestUnitCallOnPct(Base):
         }
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.8 )
-        eq_( 'N', r )
+        eq_( ('N',80), r )
 
     def test_calls_correct_amb( self ):
         base_stats = {
@@ -172,7 +174,7 @@ class TestUnitCallOnPct(Base):
         }
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.8 )
-        eq_( 'M', r )
+        eq_( ('M',66), r )
 
     def test_multiple_amb_called( self ):
         base_stats = {
@@ -182,7 +184,7 @@ class TestUnitCallOnPct(Base):
         }
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.8 )
-        eq_( 'V', r )
+        eq_( ('V',100), r )
 
     def test_no_majority( self ):
         base_stats = {
@@ -192,7 +194,7 @@ class TestUnitCallOnPct(Base):
         }
         stats = self.make_stats( base_stats )
         r = self._C( stats, 0.8 )
-        eq_( 'G', r )
+        eq_( ('G',76), r )
 
 @patch('base_caller.stats')
 class TestUnitGenerateVcfRow(Base):

@@ -312,9 +312,10 @@ def caller( stats, minbq, maxd, mind=10, minth=0.8 ):
         # Else we will determine if the N's are the majority now
         # defines if the base is an N
         if 'N' in stats2:
-            np = len(stats2['N']['baseq'])/(stats2['depth']*1.0)
+            nlen = len(stats2['N']['baseq'])
+            np = nlen/(stats2['depth']*1.0)
             if np > (1-minth):
-                return 'N'
+                return ('N', nlen)
     return call_on_pct(stats2, minth)
 
 def call_on_pct( stats, minth=0.8 ):
@@ -329,20 +330,24 @@ def call_on_pct( stats, minth=0.8 ):
         @param stats2 - Stats dictionary returned from label_N or stats_at_refpos.stats
         @param minth - minimum percentage that a base needs to be present in order to be called non-ambiguous
 
-        @returns the called base based on the percentages in the given stats
+        @returns the called base based on the percentages in the given stats and the depth for the called base
     '''
-    nt_list = []
+    nt_list = ''
+    count = 0
     for base, quals in stats.iteritems():
         # Only interested in base stats in this loop
         if base not in ('depth','mqualsum','bqualsum'):
-            # generates a list called bquals
+            # Quick alias for quals['baseq']
             bquals = quals['baseq']    
+            # Percentage of current base compared to total depth
             np_2 = len(bquals)/(stats['depth']*1.0)
-            if np_2 > round((1-minth),1): # fix for proper calculations with float
-                nt_list.append( base )
-    dnalist = ''.join(sorted(nt_list))
-    return iupac_amb(dnalist)
-    
+            # fix for proper calculations with float
+            # If basepercent is greater than minimum threashold
+            if np_2 > round((1-minth),1):
+                nt_list += base
+                count += len(bquals)
+    dnalist = sorted(nt_list)
+    return (iupac_amb(dnalist), count)
 
 def info_stats( stats2, rb):
     '''
