@@ -362,11 +362,19 @@ class TestUnitInfoStats(Base):
         self.stats2['G']['baseq'] = [38]*42
         self.stats2['N']['baseq'] = [37]*58
         self.stats2['T']['baseq'] = [36]*500
+        self.update_stats( self.stats2 )
         r = self._C( self.stats2, 'A' )
         eq_( [200,42,58,500], r['AC'] )
         eq_( [20,4,6,50], r['PAC'] )
         eq_( [39,38,37,36], r['AAQ'] )
         eq_( ['CGNT'], r['bases'] )
+
+    def test_ensure_exclude_ref( self ):
+        self.stats2['G']['baseq'] = [10]*20
+        self.update_stats( self.stats2 )
+        r = self._C( self.stats2, 'G' )
+        eq_( [40]*4, r['AAQ'] )
+        eq_( ['ACNT'], r['bases'] )
 
 class TestIntegrate(Base):
     def setUp( self ):
