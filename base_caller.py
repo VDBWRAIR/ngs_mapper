@@ -7,7 +7,6 @@ import argparse
 import re
 import pysam
 from Bio import SeqIO
-import vcf
 from StringIO import StringIO
 
 # The header for the vcf
@@ -182,6 +181,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
 
         @returns path to vcf_output_file
     '''
+    import vcf
     refseqs = SeqIO.index( reffile, 'fasta' )
     # Do all references
     if regionstr is None:
