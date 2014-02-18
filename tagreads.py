@@ -44,6 +44,43 @@ def tag_bam( bam, SM, CN ):
     hdr = get_rg_headers( bam, SM, CN )
     tag_reads( bam, hdr )
 
+def tag_read( untagged_read, tags ):
+    '''
+        Tags a given pysam.alignedread with various tags
+        Does not replace existing tags
+
+        @param untagged_read - pysam.Samfile.alignedread
+        @param tags - List of tag tuples acceptable to pysam.Samfile.alignedread.tags
+
+        @returns a tagged read
+    '''
+    # Turn the tuple list into a dictionary for quick lookup
+    index_tags = dict( untagged_read.tags )
+    # Start with the existing tags
+    newtags = untagged_read.tags
+    # Add any tags that do not exist already
+    for k,v in tags:
+        if k not in index_tags:
+            newtags.append( (k,v) )
+
+    # Set the tags
+    untagged_read.tags = newtags
+    # Return the tagged read
+    return untagged_read
+
+def tag_readgroup( read ):
+    '''
+        Tags a given pysam.AlignedRead with the readgroup that the qname
+        belongs to depending on how it maps to ID_MAP
+
+        @param read - pysam.AlignedRead
+        
+        @returns pysam.AlignedRead that is tagged with the appropriate read group
+    '''
+    rg = get_rg_for_read( read )
+    #log.debug( "Tagging {} with Read group {}".format(read.qname,rg) )
+    return tag_read( read, [('RG',rg)] )
+
 def tag_reads( bam, hdr ):
     ''' Sets header of bam and tags all reads appropriately for each platform '''
     # Open the existing bam to fetch the reads to modify from
@@ -54,10 +91,8 @@ def tag_reads( bam, hdr ):
     tagged_bam = pysam.Samfile( bam + '.tagged', 'wb', header = hdr )
     # Tag the reads
     log.info( "Tagging reads for {}".format(bam) )
-    for read in untagged_bam.fetch(until_eof=True):
-        rg = get_rg_for_read( read )
-        # Have to modify it to get it to save according to docs
-        read.tags = read.tags + [('RG',rg)]
+    for read in untagged_bam.fetch( until_eof=True ):
+        read = tag_readgroup( read )
         tagged_bam.write( read )
     tagged_bam.close()
     untagged_bam.close()

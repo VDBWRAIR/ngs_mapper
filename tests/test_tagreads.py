@@ -7,6 +7,7 @@ import tempfile
 import shutil
 
 from nose.tools import eq_, raises
+from nose.plugins.attrib import attr
 
 class Base(object):
     def setUp( self ):
@@ -54,6 +55,10 @@ class Base(object):
             print "Read Group: {} had {} reads".format(rg,c)
 
         eq_( self.get_numreads(bamfile), read_count )
+
+    def mock_read( self ):
+        from pysam import AlignedRead
+        return AlignedRead()
 
 class TestUnitGetRGForRead(Base):
     def _C( self, read ):
@@ -106,6 +111,7 @@ class TestUnitGetHeader(Base):
         assert 'SQ' in hdr, 'SQ key was not in bam header'
         assert 'HD' in hdr, 'HD key was not in bam header'
 
+@attr('current')
 class TestUnitTagReads(Base):
     def _C( self, bamfile, hdr ):
         from tagreads import tag_reads
@@ -184,6 +190,60 @@ class TestUnitTagReads(Base):
         eq_( 1, counts['Roche454'] )
         eq_( 1, counts['Sanger'] )
         eq_( 996, counts['MiSeq'] )
+
+class TestUnitTagReadGroup(Base):
+    def _C( self, read ):
+        from tagreads import tag_readgroup
+        return tag_readgroup( read )
+
+    def test_tags_sanger( self ):
+        read = self.mock_read()
+        read.qname = 'TestingAread_sanger'
+        self._C( read )
+        eq_( 'Sanger', read.tags[0][1] )
+
+    def test_tags_miseq( self ):
+        read = self.mock_read()
+        read.qname = 'M00000:0:000000000-AAAAA:0:0000:0000:0000'
+        self._C( read )
+        eq_( 'MiSeq', read.tags[0][1] )
+
+    def test_tags_roche( self ):
+        read = self.mock_read()
+        read.qname = 'A' * 14
+        self._C( read )
+        eq_( 'Roche454', read.tags[0][1] )
+
+    def test_tags_iontorrent( self ):
+        read = self.mock_read()
+        read.qname = 'AAAAA:00000:00000'
+        self._C( read )
+        eq_( 'IonTorrent', read.tags[0][1] )
+
+class TestUnitTagRead(Base):
+    def _C( self, read, tags ):
+        from tagreads import tag_read
+        return tag_read( read, tags )
+
+    def test_sets_tags( self ):
+        read = self.mock_read()
+        tags = [('RG','Test'),('RX','Test2')]
+        self._C( read, tags )
+        eq_( tags, read.tags )
+
+    def test_adds_tags( self ):
+        read = self.mock_read()
+        read.tags = [( 'RG', 'Test1' )]
+        tags = [('RX','Test'),('RY','Test2')]
+        self._C( read, tags )
+        eq_( [('RG','Test1')] + tags, read.tags )
+
+    def test_tag_not_replace( self ):
+        read = self.mock_read()
+        read.tags = [( 'RG', 'Test1' )]
+        tags = [('RG','Test'),('RX','Test2')]
+        self._C( read, tags )
+        eq_( [('RG','Test1'),tags[1]], read.tags )
 
 class TestUnitGetRGHeaders(Base):
     def _C( self, bamfile, SM=None, CN=None ):
