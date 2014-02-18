@@ -245,12 +245,7 @@ def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
 
         @returns a vcf.model._Record
     '''
-
-
     stats2 = label_N( stats (bamfile, regionstr, minmq, minbq, maxd ))
- 
-
-
 
     # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
     info = {
@@ -265,47 +260,25 @@ def generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
         'CBQ': 0,
     }
 
-
     # retrieve the info directly from the stats2 dictionary
     info['DP'] = stats2['depth']
     
     # find the base on the reference file - use this by the parse command ensure selection of the base    
     r = parse_regionstr(regionstr)
     rb = refseq[r[1]]
-
-
     # data for the depth
     info['DP'] = stats['depth']
-
     # data for the reference count
     info['RC'] = len(stats[rb])
-
     # data for the reference average quality
     info['RAQ'] = sum(stats[rb]['baseq'])/len(stats[rb]['baseq'])
-
     # data for the percentage reference count
     info['PRC'] = len(stats[rb])/(stats['depth']*1.0)
-
-
-
     # need to generate the stats2 information for the alternitive nucleotide - 
     # need to remove the data that is linked to the reference nucleotide
 
-
-
-
- 
-
-    
-
-
     # need to record each line of the vcf file.
     # record = vcf._Record( 
-
-
-        
-    
-
 
     # call the nucleotides
     #s stats(bamfile, regionstr, 1, 1, maxd)
@@ -372,8 +345,22 @@ def call_on_pct( stats, minth=0.8 ):
     
 
 def info_stats( stats2, rb):
+    '''
+        Returns a dictionary that can be used to fill in the info field of a vcf record
+        The returned dictionary will contain the AC(Alternate Count), AAQ(Alternate Average Quality)
+            PAC(Percentage Average Count) and bases.
 
+        AC should be a list of integers
+        AAQ should be a list of integers
+        PAC should be a list of integers rounded to the nearest integer
+        bases should be the ordered list of bases for each item in AC,AAQ, PAC such that
+        zip( bases, AC/AAQ/PAC ) would work as expected
+    
+        @param stats2 - label_N version of stats dictionary
+        @param rb - Reference base to ignore in the outputted dictionary
 
+        @returns info dictionary with AC,AAQ, PAC and bases keys filled out
+    '''
     info = {
         'AC' : [], 
         'AAQ' : [],
@@ -385,29 +372,17 @@ def info_stats( stats2, rb):
     alt_nt = []
     for base, quals in stats2.iteritems():
         if base  not in ('depth',rb):
-            ab = base  
-
-
             # identify the alternitive bases in stats 2        
             # data for the alternitive count
             info['AC'].append(len(quals['baseq']))
-             
-
             # data for the alternitive avarage quality
             info['AAQ'].append(sum(quals['baseq'])/len(quals['baseq']))
-
-        
             # data for the percentage reference count
             info['PAC'].append(round((len(quals['baseq'])*100.0)/(stats2['depth'])))
- 
-
             # base data
             info['bases'].append(base)
                                      
     return info
-
-
-
  
 if __name__ == '__main__':
     main( parse_args() )
