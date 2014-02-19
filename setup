@@ -16,11 +16,20 @@ deactivate 2>/dev/null
 . /home/EIDRUdata/programs/vdbapps/bin/activate
 
 CWD=$(pwd)
+# Compile samtools
 if [ ! -e ${THIS}/samtools/samtools ]
 then
     cd ${THIS}/htslib
     make
     cd ${THIS}/samtools
+    make
+    cd $CWD
+fi
+
+# Compile bwa
+if [ ! -e ${THIS}/bwa/bwa ]
+then
+    cd ${THIS}/bwa
     make
     cd $CWD
 fi
