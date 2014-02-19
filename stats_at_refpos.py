@@ -185,6 +185,20 @@ def stats_at_pos( bamfile, regionstr, minmq, minbq, maxd ):
     return base_stats
 
 def stats( bamfile, regionstr, minmq, minbq, maxd ):
+    import samtools
+    out = samtools.mpileup( bamfile, regionstr, minmq, minbq, maxd )
+    
+    try:
+        col = samtools.MPileupColumn( out.next() )
+        out.close()
+        return col.base_stats()
+    except StopIteration:
+        return {
+            'depth': 0,
+            'mqualsum': 0.0,
+            'bqualsum': 0.0
+        }
+
     base_stats = {}
     pile = mpileup( bamfile, regionstr, minmq=minmq, minbq=minbq, maxd=maxd )
     for line in pile:

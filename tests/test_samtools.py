@@ -123,8 +123,10 @@ class TestUnitBaseStats(MpileupBase):
     def test_qualsums_set( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._CA( str )
-        eq_( 40*10, r['bqualsum'] )
-        eq_( 60*10, r['mqualsum'] )
+        eq_( 40*10.0, r['bqualsum'] )
+        eq_( 60*10.0, r['mqualsum'] )
+        eq_( float, type(r['bqualsum']) )
+        eq_( float, type(r['mqualsum']) )
 
     def test_depth_set( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
@@ -142,6 +144,11 @@ class TestUnitAvgQuals(MpileupBase):
         str = 'Ref1	1	N	10	AAAAAAAAAA	ABCDEABCDE	]]]]]]]]]]'
         r = self._C( str )
         eq_( 34.0, r.bqual_avg() )
+
+    def test_example_1( self ):
+        str =   'Den1/U88535_1/WestPac/1997/Den1_1	6109	N	13	GgnGgggggtGgg	CB#GHHHHG2GHH'
+        r = self._C( str )
+        eq_( 33.38, r.bqual_avg() )
 
     def test_avgmqual_set( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	ABCDEABCDE'

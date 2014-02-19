@@ -105,10 +105,10 @@ class MPileupColumn(object):
             return []
 
     def bqual_avg( self ):
-        return np.mean( self.bquals )
+        return round( np.mean( self.bquals ), 2 )
 
     def mqual_avg( self ):
-        return np.mean( self.mquals )
+        return round( np.mean( self.mquals ), 2 )
 
     def __iter__( self ):
         return itertools.izip_longest( self.bases, self.bquals, self.mquals, fillvalue=0 )
@@ -116,8 +116,8 @@ class MPileupColumn(object):
     def base_stats( self ):
         bquals = self.bquals
         mquals = self.mquals
-        bqualsum = sum( bquals )
-        mqualsum = sum( mquals )
+        bqualsum = float( sum( bquals ) )
+        mqualsum = float( sum( mquals ) )
         assert len(bquals) == len(mquals), "Somehow length of Base Qualities != Map Qualities"
         depth = self.depth
         stats = {'depth':depth,'mqualsum':mqualsum,'bqualsum':bqualsum}
