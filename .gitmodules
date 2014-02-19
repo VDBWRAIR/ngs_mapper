@@ -3,4 +3,10 @@
 	url = /home/EIDRUdata/Tyghe/Dev/python/BamCoverage.git
 [submodule "bwa"]
 	path = bwa
-	url = https://github.com/lh3/bwa.git
+	url = /home/EIDRUdata/Tyghe/Dev/bwa.git
+[submodule "samtools"]
+	path = samtools
+	url = /home/EIDRUdata/Tyghe/Dev/samtools.git
+[submodule "htslib"]
+	path = htslib
+	url = /home/EIDRUdata/Tyghe/Dev/htslib.git

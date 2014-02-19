@@ -15,5 +15,15 @@ deactivate 2>/dev/null
 # of git submodules for all the necessary apps
 . /home/EIDRUdata/programs/vdbapps/bin/activate
 
+CWD=$(pwd)
+if [ ! -e ${THIS}/samtools/samtools ]
+then
+    cd ${THIS}/htslib
+    make
+    cd ${THIS}/samtools
+    make
+    cd $CWD
+fi
+
 _OLDPATH=$PATH
-export PATH=${THIS}:${THIS}/BamCoverage:${THIS}/bwa:$PATH
+export PATH=${THIS}:${THIS}/BamCoverage:${THIS}/bwa:${THIS}/samtools:$PATH
