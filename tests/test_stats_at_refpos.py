@@ -136,21 +136,6 @@ class TestPysamCol(Base):
             res
         )
 
-class TestMpileupPopen(Base):
-    def _CM( self, bamfile, regionstr, minqual, maxd ):
-        from stats_at_refpos import mpileup_popen
-        return mpileup_popen( bamfile, regionstr, minqual, maxd )
-
-    @patch('stats_at_refpos.Popen')
-    def test_unit_popencall( self, popen ):
-        popen.return_value.stdout = 'tested'
-        res = self._CM( self.bam, '', 25, 100000 )
-        eq_( 'tested', res )
-        popen.assert_called_with(['samtools','mpileup','-Q','25','-d','100000',self.bam],stdout=-1)
-        self._CM( self.bam, 'den1:1-5', 25, 100000 )
-        eq_( 'tested', res )
-        popen.assert_called_with(['samtools','mpileup','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1)
-
 class StatsAtPos(Base):
     def _doit( self, res, eb, e ):
         # Ensure keys are same and in same order

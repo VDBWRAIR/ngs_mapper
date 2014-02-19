@@ -2,7 +2,6 @@
 
 ## Untested
 
-from subprocess import Popen, PIPE
 import argparse
 import sys
 import itertools
@@ -133,14 +132,6 @@ def pysam_col( pysamcol, reference, minmq, minbq ):
     ])
 
     return col_str
-
-def mpileup_popen( bamfile, regionstr=None, minqual=25, maxd=100000 ):
-    cmd = ['samtools','mpileup','-Q','{}'.format(minqual),'-d','{}'.format(maxd)]
-    if regionstr:
-        cmd += ['-r',regionstr]
-    cmd.append( bamfile )
-    p = Popen( cmd, stdout=PIPE )
-    return p.stdout
 
 def mpileup( bamfile, regionstr=None, minmq=25, minbq=20, maxd=100000 ):
     return mpileup_pysam( bamfile, regionstr, minmq, minbq, maxd )
