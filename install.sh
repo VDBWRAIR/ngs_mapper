@@ -19,9 +19,18 @@ trap 'echo "Error running $BASH_COMMAND"; rm -rf man1; exit;' ERR SIGINT SIGTERM
 # Make sure we are in the repository directory
 cd ${THIS}
 
+# Ensure zlib.h is in include path(I guess we won't assume redhat here and just do rpm -qa stuff)
+if [ -z "$(find $(echo | cpp -x c++ -Wp,-v 2>&1 | grep -v 'ignoring' | grep -v '^#' | grep -v '^End' | xargs) -type f -name zlib.h)" ]
+then
+    echo "Please ensure that the zlib development package is installed. Probably yum install zlib-devel or apt-get install zlib-devel"
+    exit 1
+fi
+
 # Now ensure submodules are setup correctly(hopefully)
 # This is probably not the correct thing to do, but hacks are great yay!
+# First make sure all submodules are updated and init'd
 git submodule update --init
+# Then just run through all of them and ensure they have HEAD checked out or something
 git submodule foreach git reset --hard HEAD
 
 # Compile samtools if the samtools binary doesn't exist
