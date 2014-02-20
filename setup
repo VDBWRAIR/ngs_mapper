@@ -23,7 +23,7 @@ cd ${THIS}
 
 # Now ensure submodules are setup correctly(hopefully)
 # This is probably not the correct thing to do, but hacks are great yay!
-git submodule update --init --rebase
+git submodule update --init
 
 # Compile samtools
 if [ ! -e ${THIS}/samtools/samtools ]
