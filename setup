@@ -15,7 +15,16 @@ deactivate 2>/dev/null
 # of git submodules for all the necessary apps
 . /home/EIDRUdata/programs/vdbapps/bin/activate
 
+# Grab the current directory the user is in
 CWD=$(pwd)
+
+# Make sure we are in the repository directory
+cd ${THIS}
+
+# Now ensure submodules are setup correctly(hopefully)
+# This is probably not the correct thing to do, but hacks are great yay!
+git submodule update --init --rebase
+
 # Compile samtools
 if [ ! -e ${THIS}/samtools/samtools ]
 then
