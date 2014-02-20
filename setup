@@ -34,5 +34,32 @@ then
     cd $CWD
 fi
 
+# Some manpage setup
+if [ ! -d ${THIS}/man1 ]
+then
+    mkdir -p ${THIS}/man1
+    # Find all the actual manpages and link them into the man1 directory
+    find . -type f -name '*.1' | while read f
+    do
+        # Manpages start with .TH
+        head -1 "$f" | grep -q '^.TH'
+        if [ $? -eq 0 ]
+        then
+            path_to="$(cd $(dirname "$f") && pwd)/$(basename "$f")"
+            ln -s "$path_to" "${THIS}/man1/$(basename "$f")"
+        fi
+    done
+fi
+
+# Remember the old path
 _OLDPATH=$PATH
+# Setup the path to include bwa and samtools that we just compiled
 export PATH=${THIS}:${THIS}/BamCoverage:${THIS}/bwa:${THIS}/samtools:$PATH
+
+# Remember the old manpath
+_OLDMANPATH=$(manpath)
+# Setup the manpath for bwa and samtools
+export MANPATH=$(manpath):${THIS}
+
+# TODO
+# add deactivate function in this file
