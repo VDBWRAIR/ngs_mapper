@@ -190,7 +190,6 @@ class MPileupColumn(object):
         bqualsum = float( sum( bquals ) )
         mqualsum = float( sum( mquals ) )
         # Lets just make sure of a few things because samtools mpileup isn't exactly documented the best
-        assert len(bquals) == len(mquals), "Somehow length of Base Qualities != length of Map Qualities"
         assert len(bquals) == self.depth, "Somehow length of bases != length of Base Qualities"
         depth = self.depth
         stats = {'depth':depth,'mqualsum':mqualsum,'bqualsum':bqualsum}
