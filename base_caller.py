@@ -186,7 +186,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
     refseqs = SeqIO.index( reffile, 'fasta' )
     # Do all references
     if regionstr is None:
-        regions = [(r,1,len(seq.seq)) for r,seq in refseqs.iteritems()]
+        regions = [(r,1,len(refseqs[r].seq)) for r in sorted(refseqs.keys())]
     else: # Do only single reference
         region = parse_regionstring( regionstr )
         regions = [region]
@@ -295,13 +295,19 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     # Total Depth at this position
     info['DP'] = stats2['depth']
     # Quick alias to reference statistics
-    refstats = stats2[rb]
-    # Reference Count is length of the base qualities list
-    info['RC'] = len(refstats['baseq'])
-    # Reference Average Quality is the sum of base qualities / length
-    info['RAQ'] = int( round( sum(refstats['baseq']) / float(len(refstats['baseq'])), 0 ) )
-    # Percentage Reference Count is len of qualities / depth
-    info['PRC'] = int( round( (100.0 * len(refstats['baseq'])) / float(stats2['depth']), 0 ) )
+    # Maybe reference base isn't in stats
+    if rb in stats2:
+        refstats = stats2[rb]
+        # Reference Count is length of the base qualities list
+        info['RC'] = len(refstats['baseq'])
+        # Reference Average Quality is the sum of base qualities / length
+        info['RAQ'] = int( round( sum(refstats['baseq']) / float(len(refstats['baseq'])), 0 ) )
+        # Percentage Reference Count is len of qualities / depth
+        info['PRC'] = int( round( (100.0 * len(refstats['baseq'])) / float(stats2['depth']), 0 ) )
+    else:
+        info['RC'] = 0
+        info['RAQ'] = 0
+        info['PRC'] = 0
 
     # Get Called Base Info
     cb, cbd = caller( s, minbq, maxd, mind, minth )

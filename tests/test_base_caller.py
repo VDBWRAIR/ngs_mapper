@@ -412,6 +412,21 @@ class TestUnitGenerateVcfRow(Base):
         eq_( 'A', r.REF )
         eq_( ['G'], r.ALT )
 
+    def test_refbase_not_in_stats( self, mock_stats ):
+        base_stats = {
+            'N': { 'baseq': [40]*100 },
+        }
+        stats = self.make_stats( base_stats )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 'ref', r.CHROM )
+        eqs_( 1, r.POS )
+        eq_( 'A', r.REF )
+        eq_( ['N'], r.ALT )
+        eq_( 0, r.INFO['RC'] )
+        eq_( 0, r.INFO['RAQ'] )
+        eq_( 0, r.INFO['PRC'] )
+
 class TestUnitGenerateVCF(Base):
     # Hard to test each thing without generating sam files and vcf manually so
     # just going to let the integration tests do it...
@@ -527,6 +542,7 @@ class BaseInty(Base):
         except subprocess.CalledProcessError as e:
             print e
             print e.output
+            print "Here is the generated file for comparison"
             print open(f2).read()
             return False
 
@@ -538,7 +554,6 @@ class BaseInty(Base):
         shutil.copy( self.bai, tbai )
         return tbam, tbai
 
-@attr('current')
 class TestUnitGenerateVCF(BaseInty):
     def _C( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, vcf_template=None ):
         from base_caller import generate_vcf, VCF_HEAD
@@ -583,7 +598,6 @@ class TestUnitMain(BaseInty):
         r = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
         assert self.cmp_files( self.vcf, out_vcf )
 
-@attr('current')
 class TestIntegrate(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8 ):
         import subprocess
