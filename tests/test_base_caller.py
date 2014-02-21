@@ -2,7 +2,7 @@ import common
 from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
 from mock import patch, Mock, MagicMock
-from os.path import join, dirname, basename
+from os.path import join, dirname, basename, exists
 import fixtures
 
 class Base( common.BaseClass ):
@@ -130,6 +130,66 @@ class TestUnitCaller(Base):
         stats = self.make_stats( base_stats )
         eq_( ('R',100), self._C( stats, 25, 100000, 10, 0.8 ) )
 
+    def test_example_1( self ):
+        # Just testing an example from the test.vcf
+        stats = {
+            'bqualsum': 360.0,
+			'mqualsum': 540.0,
+			'depth': 9,
+			'A': {
+                'baseq': [40, 40, 40, 40, 40, 40, 40, 40],
+                'mapq': [60, 60, 60, 60, 60, 60, 60, 60]
+            },
+            'C': {
+                'baseq': [40],
+                'mapq': [60]
+            }
+        }
+        r = self._C( stats, 25, 100000, 10, 0.8 )
+        eq_( ('A', 8), r )
+
+    def test_example_2( self ):
+        # Should call a D,3
+        stats = {
+			'bqualsum': 128.0,
+			'mqualsum': 660.0,
+			'depth': 11,
+            'A': {
+                'baseq': [40],
+                'mapq': [60]
+            },
+			'G': {
+                'baseq': [1, 1, 1, 1, 40],
+                'mapq': [60, 60, 60, 60, 60]
+            },
+			'T': {
+                'baseq': [40, 1, 1, 1, 1],
+                'mapq': [60, 60, 60, 60, 60]
+            }
+        }
+        r = self._C( stats, 25, 10000, 10, 0.8 )
+        eq_( ('D',3), r )
+
+    def test_removes_N_and_updates_totaldepth( self ):
+        # Bug: Returned None,0 instead of A,1
+        # because when N was removed from the stats2 it was not
+        # updating the total depth as well
+        stats = {
+            'bqualsum': 50.0,
+			'mqualsum': 660.0,
+			'depth': 11,
+			'C': {
+                'baseq': [40],
+                'mapq': [60]
+            },
+			'T': {
+                'baseq': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                'mapq': [60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+            }
+        }
+        r = self._C( stats, 25, 100000, 10, 0.8 )
+        eq_( ('C',1), r )
+
 class TestUnitCallOnPct(Base):
     def _C( self, stats, minth ):
         from base_caller import call_on_pct
@@ -194,7 +254,13 @@ class TestUnitCallOnPct(Base):
         r = self._C( stats, 0.8 )
         eq_( ('G',76), r )
 
-@attr('current')
+def eqs_( v1, v2, msg=None ):
+    ''' Just run str on v1 and v2 and compare and use eq then '''
+    if msg:
+        eq_( str(v1), str(v2), msg )
+    else:
+        eq_( str(v1), str(v2) )
+
 @patch('base_caller.stats')
 class TestUnitGenerateVcfRow(Base):
     def _C( self, bam, regionstr, refseq, minbq, maxd, mind, minth ):
@@ -213,19 +279,19 @@ class TestUnitGenerateVcfRow(Base):
     def test_regionstr_not_1( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:3-3', 'ACGT'*100, 25, 1000, 10, 0.8 )
-        eq_( 70, r.info['DP'] )
+        eqs_( 100, r.INFO['DP'] )
 
     def test_depth_set( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
-        eq_( 100, r.info['DP'] )
+        eqs_( 100, r.INFO['DP'] )
 
     def test_refstats_set( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
-        eq_( 10, r.info['RC'] )
-        eq_( 10, r.info['PRC'] )
-        eq_( 40, r.info['ARQ'] )
+        eqs_( 10, r.INFO['RC'] )
+        eqs_( 10, r.INFO['PRC'] )
+        eqs_( 40, r.INFO['RAQ'] )
 
     def test_calledbase_amb( self, mock_stats ):
         base_stats = {
@@ -236,12 +302,19 @@ class TestUnitGenerateVcfRow(Base):
         }
         stats = self.make_stats( base_stats )
         mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 100, 0.8 )
-        eq_( [60,21,9], r.info['AC'] )
-        eq_( [60,21,10], r.info['PAC'] )
-        eq_( [40,38,37], r.info['AAQ'] )
+        with patch( 'base_caller.info_stats' ) as info_stats:
+            info_stats.return_value = {
+                'AC':[60,21,9],
+                'PAC':[60,21,10],
+                'AAQ':[40,38,37],
+                'bases': ['G','C','T']
+            }
+            r = self._C( '', 'ref:1-1', 'A', 25, 1000, 100, 0.8 )
+        eq_( [60,21,9], r.INFO['AC'] )
+        eq_( [60,21,10], r.INFO['PAC'] )
+        eq_( [40,38,37], r.INFO['AAQ'] )
         eq_( ['G','C','T'], r.ALT )
-        eq_( 'S', r.info['CB'] )
+        eq_( 'S', r.INFO['CB'] )
 
     def test_alternatestats_same_order( self, mock_stats ):
         base_stats = {
@@ -252,49 +325,76 @@ class TestUnitGenerateVcfRow(Base):
         }
         stats = self.make_stats( base_stats )
         mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
-        eq_( [60,20,10], r.info['AC'] )
-        eq_( [60,20,10], r.info['PAC'] )
-        eq_( [40,38,37], r.info['AAQ'] )
+        with patch( 'base_caller.info_stats' ) as info_stats:
+            info_stats.return_value = {
+                'AC':[60,20,10],
+                'PAC':[60,20,10],
+                'AAQ':[40,38,37],
+                'bases': ['G','C','T']
+            }
+            r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( [60,20,10], r.INFO['AC'] )
+        eq_( [60,20,10], r.INFO['PAC'] )
+        eq_( [40,38,37], r.INFO['AAQ'] )
         eq_( ['G','C','T'], r.ALT )
 
-    def test_alternatestats_multiple_set( self, mock_stats ):
+    def test_ensure_values_rounded( self, mock_stats ):
+        base_stats = {
+            'G': { 'baseq': [38]*17+[39]*16 },
+            'A': { 'baseq': [30]*33 },
+            'T': { 'baseq': [33]*16 + [35]*17 } # Hopefully avg qual will be 33.33 and depth is 33% too
+        }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = self.mock_stats()
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
-        eq_( [70,10,10], r.info['AC'] )
-        eq_( [70,10,10], r.info['PAC'] )
-        eq_( [40,40,40], r.info['AAQ'] )
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'T', 25, 100, 10, 0.8 )
+        eqs_( 33, r.INFO['RC'] )
+        eqs_( 34, r.INFO['RAQ'] )
+        eqs_( 33, r.INFO['PRC'] )
+        bases = r.ALT
+        ac = r.INFO['AC']
+        aaq = r.INFO['AAQ']
+        pac = r.INFO['PAC']
+        altinfo = dict( zip( bases, zip( ac, aaq, pac ) ) )
+        eqs_( 33, altinfo['G'][0] )
+        eqs_( 38, altinfo['G'][1] )
+        eqs_( 33, altinfo['G'][2] )
+        eqs_( 33, altinfo['A'][0] )
+        eqs_( 30, altinfo['A'][1] )
+        eqs_( 33, altinfo['A'][2] )
 
     def test_alternatestats_single_set( self, mock_stats ):
         base_stats = {
-            'G': { 'baseq': [40]*80 },
+            'G': { 'baseq': [40]*90 },
             'A': { 'baseq': [40]*10 },
         }
         stats = self.make_stats( base_stats )
         mock_stats.return_value = stats
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
-        eq_( [80], r.info['AC'] )
-        eq_( [80], r.info['PAC'] )
-        eq_( [40], r.info['AAQ'] )
+        eq_( [90], r.INFO['AC'] )
+        eq_( [90], r.INFO['PAC'] )
+        eq_( [40], r.INFO['AAQ'] )
 
     def test_calledbase_set( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
-        eq_( 'G', r.info['CB'] )
+        eq_( 'G', r.INFO['CB'] )
 
     def test_calledbasedepth_set( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
-        eq_( 70, r.info['CBD'] )
+        eqs_( 70, r.INFO['CBD'] )
 
     def test_fields_set_multiple( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        # So we can check the ordering is correct
+        info_stats = {'AC':[1,2,3],'AAQ':[4,5,6],'PAC':[7,8,9],'bases':['A','C','G']}
+        with patch('base_caller.info_stats') as info_stats:
+            info_stats.return_value = info_stats
+            r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 'ref', r.CHROM )
-        eq_( 1, r.POS )
-        eq_( 'A', r.REF )
-        eq_( ['G','C','T'], r.ALT )
+        eqs_( 1, r.POS )
+        eqs_( 'A', r.REF )
+        eq_( info_stats['bases'], r.ALT )
 
     def test_fields_set_single( self, mock_stats ):
         base_stats = {
@@ -305,7 +405,7 @@ class TestUnitGenerateVcfRow(Base):
         mock_stats.return_value = stats
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 'ref', r.CHROM )
-        eq_( 1, r.POS )
+        eqs_( 1, r.POS )
         eq_( 'A', r.REF )
         eq_( ['G'], r.ALT )
 
@@ -356,6 +456,18 @@ class TestUnitInfoStats(Base):
             self.stats2['depth'] = len(s['baseq'])
             self.stats2[b] = s.copy()
 
+    def test_empty_result( self ):
+        self.stats2 = {
+            'mqualsum': 4000,
+            'bqualsum': 6000,
+            'depth': 100,
+            'A': {
+                'baseq': [40]*100,
+            }
+        }
+        r = self._C( self.stats2, 'A' )
+        eq_( {'bases':[], 'AAQ': [], 'AC': [], 'PAC': []}, r )
+
     def test_excludes_keys( self ):
         self.stats2 = {}
         self.stats2['mqualsum'] = 1
@@ -387,22 +499,70 @@ class TestUnitInfoStats(Base):
         eq_( [40]*4, r['AAQ'] )
         eq_( ['A','C','N','T'], r['bases'] )
 
-class TestIntegrate(Base):
+class TestUnitGenerateVCF(Base):
     def setUp( self ):
-        super( TestIntegrate, self ).setUp()
+        super( TestUnitGenerateVCF, self ).setUp()
         fixpath = join( fixtures.THIS, 'fixtures', 'base_caller' )
         self.bam = join( fixpath, 'test.bam' )
+        self.bai = join( fixpath, 'test.bam.bai' )
         self.ref = join( fixpath, 'testref.fasta' )
         self.sam = join( fixpath, 'test.sam' )
         self.vcf = join( fixpath, 'test.vcf' )
         self.template = join( fixpath, 'template.vcf' )
 
-    def _C1( self, bamfile, reffile, regionstr, vcf_output_file, 
-            minbq, maxd, vcf_template, mind=10, minth=10 ):
-        from base_caller import generate_vcf
+    def _C1( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, vcf_template=None ):
+        from base_caller import generate_vcf, VCF_HEAD
+        if vcf_template is None:
+            template = VCF_HEAD.format(basename(bamfile))
+        else:
+            template = vcf_template
         return generate_vcf( bamfile, reffile, regionstr, vcf_output_file, 
-                minbq, maxd, vcf_template, mind=10, minth=10 ) 
+                minbq, maxd, mind, minth, vcf_template=template ) 
 
+    def cmp_files( self, f1, f2 ):
+        import subprocess
+        try:
+            assert exists( f1 ), "{} doesn't exist".format(f1)
+            assert exists( f2 ), "{} doesn't exist".format(f2)
+            subprocess.check_output( 'diff {} {}'.format(f1, f2), shell=True )
+            return True
+        except subprocess.CalledProcessError as e:
+            print e
+            print e.output
+            return False
+
+    def test_correct_vcf( self ):
+        import filecmp
+        out_vcf = join( self.tempdir, 'out.vcf' )
+        r = self._C1( self.bam, self.ref, None, out_vcf, 25, 100, 10, 0.8 )
+        assert self.cmp_files( self.vcf, out_vcf )
+        eq_( out_vcf, r )
+
+    def print_files( self, f1, f2 ):
+        print open(f1).read()
+        print open(f2).read()
+
+    def test_default_outfile( self ):
+        import filecmp
+        import shutil
+        tbam = join( self.tempdir, basename(self.bam) )
+        tbai = tbam + '.bai'
+        shutil.copy( self.bam, tbam )
+        shutil.copy( self.bai, tbai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        r = self._C1( tbam, self.ref, None, None, 25, 100, 10, 0.8 )
+        assert self.cmp_files( self.vcf, out_vcf )
+        eq_( out_vcf, r )
+
+class TestUnitMain(Base):
+    def test_implmement(self):
+        assert False, "Make these tests"
+
+class TestIntegrate(Base):
+    def test_implmement(self):
+        assert False, "Make these tests"
+
+'''
     def _C( self, bamfile, reffile, regionstr, vcf_output_file, 
             minbq, maxd, mind=10, minth=10 ):
         import subprocess
@@ -417,18 +577,4 @@ class TestIntegrate(Base):
         cmd = [str(x) for x in cmd]
         print cmd
         return subprocess.call( cmd )
-
-    def test_correct_vcf( self ):
-        import filecmp
-        out_vcf = join( self.tempdir, 'out.vcf' )
-        r = self._C( self.bam, self.ref, None, out_vcf, 25, 100, 10, 0.8 )
-        assert filecmp.cmp( self.vcf, out_vcf, False ), "Outputted VCF was not the same as expected VCF"
-
-    def test_default_outfile( self ):
-        import filecmp
-        import shutil
-        tbam = join( self.tempdir, self.bam )
-        shutil.copy( self.bam, tbam )
-        out_vcf = join( self.tempdir, tbam + '.vcf' )
-        r = self._C( tbam, self.ref, None, None, 25, 100, 10, 0.8 )
-        assert filecmp.cmp( self.vcf, out_vcf, False ), "Outputted VCF was not the same as expected VCF"
+'''

@@ -8,19 +8,21 @@ import re
 import pysam
 from Bio import SeqIO
 from StringIO import StringIO
+import vcf
+from os.path import basename
 
 # The header for the vcf
 VCF_HEAD = '''##fileformat=VCFv4.2
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
 ##INFO=<ID=RC,Number=1,Type=Integer,Description="Reference Count">
-##INFO=<ID=ARQ,Number=1,Type=Float,Description="Average Reference Quality">
+##INFO=<ID=RAQ,Number=1,Type=Integer,Description="Reference Average Quality">
 ##INFO=<ID=PRC,Number=1,Type=Integer,Description="Percentage Reference Count">
 ##INFO=<ID=AC,Number=A,Type=Integer,Description="Alternative Alternate Count">
-##INFO=<ID=AAQ,Number=A,Type=Float,Description="Alternate Average Quality">
+##INFO=<ID=AAQ,Number=A,Type=Integer,Description="Alternate Average Quality">
 ##INFO=<ID=PAC,Number=A,Type=Integer,Description="Percentage Alternate Count">
 ##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
 ##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT'''
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{}'''
 
 def main( args ):
     generate_vcf(
@@ -162,10 +164,10 @@ def label_N( stats, minbq ):
                 # adds the N to the nucleotides (A C G T and N)
                 if k not in stats2:
                     stats2[k] = {'baseq':[]}
-                stats2[k] ['baseq'].append( q )
+                stats2[k]['baseq'].append( q )
     return stats2
 
-def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf_template, mind=10, minth=0.8 ):
+def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, vcf_template=VCF_HEAD ):
     '''
         Generates a vcf file from a given vcf_template file
 
@@ -181,33 +183,38 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, vcf
 
         @returns path to vcf_output_file
     '''
-    import vcf
     refseqs = SeqIO.index( reffile, 'fasta' )
     # Do all references
     if regionstr is None:
-        regions = [(r,1,len(seq.seq)) for r,seq in refseqs]
+        regions = [(r,1,len(seq.seq)) for r,seq in refseqs.iteritems()]
     else: # Do only single reference
         region = parse_regionstring( regionstr )
         regions = [region]
     # Our pretend file object that has vcf stuff in it
-    vcf_head = StringIO( VCF_HEAD )
+    vcf_head = StringIO( vcf_template )
     vcf_head.name = 'header.vcf'
+    # Where to write the output file to
+    if vcf_output_file is None:
+        output_path = bamfile + '.vcf'
+    else:
+        output_path = vcf_output_file
     # The vcf writer object
-    out_vcf = vcf.Writer( open( vcf_output_file, 'w' ), 
+    out_vcf = vcf.Writer( open( output_path, 'w' ), 
                             template = vcf.Reader( vcf_head )
     )
     # Loop through all the positions in regionstr
     for ref, start, end in regions:
         for i in range( start, end+1 ):
             # Generate the new region string
-            regionstr = region[0] + ':' + str(i) + '-' + str(i)
-            refseq = refseqs[region[0]]
+            regionstr = ref + ':' + str(i) + '-' + str(i)
+            refseq = refseqs[ref]
             # Probably inefficient that we are sending in the bamfile that has to be opened over and
             # over, but for now we will do that
-            row = generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind, minth )
-            out_vcf.write( row )
+            row = generate_vcf_row( bamfile, regionstr, refseq.seq, minbq, maxd, mind, minth )
+            out_vcf.write_record( row )
+    out_vcf.close()
 
-    return vcf_output_file
+    return output_path
 
 # Exception for when invalid region strings are given
 class InvalidRegionString(Exception): pass
@@ -245,10 +252,11 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
 
         @returns a vcf.model._Record
     '''
-    s = stats( bamfile, regionstr, minbq, maxd, minmq=0 )
+    s = stats( bamfile, regionstr, minmq=0, minbq=0, maxd=maxd )
     stats2 = label_N( s, minbq )
 
     # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
+    '''
     info = {
         'DP': 0,
         'RC': 0,
@@ -258,11 +266,15 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
         'AAQ': 0,
         'PAC': 0,
         'CB': 0,
-        'CBQ': 0,
+        'CBD': 0,
     }
+    '''
+    info = {}
 
     # Parse the region string into refname, start, stop
     r = parse_regionstring(regionstr)
+    # The base position should be the same as the second item in the parsed region string
+    start = r[1]
     # Get the reference base from the reference sequence
     # Python is 0-index, biology is 1 index
     rb = refseq[r[1]-1]
@@ -273,17 +285,18 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     # Reference Count is length of the base qualities list
     info['RC'] = len(refstats['baseq'])
     # Reference Average Quality is the sum of base qualities / length
-    info['RAQ'] = sum(refstats['baseq']) / len(refstats['baseq'])
+    info['RAQ'] = int( round( sum(refstats['baseq']) / float(len(refstats['baseq'])), 0 ) )
     # Percentage Reference Count is len of qualities / depth
-    info['PRC'] = len(refstats['baseq']) / stats2['depth']
+    info['PRC'] = int( round( (100.0 * len(refstats['baseq'])) / float(stats2['depth']), 0 ) )
 
     # Alternate info
-    alt_info = info_stats( stats2, rb )
+    alt_info = info_stats( s, rb )
     alt_bases = alt_info['bases']
-    del alt_info['bases']
-    
-    # Merge existing info, with alt_info
-    info.update( alt_info )
+    # Only merge if there is something to merge
+    if alt_info['bases'] != []:
+        del alt_info['bases']
+        # Merge existing info, with alt_info
+        info.update( alt_info )
 
     # Get Called Base Info
     cb, cbd = caller( s, minbq, maxd, mind, minth )
@@ -293,7 +306,7 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     info['CBD'] = cbd
 
     # need to record each line of the vcf file.
-    record = vcf._Record( r[0], start, None, rb, alt_bases, None, None, info, None )
+    record = vcf.model._Record( r[0], start, None, rb, alt_bases, None, None, info, None, None )
 
     return record
 
@@ -320,6 +333,8 @@ def caller( stats, minbq, maxd, mind=10, minth=0.8 ):
     # if the depth is >= min depth then just remove the N's
     if stats2['depth'] >= mind:
         if 'N' in stats2:        
+            # Need to update the total depth when we remove N
+            stats2['depth'] -= len (stats2['N']['baseq'] )
             del stats2['N']
     else:
         # Else we will determine if the N's are the majority now
@@ -331,7 +346,7 @@ def caller( stats, minbq, maxd, mind=10, minth=0.8 ):
                 return ('N', nlen)
     return call_on_pct(stats2, minth)
 
-def call_on_pct( stats, minth=0.8 ):
+def call_on_pct( stats2, minth=0.8 ):
     '''
         Calls a base from the given stats dictionary if it is the majority. A majority base is
         any base where it is in %total >= minth.
@@ -347,13 +362,13 @@ def call_on_pct( stats, minth=0.8 ):
     '''
     nt_list = ''
     count = 0
-    for base, quals in stats.iteritems():
+    for base, quals in stats2.iteritems():
         # Only interested in base stats in this loop
         if base not in ('depth','mqualsum','bqualsum'):
             # Quick alias for quals['baseq']
             bquals = quals['baseq']    
             # Percentage of current base compared to total depth
-            np_2 = len(bquals)/(stats['depth']*1.0)
+            np_2 = len(bquals)/(stats2['depth']*1.0)
             # fix for proper calculations with float
             # If basepercent is greater than minimum threashold
             if np_2 > round((1-minth),1):
@@ -362,7 +377,7 @@ def call_on_pct( stats, minth=0.8 ):
     dnalist = sorted(nt_list)
     return (iupac_amb(dnalist), count)
 
-def info_stats( stats2, rb):
+def info_stats( stats, rb):
     '''
         Returns a dictionary that can be used to fill in the info field of a vcf record
         The returned dictionary will contain the AC(Alternate Count), AAQ(Alternate Average Quality)
@@ -374,7 +389,7 @@ def info_stats( stats2, rb):
         bases should be the ordered list of bases for each item in AC,AAQ, PAC such that
         zip( bases, AC/AAQ/PAC ) would work as expected
     
-        @param stats2 - label_N version of stats dictionary
+        @param stats - stats dictionary(should accept either stats or stats2)
         @param rb - Reference base to ignore in the outputted dictionary
 
         @returns info dictionary with AC,AAQ, PAC and bases keys filled out
@@ -384,19 +399,19 @@ def info_stats( stats2, rb):
         'AAQ' : [],
         'PAC' : [],
         'bases' : []
-        }
+    }
 
      # the alternitive base = ab
     alt_nt = []
-    for base, quals in stats2.iteritems():
+    for base, quals in stats.iteritems():
         if base  not in ('depth','mqualsum','bqualsum',rb):
             # identify the alternitive bases in stats 2        
             # data for the alternitive count
             info['AC'].append(len(quals['baseq']))
             # data for the alternitive avarage quality
-            info['AAQ'].append(sum(quals['baseq'])/len(quals['baseq']))
+            info['AAQ'].append(int(round((sum(quals['baseq'])*1.0)/len(quals['baseq']))))
             # data for the percentage reference count
-            info['PAC'].append(round((len(quals['baseq'])*100.0)/(stats2['depth'])))
+            info['PAC'].append(int(round((len(quals['baseq'])*100.0)/(stats['depth']))))
             # base data
             info['bases'].append(base)
                                      

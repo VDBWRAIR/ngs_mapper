@@ -1,7 +1,7 @@
 ##fileformat=VCFv4.2
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
 ##INFO=<ID=RC,Number=1,Type=Integer,Description="Reference Count">
-##INFO=<ID=ARQ,Number=1,Type=Integer,Description="Average Reference Quality">
+##INFO=<ID=RAQ,Number=1,Type=Integer,Description="Reference Average Quality">
 ##INFO=<ID=PRC,Number=1,Type=Integer,Description="Percentage Reference Count">
 ##INFO=<ID=AC,Number=A,Type=Integer,Description="Alternative Alternate Count">
 ##INFO=<ID=AAQ,Number=A,Type=Integer,Description="Alternate Average Quality">
@@ -9,19 +9,19 @@
 ##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
 ##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	test.bam
-Ref1    1   .   A   .   60  PASS    DP=9;RC=9;ARQ=40;PRC=100;CBD=9;CB=A
-Ref1    2   .   C   A   60  PASS    DP=9;RC=2;ARQ=40;PRC=22;AC=7;AAQ=40;PAC=78;CBD=7;CB=A
-Ref1    3   .   G   A   60  PASS    DP=9;RC=3;ARQ=40;PRC=33;AC=6;AAQ=40;PAC=67;CBD=6;CB=A
-Ref1    4   .   T   A,G 60  PASS    DP=9;RC=1;ARQ=40;PRC=11;AC=4,4;AAQ=40,40;PAC=44,44;CBD=8;CB=R
-Ref1    5   .   A   T,G 60  PASS    DP=9;RC=1;ARQ=40;PRC=11;AC=4,4;AAQ=11,11;PAC=44,44;CBD=6;CB=N
-Ref1    6   .   C   T 60  PASS    DP=9;RC=1;ARQ=40;PRC=11;AC=8;AAQ=11;PAC=89;CBD=8;CB=N
-Ref1    7   .   G   . 60  PASS    DP=9;RC=9;ARQ=40;PRC=100;CBD=9;CB=G
-Ref1    8   .   T   . 60  PASS    DP=9;RC=9;ARQ=40;PRC=100;CBD=9;CB=T
-Ref2    1   .   A   .   60  PASS    DP=11;RC=11;ARQ=40;PRC=100;CBD=11;CB=A
-Ref2    2   .   C   A   60  PASS    DP=11;RC=2;ARQ=40;PRC=18;AC=9;AAQ=40;PAC=82;CBD=9;CB=A
-Ref2    3   .   G   A   60  PASS    DP=11;RC=3;ARQ=40;PRC=27;AC=8;AAQ=40;PAC=73;CBD=11;CB=R
-Ref2    4   .   T   A,G 60  PASS    DP=11;RC=1;ARQ=40;PRC=9;AC=5,5;AAQ=40,40;PAC=45,45;CBD=10;CB=R
-Ref2    5   .   A   T,G 60  PASS    DP=11;RC=1;ARQ=40;PRC=9;AC=5,5;AAQ=9,9;PAC=45,45;CBD=1;CB=A
-Ref2    6   .   C   T 60  PASS    DP=11;RC=1;ARQ=40;PRC=9;AC=10;AAQ=11;PAC=91;CBD=1;CB=C
-Ref1    7   .   G   . 60  PASS    DP=11;RC=11;ARQ=40;PRC=100;CBD=11;CB=G
-Ref1    8   .   T   . 60  PASS    DP=11;RC=11;ARQ=40;PRC=100;CBD=11;CB=T
+Ref1	1	.	A		.	.	DP=9;RC=9;RAQ=40;PRC=100;CBD=9;CB=A
+Ref1	2	.	C	A	.	.	DP=9;RC=1;RAQ=40;PRC=11;AC=8;AAQ=40;PAC=89;CBD=8;CB=A
+Ref1	3	.	G	A	.	.	DP=9;RC=3;RAQ=40;PRC=33;AC=6;AAQ=40;PAC=67;CBD=9;CB=R
+Ref1	4	.	T	A,G	.	.	DP=9;RC=1;RAQ=40;PRC=11;AC=4,4;AAQ=40,40;PAC=44,44;CBD=8;CB=R
+Ref1	5	.	A	G,T	.	.	DP=9;RC=1;RAQ=40;PRC=11;AC=4,4;AAQ=11,11;PAC=44,44;CBD=6;CB=N
+Ref1	6	.	C	T	.	.	DP=9;RC=1;RAQ=40;PRC=11;AC=8;AAQ=1;PAC=89;CBD=8;CB=N
+Ref1	7	.	G		.	.	DP=9;RC=9;RAQ=40;PRC=100;CBD=9;CB=G
+Ref1	8	.	T		.	.	DP=9;RC=9;RAQ=40;PRC=100;CBD=9;CB=T
+Ref2	1	.	A		.	.	DP=11;RC=11;RAQ=40;PRC=100;CBD=11;CB=A
+Ref2	2	.	C	A	.	.	DP=11;RC=2;RAQ=40;PRC=18;AC=9;AAQ=40;PAC=82;CBD=9;CB=A
+Ref2	3	.	G	A	.	.	DP=11;RC=3;RAQ=40;PRC=27;AC=8;AAQ=40;PAC=73;CBD=11;CB=R
+Ref2	4	.	T	A,G	.	.	DP=11;RC=1;RAQ=40;PRC=9;AC=5,5;AAQ=40,40;PAC=45,45;CBD=10;CB=R
+Ref2	5	.	A	G,T	.	.	DP=11;RC=1;RAQ=40;PRC=9;AC=5,5;AAQ=9,9;PAC=45,45;CBD=3;CB=D
+Ref2	6	.	C	T	.	.	DP=11;RC=1;RAQ=40;PRC=9;AC=10;AAQ=1;PAC=91;CBD=1;CB=C
+Ref2	7	.	G		.	.	DP=11;RC=11;RAQ=40;PRC=100;CBD=11;CB=G
+Ref2	8	.	T		.	.	DP=11;RC=11;RAQ=40;PRC=100;CBD=11;CB=T
