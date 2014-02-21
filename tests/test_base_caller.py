@@ -1,9 +1,12 @@
 import common
+import fixtures
+
 from nose.tools import eq_, raises
 from nose.plugins.attrib import attr
 from mock import patch, Mock, MagicMock
+
+from StringIO import StringIO
 from os.path import join, dirname, basename, exists
-import fixtures
 
 class Base( common.BaseClass ):
     def mock_stats( self ):
@@ -499,9 +502,9 @@ class TestUnitInfoStats(Base):
         eq_( [40]*4, r['AAQ'] )
         eq_( ['A','C','N','T'], r['bases'] )
 
-class TestUnitGenerateVCF(Base):
+class BaseInty(Base):
     def setUp( self ):
-        super( TestUnitGenerateVCF, self ).setUp()
+        super( BaseInty, self ).setUp()
         fixpath = join( fixtures.THIS, 'fixtures', 'base_caller' )
         self.bam = join( fixpath, 'test.bam' )
         self.bai = join( fixpath, 'test.bam.bai' )
@@ -510,14 +513,9 @@ class TestUnitGenerateVCF(Base):
         self.vcf = join( fixpath, 'test.vcf' )
         self.template = join( fixpath, 'template.vcf' )
 
-    def _C1( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, vcf_template=None ):
-        from base_caller import generate_vcf, VCF_HEAD
-        if vcf_template is None:
-            template = VCF_HEAD.format(basename(bamfile))
-        else:
-            template = vcf_template
-        return generate_vcf( bamfile, reffile, regionstr, vcf_output_file, 
-                minbq, maxd, mind, minth, vcf_template=template ) 
+    def print_files( self, f1, f2 ):
+        print open(f1).read()
+        print open(f2).read()
 
     def cmp_files( self, f1, f2 ):
         import subprocess
@@ -529,42 +527,65 @@ class TestUnitGenerateVCF(Base):
         except subprocess.CalledProcessError as e:
             print e
             print e.output
+            print open(f2).read()
             return False
 
-    def test_correct_vcf( self ):
-        import filecmp
-        out_vcf = join( self.tempdir, 'out.vcf' )
-        r = self._C1( self.bam, self.ref, None, out_vcf, 25, 100, 10, 0.8 )
-        assert self.cmp_files( self.vcf, out_vcf )
-        eq_( out_vcf, r )
-
-    def print_files( self, f1, f2 ):
-        print open(f1).read()
-        print open(f2).read()
-
-    def test_default_outfile( self ):
-        import filecmp
+    def temp_bam( self, bam, bai ):
         import shutil
         tbam = join( self.tempdir, basename(self.bam) )
         tbai = tbam + '.bai'
         shutil.copy( self.bam, tbam )
         shutil.copy( self.bai, tbai )
-        out_vcf = join( self.tempdir, tbam + '.vcf' )
-        r = self._C1( tbam, self.ref, None, None, 25, 100, 10, 0.8 )
+        return tbam, tbai
+
+@attr('current')
+class TestUnitGenerateVCF(BaseInty):
+    def _C( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, vcf_template=None ):
+        from base_caller import generate_vcf, VCF_HEAD
+        if vcf_template is None:
+            template = VCF_HEAD.format(basename(bamfile))
+        else:
+            template = vcf_template
+        return generate_vcf( bamfile, reffile, regionstr, vcf_output_file, 
+                minbq, maxd, mind, minth, vcf_template=template ) 
+
+    def test_correct_vcf( self ):
+        out_vcf = join( self.tempdir, 'out.vcf' )
+        r = self._C( self.bam, self.ref, None, out_vcf, 25, 100, 10, 0.8 )
         assert self.cmp_files( self.vcf, out_vcf )
         eq_( out_vcf, r )
 
-class TestUnitMain(Base):
-    def test_implmement(self):
-        assert False, "Make these tests"
+    def test_default_outfile( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        r = self._C( tbam, self.ref, None, None, 25, 100, 10, 0.8 )
+        assert self.cmp_files( self.vcf, out_vcf )
+        eq_( out_vcf, r )
 
-class TestIntegrate(Base):
-    def test_implmement(self):
-        assert False, "Make these tests"
+class TestUnitMain(BaseInty):
+    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8 ):
+        from base_caller import main
+        args = Mock(
+            bamfile=bamfile,
+            reffile=reffile,
+            vcf_output_file=vcf_output_file,
+            regionstr=regionstr,
+            minbq=minbq,
+            maxd=maxd,
+            mind=mind,
+            minth=minth
+        )        
+        return main( args )
 
-'''
-    def _C( self, bamfile, reffile, regionstr, vcf_output_file, 
-            minbq, maxd, mind=10, minth=10 ):
+    def test_runs( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        r = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
+        assert self.cmp_files( self.vcf, out_vcf )
+
+@attr('current')
+class TestIntegrate(BaseInty):
+    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8 ):
         import subprocess
         script_path = join( dirname( dirname( __file__ ) ) )
         script_path = join( script_path, 'base_caller.py' )
@@ -575,6 +596,27 @@ class TestIntegrate(Base):
             cmd += ['-o', vcf_output_file]
         cmd += ['-minbq', minbq, '-maxd', maxd, '-mind', mind, '-minth', minth]
         cmd = [str(x) for x in cmd]
-        print cmd
-        return subprocess.call( cmd )
-'''
+        #print cmd
+        return subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+    def test_outputs_correct_vcf_1( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        p = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
+        o,e = p.communicate()
+        assert self.cmp_files( self.vcf, out_vcf )
+
+    def test_stdouterr_ok( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        p = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
+
+        o,e = p.communicate()
+        print "STDOUT"
+        print o
+        print "STDERR"
+        print e
+        assert e==o==''
+
+        assert self.cmp_files( self.vcf, out_vcf )
+

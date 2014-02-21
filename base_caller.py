@@ -32,9 +32,9 @@ def main( args ):
         args.vcf_output_file,
         args.minbq,
         args.maxd,
-        VCF_HEAD,
         args.mind,
-        args.minth
+        args.minth,
+        VCF_HEAD.format(basename(args.bamfile)),
     )
 
 def parse_args( args=sys.argv[1:] ):
@@ -252,6 +252,7 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
 
         @returns a vcf.model._Record
     '''
+    from collections import OrderedDict
     s = stats( bamfile, regionstr, minmq=0, minbq=0, maxd=maxd )
     stats2 = label_N( s, minbq )
 
@@ -269,6 +270,7 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
         'CBD': 0,
     }
     '''
+    # Holds the info dictionary in order
     info = {}
 
     # Parse the region string into refname, start, stop
@@ -278,6 +280,18 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     # Get the reference base from the reference sequence
     # Python is 0-index, biology is 1 index
     rb = refseq[r[1]-1]
+
+    # Alternate info
+    alt_info = info_stats( s, rb )
+    alt_bases = alt_info['bases']
+    # Only merge if there is something to merge
+    if alt_info['bases'] != []:
+        del alt_info['bases']
+        # Merge existing info, with alt_info
+        info['AC'] = alt_info['AC']
+        info['AAQ'] = alt_info['AAQ']
+        info['PAC'] = alt_info['PAC']
+
     # Total Depth at this position
     info['DP'] = stats2['depth']
     # Quick alias to reference statistics
@@ -288,15 +302,6 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     info['RAQ'] = int( round( sum(refstats['baseq']) / float(len(refstats['baseq'])), 0 ) )
     # Percentage Reference Count is len of qualities / depth
     info['PRC'] = int( round( (100.0 * len(refstats['baseq'])) / float(stats2['depth']), 0 ) )
-
-    # Alternate info
-    alt_info = info_stats( s, rb )
-    alt_bases = alt_info['bases']
-    # Only merge if there is something to merge
-    if alt_info['bases'] != []:
-        del alt_info['bases']
-        # Merge existing info, with alt_info
-        info.update( alt_info )
 
     # Get Called Base Info
     cb, cbd = caller( s, minbq, maxd, mind, minth )

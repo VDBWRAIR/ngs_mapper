@@ -19,15 +19,17 @@ class TestMpileup(Base):
         from samtools import mpileup
         return mpileup( bamfile, regionstr, minmq, minbq, maxd )
 
+    @patch('__builtin__.open')
     @patch('samtools.Popen')
-    def test_unit_popencall( self, popen ):
+    def test_unit_popencall( self, popen, open ):
+        open.return_value = 'null'
         popen.return_value.stdout = 'tested'
         res = self._CM( self.bam, '', 20, 25, 100000 )
         eq_( 'tested', res )
-        popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000',self.bam],stdout=-1)
+        popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000',self.bam],stdout=-1, stderr='null')
         self._CM( self.bam, 'den1:1-5', 20, 25, 100000 )
         eq_( 'tested', res )
-        popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1)
+        popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1, stderr='null')
 
 class TestUnitCharToQual(object):
     def _C( self, qual_char ):
@@ -189,7 +191,6 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( ']]]]]A]]]]]]]]]]]]]]', r._mquals )
         eq_( [], r.mquals )
 
-    @attr('current')
     def test_no_mapping_qualities( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII'
         r = self._C( str )

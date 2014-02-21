@@ -25,7 +25,7 @@ def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
     cmd.append( bamfile )
     # The command will be executed and output sent through the pipe so that it can be iterated
     # over
-    p = Popen( cmd, stdout=PIPE )
+    p = Popen( cmd, stdout=PIPE, stderr=open('/dev/null','w') )
     # Return the stdout file descriptor handle so it can be easily iterated
     return p.stdout
 
