@@ -31,6 +31,7 @@ class TestMpileup(Base):
         eq_( 'tested', res )
         popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1, stderr='null')
 
+
 class TestUnitCharToQual(object):
     def _C( self, qual_char ):
         from samtools import char_to_qual
@@ -241,3 +242,18 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( 'I'*10, r._bquals )
         eq_( ']'*10, r._mquals )
         eq_( 'ANNAAAAA*A', r.bases )
+
+    def test_indel_gt_9( self ):
+        str = 'Ref1	1	N	10	AAAAA-10NNNNNNNNNNAAAAA	IIIIIIIIII	]]]]]]]]]]'
+        r = self._C( str )
+        eq_( 10, r.depth )
+        eq_( 'A'*10, r.bases )
+
+    def test_gap( self ):
+        # Guess gaps don't have quality scores
+        str = 'Ref1	1	N	10	AAAAA-AAAAA	IIIIIIIIII	]]]]]]]]]]'
+        r = self._C( str )
+        eq_( 10, r.depth )
+        eq_( 'I'*10, r._bquals )
+        eq_( ']'*10, r._mquals )
+        eq_( 'A'*10, r.bases )

@@ -90,43 +90,43 @@ class MPileupColumn(object):
         '''
         # Will contain the cleaned base
         cleaned = ''
-        indel = False
-        indel_count = None
-        indel_base = ''
-        for x in self._bases:
-            # If a new insert or delete is starting
-            if x in '+-':
-                indel = x
-                indel_count = None
+        # The counter
+        i = 0
+        # Iterate every position
+        while i < len( self._bases ):
+            x = self._bases[i]
+            # Just skip - and +
+            if x in '-+$':
+                i += 1
                 continue
-            # Only if we are parsing through an indel
-            if indel != False:
-                # Parse the integer of how many bases to chomp
-                if indel in '+-' and indel_count is None:
-                    indel_count = int(x)
-                    continue
-                # We are on a base that needs to be chomped
-                if indel in '+-':
-                    # Chomp the base
-                    if indel_count > 0:
-                        indel_count -= 1
-                        indel_base = x
-                        continue
-                    # Last base in the series
-                    else:
-                        if indel == '+':
-                            # Indel bases do not have base quality nor mapping quality
-                            # so do not include them in self.bases
-                            #cleaned += indel_base
-                            pass
-                        indel = False
-                        indel_count = None
+            # Skip this position and the next quality scores
+            if x == '^':
+                i += 2
+                continue
             # Add any normal base, but make it uppercase
             if x.upper() in ('ACTGN*'):
                 cleaned += x.upper()
+                i += 1
             # . and , mean a match to the reference base
             elif x in ('.,'):
                 cleaned += self.refbase
+                i += 1
+            # We are on an indel number now so can just skip them
+            else:
+                try:
+                    # Build the integer that will tell us how many
+                    # indel bases to skip
+                    n = ''
+                    while True:
+                        # Just try it if it fails the try except will grab it
+                        int(x)
+                        n += x
+                        # Increment i
+                        i += 1
+                        # Get new base
+                        x = self._bases[i]
+                except ValueError as e:
+                    i += int( n )
         return cleaned
 
     @property
