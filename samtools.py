@@ -187,17 +187,19 @@ class MPileupColumn(object):
         '''
         bquals = self.bquals
         mquals = self.mquals
+        bases = self.bases
         bqualsum = float( sum( bquals ) )
         mqualsum = float( sum( mquals ) )
         # Lets just make sure of a few things because samtools mpileup isn't exactly documented the best
         assert len(bquals) == self.depth, "Somehow length of bases != length of Base Qualities"
         depth = self.depth
         stats = {'depth':depth,'mqualsum':mqualsum,'bqualsum':bqualsum}
-        for b,bq,mq in self:
+        for b,bq,mq in itertools.izip_longest( bases, bquals, mquals ):
             if b not in stats:
                 stats[b] = {'baseq':[],'mapq':[]}
             stats[b]['baseq'].append(bq)
             stats[b]['mapq'].append(mq)
+
         return stats
 
     def __str__( self ):
