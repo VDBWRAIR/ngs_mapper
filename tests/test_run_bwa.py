@@ -260,13 +260,23 @@ class TestIntegrateMainArgs(Base):
                 from run_bwa import main
                 return main()
 
+    def _eqsize( self, f1, f2, threshold=100 ):
+        # Just make sure file sizes are relatively similar
+        # threshold size in bytes that they can differ
+        s1 = os.stat( f1 ).st_size
+        s2 = os.stat( f2 ).st_size
+        diff = abs( s1 - s2 )
+        assert diff <= threshold, "Size of {}({}) - {}({}) was greater than threshold of {}".format(
+            f1, s1, f2, s2, threshold
+        )
+
     def test_paired_and_nonpaired_get_merged(self):
         ff = self.fixture_files
         argv = ['expected/reads', ff['REF'], '--keep-temp']
         res = self._CM( argv )
         eq_( 'bwa_mem.bam', res )
-        eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
-        eq_( os.stat(ff['merged.bam.bai']).st_size, os.stat(res+'.bai').st_size )
+        self._eqsize( ff['merged.bam'], res )
+        self._eqsize( ff['merged.bam.bai'], res+'.bai' )
         assert os.path.exists( 'tmpdir1' ), "Did not keep temp directory"
 
     def test_paired_only(self):
@@ -274,7 +284,7 @@ class TestIntegrateMainArgs(Base):
         argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'MiSeq']
         res = self._CM( argv )
         eq_( 'bwa_mem.bam', res )
-        eq_( os.stat(ff['paired.bam']).st_size, os.stat(res).st_size )
+        self._eqsize( ff['paired.bam'], res )
         assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
         assert os.path.exists( 'bwa_mem.bam.bai' )
 
@@ -284,7 +294,7 @@ class TestIntegrateMainArgs(Base):
         argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'Sanger']
         res = self._CM( argv )
         eq_( 'bwa_mem.bam', res )
-        eq_( os.stat(ff['nonpaired.bam']).st_size, os.stat(res).st_size )
+        self._eqsize( ff['nonpaired.bam'], res )
         assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
         assert os.path.exists( 'bwa_mem.bam.bai' )
 
@@ -293,7 +303,7 @@ class TestIntegrateMainArgs(Base):
         argv = ['expected/reads', self.fixture_files['REF'], '-o', 'merged.bam']
         res = self._CM( argv )
         eq_( 'merged.bam', res )
-        eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
+        self._eqsize( ff['merged.bam'], res )
         assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
         assert os.path.exists( 'merged.bam.bai' )
 
@@ -302,7 +312,7 @@ class TestIntegrateMainArgs(Base):
         argv = ['expected/reads', self.fixture_files['REF'], '-o', 'merged.bam', '--keep-temp']
         res = self._CM( argv )
         eq_( 'merged.bam', res )
-        eq_( os.stat(ff['merged.bam']).st_size, os.stat(res).st_size )
+        self._eqsize( ff['merged.bam'], res )
         assert os.path.exists( 'tmpdir1' ), "Temp directory still exists"
         assert os.path.exists( 'merged.bam.bai' )
 

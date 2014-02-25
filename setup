@@ -16,7 +16,8 @@ deactivate 2>/dev/null
 
 # Activate vdbapps for now, but soon we will remove this in favor
 # of git submodules for all the necessary apps
-#. /home/EIDRUdata/programs/vdbapps/bin/activate
+# This is required for pyBWA, biopython, numpy
+. /home/EIDRUdata/programs/vdbapps/bin/activate
 
 # Run the installer just to make sure
 sh ${THIS}/install.sh

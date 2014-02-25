@@ -134,8 +134,14 @@ class TestFunctional(Base):
 
     def _ensure_expected_output_files( self, outdir, prefix ):
         efiles = self._expected_files( outdir, prefix )
-        for ef in efiles:
-            print os.listdir( outdir )
+        ef = set( efiles )
+        rf = set( [join(outdir,f) for f in os.listdir( outdir )] )
+        print "Files missing from project:"
+        print ef - rf
+        print "Extra files in project:"
+        print rf - ef
+        eq_( ef, rf )
+        for ef in efiles:     
             assert isfile( ef ), "{} was not created".format(ef)
             assert os.stat( ef ).st_size > 0, "{} was not > 0 bytes".format(ef)
 
@@ -150,9 +156,8 @@ class TestFunctional(Base):
         efiles.append( bamfile + '.consensus.fastq' )
         efiles.append( join( outdir, 'bwa.log' ) )
         efiles.append( join( outdir, 'flagstats.txt' ) )
-        varsuffixes = ('variants.failed.log', 'variants.filter.vcf', 'variants.indel.filter.vcf', 'variants.indel.raw.vcf', 'variants.raw.vcf')
-        for v in varsuffixes:
-            efiles.append( join( outdir, v ) )
+        efiles.append( join( outdir, prefix + '.log' ) )
+        efiles.append( bamfile + '.vcf' )
 
         return efiles
 
@@ -172,11 +177,12 @@ class TestFunctional(Base):
         print out
         self._ensure_expected_output_files( 'outdir', 'tests' )
 
+    @attr('current')
     def test_outdir_not_exist( self ):
         assert not isdir( 'outdir' )
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
-        eq_( 0, ret )
         print out
+        eq_( 0, ret )
         assert isdir( 'outdir' )
         self._ensure_expected_output_files( 'outdir', 'tests' )
 

@@ -249,6 +249,24 @@ class TestUnitCallOnPct(Base):
         r = self._C( stats, 0.8 )
         eq_( ('G',76), r )
 
+    def test_empty_stats_returns_n_zero( self ):
+        stats = {}
+        r = self._C( stats, 0.8 )
+        eq_( ('N',0), r )
+
+    def test_no_majority_returns_n_zero( self ):
+        stats = {
+            'A': { 'baseq': [40]*19 },
+            'C': { 'baseq': [40]*19 },
+            'G': { 'baseq': [40]*19 },
+            'T': { 'baseq': [40]*19 },
+            'N': { 'baseq': [40]*19 },
+            '*': { 'baseq': [40]*1 },
+            'depth': 100
+        }
+        r = self._C( stats, 0.8 )
+        eq_( ('N', 100), r )
+
 def eqs_( v1, v2, msg=None ):
     ''' Just run str on v1 and v2 and compare and use eq then '''
     if msg:
@@ -636,6 +654,12 @@ class TestIntegrate(BaseInty):
         #print cmd
         return subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
+    def test_exit_0_on_success( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        p = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
+        eq_( 0, p.wait() )
+
     def test_outputs_correct_vcf_1( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
@@ -656,4 +680,3 @@ class TestIntegrate(BaseInty):
         assert e==o==''
 
         assert self.cmp_files( self.vcf, out_vcf )
-

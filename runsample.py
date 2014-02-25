@@ -94,7 +94,6 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
 def main( args ):
     tdir = temp_projdir( args.prefix )
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
-    variantsprefix = os.path.join( tdir, 'variants' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
     consensus = os.path.join( tdir, bamfile+'.consensus.fastq' )
     bwalog = os.path.join( tdir, 'bwa.log' )
@@ -111,7 +110,6 @@ def main( args ):
             'readsdir': args.readsdir,
             'reference': args.reference,
             'bamfile': bamfile,
-            'variantsprefix': variantsprefix,
             'flagstats': flagstats,
             'consensus': consensus
         }
@@ -119,40 +117,53 @@ def main( args ):
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
         # as multiple samples may be running concurrently already
 
+        # Return code list
+        rets = []
+
         # Mapping
         with open(bwalog, 'wb') as blog:
             cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile} -t 1'
-            p1 = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
+            p = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
             # Wait for the sample to map
-            r1 = p1.wait()
+            rets.append( p.wait() )
             # Everything else is dependant on bwa finishing so might as well die here
-            if r1 != 0:
+            if rets[-1] != 0:
+                cmd = cmd.format(**cmd_args)
                 log.critical( "{} failed to complete sucessfully. Please check the log file {} for more details".format(cmd,bwalog) )
                 sys.exit(1)
 
+        # Tag Reads
+        cmd = 'tagreads.py {bamfile}'
+        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        rets.append( p.wait() )
+
         # Variant Calling
-        cmd = 'varcaller.py {bamfile} {reference} -o {variantsprefix}'
-        p2 = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        r2 = p2.wait()
+        cmd = 'base_caller.py {bamfile} {reference}'
+        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        rets.append( p.wait() )
+        if rets[-1] != 0:
+            cmd = cmd.format(**cmd_args)
+            log.critical( '{} failed to complete successfully'.format(cmd) )
 
         # Flagstats
         with open(flagstats,'wb') as flagstats:
             cmd = 'samtools flagstat {bamfile}'
-            p3 = run_cmd( cmd.format(**cmd_args), stdout=flagstats, stderr=lfile, script_dir='' )
-            r3 = p3.wait()
+            p = run_cmd( cmd.format(**cmd_args), stdout=flagstats, stderr=lfile, script_dir='' )
+            rets.append( p.wait() )
 
         # Graphics
         cmd = 'graphsample.py {bamfile} -od {tdir}'
-        p4 = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        r4 = p4.wait()
+        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        rets.append( p.wait() )
 
         # Consensus
         with open(consensus,'wb') as consensus:
             cmd = 'gen_consensus.sh {reference} {bamfile}'
-            p5 = run_cmd( cmd.format(**cmd_args), stdout=consensus, stderr=lfile )
-            r5 = p5.wait()
+            p = run_cmd( cmd.format(**cmd_args), stdout=consensus, stderr=lfile )
+            rets.append( p.wait() )
 
-        if r1+r2+r3+r4+r5 != 0:
+        # If sum is > 0 then one of the commands failed
+        if sum(rets) != 0:
             log.critical( "!!! There was an error running part of the pipeline !!!" )
             log.critical( "Please check the logfile {}".format(logfile) )
             sys.exit( 1 )

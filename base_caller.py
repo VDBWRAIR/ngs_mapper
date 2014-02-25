@@ -389,7 +389,10 @@ def call_on_pct( stats2, minth=0.8 ):
                 nt_list += base
                 count += len(bquals)
     dnalist = sorted(nt_list)
-    return (iupac_amb(dnalist), count)
+    try:
+        return (iupac_amb(dnalist), count)
+    except ValueError as e:
+        return ('N', stats2.get('depth',0))
 
 def info_stats( stats, rb):
     '''
@@ -433,4 +436,3 @@ def info_stats( stats, rb):
  
 if __name__ == '__main__':
     main( parse_args() )
-
