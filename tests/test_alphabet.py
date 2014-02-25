@@ -1,5 +1,5 @@
 import common
-from nose.tools import eq_
+from nose.tools import eq_, raises
 
 class TestUnitAmbTable(common.BaseClass):
     def _C( self, dna ):
@@ -16,3 +16,7 @@ class TestUnitAmbTable(common.BaseClass):
     def tst_permutation( self, t, v ):
         r = self._C( t )
         eq_( v, r )
+
+    @raises(ValueError)
+    def test_missing_base_raises_error( self ):
+        self._C( '?' )

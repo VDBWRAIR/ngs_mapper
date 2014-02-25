@@ -28,5 +28,8 @@ def iupac_amb( dnalist ):
     '''
     if not isinstance( dnalist, str ):
         dnalist = ''.join( sorted( dnalist ) )
-    return AMBIGUITY_TABLE.get(dnalist)
+    try:
+        return AMBIGUITY_TABLE[dnalist]
+    except KeyError as e:
+        raise ValueError( "{} is not a valid ambigious base".format(dnalist) )
 
