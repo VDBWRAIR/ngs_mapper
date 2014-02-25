@@ -127,15 +127,15 @@ def parse_args( args=sys.argv[1:] ):
 
     return args
 
-def label_N( stats, minbq ):
+def mark_lq( stats, minbq, mind ):
     '''
-        Labels all qualities < minbq as N
+        Labels all qualities < minbq as ?
         Goes through all keys in the stats dictionary that are not in ('depth','mqualsum','bqualsum')
         which should be keys that represent nucleotide bases. Those keys then point to a dictionary
         that contain 'mapq': [] and 'baseq': []
 
         This script loops through baseq and for any value less than minbq it will remove that quality score
-        and place it in a new base key for 'N'.
+        and place it in a new base key for '?'.
 
         Essentially creating a new base N with all < minbq base qualities.
 
@@ -143,6 +143,8 @@ def label_N( stats, minbq ):
 
         @param stats - Stats dictionary returned from stats_at_refpos.stats
         @param minbq - The mininum base quality to determine if a quality should belong to N
+        @param mind - The minimum depth threshold. If the depth is < this then lq will be labeled N otherwise
+            they will be labeled ? for trimming purposes
 
         @returns stats dictionary with baseq subkey for each base in the dictionary.
     '''
@@ -160,7 +162,10 @@ def label_N( stats, minbq ):
             for q in bquals:
                 k = base
                 if q < minbq:
-                    k = 'N'
+                    if stats2['depth'] < mind:
+                        k = 'N'
+                    else:
+                        k = '?'
                 # adds the N to the nucleotides (A C G T and N)
                 if k not in stats2:
                     stats2[k] = {'baseq':[]}
@@ -254,7 +259,14 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     '''
     from collections import OrderedDict
     s = stats( bamfile, regionstr, minmq=0, minbq=0, maxd=maxd )
-    stats2 = label_N( s, minbq )
+    stats2 = mark_lq( s, minbq, mind )
+
+    # Update stats2 so that it does not include low quality bases since we
+    # are above the min depth
+    if stats2['depth'] > mind:
+        if '?' in stats2:
+            stats2['depth'] -= len(stats2['?']['baseq'])
+            del stats2['?']
 
     # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
     '''
@@ -282,7 +294,7 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     rb = refseq[r[1]-1]
 
     # Alternate info
-    alt_info = info_stats( s, rb )
+    alt_info = info_stats( stats2, rb )
     alt_bases = alt_info['bases']
     # Only merge if there is something to merge
     if alt_info['bases'] != []:
@@ -310,7 +322,7 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
         info['PRC'] = 0
 
     # Get Called Base Info
-    cb, cbd = caller( s, minbq, maxd, mind, minth )
+    cb, cbd = caller( stats2, minbq, maxd, mind, minth )
 
     # Set the Called base
     info['CB'] = cb
@@ -321,7 +333,7 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
 
     return record
 
-def caller( stats, minbq, maxd, mind=10, minth=0.8 ):
+def caller( stats2, minbq, maxd, mind=10, minth=0.8 ):
     '''
         Calls a given base at refstr inside of bamfile. At this time refstr has to be a single
         base position('refname':N-N). The base is determined by first labeling all bases less than minbq as N and then
@@ -339,22 +351,13 @@ def caller( stats, minbq, maxd, mind=10, minth=0.8 ):
 
         @returns one of the items from the set( 'ATGCMRWSYKVHDBN' )
     '''
-    # Label low quality as N
-    stats2 = label_N(stats, minbq)
-    # if the depth is >= min depth then just remove the N's
-    if stats2['depth'] >= mind:
-        if 'N' in stats2:        
-            # Need to update the total depth when we remove N
-            stats2['depth'] -= len (stats2['N']['baseq'] )
-            del stats2['N']
-    else:
-        # Else we will determine if the N's are the majority now
-        # defines if the base is an N
-        if 'N' in stats2:
-            nlen = len(stats2['N']['baseq'])
-            np = nlen/(stats2['depth']*1.0)
-            if np > (1-minth):
-                return ('N', nlen)
+    # Else we will determine if the N's are the majority now
+    # defines if the base is an N
+    if '?' in stats2:
+        nlen = len(stats2['?']['baseq'])
+        np = nlen/(stats2['depth']*1.0)
+        if np > (1-minth):
+            return ('N', nlen)
     return call_on_pct(stats2, minth)
 
 def call_on_pct( stats2, minth=0.8 ):
@@ -366,7 +369,7 @@ def call_on_pct( stats2, minth=0.8 ):
         in the baseq list is used as it depicts the depth of that base. The quality scores are not used
         as the stats dictionary should already be run through the label_n function.
 
-        @param stats2 - Stats dictionary returned from label_N or stats_at_refpos.stats
+        @param stats2 - Stats dictionary returned from mark_lq or stats_at_refpos.stats
         @param minth - minimum percentage that a base needs to be present in order to be called non-ambiguous
 
         @returns the called base based on the percentages in the given stats and the depth for the called base

@@ -53,32 +53,41 @@ class TestUnitLabelN(Base):
         super( TestUnitLabelN, self ).setUp()
         self.mock_stats()
 
-    def _C( self, stats, minbq ):
-        from base_caller import label_N
-        return label_N( stats, minbq )
+    def _C( self, stats, minbq, mind ):
+        from base_caller import mark_lq
+        return mark_lq( stats, minbq, mind )
 
     def test_minq_lt( self ):
         self.stats['A']['baseq'] = [23,24,25,26]
-        r = self._C( self.stats, 25 )
+        r = self._C( self.stats, 25, 1 )
+        eq_( [23,24], r['?']['baseq'] )
+        r = self._C( self.stats, 25, 100 )
         eq_( [23,24], r['N']['baseq'] )
 
     def test_removes_empty_bases( self ):
         self.stats['A']['baseq'] = [10]*10
         self.stats['C']['baseq'] = [10]*10
-        r = self._C( self.stats, 25 )
+        r = self._C( self.stats, 25, 1 )
         assert 'A' not in r, 'A was not removed even though it had all < minq baseq'
         assert 'C' not in r, 'C was not removed even though it had all < minq baseq'
+        eq_( [10]*20, r['?']['baseq'] )
+        r = self._C( self.stats, 25, 100 )
         eq_( [10]*20, r['N']['baseq'] )
 
     def test_adds_n_single_base( self ):
         self.stats['A']['baseq'] = [10,10] + [30]*6 + [10,10]
-        r = self._C( self.stats, 25 )
+        r = self._C( self.stats, 25, 1 )
+        eq_( [10]*4, r['?']['baseq'] )
+        r = self._C( self.stats, 25, 100 )
         eq_( [10]*4, r['N']['baseq'] )
 
     def test_no_n( self ):
-        r = self._C( self.stats, 25 )
+        r = self._C( self.stats, 25, 1 )
+        assert '?' not in r, '? was added to stats when it should not have'
+        r = self._C( self.stats, 25, 100 )
         assert 'N' not in r, 'N was added to stats when it should not have'
 
+@attr('current')
 class TestUnitCaller(Base):
     def setUp( self ):
         super( TestUnitCaller, self ).setUp()
@@ -94,6 +103,7 @@ class TestUnitCaller(Base):
             'C': { 'baseq': [25]*12 }
         }
         stats = self.make_stats( base_stats )
+        # No > 0.8 majority, so call anything > 0.2 which should only be A
         eq_( ('A',76), self._C( stats, 25, 100000, 10, 0.8 ) )
 
     def test_calls_multiple_ambiguous( self ):
@@ -104,16 +114,18 @@ class TestUnitCaller(Base):
             'C': { 'baseq': [25]*33 }
         }
         stats = self.make_stats( base_stats )
+        # All bases are > 0.2 so return ambig AGC -> V
         eq_( ('V',99), self._C( stats, 25, 100000, 100, 0.8 ) )
 
-    def test_calls_low_coverage_n( self ):
-        # 79% A, 21% Low Quality G should end up 21% N
+    def test_calls_low_coverage_low_quality_n( self ):
+        # 79% A, 21% Low Quality
         base_stats = {
-            'A': { 'baseq': [25]*78 },
-            'G': { 'baseq': [24]*21 }
+            'A': { 'baseq': [25]*7 },
+            '?': { 'baseq': [24]*3 }
         }
         stats = self.make_stats( base_stats )
-        eq_( ('N',21), self._C( stats, 25, 100000, 100, 0.8 ) )
+        # Should trim off LQ G as they turn into ?
+        eq_( ('N',3), self._C( stats, 25, 100000, 10, 0.8 ) )
 
     def test_calls_minth( self ):
         # 80% A, 20% G should be called A
@@ -156,42 +168,22 @@ class TestUnitCaller(Base):
         stats = {
 			'bqualsum': 128.0,
 			'mqualsum': 660.0,
-			'depth': 11,
+			'depth': 3,
             'A': {
                 'baseq': [40],
                 'mapq': [60]
             },
 			'G': {
-                'baseq': [1, 1, 1, 1, 40],
-                'mapq': [60, 60, 60, 60, 60]
-            },
-			'T': {
-                'baseq': [40, 1, 1, 1, 1],
-                'mapq': [60, 60, 60, 60, 60]
-            }
-        }
-        r = self._C( stats, 25, 10000, 10, 0.8 )
-        eq_( ('D',3), r )
-
-    def test_removes_N_and_updates_totaldepth( self ):
-        # Bug: Returned None,0 instead of A,1
-        # because when N was removed from the stats2 it was not
-        # updating the total depth as well
-        stats = {
-            'bqualsum': 50.0,
-			'mqualsum': 660.0,
-			'depth': 11,
-			'C': {
                 'baseq': [40],
                 'mapq': [60]
             },
 			'T': {
-                'baseq': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                'mapq': [60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+                'baseq': [40],
+                'mapq': [60]
             }
         }
-        r = self._C( stats, 25, 100000, 10, 0.8 )
-        eq_( ('C',1), r )
+        r = self._C( stats, 25, 10000, 10, 0.8 )
+        eq_( ('D',3), r )
 
 class TestUnitCallOnPct(Base):
     def _C( self, stats, minth ):
@@ -264,6 +256,7 @@ def eqs_( v1, v2, msg=None ):
     else:
         eq_( str(v1), str(v2) )
 
+@attr('current')
 @patch('base_caller.stats')
 class TestUnitGenerateVcfRow(Base):
     def _C( self, bam, regionstr, refseq, minbq, maxd, mind, minth ):
@@ -296,7 +289,7 @@ class TestUnitGenerateVcfRow(Base):
         eqs_( 10, r.INFO['PRC'] )
         eqs_( 40, r.INFO['RAQ'] )
 
-    def test_calledbase_amb( self, mock_stats ):
+    def test_calls_amb( self, mock_stats ):
         base_stats = {
             'G': { 'baseq': [40]*60 },
             'A': { 'baseq': [39]*9 },
@@ -365,7 +358,7 @@ class TestUnitGenerateVcfRow(Base):
         eqs_( 30, altinfo['A'][1] )
         eqs_( 33, altinfo['A'][2] )
 
-    def test_alternatestats_single_set( self, mock_stats ):
+    def test_single_alternate_base_stats( self, mock_stats ):
         base_stats = {
             'G': { 'baseq': [40]*90 },
             'A': { 'baseq': [40]*10 },
@@ -377,14 +370,10 @@ class TestUnitGenerateVcfRow(Base):
         eq_( [90], r.INFO['PAC'] )
         eq_( [40], r.INFO['AAQ'] )
 
-    def test_calledbase_set( self, mock_stats ):
+    def test_called_base( self, mock_stats ):
         mock_stats.return_value = self.mock_stats()
         r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eq_( 'G', r.INFO['CB'] )
-
-    def test_calledbasedepth_set( self, mock_stats ):
-        mock_stats.return_value = self.mock_stats()
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
         eqs_( 70, r.INFO['CBD'] )
 
     def test_fields_set_multiple( self, mock_stats ):
@@ -426,6 +415,40 @@ class TestUnitGenerateVcfRow(Base):
         eq_( 0, r.INFO['RC'] )
         eq_( 0, r.INFO['RAQ'] )
         eq_( 0, r.INFO['PRC'] )
+
+    def test_depth_gte_mind( self, mock_stats ):
+        # Ensures that the A is turned into a ? and trimmed
+        # as it is low quality
+        stats = {
+            'depth': 20,
+            'A': { 'baseq': [1]*10 },
+            'C': { 'baseq': [40]*10 },
+            'mqualsum': 0,
+            'bqualsum': 0
+        }
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 'C', r.INFO['CB'] )
+        eq_( 10, r.INFO['CBD'] )
+        eq_( 0, r.INFO['RC'] )
+
+    def test_depth_lt_mind( self, mock_stats ):
+        # Ensures that the A is turned into a ? and trimmed
+        # as it is low quality
+        stats = {
+            'depth': 20,
+            'A': { 'baseq': [1]*10 },
+            'C': { 'baseq': [40]*10 },
+            'mqualsum': 0,
+            'bqualsum': 0
+        }
+        mock_stats.return_value = stats
+        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        eq_( 'C', r.INFO['CB'] )
+        eq_( 10, r.INFO['CBD'] )
+        eq_( 0, r.INFO['RC'] )
+        eq_( [10], r.INFO['AC'] )
+        eq_( [100], r.INFO['PAC'] )
 
 class TestUnitGenerateVCF(Base):
     # Hard to test each thing without generating sam files and vcf manually so
