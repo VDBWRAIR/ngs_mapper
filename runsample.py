@@ -125,8 +125,10 @@ def main( args ):
             p1 = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
             # Wait for the sample to map
             r1 = p1.wait()
+            # Everything else is dependant on bwa finishing so might as well die here
             if r1 != 0:
-                sys.exit( 1 )
+                log.critical( "{} failed to complete sucessfully. Please check the log file {} for more details".format(cmd,bwalog) )
+                sys.exit(1)
 
         # Variant Calling
         cmd = 'varcaller.py {bamfile} {reference} -o {variantsprefix}'
@@ -150,9 +152,9 @@ def main( args ):
             p5 = run_cmd( cmd.format(**cmd_args), stdout=consensus, stderr=lfile )
             r5 = p5.wait()
 
-        if r2+r3+r4+r5 != 0:
+        if r1+r2+r3+r4+r5 != 0:
             log.critical( "!!! There was an error running part of the pipeline !!!" )
-            log.critical( "Please check the logfile {}".format(lfile) )
+            log.critical( "Please check the logfile {}".format(logfile) )
             sys.exit( 1 )
 
         log.debug( "Moving {} to {}".format( tdir, args.outdir ) )

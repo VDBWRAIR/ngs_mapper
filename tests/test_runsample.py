@@ -40,7 +40,6 @@ class Base(common.BaseBamRef):
         klass.ref = join( dirname(ref), 'reference.fa' )
         os.rename( ref, klass.ref )
 
-@attr('current')
 class TestUnitArgs(object):
     def _C( self, arglist ):
         from runsample import parse_args
@@ -62,7 +61,6 @@ class TestUnitArgs(object):
         eq_( 'Sample1', res.prefix )
         eq_( 'outdir', res.outdir )
 
-@attr('current')
 class TestUnitRunCMD(object):
     import runsample
     def _C( self, cmdstr, stdin=None, stdout=None, stderr=None, script_dir=None ):
@@ -131,8 +129,8 @@ class TestFunctional(Base):
         try:
             sout = check_output( cmd, stderr=STDOUT )
         except CalledProcessError as e:
-            return e.output
-        return sout
+            return (e.output,-1)
+        return sout,0
 
     def _ensure_expected_output_files( self, outdir, prefix ):
         efiles = self._expected_files( outdir, prefix )
@@ -160,24 +158,28 @@ class TestFunctional(Base):
 
     def test_outdir_exists_nonempty_should_skip( self ):
         os.mkdir( 'outdir' )
-        res = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        res,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        eq_( 0, ret )
         assert 'AlreadyExists' not in res, "Raises exception when it should not have"
-        res = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        res,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        eq_( -1, ret )
         assert 'AlreadyExists' in res, "Did not raise exception"
 
     def test_outdir_exists_empty( self ):
         os.mkdir( 'outdir' )
-        out = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        eq_( 0, ret )
         print out
         self._ensure_expected_output_files( 'outdir', 'tests' )
 
     def test_outdir_not_exist( self ):
         assert not isdir( 'outdir' )
-        out = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        eq_( 0, ret )
         print out
+        assert isdir( 'outdir' )
         self._ensure_expected_output_files( 'outdir', 'tests' )
 
-    @attr('current')
     def test_missing_executables_exit_1( self ):
         # Change path so tempdir is first in lookup and then duplicate
         # some of the pipeline scripts and just have them return 1
