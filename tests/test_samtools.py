@@ -35,7 +35,7 @@ class TestMpileup(Base):
         reflist = (
             ('Ref1',8),
             ('Ref2',8),
-            ('Ref3',8)
+            ('Ref3',3)
         )
         for ref, d in reflist:
             r = self._CM( self.bam, ref, 0, 0, 100 )
@@ -49,7 +49,7 @@ class TestMpileup(Base):
         r = self._CM( self.bam, None, 0, 0, 100 )
         r = [row for row in r]
         rl = len( r )
-        eq_( 24, rl, 'Should be depth of 24 for all refs but got {}'.format(rl) )
+        eq_( 19, rl, 'Should be depth of 19 for all refs but got {}'.format(rl) )
 
 class TestUnitCharToQual(object):
     def _C( self, qual_char ):

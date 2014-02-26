@@ -87,7 +87,6 @@ class TestUnitLabelN(Base):
         r = self._C( self.stats, 25, 100 )
         assert 'N' not in r, 'N was added to stats when it should not have'
 
-@attr('current')
 class TestUnitCaller(Base):
     def setUp( self ):
         super( TestUnitCaller, self ).setUp()
@@ -274,7 +273,78 @@ def eqs_( v1, v2, msg=None ):
     else:
         eq_( str(v1), str(v2) )
 
-@attr('current')
+class TestUnitBlankVcfRows(Base):
+    def _C( self, refname, refseq, curpos, lastpos, call='-' ):
+        from base_caller import blank_vcf_rows
+        return blank_vcf_rows( refname, refseq, curpos, lastpos, call )
+
+    def test_gap_front( self ):
+        # Should return 1 & 2
+        r = self._C( 'ref', 'A'*10, 3, 0 )
+        eq_( 1, r[0].POS )
+        eq_( 2, r[1].POS )
+    
+    def test_gap_middle( self ):
+        # Should return 4 & 5
+        r = self._C( 'ref', 'A'*10, 6, 3 )
+        eq_( 4, r[0].POS )
+        eq_( 5, r[1].POS )
+    
+    def test_gap_end( self ): 
+        # Same test case
+        self.test_gap_middle()
+
+    def test_single_gap( self ):
+        # Should insert 4
+        r = self._C( 'ref', 'A'*10, 5, 3 )
+        eq_( 4, r[0].POS )
+
+    def test_no_gap( self ):
+        # Should return empty
+        r = self._C( 'ref', 'A'*10, 3, 3 )
+        r = self._C( 'ref', 'A'*10, 3, 4 )
+        eq_( 0, len( r ) )
+
+    def test_sets_call( self ):
+        # Make sure that the call gets set correctly
+        r = self._C( 'ref', 'A'*10, 6, 3, 'N' )
+        eq_( 'N', r[0].INFO['CB'] )
+        r = self._C( 'ref', 'A'*10, 6, 3, '-' )
+        eq_( '-', r[0].INFO['CB'] )
+
+    def test_sets_refbase( self ):
+        # Should be C then G
+        r = self._C( 'ref', 'ACGT', 4, 1, 'N' )
+        eq_( 'C', r[0].REF )
+        eq_( 'G', r[1].REF )
+        # Gap at the end
+        r = self._C( 'ref', 'ACGTA', 6, 4, 'N' )
+        eq_( 'A', r[0].REF )
+
+class TestUnitBlankVcfRow(Base):
+    def _C( self, refname, refseq, pos, call ):
+        from base_caller import blank_vcf_row
+        return blank_vcf_row( refname, refseq, pos, call )
+
+    def sets_( self, record, refbase, pos, call ):
+        r = record
+        eq_( pos, r.POS )
+        eq_( refbase, r.REF )
+        eq_( 'ref', r.CHROM )
+        eq_( [], r.ALT )
+        eq_( 0, r.INFO['DP'] )
+        eq_( 0, r.INFO['RC'] )
+        eq_( 0, r.INFO['RAQ'] )
+        eq_( 0, r.INFO['PRC'] )
+        eq_( call, r.INFO['CB'] )
+        eq_( 0, r.INFO['CBD'] )
+
+    def test_expected( self ):
+        rseq = 'ACGT'*2
+        for i in range(1, len(rseq)+1):
+            r = self._C( 'ref', rseq, i, '-' )
+            yield self.sets_, r, rseq[i-1], i, '-'
+
 @patch('base_caller.MPileupColumn')
 class TestUnitGenerateVcfRow(Base):
     def _C( self, mpilecol, refseq, minbq, maxd, mind, minth ):
@@ -664,7 +734,7 @@ class TestIntegrate(BaseInty):
         o,e = p.communicate()
         assert self.cmp_files( self.vcf, out_vcf )
 
-    def test_stdouterr_ok( self ):
+    def test_stdouterr_ok_and_filesmatch( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
         p = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )

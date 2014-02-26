@@ -218,15 +218,44 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
     # Do not exclude any bases by setting minmq and minbq to 0 and maxdepth to 100000
     piles = mpileup( bamfile, regionstr, 0, 0, 100000 )
     # Loop through each pileup row
+    # Last position stores the last position seen
+    # Starts at 0 to show gap at beginning if needed
+    lastpos = 0
+    lastref = ''
     for pilestr in piles:
         # Generate the handy pileup column object
         col = MPileupColumn( pilestr )
+        # Current position in alignment
+        curpos = col.pos
         # The reference we are iterating on
-        refseq = refseqs[col.ref]
+        refseq = refseqs[col.ref].seq
+        # Set lastref if we are on first iteration
+        if lastref == '':
+            lastref = col.ref
+        # New reference so reset lastpos
+        # and insert gaps at end
+        elif lastref != col.ref:
+            # Insert from lastposition of lastref to end of reference
+            # len+1 so that it inserts single bases at the end
+            for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
+                out_vcf.write_record( rec )
+            lastref = col.ref
+            lastpos = 0
+        # Insert depth 0 regions
+        for rec in blank_vcf_rows( col.ref, refseq, col.pos, lastpos, '-' ):
+            out_vcf.write_record( rec )
         # Generate the vcf frow for that column
-        row = generate_vcf_row( col, refseq.seq, minbq, maxd, mind, minth )
+        row = generate_vcf_row( col, refseq, minbq, maxd, mind, minth )
         # Write the record to the vcf file
         out_vcf.write_record( row )
+        # Set last position seen
+        lastpos = row.POS
+
+    # Insert from lastposition of lastref to end of reference
+    # len+1 so that it inserts single bases at the end
+    for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
+        out_vcf.write_record( rec )
+
     # Close the file
     out_vcf.close()
 
@@ -254,23 +283,51 @@ def parse_regionstring( regionstr ):
 
     return region
 
-def stats_for_col( mpileupstr ):
-    ''' Needs to be tested '''
-    out = samtools.mpileup( bamfile, regionstr, minmq, minbq, maxd )
-    
-    try:
-        import time; st = time.time();
-        o = out.next()
-        print time.time() - st
-        col = samtools.MPileupColumn( o )
-        out.close()
-        return col.base_stats()
-    except StopIteration:
-        return {
-            'depth': 0,
-            'mqualsum': 0.0,
-            'bqualsum': 0.0
-        }
+def blank_vcf_rows( refname, refseq, curpos, lastpos, call='-' ):
+    '''
+        Returns a list of blank vcf rows for all positions that are missing
+        between curpos and lastpos.
+        The blank rows should represent a gap in the alignment and be called whatever
+        call is set too
+
+        @param refname - Reference name to set _Record.CHROM
+        @param refseq - Reference sequence to get reference base from
+        @param curpos - Current position in the alignment(1 based)
+        @param lastpos - Last position seen in the alignment(1 based)
+        @param call - What to set the CB info field to(Default to -)
+
+        @returns a list of vcf.model._Record objects filled out with the DP,RC,RAQ,PRC,CBD=0 and CB=call
+    '''
+    # Blank record list
+    records = []
+    # Only do records between curpos and lastpos
+    for i in range( lastpos + 1, curpos ):
+        # Reference base at current position
+        rec = blank_vcf_row( refname, refseq, i, call )
+        records.append( rec )
+
+    return records
+
+def blank_vcf_row( refname, refseq, pos, call='-' ):
+    '''
+        Generates a blank VCF row to insert for depths of 0
+
+        @param refseq - Bio.seq.seq object representing the reference sequence
+        @param pos - Reference position to get the reference base from
+        @param call - What to set the CB info field to
+
+        @returns a vcf.model._Record
+    '''
+    info = dict(
+        DP=0,
+        RC=0,
+        RAQ=0,
+        PRC=0,
+        CB=call,
+        CBD=0
+    )
+    record = vcf.model._Record( refname, pos, None, refseq[pos-1], [], None, None, info, None, None )
+    return record
 
 def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8 ):
     '''
