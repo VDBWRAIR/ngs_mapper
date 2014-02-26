@@ -8,11 +8,10 @@ from mock import MagicMock, patch, Mock, call
 from os.path import *
 import os
 
-class Base(common.BaseBamRef):
+class Base(common.BaseBaseCaller):
     def setUp( self ):
         super(Base,self).setUp()
         self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}
-        self.bam = self.__class__.bam
 
 class TestMpileup(Base):
     def _CM( self, bamfile, regionstr, minmq, minbq, maxd ):
@@ -31,6 +30,26 @@ class TestMpileup(Base):
         eq_( 'tested', res )
         popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1, stderr='null')
 
+    def test_testbam_individual_refs( self ):
+        # Refname, reflen
+        reflist = (
+            ('Ref1',8),
+            ('Ref2',8),
+            ('Ref3',8)
+        )
+        for ref, d in reflist:
+            r = self._CM( self.bam, ref, 0, 0, 100 )
+            r = [row for row in r]
+            rl = len( r )
+            eq_( d, rl, 'Depth for {} should be {} but got {}'.format(
+                ref, d, rl
+            ))
+
+    def test_testbam_all_refs( self ):
+        r = self._CM( self.bam, None, 0, 0, 100 )
+        r = [row for row in r]
+        rl = len( r )
+        eq_( 24, rl, 'Should be depth of 24 for all refs but got {}'.format(rl) )
 
 class TestUnitCharToQual(object):
     def _C( self, qual_char ):

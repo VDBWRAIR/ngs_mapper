@@ -14,7 +14,7 @@ def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
         @param minbq - Minimum base quality or min BAQ. Same as -Q option to mpileup
         @param maxd - Maximum depth to consider. Same as -d option to mpileup
 
-        @returns the stdout file descriptor handle
+        @returns generator object for every row in the mpileup
     '''
     # The command that will be executed
     cmd = ['samtools','mpileup','-s','-q',str(minmq),'-Q',str(minbq),'-d','{}'.format(maxd)]

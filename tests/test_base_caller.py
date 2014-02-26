@@ -1,14 +1,14 @@
 import common
 import fixtures
 
-from nose.tools import eq_, raises
+from nose.tools import eq_, raises, timed
 from nose.plugins.attrib import attr
 from mock import patch, Mock, MagicMock
 
 from StringIO import StringIO
 from os.path import join, dirname, basename, exists
 
-class Base( common.BaseClass ):
+class Base( common.BaseBaseCaller ):
     def mock_stats( self ):
         s = { 'baseq': [40]*10, 'mapq': [60]*10 }
         self.stats = self.make_stats({
@@ -275,11 +275,11 @@ def eqs_( v1, v2, msg=None ):
         eq_( str(v1), str(v2) )
 
 @attr('current')
-@patch('base_caller.stats')
+@patch('base_caller.MPileupColumn')
 class TestUnitGenerateVcfRow(Base):
-    def _C( self, bam, regionstr, refseq, minbq, maxd, mind, minth ):
+    def _C( self, mpilecol, refseq, minbq, maxd, mind, minth ):
         from base_caller import generate_vcf_row
-        return generate_vcf_row( bam, regionstr, refseq, minbq, maxd, mind, minth )
+        return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth )
 
     def mock_stats( self ):
         base_stats = {
@@ -290,24 +290,31 @@ class TestUnitGenerateVcfRow(Base):
         }
         return self.make_stats( base_stats )
 
-    def test_regionstr_not_1( self, mock_stats ):
-        mock_stats.return_value = self.mock_stats()
-        r = self._C( '', 'ref:3-3', 'ACGT'*100, 25, 1000, 10, 0.8 )
+    def setup_mpileupcol( self, mpilemock, ref='ref', pos=1, stats=None ):
+        if stats is None:
+            stats = self.mock_stats()
+        mpilemock.ref = ref
+        mpilemock.pos = pos
+        mpilemock.base_stats.return_value = stats
+
+    def test_regionstr_not_1( self, mpilecol ):
+        self.setup_mpileupcol( mpilecol )
+        r = self._C( mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8 )
         eqs_( 100, r.INFO['DP'] )
 
-    def test_depth_set( self, mock_stats ):
-        mock_stats.return_value = self.mock_stats()
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+    def test_depth_set( self, mpilecol):
+        self.setup_mpileupcol( mpilecol )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eqs_( 100, r.INFO['DP'] )
 
-    def test_refstats_set( self, mock_stats ):
-        mock_stats.return_value = self.mock_stats()
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+    def test_refstats_set( self, mpilecol):
+        self.setup_mpileupcol( mpilecol )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eqs_( 10, r.INFO['RC'] )
         eqs_( 10, r.INFO['PRC'] )
         eqs_( 40, r.INFO['RAQ'] )
 
-    def test_calls_amb( self, mock_stats ):
+    def test_calls_amb( self, mpilecol):
         base_stats = {
             'G': { 'baseq': [40]*60 },
             'A': { 'baseq': [39]*9 },
@@ -315,7 +322,7 @@ class TestUnitGenerateVcfRow(Base):
             'T': { 'baseq': [37]*10 }
         }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        self.setup_mpileupcol( mpilecol, stats=stats )
         with patch( 'base_caller.info_stats' ) as info_stats:
             info_stats.return_value = {
                 'AC':[60,21,9],
@@ -323,14 +330,14 @@ class TestUnitGenerateVcfRow(Base):
                 'AAQ':[40,38,37],
                 'bases': ['G','C','T']
             }
-            r = self._C( '', 'ref:1-1', 'A', 25, 1000, 100, 0.8 )
+            r = self._C( mpilecol, 'A', 25, 1000, 100, 0.8 )
         eq_( [60,21,9], r.INFO['AC'] )
         eq_( [60,21,10], r.INFO['PAC'] )
         eq_( [40,38,37], r.INFO['AAQ'] )
         eq_( ['G','C','T'], r.ALT )
         eq_( 'S', r.INFO['CB'] )
 
-    def test_alternatestats_same_order( self, mock_stats ):
+    def test_alternatestats_same_order( self, mpilecol):
         base_stats = {
             'G': { 'baseq': [40]*60 },
             'A': { 'baseq': [39]*10 },
@@ -338,7 +345,7 @@ class TestUnitGenerateVcfRow(Base):
             'T': { 'baseq': [37]*10 }
         }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
+        self.setup_mpileupcol( mpilecol, stats=stats )
         with patch( 'base_caller.info_stats' ) as info_stats:
             info_stats.return_value = {
                 'AC':[60,20,10],
@@ -346,21 +353,21 @@ class TestUnitGenerateVcfRow(Base):
                 'AAQ':[40,38,37],
                 'bases': ['G','C','T']
             }
-            r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+            r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( [60,20,10], r.INFO['AC'] )
         eq_( [60,20,10], r.INFO['PAC'] )
         eq_( [40,38,37], r.INFO['AAQ'] )
         eq_( ['G','C','T'], r.ALT )
 
-    def test_ensure_values_rounded( self, mock_stats ):
+    def test_ensure_values_rounded( self, mpilecol):
         base_stats = {
             'G': { 'baseq': [38]*17+[39]*16 },
             'A': { 'baseq': [30]*33 },
             'T': { 'baseq': [33]*16 + [35]*17 } # Hopefully avg qual will be 33.33 and depth is 33% too
         }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'T', 25, 100, 10, 0.8 )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'T', 25, 100, 10, 0.8 )
         eqs_( 33, r.INFO['RC'] )
         eqs_( 34, r.INFO['RAQ'] )
         eqs_( 33, r.INFO['PRC'] )
@@ -376,56 +383,56 @@ class TestUnitGenerateVcfRow(Base):
         eqs_( 30, altinfo['A'][1] )
         eqs_( 33, altinfo['A'][2] )
 
-    def test_single_alternate_base_stats( self, mock_stats ):
+    def test_single_alternate_base_stats( self, mpilecol):
         base_stats = {
             'G': { 'baseq': [40]*90 },
             'A': { 'baseq': [40]*10 },
         }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( [90], r.INFO['AC'] )
         eq_( [90], r.INFO['PAC'] )
         eq_( [40], r.INFO['AAQ'] )
 
-    def test_called_base( self, mock_stats ):
-        mock_stats.return_value = self.mock_stats()
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+    def test_called_base( self, mpilecol):
+        self.setup_mpileupcol( mpilecol )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( 'G', r.INFO['CB'] )
         eqs_( 70, r.INFO['CBD'] )
 
-    def test_fields_set_multiple( self, mock_stats ):
-        mock_stats.return_value = self.mock_stats()
+    def test_fields_set_multiple( self, mpilecol):
+        self.setup_mpileupcol( mpilecol )
         # So we can check the ordering is correct
         info_stats = {'AC':[1,2,3],'AAQ':[4,5,6],'PAC':[7,8,9],'bases':['A','C','G']}
         with patch('base_caller.info_stats') as info_stats:
             info_stats.return_value = info_stats
-            r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+            r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( 'ref', r.CHROM )
         eqs_( 1, r.POS )
         eqs_( 'A', r.REF )
         eq_( info_stats['bases'], r.ALT )
 
-    def test_fields_set_single( self, mock_stats ):
+    def test_fields_set_single( self, mpilecol):
         base_stats = {
             'G': { 'baseq': [40]*80 },
             'A': { 'baseq': [40]*10 }
         }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( 'ref', r.CHROM )
         eqs_( 1, r.POS )
         eq_( 'A', r.REF )
         eq_( ['G'], r.ALT )
 
-    def test_refbase_not_in_stats( self, mock_stats ):
+    def test_refbase_not_in_stats( self, mpilecol):
         base_stats = {
             'N': { 'baseq': [40]*100 },
         }
         stats = self.make_stats( base_stats )
-        mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( 'ref', r.CHROM )
         eqs_( 1, r.POS )
         eq_( 'A', r.REF )
@@ -434,7 +441,7 @@ class TestUnitGenerateVcfRow(Base):
         eq_( 0, r.INFO['RAQ'] )
         eq_( 0, r.INFO['PRC'] )
 
-    def test_depth_gte_mind( self, mock_stats ):
+    def test_depth_gte_mind( self, mpilecol):
         # Ensures that the A is turned into a ? and trimmed
         # as it is low quality
         stats = {
@@ -444,13 +451,13 @@ class TestUnitGenerateVcfRow(Base):
             'mqualsum': 0,
             'bqualsum': 0
         }
-        mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( 'C', r.INFO['CB'] )
         eq_( 10, r.INFO['CBD'] )
         eq_( 0, r.INFO['RC'] )
 
-    def test_depth_lt_mind( self, mock_stats ):
+    def test_depth_lt_mind( self, mpilecol):
         # Ensures that the A is turned into a ? and trimmed
         # as it is low quality
         stats = {
@@ -460,8 +467,8 @@ class TestUnitGenerateVcfRow(Base):
             'mqualsum': 0,
             'bqualsum': 0
         }
-        mock_stats.return_value = stats
-        r = self._C( '', 'ref:1-1', 'A', 25, 1000, 10, 0.8 )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( 'C', r.INFO['CB'] )
         eq_( 10, r.INFO['CBD'] )
         eq_( 0, r.INFO['RC'] )
@@ -559,16 +566,6 @@ class TestUnitInfoStats(Base):
         eq_( ['A','C','N','T'], r['bases'] )
 
 class BaseInty(Base):
-    def setUp( self ):
-        super( BaseInty, self ).setUp()
-        fixpath = join( fixtures.THIS, 'fixtures', 'base_caller' )
-        self.bam = join( fixpath, 'test.bam' )
-        self.bai = join( fixpath, 'test.bam.bai' )
-        self.ref = join( fixpath, 'testref.fasta' )
-        self.sam = join( fixpath, 'test.sam' )
-        self.vcf = join( fixpath, 'test.vcf' )
-        self.template = join( fixpath, 'template.vcf' )
-
     def print_files( self, f1, f2 ):
         print open(f1).read()
         print open(f2).read()

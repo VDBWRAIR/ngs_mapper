@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-from stats_at_refpos import stats
+#from stats_at_refpos import stats
+from samtools import MPileupColumn, mpileup
+
 from alphabet import iupac_amb
 import sys
 import argparse
@@ -23,6 +25,15 @@ VCF_HEAD = '''##fileformat=VCFv4.2
 ##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
 ##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{}'''
+
+def timeit( func ):
+    def wrapper( *args, **kwargs ):
+        import time; st = time.time()
+        result = func( *args, **kwargs )
+        print "{} took {} seconds to run".format(func, time.time() - st)
+        return result
+
+    return wrapper
 
 def main( args ):
     generate_vcf(
@@ -188,13 +199,8 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
 
         @returns path to vcf_output_file
     '''
+    # All the references indexed by the seq.id(first string after the > in the file until the first space)
     refseqs = SeqIO.index( reffile, 'fasta' )
-    # Do all references
-    if regionstr is None:
-        regions = [(r,1,len(refseqs[r].seq)) for r in sorted(refseqs.keys())]
-    else: # Do only single reference
-        region = parse_regionstring( regionstr )
-        regions = [region]
     # Our pretend file object that has vcf stuff in it
     vcf_head = StringIO( vcf_template )
     vcf_head.name = 'header.vcf'
@@ -207,16 +213,21 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
     out_vcf = vcf.Writer( open( output_path, 'w' ), 
                             template = vcf.Reader( vcf_head )
     )
-    # Loop through all the positions in regionstr
-    for ref, start, end in regions:
-        for i in range( start, end+1 ):
-            # Generate the new region string
-            regionstr = ref + ':' + str(i) + '-' + str(i)
-            refseq = refseqs[ref]
-            # Probably inefficient that we are sending in the bamfile that has to be opened over and
-            # over, but for now we will do that
-            row = generate_vcf_row( bamfile, regionstr, refseq.seq, minbq, maxd, mind, minth )
-            out_vcf.write_record( row )
+
+    # Get the iterator for an mpileupcal
+    # Do not exclude any bases by setting minmq and minbq to 0 and maxdepth to 100000
+    piles = mpileup( bamfile, regionstr, 0, 0, 100000 )
+    # Loop through each pileup row
+    for pilestr in piles:
+        # Generate the handy pileup column object
+        col = MPileupColumn( pilestr )
+        # The reference we are iterating on
+        refseq = refseqs[col.ref]
+        # Generate the vcf frow for that column
+        row = generate_vcf_row( col, refseq.seq, minbq, maxd, mind, minth )
+        # Write the record to the vcf file
+        out_vcf.write_record( row )
+    # Close the file
     out_vcf.close()
 
     return output_path
@@ -243,12 +254,29 @@ def parse_regionstring( regionstr ):
 
     return region
 
-def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.8 ):
+def stats_for_col( mpileupstr ):
+    ''' Needs to be tested '''
+    out = samtools.mpileup( bamfile, regionstr, minmq, minbq, maxd )
+    
+    try:
+        import time; st = time.time();
+        o = out.next()
+        print time.time() - st
+        col = samtools.MPileupColumn( o )
+        out.close()
+        return col.base_stats()
+    except StopIteration:
+        return {
+            'depth': 0,
+            'mqualsum': 0.0,
+            'bqualsum': 0.0
+        }
+
+def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8 ):
     '''
         Generates a vcf row and returns it as a string
 
-        @param bamfile - path to a bamfile
-        @param regionstr - samtools regionstring to look at for a specific base(aka refname:N-N)
+        @param mpileupcol - samtools.MpileupColumn
         @param refseq - Bio.Seq.Seq object representing the reference sequence
         @param minbq - minimum base quality to be considered or turned into an N
         @param maxd - Maximum depth for pileup
@@ -258,7 +286,10 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
         @returns a vcf.model._Record
     '''
     from collections import OrderedDict
-    s = stats( bamfile, regionstr, minmq=0, minbq=0, maxd=maxd )
+    # This call needs to be replaced after the mpileupcol parameter is put into place
+    # then stats_for_col( mpileup
+    #s = stats( bamfile, regionstr, minmq=0, minbq=0, maxd=maxd )
+    s = mpileupcol.base_stats()
     stats2 = mark_lq( s, minbq, mind )
 
     # Update stats2 so that it does not include low quality bases since we
@@ -286,12 +317,12 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     info = {}
 
     # Parse the region string into refname, start, stop
-    r = parse_regionstring(regionstr)
+    #r = parse_regionstring(regionstr)
     # The base position should be the same as the second item in the parsed region string
-    start = r[1]
+    start = mpileupcol.pos
     # Get the reference base from the reference sequence
     # Python is 0-index, biology is 1 index
-    rb = refseq[r[1]-1]
+    rb = refseq[start-1]
 
     # Alternate info
     alt_info = info_stats( stats2, rb )
@@ -329,7 +360,7 @@ def generate_vcf_row( bamfile, regionstr, refseq, minbq, maxd, mind=10, minth=0.
     info['CBD'] = cbd
 
     # need to record each line of the vcf file.
-    record = vcf.model._Record( r[0], start, None, rb, alt_bases, None, None, info, None, None )
+    record = vcf.model._Record( mpileupcol.ref, start, None, rb, alt_bases, None, None, info, None, None )
 
     return record
 

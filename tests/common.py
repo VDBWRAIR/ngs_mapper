@@ -50,3 +50,14 @@ class BaseBamRef(BaseClass):
         super(BaseBamRef,klass).tearDownClass()
         import shutil
         shutil.rmtree(klass.mytempdir)
+
+class BaseBaseCaller(BaseClass):
+    def setUp( self ):
+        super( BaseBaseCaller, self ).setUp()
+        fixpath = join( fixtures.THIS, 'fixtures', 'base_caller' )
+        self.bam = join( fixpath, 'test.bam' )
+        self.bai = join( fixpath, 'test.bam.bai' )
+        self.ref = join( fixpath, 'testref.fasta' )
+        self.sam = join( fixpath, 'test.sam' )
+        self.vcf = join( fixpath, 'test.vcf' )
+        self.template = join( fixpath, 'template.vcf' )

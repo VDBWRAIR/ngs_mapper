@@ -6,6 +6,7 @@ import argparse
 import sys
 import itertools
 from collections import OrderedDict
+import samtools
 
 def main(args):
     return stats_at_pos( args.bamfile, args.regionstr, args.minmq, args.minbq, args.maxd )
@@ -185,11 +186,13 @@ def stats_at_pos( bamfile, regionstr, minmq, minbq, maxd ):
     return base_stats
 
 def stats( bamfile, regionstr, minmq, minbq, maxd ):
-    import samtools
     out = samtools.mpileup( bamfile, regionstr, minmq, minbq, maxd )
     
     try:
-        col = samtools.MPileupColumn( out.next() )
+        import time; st = time.time();
+        o = out.next()
+        #print time.time() - st
+        col = samtools.MPileupColumn( o )
         out.close()
         return col.base_stats()
     except StopIteration:
