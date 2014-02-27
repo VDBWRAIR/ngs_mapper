@@ -205,3 +205,27 @@ class MPileupColumn(object):
     def __str__( self ):
         ''' Returns the mpileup string '''
         return "{ref}\t{pos}\t{refbase}\t{depth}\t{_bases}\t{_bquals}\t{_mquals}".format(**self.__dict__)
+
+# Exception for when invalid region strings are given
+class InvalidRegionString(Exception): pass
+
+def parse_regionstring( regionstr ):
+    '''
+        Parses a region string into a 3 item tuple and checks it for errors
+
+        @param regionstr - samtools region string format
+
+        @returns (ref, start, stop)
+        @raises InvalidRegionString
+    '''
+    import re
+    m = re.match( '(\S+):(\d+)-(\d+)', regionstr )
+    if not m:
+        raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )
+
+    region = (m.group(1), int(m.group(2)), int(m.group(3)))
+    if region[1] > region[2]:
+        raise InvalidRegionString( "Start cannot be > stop in a region string: {}".format(regionstr) )
+
+    return region
+

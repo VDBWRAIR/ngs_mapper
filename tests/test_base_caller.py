@@ -550,32 +550,6 @@ class TestUnitGenerateVCF(Base):
     # just going to let the integration tests do it...
     pass
 
-from base_caller import InvalidRegionString
-class TestUnitParseRegionString(object):
-    def _C( self, regionstr ):
-        from base_caller import parse_regionstring
-        return parse_regionstring( regionstr )
-
-    @raises(InvalidRegionString)
-    def test_start_gt_stop( self ):
-        self._C( 'ref1:2-1' )
-
-    @raises(InvalidRegionString)
-    def test_incorrect_format( self ):
-        self._C( 'sometext' )
-        self._C( 'sometext:1' )
-        self._C( 'sometext:1-' )
-        self._C( 'sometext:1- ' )
-        self._C( 'sometext:a-b' )
-
-    def test_correct_singlebase( self ):
-        r = self._C( 'ref:1-1' )
-        eq_( ('ref',1,1), r )
-
-    def test_correct_multibase( self ):
-        r = self._C( 'ref:1-2' )
-        eq_( ('ref',1,2), r )
-
 class TestUnitInfoStats(Base):
     def setUp( self ):
         self.mock_stats2()

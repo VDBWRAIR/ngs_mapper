@@ -261,28 +261,6 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
 
     return output_path
 
-# Exception for when invalid region strings are given
-class InvalidRegionString(Exception): pass
-
-def parse_regionstring( regionstr ):
-    '''
-        Parses a region string into a 3 item tuple and checks it for errors
-
-        @param regionstr - samtools region string format
-
-        @returns (ref, start, stop)
-        @raises InvalidRegionString
-    '''
-    m = re.match( '(\S+):(\d+)-(\d+)', regionstr )
-    if not m:
-        raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )
-
-    region = (m.group(1), int(m.group(2)), int(m.group(3)))
-    if region[1] > region[2]:
-        raise InvalidRegionString( "Start cannot be > stop in a region string: {}".format(regionstr) )
-
-    return region
-
 def blank_vcf_rows( refname, refseq, curpos, lastpos, call='-' ):
     '''
         Returns a list of blank vcf rows for all positions that are missing
@@ -373,8 +351,6 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8 ):
     # Holds the info dictionary in order
     info = {}
 
-    # Parse the region string into refname, start, stop
-    #r = parse_regionstring(regionstr)
     # The base position should be the same as the second item in the parsed region string
     start = mpileupcol.pos
     # Get the reference base from the reference sequence

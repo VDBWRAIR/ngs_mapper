@@ -276,3 +276,37 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( 'I'*10, r._bquals )
         eq_( ']'*10, r._mquals )
         eq_( 'A'*10, r.bases )
+
+class TestUnitParseRegionString(object):
+    def _C( self, regionstr ):
+        from samtools import parse_regionstring
+        return parse_regionstring( regionstr )
+
+    def test_start_gt_stop( self ):
+        from samtools import InvalidRegionString
+        try:
+            self._C( 'ref1:2-1' )
+            assert False, "Did not raise InvalidRegionString"
+        except InvalidRegionString as e:
+            assert True
+
+    def test_incorrect_format( self ):
+        from samtools import InvalidRegionString
+        try:
+            self._C( 'sometext' )
+            self._C( 'sometext:1' )
+            self._C( 'sometext:1-' )
+            self._C( 'sometext:1- ' )
+            self._C( 'sometext:a-b' )
+            assert False, "Did not raise InvalidRegionString"
+        except InvalidRegionString as e:
+            assert True
+
+    def test_correct_singlebase( self ):
+        r = self._C( 'ref:1-1' )
+        eq_( ('ref',1,1), r )
+
+    def test_correct_multibase( self ):
+        r = self._C( 'ref:1-2' )
+        eq_( ('ref',1,2), r )
+
