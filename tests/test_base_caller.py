@@ -64,7 +64,6 @@ class StatsBase(Base):
         #'depth': 100
         self.mock_stats()
 
-@attr('current')
 class TestUnitBiasHQ(StatsBase):
     def _C( self, *args, **kwargs ):
         from base_caller import bias_hq
@@ -433,7 +432,6 @@ class TestUnitGenerateVcfRow(Base):
         self.setup_mpileupcol( mpilecol )
         r = self._C( mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8 )
 
-    @attr('current')
     def test_bias_works( self, mpilecol ):
         stats = self.mock_stats()
         # SHould keep depth at 100 and as it stands
@@ -757,11 +755,10 @@ class TestUnitMain(BaseInty):
         )        
         return main( args )
 
-    @attr('current')
     def test_runs( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
-        r = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
+        r = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8, 50, 2 )
         assert self.cmp_files( self.vcf, out_vcf )
 
 class TestIntegrate(BaseInty):
@@ -774,7 +771,7 @@ class TestIntegrate(BaseInty):
             cmd += ['-r', regionstr]
         if vcf_output_file:
             cmd += ['-o', vcf_output_file]
-        cmd += ['-minbq', minbq, '-maxd', maxd, '-mind', mind, '-minth', minth]
+        cmd += ['-minbq', minbq, '-maxd', maxd, '-mind', mind, '-minth', minth, '-biasth', biasth, '-bias', bias]
         cmd = [str(x) for x in cmd]
         #print cmd
         return subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
@@ -793,7 +790,6 @@ class TestIntegrate(BaseInty):
         o,e = p.communicate()
         assert self.cmp_files( self.vcf, out_vcf )
 
-    @attr('current')
     def test_stdouterr_ok_and_filesmatch( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
@@ -807,3 +803,17 @@ class TestIntegrate(BaseInty):
         assert e==o==''
 
         assert self.cmp_files( self.vcf, out_vcf )
+
+    def test_nondefault_filesdiffer( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        p = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8, 50, 10 )
+
+        o,e = p.communicate()
+        print "STDOUT"
+        print o
+        print "STDERR"
+        print e
+        assert e==o==''
+
+        assert not self.cmp_files( self.vcf, out_vcf )

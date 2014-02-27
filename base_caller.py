@@ -44,6 +44,8 @@ def main( args ):
         args.maxd,
         args.mind,
         args.minth,
+        args.biasth,
+        args.bias,
         VCF_HEAD.format(basename(args.bamfile)),
     )
 
@@ -199,7 +201,7 @@ def mark_lq( stats, minbq, mind ):
                 stats2[k]['baseq'].append( q )
     return stats2
 
-def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, vcf_template=VCF_HEAD ):
+def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=2, vcf_template=VCF_HEAD ):
     '''
         Generates a vcf file from a given vcf_template file
 
@@ -261,7 +263,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         for rec in blank_vcf_rows( col.ref, refseq, col.pos, lastpos, '-' ):
             out_vcf.write_record( rec )
         # Generate the vcf frow for that column
-        row = generate_vcf_row( col, refseq, minbq, maxd, mind, minth )
+        row = generate_vcf_row( col, refseq, minbq, maxd, mind, minth, biasth, bias )
         # Write the record to the vcf file
         out_vcf.write_record( row )
         # Set last position seen
