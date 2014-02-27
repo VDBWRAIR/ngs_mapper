@@ -131,6 +131,23 @@ def parse_args( args=sys.argv[1:] ):
             'will trigger a base to be called.[Default: 0.8]'
     )
 
+    parser.add_argument(
+        '-biasth',
+        dest='biasth',
+        default=50,
+        type=float,
+        help='Minimum base quality threshold to bias towards. Will increase the amount of bases that have >= ' \
+            'this value by a factor of what bias is set to[Default: 50]'
+    )
+
+    parser.add_argument(
+        '-bias',
+        dest='bias',
+        default=2,
+        type=int,
+        help='What factor to bias high quality bases by. Must be an integer >= 1[Default: 2]'
+    )
+
     args = parser.parse_args( args )
     if args.vcf_output_file is None:
         args.vcf_output_file = args.bamfile + '.vcf'
@@ -349,7 +366,7 @@ def bias_hq( stats, biasth=50, bias=2 ):
         stats2['depth'] += len( stats2[k]['baseq'] )
     return stats2
 
-def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8 ):
+def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=2 ):
     '''
         Generates a vcf row and returns it as a string
 
@@ -359,6 +376,8 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8 ):
         @param maxd - Maximum depth for pileup
         @param mind - Minimum depth decides if low quality bases are N's or if they are removed
         @param minth - Minimum percentage to call a base(unless no bases have > minth then the maximum pct base would be called
+        @param biasth - Any base with quality above this will be biased by a bias factor
+        @param bias - For every base >= biasth add bias more of those bases
 
         @returns a vcf.model._Record
     '''
@@ -368,6 +387,7 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8 ):
     #s = stats( bamfile, regionstr, minmq=0, minbq=0, maxd=maxd )
     s = mpileupcol.base_stats()
     stats2 = mark_lq( s, minbq, mind )
+    stats2 = bias_hq( stats2, biasth, bias )
 
     # Update stats2 so that it does not include low quality bases since we
     # are above the min depth

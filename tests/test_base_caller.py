@@ -407,9 +407,9 @@ class TestUnitBlankVcfRow(Base):
 
 @patch('base_caller.MPileupColumn')
 class TestUnitGenerateVcfRow(Base):
-    def _C( self, mpilecol, refseq, minbq, maxd, mind, minth ):
+    def _C( self, mpilecol, refseq, minbq, maxd, mind, minth, biasth=50, bias=2 ):
         from base_caller import generate_vcf_row
-        return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth )
+        return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias )
 
     def mock_stats( self ):
         base_stats = {
@@ -432,6 +432,21 @@ class TestUnitGenerateVcfRow(Base):
     def test_runs_quickly( self, mpilecol ):
         self.setup_mpileupcol( mpilecol )
         r = self._C( mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8 )
+
+    @attr('current')
+    def test_bias_works( self, mpilecol ):
+        stats = self.mock_stats()
+        # SHould keep depth at 100 and as it stands
+        # ambiguous call which we can bias towards the N
+        stats['G'] = {'baseq': [50]*60}
+        stats['N'] = {'baseq': [40]*10}
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        # biasth @ 50 will bias the G and bias @ 3 will make it
+        # the majority at 180/220 = 82%
+        r = self._C( mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8, 50, 3 )
+        eq_( 220, r.INFO['DP'] )
+        eq_( 180, r.INFO['CBD'] )
+        eq_( 'G', r.INFO['CB'] )
 
     def test_regionstr_not_1( self, mpilecol ):
         self.setup_mpileupcol( mpilecol )
@@ -726,7 +741,7 @@ class TestUnitGenerateVCF(BaseInty):
         eq_( out_vcf, r )
 
 class TestUnitMain(BaseInty):
-    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8 ):
+    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         from base_caller import main
         args = Mock(
             bamfile=bamfile,
@@ -736,10 +751,13 @@ class TestUnitMain(BaseInty):
             minbq=minbq,
             maxd=maxd,
             mind=mind,
-            minth=minth
+            minth=minth,
+            biasth=biasth,
+            bias=bias
         )        
         return main( args )
 
+    @attr('current')
     def test_runs( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
@@ -747,7 +765,7 @@ class TestUnitMain(BaseInty):
         assert self.cmp_files( self.vcf, out_vcf )
 
 class TestIntegrate(BaseInty):
-    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8 ):
+    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         import subprocess
         script_path = join( dirname( dirname( __file__ ) ) )
         script_path = join( script_path, 'base_caller.py' )
@@ -775,6 +793,7 @@ class TestIntegrate(BaseInty):
         o,e = p.communicate()
         assert self.cmp_files( self.vcf, out_vcf )
 
+    @attr('current')
     def test_stdouterr_ok_and_filesmatch( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
