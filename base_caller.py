@@ -306,6 +306,49 @@ def blank_vcf_row( refname, refseq, pos, call='-' ):
     record = vcf.model._Record( refname, pos, None, refseq[pos-1], [], None, None, info, None, None )
     return record
 
+def bias_hq( stats, biasth=50, bias=2 ):
+    '''
+        Biases high quality reads in stats so that they are more likely to be selected later on.
+        Essentially duplicates quality scores(baseq values) by a factor of bias.
+         Given the example:
+            stats = { 'A': {'baseq':[40,40,40]}, 'C': {'baseq':[50,50,50,50,50,50,50]} }
+         Without any biasing the called base would likely be called an M as there is no majority of C's
+          since A is 30% and C is 70%(Assuming 0.8 minth which requires 80% to be called)
+         With bias_hq( stats, 50, 2 ) you would end up with 3 A's and 14 C's or 18% A and 82% C so C
+            would be more correctly called for the consensus
+
+        bias will round the length of the created list to the nearest integer so if the length of a
+        baseq is say 10 and the bias is 1.25 the resulting baseq list will be 13 in length(addition of 3 baseq)
+
+        @param stats - Should most likely be a stats2 dictionary although stats would work as well
+        @param biasth - What quality value(>=) should be considered to be bias towards
+        @param bias - How much to bias aka, how much to multiply the # of quals >= biasth(has to be int >= 1)
+
+        @returns stats2 formatted dictionary with all baseq lists appended to with the bias amount
+    '''
+    if bias < 1 or int(bias) != bias:
+        raise ValueError( "bias was set to {} which is less than 1. Cannot bias on a factor < 1".format(bias) )
+
+    # Because we are adding onto the existing list this needs to be one less
+    bias = int(bias) - 1
+
+    stats2 = {'depth': 0}
+
+    for k, v in stats.iteritems():
+        # Skip non base items
+        if k in ('depth','mqualsum','bqualsum'):
+            if k != 'depth':
+                stats2[k] = v
+            continue
+        stats2[k] = {}
+        bquals = v['baseq']
+        # New list of all baseq >= biasth biased by a factor of bias
+        duplist = [d for d in bquals if d >= biasth] * bias
+        stats2[k]['baseq'] = v['baseq'] + duplist
+        stats2[k]['mapq'] = v.get( 'mapq', [] )
+        stats2['depth'] += len( stats2[k]['baseq'] )
+    return stats2
+
 def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8 ):
     '''
         Generates a vcf row and returns it as a string

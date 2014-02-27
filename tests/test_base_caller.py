@@ -53,11 +53,66 @@ class Base( common.BaseBaseCaller ):
 
         return stats
 
-class TestUnitLabelN(Base):
+class StatsBase(Base):
     def setUp( self ):
-        super( TestUnitLabelN, self ).setUp()
+        super( StatsBase, self ).setUp()
+        # For reference
+        #'G': { 'baseq': [40]*70 },
+        #'A': { 'baseq': [40]*10 },
+        #'C': { 'baseq': [40]*10 },
+        #'T': { 'baseq': [40]*10 }
+        #'depth': 100
         self.mock_stats()
 
+@attr('current')
+class TestUnitBiasHQ(StatsBase):
+    def _C( self, *args, **kwargs ):
+        from base_caller import bias_hq
+        return bias_hq( *args, **kwargs )
+
+    def test_no_highquality( self ):
+        r = self._C( self.stats )
+        for k,v in self.stats.items():
+            eq_( v, r[k] )
+
+    def do_depth( self, stats, bias ):
+        if stats is None:
+            stats = self.stats
+        # Depth should just increase by a factor of i
+        r = self._C( stats, 1, bias )
+        for k,v in stats.items():
+            if k not in ('depth','mqualsum','bqualsum'):
+                ebaseq = v['baseq']*int(bias)
+                rbaseq = r[k]['baseq']
+                eq_( ebaseq, r[k]['baseq'], 
+                    "Len of base {} should be {} but got {}".format( k, len(ebaseq), len(rbaseq) )
+                )
+        # Verify depth is updated
+        eq_( int(stats['depth']*bias), r['depth'] )
+
+    def test_depth_is_updated( self ):
+        # Verify that everything works when the bias is changed
+        for i in (1,2,3.0):
+            yield self.do_depth, None, i
+
+    def test_biasth_works( self ):
+        self.stats = {
+            'A': {'baseq': [1,10,20,30,40,50,60] },
+            'depth': 7
+        }
+        self.update_stats( self.stats )
+        r = self._C( self.stats )
+        eq_( self.stats['A']['baseq'] + [50,60], r['A']['baseq'] )
+        r = self._C( self.stats, 15 )
+        eq_( self.stats['A']['baseq'] + [20,30,40,50,60], r['A']['baseq'] )
+
+    @raises(ValueError)
+    def test_bias_is_zero( self ):
+        # Non int and < 1 should raise error
+        for i in (1, 0.9, 0, -1, 1.5):
+            r = self._C( self.stats, 1, i )
+
+class TestUnitMarkLQ(StatsBase):
     def _C( self, stats, minbq, mind ):
         from base_caller import mark_lq
         return mark_lq( stats, minbq, mind )
