@@ -41,7 +41,7 @@ bash ${scripts}/perms.sh
 # File needs to be either space or tab delimeted
 # Samplename ReferencePath
 # Excluding any lines that begin with a #
-mkdir -p Projects && cd Projects
+mkdir -p Projects
 grep -v '^#' $sample_ref_map_file | while read sample reference
 do
     # Make sure that sample was set
@@ -68,7 +68,7 @@ do
         continue
     fi
 
-    ${scripts}/runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od ${sample}
+    ${scripts}/runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od Projects/${sample}
     ret=$?
     # Detect if bwa didn't run correctly
     if [ $ret -ne 0 ]
@@ -76,4 +76,3 @@ do
         echo "runsample.py did not run successfully for ${sample}"
     fi
 done
-cd ..
