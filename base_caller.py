@@ -32,7 +32,6 @@ def timeit( func ):
         result = func( *args, **kwargs )
         print "{} took {} seconds to run".format(func, time.time() - st)
         return result
-
     return wrapper
 
 def main( args ):

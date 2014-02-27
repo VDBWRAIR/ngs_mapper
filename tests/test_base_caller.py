@@ -8,6 +8,11 @@ from mock import patch, Mock, MagicMock
 from StringIO import StringIO
 from os.path import join, dirname, basename, exists
 
+# How long you expect each base position on the reference to take to process
+EXPECTED_TIME_PER_BASE = 0.0015
+# How long you expect for the entire fixtures/base_caller/test.bam to complete
+EXPECTED_TOTAL_TIME = 0.6
+
 class Base( common.BaseBaseCaller ):
     def mock_stats( self ):
         s = { 'baseq': [40]*10, 'mapq': [60]*10 }
@@ -361,11 +366,17 @@ class TestUnitGenerateVcfRow(Base):
         return self.make_stats( base_stats )
 
     def setup_mpileupcol( self, mpilemock, ref='ref', pos=1, stats=None ):
+        ''' Sets up a mock mpileupcolumn object '''
         if stats is None:
             stats = self.mock_stats()
         mpilemock.ref = ref
         mpilemock.pos = pos
         mpilemock.base_stats.return_value = stats
+
+    @timed(EXPECTED_TIME_PER_BASE)
+    def test_runs_quickly( self, mpilecol ):
+        self.setup_mpileupcol( mpilecol )
+        r = self._C( mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8 )
 
     def test_regionstr_not_1( self, mpilecol ):
         self.setup_mpileupcol( mpilecol )
@@ -695,6 +706,7 @@ class TestIntegrate(BaseInty):
         #print cmd
         return subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
+    @timed(EXPECTED_TOTAL_TIME)
     def test_exit_0_on_success( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
