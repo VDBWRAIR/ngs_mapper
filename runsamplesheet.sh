@@ -27,12 +27,12 @@ then
     exit 1
 fi
 
-if [ ! -e ${scripts}/perms.sh ]
-then
-    echo "Please setup perms.sh first"
-    echo "You can copy perms.sh-example to perms.sh and then modify it"
-    exit 1
-fi
+#if [ ! -e ${scripts}/perms.sh ]
+#then
+#    echo "Please setup perms.sh first"
+#    echo "You can copy perms.sh-example to perms.sh and then modify it"
+#    exit 1
+#fi
 
 # Call perms.sh to setup the permissions environment
 bash ${scripts}/perms.sh
