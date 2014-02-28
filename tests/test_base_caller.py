@@ -708,6 +708,7 @@ class BaseInty(Base):
             return False
 
     def temp_bam( self, bam, bai ):
+        ''' Copies given bam and bai to fixture temp dir '''
         import shutil
         tbam = join( self.tempdir, basename(self.bam) )
         tbai = tbam + '.bai'
@@ -716,14 +717,14 @@ class BaseInty(Base):
         return tbam, tbai
 
 class TestUnitGenerateVCF(BaseInty):
-    def _C( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, vcf_template=None ):
+    def _C( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, biasth=50, bias=2, vcf_template=None ):
         from base_caller import generate_vcf, VCF_HEAD
         if vcf_template is None:
             template = VCF_HEAD.format(basename(bamfile))
         else:
             template = vcf_template
         return generate_vcf( bamfile, reffile, regionstr, vcf_output_file, 
-                minbq, maxd, mind, minth, vcf_template=template ) 
+                minbq, maxd, mind, minth, biasth, bias, vcf_template=template ) 
 
     def test_correct_vcf( self ):
         out_vcf = join( self.tempdir, 'out.vcf' )
@@ -738,6 +739,29 @@ class TestUnitGenerateVCF(BaseInty):
         assert self.cmp_files( self.vcf, out_vcf )
         eq_( out_vcf, r )
 
+    @timed(90)
+    @attr('slow')
+    def test_fullsample( self ):
+        # The base directory of the fixture files
+        fullsampledir = fsd = join( fixtures.THIS, 'fixtures', 'base_caller', 'fullsample' )
+        # Input files
+        ref = join( fsd, 'Den1__WestPac__1997.fasta' )
+        bam = join( fsd, 'fullsample.bam' )
+        bai = bam + '.bai'
+        # Expected vcf
+        vcf = join( fsd, 'fullsample.bam.vcf' )
+        # Result vcf
+        out_vcf = join( self.tempdir, basename(bam) + '.vcf' )
+        print out_vcf
+        assert out_vcf is not None
+        # Run the base caller
+        # Set bias to 10. Will probably be what will be used as default eventually
+        out_vcf = self._C( bam, ref, None, out_vcf, 25, 100000, 10, 0.8, 50, 10 )
+        # Compare the expected and result vcf
+        assert self.cmp_files( vcf, out_vcf )
+
+
+@attr('current')
 class TestUnitMain(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         from base_caller import main
@@ -755,10 +779,16 @@ class TestUnitMain(BaseInty):
         )        
         return main( args )
 
+    def test_noregion_emptypileup( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+        r = self._C( self.bam, self.ref, out_vcf, 'doesnotexist', 25, 100, 10, 0.8, 50, 2 )
+        assert not self.cmp_files( self.vcf, out_vcf )
+
     def test_runs( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
-        r = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8, 50, 2 )
+        r = self._C( self.bam, self.ref, out_vcf, '', 25, 100, 10, 0.8, 50, 2 )
         assert self.cmp_files( self.vcf, out_vcf )
 
 class TestIntegrate(BaseInty):

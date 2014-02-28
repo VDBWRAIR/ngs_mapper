@@ -269,10 +269,11 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         # Set last position seen
         lastpos = row.POS
 
-    # Insert from lastposition of lastref to end of reference
-    # len+1 so that it inserts single bases at the end
-    for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
-        out_vcf.write_record( rec )
+    if lastref != '':
+        # Insert from lastposition of lastref to end of reference
+        # len+1 so that it inserts single bases at the end
+        for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
+            out_vcf.write_record( rec )
 
     # Close the file
     out_vcf.close()
