@@ -323,7 +323,7 @@ def blank_vcf_row( refname, refseq, pos, call='-' ):
         CB=call,
         CBD=0
     )
-    record = vcf.model._Record( refname, pos, None, refseq[pos-1], [], None, None, info, None, None )
+    record = vcf.model._Record( refname, pos, None, refseq[pos-1], '.', None, None, info, None, None )
     return record
 
 def bias_hq( stats, biasth=50, bias=2 ):
@@ -456,6 +456,9 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
     # Set the Called base
     info['CB'] = cb
     info['CBD'] = cbd
+
+    if not alt_bases:
+        alt_bases = '.'
 
     # need to record each line of the vcf file.
     record = vcf.model._Record( mpileupcol.ref, start, None, rb, alt_bases, None, None, info, None, None )

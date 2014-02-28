@@ -390,7 +390,7 @@ class TestUnitBlankVcfRow(Base):
         eq_( pos, r.POS )
         eq_( refbase, r.REF )
         eq_( 'ref', r.CHROM )
-        eq_( [], r.ALT )
+        eq_( '.', r.ALT )
         eq_( 0, r.INFO['DP'] )
         eq_( 0, r.INFO['RC'] )
         eq_( 0, r.INFO['RAQ'] )
@@ -426,6 +426,17 @@ class TestUnitGenerateVcfRow(Base):
         mpilemock.ref = ref
         mpilemock.pos = pos
         mpilemock.base_stats.return_value = stats
+
+    @attr('current')
+    def test_no_alternates( self, mpilecol ):
+        stats = self.mock_stats()
+        del stats['A']
+        del stats['C']
+        del stats['T']
+        stats['depth'] = 70
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'G', 25, 1000, 10, 0.8 )
+        eq_( '.', r.ALT )
 
     @timed(EXPECTED_TIME_PER_BASE)
     def test_runs_quickly( self, mpilecol ):
@@ -761,7 +772,6 @@ class TestUnitGenerateVCF(BaseInty):
         assert self.cmp_files( vcf, out_vcf )
 
 
-@attr('current')
 class TestUnitMain(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         from base_caller import main
@@ -813,6 +823,7 @@ class TestIntegrate(BaseInty):
         p = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
         eq_( 0, p.wait() )
 
+    @attr('current')
     def test_outputs_correct_vcf_1( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
