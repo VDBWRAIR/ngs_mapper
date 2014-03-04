@@ -153,7 +153,7 @@ class TestFunctional(Base):
         efiles.append( bamfile + '.bai' )
         efiles.append( bamfile + '.qualdepth.json' )
         efiles.append( bamfile + '.qualdepth.png' )
-        efiles.append( bamfile + '.consensus.fastq' )
+        efiles.append( bamfile + '.consensus.fasta' )
         efiles.append( join( outdir, 'bwa.log' ) )
         efiles.append( join( outdir, 'flagstats.txt' ) )
         efiles.append( join( outdir, prefix + '.log' ) )
@@ -177,7 +177,6 @@ class TestFunctional(Base):
         print out
         self._ensure_expected_output_files( 'outdir', 'tests' )
 
-    @attr('current')
     def test_outdir_not_exist( self ):
         assert not isdir( 'outdir' )
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )

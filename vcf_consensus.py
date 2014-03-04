@@ -35,7 +35,7 @@ def write_fasta( records, outputfile ):
 
 def iter_refs( vcffile ):
     '''
-        Iterates over a given vcf file and outputs a list of Bio.Seq.Seq objects
+        Iterates over a given vcf file and yields Bio.Seq.Seq objects
         that represent the consensus sequence for each of the references in the vcffile
 
         @param vcffile - path to a vcf file
