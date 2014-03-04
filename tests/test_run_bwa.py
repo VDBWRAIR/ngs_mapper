@@ -8,6 +8,7 @@ import fixtures
 import os
 from os.path import *
 from glob import glob
+import shutil
 
 class Base(BaseClass):
     pass
@@ -92,7 +93,7 @@ class TestUnitParseArgs(Base):
 
     def test_platform_select_none( self ):
         res = self._CPA( ['fake_read', 'fake_ref'] )
-        eq_( res.platforms, ['MiSeq','Sanger'] )
+        eq_( res.platforms, ['MiSeq','Sanger','Roche454','IonTorrent'] )
 
     def test_platform_select_single( self ):
         res = self._CPA( ['fake_read', 'fake_ref', '--platforms', 'Sanger'] )
@@ -270,6 +271,24 @@ class TestIntegrateMainArgs(Base):
             f1, s1, f2, s2, threshold
         )
 
+    def test_handles_sff( self ):
+        sff = glob( join( fixtures.THIS, 'fixtures', 'reads', '*.sff' ) )[0]
+        shutil.copy( sff, 'expected/reads' )
+        sff = join( 'expected', 'reads', basename( sff ) )
+
+        print "All files in expected directory:" + str( glob( 'expected/*' ) )
+        ff = self.fixture_files
+        argv = ['expected/reads', ff['REF']]
+        r = self._CM( argv )
+        assert os.stat( r )
+        import subprocess
+        out = subprocess.check_output( ['samtools', 'view', '{}'.format(r)] )
+        rochecount = out.count( 'IA52U1' )
+        print rochecount
+        eq_( 100, rochecount, 'Sff file reads did not make it into bam file' )
+
+        os.unlink( sff )
+
     def test_paired_and_nonpaired_get_merged(self):
         ff = self.fixture_files
         argv = ['expected/reads', ff['REF'], '--keep-temp']
@@ -320,6 +339,7 @@ class TestFunctionalRunBWA(Base):
     def setUp(self):
         super(TestFunctionalRunBWA,self).setUp()
         self.read1,self.read2,self.ref = fixtures.get_sample_paired_reads()
+        self.sff = glob( join( fixtures.THIS, 'fixtures', 'reads', '*.sff' ) )[0]
 
     def test_maps_reads_paired(self):
         from run_bwa import bwa_mem

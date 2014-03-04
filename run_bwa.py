@@ -30,6 +30,7 @@ def main():
     
     # Compile together all the reads into a list
     preads = reads_by_plat( args.reads )
+    log.debug( "Reads parsed by platform: {}".format(preads) )
     reads = []
     for plat in args.platforms:
         if plat in preads:
@@ -99,7 +100,7 @@ def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
         description='Runs the bwa mem argument on a given set of reads and references for the given platform\'s reads',
         epilog='You should consider this script an autonomous bwa operation. That is, it will select the reads for ' \
-            'the platforms you select(MiSeq,Sanger only) and it will pull those reads onto the current host. It will ' \
+            'the platforms you select and it will pull those reads onto the current host. It will ' \
             'compile references if they are multiple ones in a directory you select onto the local computer. Then it ' \
             'will map any mated reads against to those refs and also map the nonpaired reads against that ref in a separate ' \
             'call. Then when both are finished it will convert to bam/sort/index/merge/reindex the results. It attempts all of ' \
@@ -117,7 +118,7 @@ def parse_args( args=sys.argv[1:] ):
         help='Location of the reference to map to. Should be a fasta file or directory of fasta files that will be compiled together.'
     )
 
-    valid_platforms = ['MiSeq','Sanger']
+    valid_platforms = ['MiSeq','Sanger','Roche454','IonTorrent']
     parser.add_argument(
         '--platforms',
         dest='platforms',
