@@ -48,6 +48,13 @@ def parse_args( args=sys.argv[1:] ):
         help='The prefix to put before every output file generated. Probably the samplename'
     )
 
+    parser.add_argument(
+        '--CN',
+        dest='CN',
+        default='WRAIRVDB',
+        help='What to set the CN argument to for tagreads.py[Default: WRAIRVDB]'
+    )
+
     default_outdir = os.getcwd()
     parser.add_argument(
         '-od',
@@ -95,9 +102,11 @@ def main( args ):
     tdir = temp_projdir( args.prefix )
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
-    consensus = os.path.join( tdir, bamfile+'.consensus.fastq' )
+    consensus = os.path.join( tdir, bamfile+'.consensus.fasta' )
+    vcf = os.path.join( tdir, bamfile+'.vcf' )
     bwalog = os.path.join( tdir, 'bwa.log' )
     logfile = os.path.join( tdir, args.prefix + '.log' )
+    CN = args.CN
 
     if os.path.isdir( args.outdir ):
         if os.listdir( args.outdir ):
@@ -111,7 +120,9 @@ def main( args ):
             'reference': args.reference,
             'bamfile': bamfile,
             'flagstats': flagstats,
-            'consensus': consensus
+            'consensus': consensus,
+            'vcf': vcf,
+            'CN': CN
         }
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
@@ -133,12 +144,12 @@ def main( args ):
                 sys.exit(1)
 
         # Tag Reads
-        cmd = 'tagreads.py {bamfile}'
+        cmd = 'tagreads.py {bamfile} -CN {CN}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
 
         # Variant Calling
-        cmd = 'base_caller.py {bamfile} {reference}'
+        cmd = 'base_caller.py {bamfile} {reference} -o {vcf}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
         if rets[-1] != 0:
@@ -158,7 +169,7 @@ def main( args ):
 
         # Consensus
         with open(consensus,'wb') as consensus:
-            cmd = 'gen_consensus.sh {reference} {bamfile}'
+            cmd = 'vcf_consensus.py {vcf} -o {consensus}'
             p = run_cmd( cmd.format(**cmd_args), stdout=consensus, stderr=lfile )
             rets.append( p.wait() )
 
