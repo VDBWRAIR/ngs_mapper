@@ -1,11 +1,13 @@
-from nose.tools import eq_, raises
+from nose.tools import eq_, raises, ok_
 from nose.plugins.attrib import attr
-from mock import Mock, MagicMock, patch
+from mock import Mock, MagicMock, patch, call
 
 from .common import BaseClass
+import fixtures
 
 import os
 from os.path import *
+from glob import glob
 
 class Base(BaseClass):
     pass
@@ -102,10 +104,25 @@ class TestFunctionalCompileReads(Base):
         eq_( expected, compile_reads( reads, outputdir ) )
         eq_( len(mock.call_args_list), 1 )
 
-    def test_compile_reads_non_fastq(self,mock):
+    @patch('bwa.seqio.sffs_to_fastq')
+    def test_converts_sff_to_fastq(self,sffs_to_fastq,concat_files):
+        from reads import compile_reads
+        def side_effect( ins, out ):
+            fh = open(out,'w')
+            fh.write('\n')
+            fh.close()
+        sffs_to_fastq.side_effect = side_effect
+        outputdir = join(self.tempdir,'output')
+        reads = ['np.sff','np.fastq',('F.fastq','R.fastq')]
+        compile_reads( reads, outputdir )
+        eq_( ['np.sff'], sffs_to_fastq.call_args_list[0][0][0] )
+        eq_( 3, len(concat_files.call_args_list) )
+
+    def test_compile_reads_non_supported_read_types(self,mock):
+        # Only support fastq and sff right now
         from reads import compile_reads, InvalidReadFile
         outputdir = join(self.tempdir,'output')
-        reads = ['np.sff','np.ab1','np.fastq.gz']
+        reads = ['np.ab1','np.fastq.gz']
         try:
             compile_reads( reads, outputdir )
             assert False, "Did not raise InvalidReadFile"
@@ -130,6 +147,23 @@ class TestFunctionalCompileReads(Base):
         reads = ['np.sff','np.ab1','np.fastq.gz']
         eq_({'F':None,'R':None,'NP':None}, compile_reads( [], outputdir ) )
 
+class TestUnitIsValidRead(object):
+    def _C( self, readpath ):
+        from reads import is_valid_read
+        return is_valid_read( readpath )
+
+    def test_invalid_read( self ):
+        for ext in ('ab1','gz','adasdf'):
+            eq_( False, self._C( 'file.'+ext ) )
+
+    def test_valid_read( self ):
+        from reads import VALID_READ_EXT
+        for ext in VALID_READ_EXT:
+            eq_( True, self._C( 'file.'+ext ) )
+
+    def test_file_has_no_ext( self ):
+        eq_( False, self._C( 'file' ) )
+
 class TestIntegrationCompileReads(Base):
     def test_compile_reads_outputdir_not_exist(self):
         outputdir = join(self.tempdir,'output')
@@ -142,9 +176,16 @@ class TestIntegrationCompileReads(Base):
 
     def run_compile_reads(self,outputdir):
         from reads import compile_reads
+        readsdir = join( fixtures.THIS, 'fixtures', 'reads' )
+        sff = glob( join(readsdir,'*.sff') )
+        miseq = tuple( glob( join(readsdir,'*L001*') ) )
+        sanger = glob( join( readsdir, '*0001*' ) )
+        reads = sff + [miseq] + sanger
+
         # Read dir will allow relative and abspath testing
         readdir = 'reads'
         os.mkdir(readdir)
+        '''
         reads = [
             ('p1_1.fastq','p1_2.fastq'), # current dir paired
             'np1.fastq', # Current dir np
@@ -164,6 +205,13 @@ class TestIntegrationCompileReads(Base):
             else:
                 np = self.create_file(read,read_contents)
                 expected_linecounts['NP'] += np
+        '''
+        expected_linecounts = {}
+        # Only 1 read F & R since just copied sanger read to fake the miseq paired
+        expected_linecounts['F'] = 1*4
+        expected_linecounts['R'] = 1*4
+        # 100 sff reads + 2 sanger
+        expected_linecounts['NP'] = 102*4
 
         result = compile_reads( reads, outputdir )
         assert os.access(result['F'],os.R_OK), "Did not create Forward file"
@@ -172,6 +220,4 @@ class TestIntegrationCompileReads(Base):
         for k,v in expected_linecounts.items():
             with open(result[k]) as fh:
                 contents = fh.read()
-                print contents
                 eq_( v, len(contents.splitlines()) )
-

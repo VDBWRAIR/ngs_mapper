@@ -3,6 +3,7 @@ from os.path import *
 
 # This directory
 THIS=dirname(abspath(__file__))
+FIXDIR=join(THIS,'fixtures')
 
 def ungiz( filepath, dest=os.getcwd() ):
     ''' unpack filepath into dest '''

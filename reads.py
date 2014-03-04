@@ -4,6 +4,9 @@ from os.path import *
 import logging
 log = logging.getLogger(__name__)
 
+# Valid Read extensions
+VALID_READ_EXT = ('sff','fastq')
+
 class InvalidReadFile(Exception): pass
 
 def compile_reads( readfilelist, outputdir ):
@@ -29,16 +32,16 @@ def compile_reads( readfilelist, outputdir ):
     for read in readfilelist:
         # Non Paired read
         if isinstance(read,str):
-            if read.endswith('.fastq'):
+            if is_valid_read( read ):
                 files_written['NP'].append(read)
             else:
                 raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read))
         elif isinstance(read,tuple) and len(read) == 2:
-            if read[0].endswith('.fastq'):
+            if is_valid_read( read[0] ):
                 files_written['F'].append(read[0])
             else:
                 raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read[0]))
-            if read[1].endswith('.fastq'):
+            if is_valid_read( read[1] ):
                 files_written['R'].append(read[1])
             else:
                 raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read[1]))
@@ -50,10 +53,45 @@ def compile_reads( readfilelist, outputdir ):
         if files:
             outfile = join(outputdir,f+'.fq')
             log.info( "Compiling reads from {} into {}".format( files, outfile ) )
-            seqio.concat_files(files, outfile)
+            # List of only sff
+            sffs = [r for r in files if r.endswith('.sff')]
+            # List of all others
+            other = [r for r in files if not r.endswith('.sff')]
+
+            # All files to concat together
+            cfiles = []
+
+            # Cat all sff
+            if sffs:
+                sff_out = join(outputdir,'sffs.fq')
+                log.debug( "Converting {} to temp fastq file {}".format(sffs,sff_out) )
+                r = seqio.sffs_to_fastq( sffs, sff_out )
+                cfiles.append( sff_out )
+            if other:
+                # Just concat these as normal since they are just text
+                cfiles += other
+
+            # concat everything together now
+            log.debug( "Concating all files {} to {}".format(cfiles,outfile) )
+            seqio.concat_files(cfiles, outfile)
+            # Remove the sff concatted file
+            if sffs:
+                os.unlink( sff_out )
+
+            # Record the file that was written
             files_written[f] = outfile
         else:
             files_written[f] = None
 
     return files_written
 
+def is_valid_read( readpath ):
+    '''
+        Just checks to make sure file extension is in VALID_READ_EXT
+
+        @param readpath - Path to read file
+
+        @returns true if ext of readpath is in VALID_READ_EXT
+    '''
+    # File extension without the period in VALID_READ_EXT ?
+    return splitext( readpath )[1][1:] in VALID_READ_EXT
