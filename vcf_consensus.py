@@ -9,7 +9,7 @@ import vcf
 import os
 
 def main( args ):
-    seqs = iter_refs( args.vcffile )
+    seqs = iter_refs( args.vcffile, args.fastaid )
     write_fasta( seqs, args.output_file )
 
 def write_fasta( records, outputfile ):
@@ -33,12 +33,16 @@ def write_fasta( records, outputfile ):
 
     return numwrote
 
-def iter_refs( vcffile ):
+def iter_refs( vcffile, fastaid=None ):
     '''
         Iterates over a given vcf file and yields Bio.Seq.Seq objects
         that represent the consensus sequence for each of the references in the vcffile
 
+        The Bio.SeqRecord.SeqRecord.id will be set based on what the fastaid. If fastaid is None then the id field will be
+        whatever the current vcf reference is otherwise it will be fastaid
+
         @param vcffile - path to a vcf file
+        @param fastaid - What to set as the fastaid. If None then just use the reference from the vcf
 
         @returns list of Bio.Seq.Seq objects for every reference in vcffile
     '''
@@ -50,13 +54,21 @@ def iter_refs( vcffile ):
         # First iteration
         if lastref == '':
             lastref = row.CHROM
+        # Setup the correct id and description
+        # based on the fastaid argument
+        if fastaid is None:
+            id = lastref
+            description = ''
+        else:
+            id = fastaid
+            description = lastref
         # New Ref so yield our seq
         if row.CHROM != lastref:
             yield SeqRecord(
-                Seq( consensus, generic_dna, ),
-                id=lastref,
-                description='',
-                name=''
+                Seq( consensus, generic_dna ),
+                id=id,
+                description=description,
+                name=id
             )
             lastref = row.CHROM
             consensus = ''
@@ -64,11 +76,19 @@ def iter_refs( vcffile ):
         # Add to the consensus
         consensus += row.INFO['CB']
 
+    # Setup the correct id and description
+    # based on the fastaid argument
+    if fastaid is None:
+        id = lastref
+        description = ''
+    else:
+        id = fastaid
+        description = lastref
     yield SeqRecord(
         Seq( consensus, generic_dna, ),
-        id=lastref,
-        description='',
-        name=''
+        id=id,
+        description=description,
+        name=id
     )
 
 def parse_args( args=sys.argv[1:] ):
@@ -81,6 +101,13 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         'vcffile',
         help='VCF file path to generate a consensus from'
+    )
+
+    parser.add_argument(
+        '-i',
+        dest='fastaid',
+        default=None,
+        help='What to use for the id field which is placed directly after the > for each reference'
     )
 
     parser.add_argument(

@@ -42,9 +42,9 @@ class VCFBase(common.BaseClass):
     br = blank_record
 
 class TestUnitIterRefs(VCFBase):
-    def _C( self, vcffile ):
+    def _C( self, *args, **kwargs):
         from vcf_consensus import iter_refs
-        return iter_refs( vcffile )
+        return iter_refs( *args, **kwargs )
 
     def test_is_iterable_singleref( self ):
         # Just one entry
@@ -53,23 +53,11 @@ class TestUnitIterRefs(VCFBase):
         r = self._C( self.fp ).next()
         ok_( isinstance( r, SeqRecord ), "Did not return a Bio.SeqRecord instance" )
 
-    def test_rows_are_correct_type( self ):
-        # Mock Reference sequences
-        refseq = 'ACGT'*10
-        # Multiple references with single bases each
-        for i in range(5):
-            self.writer.write_record( self.br( 'Ref{}'.format(i), refseq, 1 ) )
-        self.writer.close()
-        print open(self.fp).read()
-        for row in self._C( self.fp ):
-            ok_( isinstance( row, SeqRecord ), "Did not return a Bio.SeqRecord instance"  )
-            ok_( row.id.startswith( 'Ref' ), "Sequence id did not start with Ref" )
-
     @raises(StopIteration)
     def test_empty_vcf( self ):
         r = self._C( self.fp ).next()
 
-    def test_correct_consensus( self ):
+    def make_vcf( self ):
         ref = 'ACGTN*-'*10
         # Vcf will have 2 references Ref1 & Ref2
         for i in range( 1, 3 ):
@@ -78,16 +66,32 @@ class TestUnitIterRefs(VCFBase):
                 rec = self.br( 'Ref{}'.format(i), ref, p+1, ref[p] )
                 self.writer.write_record( rec )
         self.writer.close()
+        return ref
+
+    def test_correct_consensus( self ):
+        ref = self.make_vcf()
         for i, row in enumerate( self._C( self.fp ) ):
+            ok_( isinstance( row, SeqRecord ), "Did not return a Bio.SeqRecord instance"  )
             # Correct id field
             eq_( 'Ref{}'.format(i+1), row.id )
             # Correct sequence field
             eq_( ref, str(row.seq) )
 
+    def test_correct_consensus_fastaidset( self ):
+        ref = self.make_vcf()
+        for i, row in enumerate( self._C( self.fp, 'samplename' ) ):
+            ok_( isinstance( row, SeqRecord ), "Did not return a Bio.SeqRecord instance"  )
+            # id matches set fastaid
+            eq_( 'samplename', row.id )
+            # Correct description field
+            eq_( 'Ref{}'.format(i+1), row.description )
+            # Correct sequence field
+            eq_( ref, str(row.seq) )
+
 class TestUnitWriteFasta(VCFBase):
-    def _C( self, records, outputfile ):
+    def _C( self, *args, **kwargs ):
         from vcf_consensus import write_fasta
-        return write_fasta( records, outputfile )
+        return write_fasta( *args, **kwargs )
 
     def mock_records( self, num ):
         ''' Just get some blank records to use '''
@@ -114,6 +118,7 @@ class TestUnitWriteFasta(VCFBase):
                 "in file({}) as in expected list({})".format(le,ls) )
 
         return len(seqs)
+    # lazy alias
     csr = compare_seqrecords
 
     def test_does_not_write_empty( self ):
@@ -149,10 +154,10 @@ class TestIntegrate(VCFBase):
         d = join( dirname( dirname( __file__ ) ) )
         script = join( d, 'vcf_consensus.py' )
         cmd = [script, vcffile]
-        if kwargs.get( 'showdiffs', False ):
-            cmd += ['--show-diffs']
         if kwargs.get( 'o', False ):
             cmd += ['-o', kwargs.get( 'o' )]
+        if kwargs.get( 'i', False ):
+            cmd += ['-i', kwargs.get( 'i' )]
 
         try:
             return subprocess.check_call( cmd )
@@ -170,3 +175,17 @@ class TestIntegrate(VCFBase):
         self.writer.close()
         r = self._C( self.fp, o=self.fp+'.fasta' )
         ok_( exists( self.fp+'.fasta' ), "Did not create correct output name" )
+
+    def test_fastaid_set_as_fasta_id( self ):
+        # Input vcf has 2 references with A as refsequence and A as the call(single nucleotide)
+        self.writer.write_record( self.br( 'Ref1', 'A', 1, 'A' ) )
+        self.writer.write_record( self.br( 'Ref2', 'A', 1, 'A' ) )
+        self.writer.close()
+        r = self._C( self.fp, o='mysample.fasta', i='mysample' )
+        seqs = list(SeqIO.parse( 'mysample.fasta', 'fasta' ))
+        # Resultant consensus should be 2 sequences with single seq and id's should both be mysample with Ref1 and Ref2 as seqrecord.description
+        eq_( 'mysample', seqs[0].id )
+        eq_( 'mysample Ref1', seqs[0].description )
+        eq_( 'mysample', seqs[1].id )
+        eq_( 'mysample Ref2', seqs[1].description )
+        eq_( 2, len(seqs) )
