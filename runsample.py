@@ -115,6 +115,7 @@ def main( args ):
     log.debug( "--- Starting {} --- ".format(args.prefix) )
     with open(logfile,'wb') as lfile:
         cmd_args = {
+            'samplename': args.prefix,
             'tdir': tdir,
             'readsdir': args.readsdir,
             'reference': args.reference,
@@ -168,10 +169,9 @@ def main( args ):
         rets.append( p.wait() )
 
         # Consensus
-        with open(consensus,'wb') as consensus:
-            cmd = 'vcf_consensus.py {vcf} -o {consensus}'
-            p = run_cmd( cmd.format(**cmd_args), stdout=consensus, stderr=lfile )
-            rets.append( p.wait() )
+        cmd = 'vcf_consensus.py {vcf} -i {samplename} -o {consensus}'
+        p = run_cmd( cmd.format(**cmd_args), stderr=lfile )
+        rets.append( p.wait() )
 
         # If sum is > 0 then one of the commands failed
         if sum(rets) != 0:

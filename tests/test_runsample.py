@@ -161,6 +161,14 @@ class TestFunctional(Base):
 
         return efiles
 
+    def test_ensure_samplename_in_consensus( self ):
+        out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'testsample', 'outdir' )
+        from Bio import SeqIO
+        cons_file = join( 'outdir', 'testsample.bam.consensus.fasta' )
+        # Every seq should have same id as the prefix passed to the command
+        for seq in SeqIO.parse( cons_file, 'fasta' ):
+            eq_( 'testsample', seq.id )
+
     def test_outdir_exists_nonempty_should_skip( self ):
         os.mkdir( 'outdir' )
         res,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
