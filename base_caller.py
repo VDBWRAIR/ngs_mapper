@@ -420,7 +420,7 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
     start = mpileupcol.pos
     # Get the reference base from the reference sequence
     # Python is 0-index, biology is 1 index
-    rb = refseq[start-1]
+    rb = refseq[start-1].upper()
 
     # Alternate info
     alt_info = info_stats( stats2, rb )

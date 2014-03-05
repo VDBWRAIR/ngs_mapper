@@ -428,6 +428,16 @@ class TestUnitGenerateVcfRow(Base):
         mpilemock.base_stats.return_value = stats
 
     @attr('current')
+    def test_reference_lowercase_dna( self, mpilecol ):
+        # Issue #145
+        # Reference bases are lowercase should be converted to uppercase
+        self.setup_mpileupcol( mpilecol )
+        r = self._C( mpilecol, 'g', 25, 1000, 10, 0.8 )
+        eq_( 'G', r.REF )
+        eq_( 70, r.INFO['RC'] )
+        eq_( 70, r.INFO['PRC'] )
+        eq_( 40, r.INFO['RAQ'] )
+
     def test_no_alternates( self, mpilecol ):
         stats = self.mock_stats()
         del stats['A']
@@ -823,7 +833,6 @@ class TestIntegrate(BaseInty):
         p = self._C( self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8 )
         eq_( 0, p.wait() )
 
-    @attr('current')
     def test_outputs_correct_vcf_1( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
