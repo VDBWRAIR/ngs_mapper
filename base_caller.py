@@ -524,7 +524,12 @@ def call_on_pct( stats2, minth=0.8 ):
     try:
         return (iupac_amb(dnalist), count)
     except ValueError as e:
-        return ('N', stats2.get('depth',0))
+        # Only depth from bases for the N
+        if dnalist:
+            ndepth = sum([len(stats2[b]['baseq']) for b in dnalist])
+        else:
+            ndepth = stats2.get( 'depth', 0 )
+        return ('N', ndepth)
 
 def info_stats( stats, rb):
     '''

@@ -297,6 +297,16 @@ class TestUnitCallOnPct(Base):
         r = self._C( stats, 0.8 )
         eq_( ('V',100), r )
 
+    def test_N_and_other_base_gt_threshold( self ):
+        base_stats = {
+            'A': { 'baseq': [40]*42 },
+            'N': { 'baseq': [40]*42 },
+            'G': { 'baseq': [40]*16 }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 0.8 )
+        eq_( ('N',84), r )
+
     def test_no_majority( self ):
         base_stats = {
             'G': { 'baseq': [40]*76 },
@@ -312,6 +322,7 @@ class TestUnitCallOnPct(Base):
         r = self._C( stats, 0.8 )
         eq_( ('N',0), r )
 
+    @attr('current')
     def test_no_majority_returns_n_zero( self ):
         stats = {
             'A': { 'baseq': [40]*19 },
@@ -427,7 +438,6 @@ class TestUnitGenerateVcfRow(Base):
         mpilemock.pos = pos
         mpilemock.base_stats.return_value = stats
 
-    @attr('current')
     def test_reference_lowercase_dna( self, mpilecol ):
         # Issue #145
         # Reference bases are lowercase should be converted to uppercase
