@@ -506,6 +506,9 @@ def call_on_pct( stats2, minth=0.8 ):
 
         @returns the called base based on the percentages in the given stats and the depth for the called base
     '''
+    # Empty stats indicates zero depth
+    if not stats2:
+        return ('-',0)
     nt_list = ''
     count = 0
     for base, quals in stats2.iteritems():

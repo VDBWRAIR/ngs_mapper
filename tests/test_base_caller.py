@@ -328,10 +328,10 @@ class TestUnitCallOnPct(Base):
         r = self._C( stats, 0.8 )
         eq_( ('G',76), r )
 
-    def test_empty_stats_returns_n_zero( self ):
+    def test_empty_stats_returns_gap_zero( self ):
         stats = {}
         r = self._C( stats, 0.8 )
-        eq_( ('N',0), r )
+        eq_( ('-',0), r )
 
     def test_no_majority_returns_n_zero( self ):
         stats = {
@@ -447,6 +447,16 @@ class TestUnitGenerateVcfRow(Base):
         mpilemock.ref = ref
         mpilemock.pos = pos
         mpilemock.base_stats.return_value = stats
+
+    def test_highcov_lowqual( self, mpilecol ):
+        # Greater than mind but all lq bases should turn into a N
+        self.setup_mpileupcol( mpilecol )
+        # Set the low quality threshold to 41 to trigger all bases as low quality
+        r = self._C( mpilecol, 'G', 41, 1000, 10, 0.8 )
+        eq_( 'N', r.INFO['CB'] )
+        # All values should be 0
+        for k in ('DP','RC','RAQ','PRC','CBD'):
+            eq_( 0, r.INFO[k] )
 
     def test_reference_lowercase_dna( self, mpilecol ):
         # Issue #145
