@@ -393,8 +393,8 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
     stats2 = bias_hq( stats2, biasth, bias )
 
     # Update stats2 so that it does not include low quality bases since we
-    # are above the min depth
-    if stats2['depth'] > mind:
+    # are equal to or above the min depth
+    if stats2['depth'] >= mind:
         if '?' in stats2:
             stats2['depth'] -= len(stats2['?']['baseq'])
             del stats2['?']

@@ -134,11 +134,22 @@ class TestUnitMarkLQ(StatsBase):
         eq_( [10]*20, r['N']['baseq'] )
 
     def test_adds_n_single_base( self ):
+        # A - Depth 10, AQ - 20
         self.stats['A']['baseq'] = [10,10] + [30]*6 + [10,10]
         r = self._C( self.stats, 25, 1 )
         eq_( [10]*4, r['?']['baseq'] )
         r = self._C( self.stats, 25, 100 )
         eq_( [10]*4, r['N']['baseq'] )
+
+    def test_ensure_depth_threshold( self ):
+        # Make sure if the depth is == mind everything still works
+        # Should trigger all N
+        stats = self.make_stats({
+            'A': {'baseq':[20]*10}
+        })
+        # A's should all get turned to ? because mind == depth is high coverage
+        r = self._C( stats, 25, 10 )
+        eq_( 10, len(r['?']['baseq']) )
 
     def test_no_n( self ):
         r = self._C( self.stats, 25, 1 )
@@ -322,7 +333,6 @@ class TestUnitCallOnPct(Base):
         r = self._C( stats, 0.8 )
         eq_( ('N',0), r )
 
-    @attr('current')
     def test_no_majority_returns_n_zero( self ):
         stats = {
             'A': { 'baseq': [40]*19 },
@@ -648,12 +658,14 @@ class TestUnitGenerateVcfRow(Base):
             'bqualsum': 0
         }
         self.setup_mpileupcol( mpilecol, stats=stats )
-        r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
+        # Should ensure that >= mind is working since 20 == stats['depth']
+        r = self._C( mpilecol, 'A', 25, 1000, 20, 0.8 )
         eq_( 'C', r.INFO['CB'] )
         eq_( 10, r.INFO['CBD'] )
         eq_( 0, r.INFO['RC'] )
         eq_( [10], r.INFO['AC'] )
         eq_( [100], r.INFO['PAC'] )
+        eq_( ['C'], r.ALT )
 
 class TestUnitGenerateVCF(Base):
     # Hard to test each thing without generating sam files and vcf manually so
