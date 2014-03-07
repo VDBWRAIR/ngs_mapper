@@ -147,31 +147,46 @@ def main( args ):
         # Tag Reads
         cmd = 'tagreads.py {bamfile} -CN {CN}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        rets.append( p.wait() )
+        r = p.wait()
+        if r != 0:
+            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+        rets.append( r )
 
         # Variant Calling
         cmd = 'base_caller.py {bamfile} {reference} -o {vcf}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        rets.append( p.wait() )
+        r = p.wait()
+        if r != 0:
+            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+        rets.append( r )
         if rets[-1] != 0:
             cmd = cmd.format(**cmd_args)
-            log.critical( '{} failed to complete successfully'.format(cmd) )
+            log.critical( '{} failed to complete successfully'.format(cmd.format(**cmd_args)) )
 
         # Flagstats
         with open(flagstats,'wb') as flagstats:
             cmd = 'samtools flagstat {bamfile}'
             p = run_cmd( cmd.format(**cmd_args), stdout=flagstats, stderr=lfile, script_dir='' )
-            rets.append( p.wait() )
+            r = p.wait()
+            if r != 0:
+                log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            rets.append( r )
 
         # Graphics
         cmd = 'graphsample.py {bamfile} -od {tdir}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        rets.append( p.wait() )
+        r = p.wait()
+        if r != 0:
+            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+        rets.append( r )
 
         # Consensus
         cmd = 'vcf_consensus.py {vcf} -i {samplename} -o {consensus}'
-        p = run_cmd( cmd.format(**cmd_args), stderr=lfile )
-        rets.append( p.wait() )
+        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        r = p.wait()
+        if r != 0:
+            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+        rets.append( r )
 
         # If sum is > 0 then one of the commands failed
         if sum(rets) != 0:
