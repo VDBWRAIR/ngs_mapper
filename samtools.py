@@ -2,6 +2,47 @@ from subprocess import Popen, PIPE
 import numpy as np
 import itertools
 
+def view( infile, *args, **kwargs ):
+    '''
+        A simple wrapper around samtools view command that will just return the stdout iterator
+        The command should accept the same arguments as samtools view except that any single argument
+        such as S, h or b just need to be kwargs set to true(S=True,h=True,b=True) otherwise their value
+        would just be the same as what the samtools view command accepts
+
+        @param infile - The sam|bam file to read or an open file-like object to read
+        
+        @returns file like object representing the output of view
+    '''
+    # The base command
+    cmd = ['samtools','view']
+    # Put in all the kwargs
+    for k,v in kwargs.items():
+        # If value is a bool then the k is a flag argument with no value
+        if v is True:
+            cmd.append( '-'+k )
+        else:
+            cmd.append( '-'+k )
+            cmd.append( v )
+    # Now put the file we are working with or - for stdin
+    if isinstance(infile,str):
+        cmd.append( infile )
+        in_handle = False
+    else:
+        cmd.append('-')
+        in_handle = infile
+
+    # Were there any regionstrings specified?
+    cmd += args
+
+    # Execute the command
+    if in_handle:
+        p = Popen( cmd, stdout=PIPE, stdin=in_handle.fileno() )
+    else:
+        p = Popen( cmd, stdout=PIPE )
+
+    # Return the stdout iterator
+    return p.stdout
+
 def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
     '''
         A simple  wrapper around the samtools mpileup command to ensure that
@@ -14,7 +55,7 @@ def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
         @param minbq - Minimum base quality or min BAQ. Same as -Q option to mpileup
         @param maxd - Maximum depth to consider. Same as -d option to mpileup
 
-        @returns generator object for every row in the mpileup
+        @returns file like object representing the output of mpileup
     '''
     # The command that will be executed
     cmd = ['samtools','mpileup','-s','-q',str(minmq),'-Q',str(minbq),'-d','{}'.format(maxd)]

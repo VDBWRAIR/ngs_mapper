@@ -13,6 +13,83 @@ class Base(common.BaseBaseCaller):
         super(Base,self).setUp()
         self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}
 
+@attr('current')
+class TestView(Base):
+    '''
+Usage:   samtools view [options] <in.bam>|<in.sam> [region1 [...]]
+
+Options: -b       output BAM
+         -h       print header for the SAM output
+         -H       print header only (no alignments)
+         -S       input is SAM
+         -u       uncompressed BAM output (force -b)
+         -1       fast compression (force -b)
+         -x       output FLAG in HEX (samtools-C specific)
+         -X       output FLAG in string (samtools-C specific)
+         -c       print only the count of matching records
+         -B       collapse the backward CIGAR operation
+         -@ INT   number of BAM compression threads [0]
+         -L FILE  output alignments overlapping the input BED FILE [null]
+         -t FILE  list of reference names and lengths (force -S) [null]
+         -T FILE  reference sequence file (force -S) [null]
+         -o FILE  output file name [stdout]
+         -R FILE  list of read groups to be outputted [null]
+         -f INT   required flag, 0 for unset [0]
+         -F INT   filtering flag, 0 for unset [0]
+         -q INT   minimum mapping quality [0]
+         -l STR   only output reads in library STR [null]
+         -r STR   only output reads in read group STR [null]
+         -s FLOAT fraction of templates to subsample; integer part as seed [-1]
+         -?       longer help
+    '''
+    def _CM( self, infile, *args, **kwargs ):
+        from samtools import view
+        return view( infile, *args, **kwargs )
+
+    @patch('samtools.Popen')
+    def test_returns_stdout( self, popen ):
+        popen.return_value.stdout = 'tested'
+        res = self._CM( self.bam )
+        eq_( 'tested', res )
+
+    @patch('__builtin__.open')
+    @patch('samtools.Popen')
+    def test_inbam_outsam( self, popen, open ):
+        open.return_value = 'null'
+        res = self._CM( self.bam )
+        cmd = ['samtools','view',self.bam]
+        popen.assert_called_with(cmd,stdout=-1)
+
+    @patch('__builtin__.open')
+    @patch('samtools.Popen')
+    def test_pipeinput( self, popen, open ):
+        open.return_value = 'null'
+        infile = Mock()
+        infile.fileno.return_value = -5
+        res = self._CM( infile )
+        cmd = ['samtools','view','-']
+        popen.assert_called_with(cmd,stdout=-1,stdin=-5)
+
+    def test_bam_to_sam_and_back( self ):
+        # Just pipe samtools sam output into samtools to bam output
+        sam = self._CM( self.bam, h=True, u=True )
+        bam = self._CM( sam, h=True, b=True )
+        with open( 'new.bam', 'wb' ) as fh:
+            fh.write( bam.read() )
+        # Original file and new file should be same size
+        eq_( os.stat(self.bam).st_size, os.stat('new.bam').st_size )
+
+    def test_regionstring( self ):
+        # Returns all reads for Ref2 since the test sam file 
+        # has reads under every base(reads for ref 2 start at 10 and go to 20
+        res = self._CM( self.bam, 'Ref2:3-5' )
+        i = 0
+        for i, line in enumerate( res, 10 ):
+            line = line.split()
+            print line
+            eq_( 'Read{}'.format(i), line[0] )
+        eq_( 20, i )
+
 class TestMpileup(Base):
     def _CM( self, bamfile, regionstr, minmq, minbq, maxd ):
         from samtools import mpileup
