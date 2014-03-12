@@ -54,6 +54,10 @@ def tag_read( untagged_read, tags ):
 
         @returns a tagged read
     '''
+    if untagged_read.flag >= 2048:
+        # Skip supplementary
+        log.debug( "Skipping read {} because it is supplementary".format(untagged_read.qname) )
+        return untagged_read
     # Turn the tuple list into a dictionary for quick lookup
     index_tags = dict( untagged_read.tags )
     # Start with the existing tags
@@ -62,7 +66,6 @@ def tag_read( untagged_read, tags ):
     for k,v in tags:
         if k not in index_tags:
             newtags.append( (k,v) )
-
     # Set the tags
     untagged_read.tags = newtags
     # Return the tagged read
@@ -79,6 +82,9 @@ def tag_readgroup( read ):
     '''
     rg = get_rg_for_read( read )
     #log.debug( "Tagging {} with Read group {}".format(read.qname,rg) )
+    # Don't know excatly why there needs to be short pause here, but it fixes an issue
+    #  with some roche data
+    import time; time.sleep(0.0001)
     return tag_read( read, [('RG',rg)] )
 
 def tag_reads( bam, hdr ):

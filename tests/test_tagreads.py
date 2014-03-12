@@ -111,7 +111,6 @@ class TestUnitGetHeader(Base):
         assert 'SQ' in hdr, 'SQ key was not in bam header'
         assert 'HD' in hdr, 'HD key was not in bam header'
 
-@attr('current')
 class TestUnitTagReads(Base):
     def _C( self, bamfile, hdr ):
         from tagreads import tag_reads
@@ -195,6 +194,18 @@ class TestUnitTagReadGroup(Base):
     def _C( self, read ):
         from tagreads import tag_readgroup
         return tag_readgroup( read )
+
+    @attr('current')
+    def test_skips_supplementary(self):
+        # Fake a chimeric supplementary read
+        read = self.mock_read()
+        read.flag = 2048
+        read.qname = 'A' * 14
+        self._C( read )
+        eq_( [], read.tags )
+        read.flag = 2090
+        self._C( read )
+        eq_( [], read.tags )
 
     def test_tags_sanger( self ):
         read = self.mock_read()
