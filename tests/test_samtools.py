@@ -1,7 +1,7 @@
 import common
 import fixtures
 
-from nose.tools import eq_, raises
+from nose.tools import eq_, raises, ok_
 from nose.plugins.attrib import attr
 from mock import MagicMock, patch, Mock, call
 
@@ -89,6 +89,97 @@ Options: -b       output BAM
             print line
             eq_( 'Read{}'.format(i), line[0] )
         eq_( 20, i )
+
+class TestProp( object ):
+    def _C( self, name, type ):
+        from samtools import Prop
+        return Prop( name, type )
+
+    def test_does_type( self ):
+        class A(object):
+            a = self._C( 'i', int )
+            b = self._C( 'f', float )
+        a = A()
+        a.a = '5'
+        a.b = '5.1'
+        eq_( 5, a.a )
+        eq_( 5.1, a.b )
+
+########### SamRow Tests ################
+class SamRowBase(Base):
+    def setUp(self):
+        super(SamRowBase,self).setUp()
+        self.row = 'Read1	0	Ref1	1	60	8M	=	0	0	ACGTACGT	IIIIIIII	'
+
+    def _CM( self, rowstr ):
+        from samtools import SamRow
+        return SamRow( rowstr )
+
+class TestSamRow(SamRowBase):
+    def test_properties_set( self ):
+        row = self.row + 'NM:i:0	AS:i:250'
+        r = self._CM( row )
+        eq_( 'Read1', r.QNAME )
+        eq_( 0, r.FLAG )
+        eq_( 'Ref1', r.RNAME )
+        eq_( 1, r.POS )
+        eq_( 60, r.MAPQ )
+        eq_( '8M', r.CIGAR )
+        eq_( '=', r.RNEXT )
+        eq_( 0, r.PNEXT )
+        eq_( 0, r.TLEN )
+        eq_( 'ACGTACGT', r.SEQ )
+        eq_( 'IIIIIIII', r._qual )
+        eq_( [40]*8, r.QUAL )
+        eq_( [('NM',0),('AS',250)], r.TAGS )
+        eq_( 'NM:i:0	AS:i:250', r._tags )
+
+    def test_notags( self ):
+        r = self._CM( self.row[:-1] )
+        eq_( '', r._tags )
+
+class TestUnitSamRowStr(SamRowBase):
+    def test_samestring_notags( self ):
+        r = self._CM( self.row[:-1] )
+        eq_( self.row[:-1], str(r) )
+
+    def test_samestring_tags( self ):
+        r = self._CM( self.row + 'NM:i:0' )
+        eq_( self.row + 'NM:i:0', str(r) )
+
+class TestUnitTagsToList(SamRowBase):
+    def test_notags( self ):
+        r = self._CM( self.row )
+        eq_( [], r.TAGS )
+        eq_( '', r._tags )
+
+    def test_single_and_convertstype( self ):
+        types = (
+            ('A',str),
+            ('i',int),
+            ('f',float),
+            ('Z',str),
+            ('H',hex),
+            ('B',list)
+        )
+        for c,t in types:
+            if c == 'B':
+                row = self.row + 'aa:{}:'.format(c) + '1,1'
+                r = self._CM( row )
+                eq_( ('aa',[1,1]), r.TAGS[0] )
+            else:
+                row = self.row + 'aa:{}:'.format(c) + str(t(1))
+                r = self._CM( row )
+                if c == 'H':
+                    t = str
+                ok_( isinstance( r.TAGS[0][1], t ), "Expected {} to be a {} but got {}".format(c,t,type(r.TAGS[0][1])) )
+            ok_( c in r._tags, "Did not set the correct field type" )
+
+    def test_multi( self ):
+        self.row += 'NM:i:0	AS:i:250'
+        r = self._CM( self.row )
+        eq_( ('NM',0), r.TAGS[0] )
+        eq_( ('AS',250), r.TAGS[1] )
 
 class TestMpileup(Base):
     def _CM( self, bamfile, regionstr, minmq, minbq, maxd ):
@@ -254,7 +345,7 @@ class TestUnitAvgQuals(MpileupBase):
         r = self._C( str )
         eq_( 34.0, r.mqual_avg() )
 
-class TestUnitStr(MpileupBase):
+class TestUnitMpileupStr(MpileupBase):
     def test_returns_correct_string( self ):
         s = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	ABCDEABCDE'
         r = self._C( s )

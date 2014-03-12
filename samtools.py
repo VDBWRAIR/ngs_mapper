@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
 import numpy as np
 import itertools
+import re
 
 def view( infile, *args, **kwargs ):
     '''
@@ -42,6 +43,77 @@ def view( infile, *args, **kwargs ):
 
     # Return the stdout iterator
     return p.stdout
+
+class Prop(object):
+    def __init__( self, name, type=int ):
+        self.name = name
+        self.type = type
+
+    def __get__( self, obj, objtype ):
+        return obj.__dict__[self.name]
+
+    def __set__( self, obj, val ):
+        obj.__dict__[self.name] = self.type(val)
+
+class SamRow(object):
+    '''
+        Represents a single sam row
+        
+        Object is instantiated by supplying it with a valid sam row string
+
+        @param samrow_str - Sam row string
+    '''
+    FLAG = Prop( 'FLAG', int )
+    MAPQ = Prop( 'MAPQ', int )
+    POS = Prop( 'POS', int )
+    TLEN = Prop( 'TLEN', int )
+    PNEXT = Prop( 'PNEXT', int )
+
+    def __init__( self, samrow_str ):
+        # Only split up to 11 times. The last element will be all the tags if they are there at all
+        parts = samrow_str.rstrip().split( '\t', 11 )
+        if len( parts ) == 12:
+            self.QNAME, self.FLAG, self.RNAME, self.POS, self.MAPQ, self.CIGAR, \
+                self.RNEXT, self.PNEXT, self.TLEN, self.SEQ, self._qual, self._tags = parts
+        else:
+            self.QNAME, self.FLAG, self.RNAME, self.POS, self.MAPQ, self.CIGAR, \
+                self.RNEXT, self.PNEXT, self.TLEN, self.SEQ, self._qual = parts
+            self._tags = ''
+
+    @property
+    def TAGS( self ):
+        tags = re.findall( '([A-Za-z]{2}):([AifZHB]):(\S+)', self._tags )
+        t = []
+        for name,typ,val in tags:
+            if typ == 'A':
+                value = str(val)
+            elif typ == 'i':
+                value = int(val)
+            elif typ == 'f':
+                value = float(val)
+            elif typ == 'Z':
+                value = str(val)
+            elif typ == 'H':
+                value = hex(int(val,0))
+            elif typ == 'B':
+                value = [int(x) for x in val.split(',')]
+            else:
+                raise ValueError("{} is not a supported field type".format(typ))
+
+            t.append( (name,value) )
+            
+        return t
+
+    @property
+    def QUAL( self ):
+        return [char_to_qual(c) for c in self._qual]
+
+    def __str__( self ):
+        s = '{QNAME}\t{FLAG}\t{RNAME}\t{POS}\t{MAPQ}\t{CIGAR}\t{RNEXT}' \
+                '\t{PNEXT}\t{TLEN}\t{SEQ}\t{_qual}'.format(**self.__dict__)
+        if self._tags:
+            s += '\t'+self._tags
+        return s
 
 def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
     '''
