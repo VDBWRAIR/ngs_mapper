@@ -145,12 +145,16 @@ def main( args ):
                 sys.exit(1)
 
         # Tag Reads
+        ## There is an issue with chimeric reads that I think has to do with a bug in pysam/samtools api
+        ## for now it will not be run
+        '''
         cmd = 'tagreads.py {bamfile} -CN {CN}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
             log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
+        '''
 
         # Variant Calling
         cmd = 'base_caller.py {bamfile} {reference} -o {vcf}'
