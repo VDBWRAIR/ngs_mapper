@@ -228,6 +228,17 @@ class TestUnitTagRead(Base):
         r = self._C( read, tags )
         eq_( str(read), str(r) )
 
+    @attr('current')
+    def test_all_duplicate_tags( self ):
+        # When all tags are duplicates
+        read = self.mock_read()
+        read._tags = 'RG:Z:Test'
+        # Same tag
+        tags = ['RG:Z:Test']
+        r = self._C( read, tags )
+        eq_( [('RG','Test')], read.TAGS )
+        eq_( 'RG:Z:Test', read._tags )
+
     def test_skips_identical_tags( self ):
         # Don't append a tag that is identical to one that already exists
         read = self.mock_read()
@@ -273,15 +284,55 @@ class TestUnitGetRGHeaders(Base):
         from tagreads import get_rg_headers
         return get_rg_headers( bamfile, SM, CN )
 
-    @attr('current')
     def test_does_not_readd_headers( self ):
         # Make sure headers that exist are not duplicated
         from tagreads import get_bam_header
         import samtools
         self.temp_copy_files()
+        # Create a new bam file that the header already has a read group in it
+        # as well as a new header
         hdr = get_bam_header( self.bam )
-        # Yay for pipes
-        rp,wp = os.pipe()
+        hdr += '\n' + '@RG\tID:Test\tCN:cn\tSM:sm\tPL:ILLUMINA\n'
+        hdr += '@RG\tID:Roche454\tSM:312\tPL:L454\n'
+        hdr += '@RG\tID:IonTorrent\tSM:312\tPL:IONTORRENT\n'
+        hdr += '@RG\tID:MiSeq\tSM:312\tPL:ILLUMINA\n'
+        hdr += '@RG\tID:Sanger\tSM:312\tPL:CAPILLARY\n'
+        # Read the pipe which should be sam input and output bam
+        s = samtools.view( self.bam )
+        # Put in new header and sam output after it
+        with open('t.sam','w') as fh:
+            # New header
+            fh.write( hdr )
+            # Then reads
+            fh.write(s.read())
+        # Now convert that pipe to bam
+        b = samtools.view( 't.sam', h=True, S=True, b=True )
+        # Write the bam output
+        with open( 'hasrg.bam', 'wb' ) as bamfh:
+            bamfh.write( b.read() )
+        # Close the file handles
+        b.close()
+        s.close()
+        # Now we have a bamfile with an existing header that we can test
+        r = self._C( 'hasrg.bam', 'sm', 'cn' )
+        # Make sure that the new header made it in and that the MiSeq header was not duplicated
+        header_lines = r.splitlines(True)
+        read_groups = [rg for rg in header_lines if rg.startswith('@RG')]
+        num_miseq = 0
+        num_test = 0
+        for rg in read_groups:
+            if 'ID:Test\t' in rg:
+                num_test += 1
+            if 'ID:MiSeq\t' in rg:
+                num_miseq += 1
+
+        eq_( 1, num_miseq, "Header was duplicated which is incorrect" )
+        eq_( 1, num_test, "Existing header was removed somehow" )
+        # How many platform readgroups to expect(includes the MiSeq one that we are testing)
+        i = len(self.read_group_ids)
+        # Now increase that by HD, SQ and Test RG
+        i += 3
+        eq_( i, len(header_lines), "Incorrect number of header lines" )
 
     def test_correct_header( self ):
         # Make sure the expected number of header lines exist
@@ -330,12 +381,22 @@ class TestUnitGetRGHeaders(Base):
         for rg in readgroups:
             ok_( 'seqcenter' in rg, 'Samplename was not set to filename correctly' )
 
-@attr('current')
 class TestIntegrate(Base):
     def _C( self, bamfiles, options=[] ):
         this = dirname( dirname( __file__ ) )
         cmd = [join( this, 'tagreads.py' )] + bamfiles + options
         subprocess.check_call( cmd )
+
+    def test_does_not_duplicate( self ):
+        from tagreads import get_bam_header
+        # Make sure if you run tagreads 2x it doesn't duplicate tags and headers
+        self.temp_copy_files()
+        self._C( [self.bam] )
+        size_before = os.stat( self.bam ).st_size
+        self._C( [self.bam] )
+        size_after = os.stat( self.bam ).st_size
+        self.check_tagreadcounts( self.bam )
+        eq_( size_before, size_after, "Running tagreads.py 2x produced a different size bam file" )
 
     def test_tags_reads( self ):
         self.temp_copy_files()

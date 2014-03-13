@@ -67,6 +67,8 @@ def tag_read( untagged_read, tags ):
     # tag+'\t' is used to make it an exact match
     tags = [tag for tag in tags if tag+'\t' not in untagged_read._tags] 
     untagged_read._tags += '\t'.join( tags )
+    # Remove trailing tab if all the tags were duplicate
+    untagged_read._tags = untagged_read._tags.rstrip()
     # Return the tagged read
     return untagged_read
 
@@ -130,6 +132,10 @@ def get_rg_headers( bam, SM=None, CN=None ):
     old_header = get_bam_header( bam ) + '\n'
 
     for id, pl in zip( IDS, PLATFORMS ):
+        # Skip headers that exist already
+        if 'ID:{}\t'.format(id) in old_header:
+            continue
+
         rg = '@RG\tID:{}\tSM:{}\t'
         if SM is None:
             SM = os.path.basename(bam).replace( '.bam', '' )
