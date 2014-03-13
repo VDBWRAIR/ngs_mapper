@@ -34,45 +34,40 @@ fi
 #    exit 1
 #fi
 
-# Call perms.sh to setup the permissions environment
-bash ${scripts}/perms.sh
-
 # Loop over each of our samplenames and references
 # File needs to be either space or tab delimeted
 # Samplename ReferencePath
 # Excluding any lines that begin with a #
 mkdir -p Projects
+# How many CPUS does the computer have(Some ugly stuff here but it works)
+CPUS=$(for pid in $(awk '/physical id/ {print $4}' /proc/cpuinfo | sort | uniq); do egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo; done | awk '/cpu cores/ {print $4}' | paste -sd+ | bc)
+
+# Run in parallel
 grep -v '^#' $sample_ref_map_file | while read sample reference
 do
     # Make sure that sample was set
     if [ -z "${sample}" ]
     then
-        echo "${sample_ref_map_file} must have an incorrect line. Could not read samplename"
+        echo "${sample_ref_map_file} must have an incorrect line. Could not read samplename" >&2
         continue
     fi
     # Make sure that reference was set
     if [ -z "${reference}" ]
     then
-        echo "${sample_ref_map_file} must have an incorrect line. Could not read reference"
+        echo "${sample_ref_map_file} must have an incorrect line. Could not read reference" >&2
         continue
     elif [ ! -f "${reference}" ]
     then
-        echo "${reference} is not a file that can be read. Skipping ${sample}"
+        echo "${reference} is not a file that can be read. Skipping ${sample}" >&2
         continue
     fi
     # If the sample already has been run
     #  then don't rerun it
     if [ -d ${sample} ]
     then
-        echo "Skipping ${sample} because it already exists"
+        echo "Skipping ${sample} because it already exists" >&2
         continue
     fi
 
-    ${scripts}/runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od Projects/${sample}
-    ret=$?
-    # Detect if bwa didn't run correctly
-    if [ $ret -ne 0 ]
-    then
-        echo "runsample.py did not run successfully for ${sample}"
-    fi
-done
+    echo ${scripts}/runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od Projects/${sample}
+done | xargs -n 6 -P $CPUS -I CMD bash -c CMD
