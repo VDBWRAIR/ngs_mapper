@@ -5,8 +5,9 @@ from glob import glob
 import subprocess
 import tempfile
 import shutil
+import re
 
-from nose.tools import eq_, raises
+from nose.tools import eq_, raises, ok_
 from nose.plugins.attrib import attr
 
 class Base(object):
@@ -56,9 +57,13 @@ class Base(object):
 
         eq_( self.get_numreads(bamfile), read_count )
 
-    def mock_read( self ):
+    def mock_read_pysam( self ):
         from pysam import AlignedRead
         return AlignedRead()
+
+    def mock_read( self ):
+        from samtools import SamRow
+        return SamRow('qname\t0\tRef1\t1\t60\t*\t=\t0\t0\t*\t*')
 
 class TestUnitGetRGForRead(Base):
     def _C( self, read ):
@@ -74,14 +79,16 @@ class TestUnitGetRGForRead(Base):
 
     def test_roche( self ):
         rn = 'IPAOEAB02G8KRJ'
-        mr = self.maread( qname=rn )
-        rg = self._C( mr )
+        read = self.mock_read()
+        read.QNAME = rn
+        rg = self._C( read )
         eq_( 'Roche454', rg )
 
     def test_sanger( self ):
         rn = 'sample1_R2882_01_14_2014'
-        mr = self.maread( qname=rn )
-        rg = self._C( mr )
+        read = self.mock_read()
+        read.QNAME = rn
+        rg = self._C( read )
         eq_( 'Sanger', rg )
 
     def test_miseq( self ):
@@ -91,14 +98,16 @@ class TestUnitGetRGForRead(Base):
             'M02261:4:000000000-A6FWH:1:2106:7558:241381',
         )
         for r in rn:
-            mr = self.maread( qname=r )
-            rg = self._C( mr )
+            read = self.mock_read()
+            read.QNAME = r
+            rg = self._C( read )
             eq_( 'MiSeq', rg )
 
     def test_iontorrent( self ):
         rn = 'E6I0Z:00005:00031'
-        mr = self.maread( qname=rn )
-        rg = self._C( mr )
+        read = self.mock_read()
+        read.QNAME = rn
+        rg = self._C( read )
         eq_( 'IonTorrent', rg )
 
 class TestUnitGetHeader(Base):
@@ -108,8 +117,17 @@ class TestUnitGetHeader(Base):
 
     def test_gets_header( self ):
         hdr = self._C( self.bam )
-        assert 'SQ' in hdr, 'SQ key was not in bam header'
-        assert 'HD' in hdr, 'HD key was not in bam header'
+        ok_( isinstance( hdr, str ), 'Header is not a string' )
+        ok_( 'SQ' in hdr, 'SQ key was not in bam header' )
+        ok_( 'HD' in hdr, 'HD key was not in bam header' )
+
+    def test_header_correct( self ):
+        hdr = self._C( self.bam )
+        with open( 't.sam', 'w' ) as fh:
+            fh.write( hdr )
+        import samtools
+        h = samtools.view( 't.sam', S=True, H=True )
+        eq_( hdr, h.read().rstrip() )
 
 class TestUnitTagReads(Base):
     def _C( self, bamfile, hdr ):
@@ -121,39 +139,15 @@ class TestUnitTagReads(Base):
         hdr = get_bam_header( self.bam )
         # Make a copy as we will edit the file
         self.temp_copy_files()
-        rg = {
-            'SM': 'sample1',
-            'ID': 'testrg',
-            'PL': 'ILLUMINA',
-            'CN': 'SeqCenter'
-        }
-        hdr['RG'] = [rg]
+        # New read group header
+        rg = '\n@RG\tID:testrg\tSM:sample1\tCN:SeqCenter\tPL:ILLUMINA\n'
+        hdr += rg
         # Self.bam is now the copied version after calling temp_copy_files
         self._C( self.bam, hdr )
-        new_hdr = get_bam_header( self.bam )
-        assert 'RG' in new_hdr, "RG header did not get added to header"
-        for k,v in rg.items():
-            eq_( v, new_hdr['RG'][0][k] )
-
+        new_hdr = get_bam_header( self.bam ).splitlines()
+        reg = new_hdr[-1]
+        eq_( rg.strip(), reg.strip(), 'Read group testrg did not make it into the header' )
         assert self.get_numreads( self.bam ) > 0, "No reads in bamfile"
-
-    def test_bam_has_rg_header( self ):
-        from tagreads import get_bam_header, HeaderExists
-        self.temp_copy_files()
-        hdr = get_bam_header( self.bam )
-        rg = {
-            'SM': 'sample1',
-            'ID': 'testrg',
-            'PL': 'ILLUMINA',
-            'CN': 'SeqCenter'
-        }
-        hdr['RG'] = [rg]
-        self._C( self.bam, hdr )
-        try:
-            self._C( self.bam, hdr )
-            assert False, "Did not raise HeaderExists"
-        except HeaderExists as e:
-            assert True
 
     def count_rg( self, bam ):
         ''' Count how many of each uniq read group id '''
@@ -195,80 +189,122 @@ class TestUnitTagReadGroup(Base):
         from tagreads import tag_readgroup
         return tag_readgroup( read )
 
-    @attr('current')
-    def test_skips_supplementary(self):
-        # Fake a chimeric supplementary read
-        read = self.mock_read()
-        read.flag = 2048
-        read.qname = 'A' * 14
-        self._C( read )
-        eq_( [], read.tags )
-        read.flag = 2090
-        self._C( read )
-        eq_( [], read.tags )
-
     def test_tags_sanger( self ):
         read = self.mock_read()
-        read.qname = 'TestingAread_sanger'
+        read.QNAME = 'TestingAread_sanger'
         self._C( read )
-        eq_( 'Sanger', read.tags[0][1] )
+        eq_( 'Sanger', read.TAGS[0][1] )
+        eq_( 1, len(read.TAGS) )
 
     def test_tags_miseq( self ):
         read = self.mock_read()
-        read.qname = 'M00000:0:000000000-AAAAA:0:0000:0000:0000'
+        read.QNAME = 'M00000:0:000000000-AAAAA:0:0000:0000:0000'
         self._C( read )
-        eq_( 'MiSeq', read.tags[0][1] )
+        eq_( 'MiSeq', read.TAGS[0][1] )
+        eq_( 1, len(read.TAGS) )
 
     def test_tags_roche( self ):
         read = self.mock_read()
-        read.qname = 'A' * 14
+        read.QNAME = 'A' * 14
         self._C( read )
-        eq_( 'Roche454', read.tags[0][1] )
+        eq_( 'Roche454', read.TAGS[0][1] )
+        eq_( 1, len(read.TAGS) )
 
     def test_tags_iontorrent( self ):
         read = self.mock_read()
-        read.qname = 'AAAAA:00000:00000'
+        read.QNAME = 'AAAAA:00000:00000'
         self._C( read )
-        eq_( 'IonTorrent', read.tags[0][1] )
+        eq_( 'IonTorrent', read.TAGS[0][1] )
+        eq_( 1, len(read.TAGS) )
 
 class TestUnitTagRead(Base):
     def _C( self, read, tags ):
         from tagreads import tag_read
         return tag_read( read, tags )
 
+    def test_no_tags( self ):
+        read = self.mock_read()
+        tags = []
+        r = self._C( read, tags )
+        eq_( str(read), str(r) )
+
+    def test_skips_identical_tags( self ):
+        # Don't append a tag that is identical to one that already exists
+        read = self.mock_read()
+        # Give mock read a tag
+        read._tags = 'RG:Z:Test'
+        # Now try to append tags, but with one of the tags being the tag
+        # that already exists in the read to make sure it gets skipped, but the other
+        # gets added to avoid the issue where tags could be duplicated many times if the user
+        # runs the script 2x
+        tags = ['RG:Z:Test','RG:Z:Test2']
+        r = self._C( read, tags )
+        # Should be the original tag and the other tag that was different
+        eq_( [('RG','Test'),('RG','Test2')], read.TAGS )
+        eq_( '\t'.join(tags), read._tags )
+        eq_( r.TAGS, read.TAGS )
+
     def test_sets_tags( self ):
         read = self.mock_read()
-        tags = [('RG','Test'),('RX','Test2')]
-        self._C( read, tags )
-        eq_( tags, read.tags )
+        tags = ['RG:Z:Test','RX:Z:Test2']
+        r = self._C( read, tags )
+        eq_( [('RG','Test'),('RX','Test2')], read.TAGS )
+        eq_( '\t'.join(tags), read._tags )
+        eq_( r.TAGS, read.TAGS )
 
     def test_adds_tags( self ):
         read = self.mock_read()
-        read.tags = [( 'RG', 'Test1' )]
-        tags = [('RX','Test'),('RY','Test2')]
-        self._C( read, tags )
-        eq_( [('RG','Test1')] + tags, read.tags )
+        read._tags = 'RG:Z:Test1'
+        tags = ['RG:Z:Test','RX:Z:Test2']
+        r = self._C( read, tags )
+        eq_( 'RG:Z:Test1\t' + '\t'.join(tags), read._tags )
+        eq_( r.TAGS, read.TAGS )
+        eq_( [('RG','Test1'),('RG','Test'),('RX','Test2')], read.TAGS )
 
-    def test_tag_not_replace( self ):
+    def test_skips_secondary_supplementary( self ):
         read = self.mock_read()
-        read.tags = [( 'RG', 'Test1' )]
-        tags = [('RG','Test'),('RX','Test2')]
-        self._C( read, tags )
-        eq_( [('RG','Test1'),tags[1]], read.tags )
+        read.FLAG = 2048
+        tags = ['RG:Z:Test']
+        r = self._C( read, tags )
+        eq_( [], r.TAGS )
 
 class TestUnitGetRGHeaders(Base):
     def _C( self, bamfile, SM=None, CN=None ):
         from tagreads import get_rg_headers
         return get_rg_headers( bamfile, SM, CN )
 
+    @attr('current')
+    def test_does_not_readd_headers( self ):
+        # Make sure headers that exist are not duplicated
+        from tagreads import get_bam_header
+        import samtools
+        self.temp_copy_files()
+        hdr = get_bam_header( self.bam )
+        # Yay for pipes
+        rp,wp = os.pipe()
+
+    def test_correct_header( self ):
+        # Make sure the expected number of header lines exist
+        self.temp_copy_files()
+        from tagreads import get_bam_header
+        hdr = get_bam_header( self.bam )
+        numlines = len(hdr.splitlines())
+        hdr = self._C( self.bam, 'sample1', 'seqcenter' )
+        linesexpected = len(self.read_group_ids) + numlines
+        resultlines = len(hdr.splitlines())
+        eq_( linesexpected, resultlines, "Expected {} header lines but got {}".format(linesexpected,resultlines) )
+
     def test_adds_platform_read_groups( self ):
         self.temp_copy_files()
         hdr = self._C( self.bam )
         r = dict( zip( self.read_group_ids, self.read_group_platforms ) )
         seen_id = []
-        for rg in hdr['RG']:
-            id = rg['ID']
-            pl = rg['PL']
+        hdr = hdr.splitlines()
+        readgroups = [l for l in hdr if l.startswith('@RG')]
+        for rg in readgroups:
+            p = re.findall( '@RG\tID:(\S+)\tSM:(\S+)(?:\tCN:(\S+)){0,1}\tPL:(\S+)', rg )[0]
+            id = p[0]
+            pl = p[3]
             eq_( r[id], pl )
             seen_id.append( id )
         eq_( sorted(self.read_group_ids), sorted(seen_id) )
@@ -276,21 +312,25 @@ class TestUnitGetRGHeaders(Base):
     def test_sets_sm_to_filename( self ):
         self.temp_copy_files()
         hdr = self._C( self.bam )
-        for rg in hdr['RG']:
-            eq_( rg['SM'], 'sample1.untagged' )
+        readgroups = [l for l in hdr.splitlines() if l.startswith('@RG')]
+        for rg in readgroups:
+            ok_( 'sample1.untagged' in rg, 'Samplename was not set to filename correctly' )
 
     def test_sets_sm( self ):
         self.temp_copy_files()
         hdr = self._C( self.bam, SM='sample1' )
-        for rg in hdr['RG']:
-            eq_( rg['SM'], 'sample1' )
+        readgroups = [l for l in hdr.splitlines() if l.startswith('@RG')]
+        for rg in readgroups:
+            ok_( 'sample1' in rg )
 
     def test_sets_cn( self ):
         self.temp_copy_files()
         hdr = self._C( self.bam, CN='seqcenter' )
-        for rg in hdr['RG']:
-            eq_( rg['CN'], 'seqcenter' )
+        readgroups = [l for l in hdr.splitlines() if l.startswith('@RG')]
+        for rg in readgroups:
+            ok_( 'seqcenter' in rg, 'Samplename was not set to filename correctly' )
 
+@attr('current')
 class TestIntegrate(Base):
     def _C( self, bamfiles, options=[] ):
         this = dirname( dirname( __file__ ) )
@@ -317,24 +357,26 @@ class TestIntegrate(Base):
             assert all( rg['SM'] == n for rg in s.header['RG'] ) == True, "Did not set {} as SM for {}".format(n,b)
 
     def test_samplename_argument( self ):
-        import pysam
+        import samtools
         self.temp_copy_files()
         self._C( [self.bam], ['-SM', 'sample1'] )
-        s = pysam.Samfile( self.bam )
-        rgs = s.header['RG']
+        s = samtools.view( self.bam, H=True )
+        rgs = s.readlines()
+        s.close()
         # Ensure each read group contains the samplename set
-        for rg in rgs:
-            eq_( rg['SM'], 'sample1' )
+        for rg in [r for r in rgs if r.startswith('@RG')]:
+            ok_( 'SM:sample1\t' in rg, "Samplename did not make it into the headers" )
 
     def test_seqencingcenter_argument( self ):
-        import pysam
+        import samtools
         self.temp_copy_files()
         self._C( [self.bam], ['-CN', 'seqcenter'] )
-        s = pysam.Samfile( self.bam )
-        rgs = s.header['RG']
+        s = samtools.view( self.bam, H=True )
+        rgs = s.readlines()
+        s.close()
         # Ensure each read group contains the samplename set
-        for rg in rgs:
-            eq_( rg['CN'], 'seqcenter' )
+        for rg in [r for r in rgs if r.startswith('@RG')]:
+            ok_( 'CN:seqcenter\t' in rg, "Sequencing center did not make it into the headers" )
 
     def test_no_extra_files( self ):
         self.temp_copy_files()

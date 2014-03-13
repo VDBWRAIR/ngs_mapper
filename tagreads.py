@@ -3,9 +3,11 @@
 import argparse
 import sys
 import pysam
+import samtools
 import re
 import shutil
 import os.path
+from bam import sortbam, indexbam
 
 import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -49,25 +51,22 @@ def tag_read( untagged_read, tags ):
         Tags a given pysam.alignedread with various tags
         Does not replace existing tags
 
-        @param untagged_read - pysam.Samfile.alignedread
-        @param tags - List of tag tuples acceptable to pysam.Samfile.alignedread.tags
+        @param untagged_read - samtools.SamRow
+        @param tags - List of valid samspec optional field strings(aka ['RG:Z:Value'])
 
         @returns a tagged read
     '''
-    if untagged_read.flag >= 2048:
+    if untagged_read.FLAG >= 2048:
         # Skip supplementary
-        log.debug( "Skipping read {} because it is supplementary".format(untagged_read.qname) )
+        log.debug( "Skipping read {} because it is supplementary".format(untagged_read.QNAME) )
         return untagged_read
-    # Turn the tuple list into a dictionary for quick lookup
-    index_tags = dict( untagged_read.tags )
-    # Start with the existing tags
-    newtags = untagged_read.tags
-    # Add any tags that do not exist already
-    for k,v in tags:
-        if k not in index_tags:
-            newtags.append( (k,v) )
-    # Set the tags
-    untagged_read.tags = newtags
+    # Append the new tags
+    if untagged_read._tags and untagged_read._tags[-1] != '\t':
+        untagged_read._tags += '\t'
+    # Append the tags that do not already exist
+    # tag+'\t' is used to make it an exact match
+    tags = [tag for tag in tags if tag+'\t' not in untagged_read._tags] 
+    untagged_read._tags += '\t'.join( tags )
     # Return the tagged read
     return untagged_read
 
@@ -82,64 +81,73 @@ def tag_readgroup( read ):
     '''
     rg = get_rg_for_read( read )
     #log.debug( "Tagging {} with Read group {}".format(read.qname,rg) )
-    # Don't know excatly why there needs to be short pause here, but it fixes an issue
-    #  with some roche data
-    import time; time.sleep(0.0001)
-    return tag_read( read, [('RG',rg)] )
+    return tag_read( read, ['RG:Z:'+rg] )
 
 def tag_reads( bam, hdr ):
-    ''' Sets header of bam and tags all reads appropriately for each platform '''
+    '''
+        Sets header of bam and tags all reads appropriately for each platform
+        Overwrites existing header
+        
+        @param bam - Bam file to tag reads in
+        @param hdr - Header string to set in the bam(needs newline at the end)
+    '''
     # Open the existing bam to fetch the reads to modify from
-    untagged_bam = pysam.Samfile( bam )
-    # Start a new bam file with new header
-    if 'RG' in untagged_bam.header:
-        raise HeaderExists( "Refusing to add header as RG header already exists." )
-    tagged_bam = pysam.Samfile( bam + '.tagged', 'wb', header = hdr )
-    # Tag the reads
-    log.info( "Tagging reads for {}".format(bam) )
-    for read in untagged_bam.fetch( until_eof=True ):
-        read = tag_readgroup( read )
-        tagged_bam.write( read )
-    tagged_bam.close()
+    untagged_bam = samtools.view( bam )
+    # Open a file to write the sam output to with the tagged reads
+    samf = bam.replace('.bam','.sam')
+    with open( samf, 'w' ) as sam:
+        # Write the hdr to the file first
+        sam.write( hdr )
+        # Tag the reads
+        log.info( "Tagging reads for {}".format(bam) )
+        for read in untagged_bam:
+            samrow = samtools.SamRow(read)
+            read = tag_readgroup( samrow )
+            sam.write( str(read) + '\n' )
+    # Close stdout
     untagged_bam.close()
     log.info( "Finished tagging reads for {}".format(bam) )
     log.info( "Sorting {}".format(bam) )
-    pysam.sort( bam + '.tagged', bam.replace('.bam','') )
-    # Remove unsorted tagged bam
-    os.unlink( bam + '.tagged' )
+    b = samtools.view( samf, h=True, S=True, b=True )
+    sortbam( b, bam )
+    # Close the fh
+    b.close()
+    # Remove temp sam file
+    # maybe some day could even just use pipes all the way through :)
+    os.unlink( samf )
     log.info( "Indexing {}".format(bam) )
-    pysam.index( bam )
+    indexbam( bam )
 
 def get_rg_for_read( aread ):
     ''' Gets the read group name for the given pysam.AlignedRead '''
-    rname = aread.qname
+    rname = aread.QNAME
     for i, p in enumerate( ID_MAP ):
         if p.match( rname ):
             return IDS[i]
     raise UnknownReadNameFormat( "{} is from an unknown platform and cannot be tagged".format(rname) )
 
 def get_rg_headers( bam, SM=None, CN=None ):
-    old_header = get_bam_header( bam )
-    old_header['RG'] = []
+    old_header = get_bam_header( bam ) + '\n'
 
     for id, pl in zip( IDS, PLATFORMS ):
-        rg = RG_TEMPLATE.copy()
-        if SM is not None:
-            rg['SM'] = SM
+        rg = '@RG\tID:{}\tSM:{}\t'
+        if SM is None:
+            SM = os.path.basename(bam).replace( '.bam', '' )
+
+        if CN is not None:
+            rg += 'CN:{}\tPL:{}'
+            old_header += rg.format( id, SM, CN, pl ) + '\n'
         else:
-            rg['SM'] = os.path.basename(bam).replace( '.bam', '' )
-        if CN is not None: rg['CN'] = CN
-        rg['ID'] = id
-        rg['PL'] = pl
-        old_header['RG'].append( rg )
+            rg += 'PL:{}'
+            old_header += rg.format( id, SM, pl ) + '\n'
 
     return old_header
 
 def get_bam_header( bam ):
-    s = pysam.Samfile( bam )
-    hdr = s.header
-    s.close()
-    return hdr
+    r = samtools.view( bam, H=True )
+    hdr = r.read()
+    r.close()
+    return hdr.rstrip()
 
 def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
