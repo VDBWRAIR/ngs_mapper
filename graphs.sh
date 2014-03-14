@@ -23,4 +23,7 @@ do
 done | xargs -n 5 -P $CPUS -I CMD bash -c CMD
 
 ${THIS}/graph_mapunmap.py Projects/*/*.qualdepth.json -o MapUnmapReads.png
-convert -quality 25 -compress JPEG Projects/*/*.png QualDepth.pdf
+# Now use montage to tile all the qualdepth images into one massive one
+# -geometry +1+1 does something to make the images not have borders
+# -tile 1x makes them tile vertically otherwise they will come out as a matrix
+montage -quality 25 -compress JPEG -geometry +1+1 -tile 1x Projects/*/*.png QualDepth.png
