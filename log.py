@@ -19,7 +19,7 @@ def setup_logger( name, config ):
     log = logging.getLogger( name )
     return log
 
-def get_config( filename, format='%(asctime)-15s %(message)s' ):
+def get_config( filename, format='%(asctime)-15s -- %(levelno)s -- %(name) -- %(message)s' ):
     '''
         Returns a standardized logging.config.dictConfig parsable dictionary
         with values set appropriate for this pipeline
