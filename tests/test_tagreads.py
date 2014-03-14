@@ -104,11 +104,17 @@ class TestUnitGetRGForRead(Base):
             eq_( 'MiSeq', rg )
 
     def test_iontorrent( self ):
-        rn = 'E6I0Z:00005:00031'
-        read = self.mock_read()
-        read.QNAME = rn
-        rg = self._C( read )
-        eq_( 'IonTorrent', rg )
+        rn = (
+            'AAAAA:00000:00000',
+            'AAAAA:00000:0',
+            'AAAAA:0:00000',
+            'AAAAA:0:0'
+        )
+        for r in rn:
+            read = self.mock_read()
+            read.QNAME = r
+            rg = self._C( read )
+            eq_( 'IonTorrent', rg )
 
 class TestUnitGetHeader(Base):
     def _C( self, bamfile ):
@@ -228,7 +234,6 @@ class TestUnitTagRead(Base):
         r = self._C( read, tags )
         eq_( str(read), str(r) )
 
-    @attr('current')
     def test_all_duplicate_tags( self ):
         # When all tags are duplicates
         read = self.mock_read()
