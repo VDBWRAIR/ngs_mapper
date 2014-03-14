@@ -90,7 +90,7 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
     global logger
     cmd = shlex.split( cmdstr )
     cmd[0] = os.path.join( script_dir, cmd[0] )
-    logger.info( "Running {}".format(' '.join(cmd)) )
+    logger.debug( "Running {}".format(' '.join(cmd)) )
     try:
         p = subprocess.Popen( cmd, stdout=stdout, stderr=stderr, stdin=stdin )
         return p
