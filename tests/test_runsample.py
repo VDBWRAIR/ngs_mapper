@@ -1,4 +1,4 @@
-from nose.tools import eq_, raises
+from nose.tools import eq_, raises, ok_
 from nose.plugins.attrib import attr
 from mock import Mock, MagicMock, patch, mock_open, call
 
@@ -61,6 +61,7 @@ class TestUnitArgs(object):
         eq_( 'Sample1', res.prefix )
         eq_( 'outdir', res.outdir )
 
+@patch('runsample.logger',Mock())
 class TestUnitRunCMD(object):
     import runsample
     def _C( self, cmdstr, stdin=None, stdout=None, stderr=None, script_dir=None ):
@@ -156,6 +157,7 @@ class TestFunctional(Base):
         efiles.append( bamfile + '.consensus.fasta' )
         efiles.append( join( outdir, 'bwa.log' ) )
         efiles.append( join( outdir, 'flagstats.txt' ) )
+        efiles.append( join( outdir, prefix + '.std.log' ) )
         efiles.append( join( outdir, prefix + '.log' ) )
         efiles.append( bamfile + '.vcf' )
 
@@ -204,3 +206,15 @@ class TestFunctional(Base):
         cmd = 'export PATH={}:$PATH; {} {} {} {} -od {}'.format( self.tempdir, script, self.reads_by_sample, self.ref, 'tests', 'outdir' )
         ret = subprocess.call( cmd, shell=True )
         assert ret != 0, "Return code was 0 even though some executables returned 1"
+
+    def test_ensure_proper_log( self ):
+        # Just check that logfile gets stuff in it
+        outdir = 'outdir'
+        project = 'project'
+        logfile = join( outdir, project+'.log' )
+        out,ret = self._run_runsample( self.reads_by_sample, self.ref, project, outdir )
+        loglines = None
+        with open( logfile ) as fh:
+            loglines = fh.read().splitlines()
+        # 5 stages + start/finish
+        ok_( 7 <= len(loglines), "Should be at least 7 loglines in log file" )

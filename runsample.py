@@ -16,11 +16,9 @@ import glob
 # Ideally the entire sample would be run inside of a prefix directory under
 # /dev/shm and drop back on tmpdir if /dev/shm didn't exist
 
-logconfig= logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)-15s %(message)s'
-)
-log = logging.getLogger(logconfig)
+import log
+# We will configure this later after args have been parsed
+logger = None
 
 class MissingCommand(Exception):
     pass
@@ -89,9 +87,10 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
         
         @returns the popen object
     '''
+    global logger
     cmd = shlex.split( cmdstr )
     cmd[0] = os.path.join( script_dir, cmd[0] )
-    log.debug( "Running {}".format(' '.join(cmd)) )
+    logger.info( "Running {}".format(' '.join(cmd)) )
     try:
         p = subprocess.Popen( cmd, stdout=stdout, stderr=stderr, stdin=stdin )
         return p
@@ -99,21 +98,30 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
         raise MissingCommand( "{} is not an executable?".format(cmd[0]) )
 
 def main( args ):
+    # So we can set the global logger
+    global logger
+
     tdir = temp_projdir( args.prefix )
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
     consensus = os.path.join( tdir, bamfile+'.consensus.fasta' )
     vcf = os.path.join( tdir, bamfile+'.vcf' )
     bwalog = os.path.join( tdir, 'bwa.log' )
+    stdlog = os.path.join( tdir, args.prefix + '.std.log' )
     logfile = os.path.join( tdir, args.prefix + '.log' )
     CN = args.CN
+
+    # Set the global logger
+    config = log.get_config( logfile )
+    logger = log.setup_logger( 'runsample', config )
 
     if os.path.isdir( args.outdir ):
         if os.listdir( args.outdir ):
             raise AlreadyExists( "{} already exists and is not empty".format(args.outdir) )
 
-    log.debug( "--- Starting {} --- ".format(args.prefix) )
-    with open(logfile,'wb') as lfile:
+    logger.info( "--- Starting {} --- ".format(args.prefix) )
+    # Write all stdout/stderr to a logfile from the various commands
+    with open(stdlog,'wb') as lfile:
         cmd_args = {
             'samplename': args.prefix,
             'tdir': tdir,
@@ -141,7 +149,7 @@ def main( args ):
             # Everything else is dependant on bwa finishing so might as well die here
             if rets[-1] != 0:
                 cmd = cmd.format(**cmd_args)
-                log.critical( "{} failed to complete sucessfully. Please check the log file {} for more details".format(cmd,bwalog) )
+                logger.critical( "{} failed to complete sucessfully. Please check the log file {} for more details".format(cmd,bwalog) )
                 sys.exit(1)
 
         # Tag Reads
@@ -152,7 +160,7 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
         '''
 
@@ -161,11 +169,11 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
         if rets[-1] != 0:
             cmd = cmd.format(**cmd_args)
-            log.critical( '{} failed to complete successfully'.format(cmd.format(**cmd_args)) )
+            logger.critical( '{} failed to complete successfully'.format(cmd.format(**cmd_args)) )
 
         # Flagstats
         with open(flagstats,'wb') as flagstats:
@@ -173,7 +181,7 @@ def main( args ):
             p = run_cmd( cmd.format(**cmd_args), stdout=flagstats, stderr=lfile, script_dir='' )
             r = p.wait()
             if r != 0:
-                log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+                logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
             rets.append( r )
 
         # Graphics
@@ -181,7 +189,7 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
 
         # Consensus
@@ -189,23 +197,24 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            log.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
 
         # If sum is > 0 then one of the commands failed
         if sum(rets) != 0:
-            log.critical( "!!! There was an error running part of the pipeline !!!" )
-            log.critical( "Please check the logfile {}".format(logfile) )
+            logger.critical( "!!! There was an error running part of the pipeline !!!" )
+            logger.critical( "Please check the logfile {}".format(logfile) )
             sys.exit( 1 )
+        logger.info( "--- Finished {} ---".format(args.prefix) )
 
-        log.debug( "Moving {} to {}".format( tdir, args.outdir ) )
+        logger.debug( "Moving {} to {}".format( tdir, args.outdir ) )
+        # Cannot log any more below this line as the log file will be moved in the following code
         if not os.path.isdir( args.outdir ):
             shutil.move( tdir, args.outdir )
         else:
             file_list = glob.glob( os.path.join( tdir, '*' ) )
             for f in file_list:
                 shutil.move( f, args.outdir )
-        log.debug( "--- Finished {} ---".format(args.prefix) )
 
 if __name__ == '__main__':
     main(parse_args())

@@ -54,16 +54,8 @@ class TestUnitSetupLogger(LogBase):
     ''' Ensure logging happens as expected '''
     def setUp( self ):
         super( TestUnitSetupLogger, self ).setUp()
-        #self.config = self.get_config( self.filename, self.format )
         from log import get_config
         self.config = get_config( self.filename, self.format )
-
-    def get_config( self, filename, format ):
-        ''' Umm, replace the handlers with a handler that we can test with?? '''
-        from log import get_config
-        config = get_config( filename, format )
-        config['loggers']['root']['handlers'] = ['testhandler']
-        return config
 
     def _C( self, *args, **kwargs ):
         from log import setup_logger
