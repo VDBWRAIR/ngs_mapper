@@ -48,6 +48,11 @@ class TestUnitHandleArgs(Base):
         eq_( join('somepath','someprefix'), res.outpath )
 
 class TestFunctional(Base):
+    def setUp( self ):
+        import fixtures
+        super( TestFunctional, self ).setUp()
+        self.testbam = join( fixtures.THIS, 'fixtures', 'base_caller', 'test.bam' )
+
     # Should make files with these extensions
     outfiles = ( '.qualdepth.png', '.qualdepth.json' )
 
@@ -73,6 +78,13 @@ class TestFunctional(Base):
             expected_files.append( o )
             assert os.path.isfile( o ), "Did not produce {}".format(o)
         return expected_files
+
+    @attr('current')
+    def test_multiple_references( self ):
+        res = self._rungraphsample( self.testbam )
+        for f in self._files_exist( os.getcwd(), basename(self.testbam) ):
+            if f.endswith( '.png' ):
+                eq_( 148131, os.stat( f ).st_size )
 
     def test_createsfiles( self ):
         res = self._rungraphsample( self.bam )
