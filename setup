@@ -20,7 +20,7 @@ deactivate 2>/dev/null
 . /home/EIDRUdata/programs/vdbapps/bin/activate
 
 # Run the installer just to make sure
-sh ${THIS}/install.sh
+bash ${THIS}/install.sh
 
 # Remember the old path
 _OLDPATH=$PATH

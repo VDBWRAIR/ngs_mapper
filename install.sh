@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This gives us the current directory that this script is in
-THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+THIS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Deactivate if possible
 deactivate 2>/dev/null
@@ -37,32 +37,29 @@ git submodule foreach git reset --hard HEAD
 if [ ! -e ${THIS}/samtools/samtools ]
 then
     cd ${THIS}/htslib
-    make 2>&1 > htslib.make.log
+    make > htslib.make.log 2>&1
     cd ${THIS}/samtools
-    make 2>&1 > samtools.make.log
+    make > samtools.make.log 2>&1
 fi
 
 # Compile bwa if the bwa binary doesn't exist
 if [ ! -e ${THIS}/bwa/bwa ]
 then
     cd ${THIS}/bwa
-    make 2>&1 > bwa.make.log
+    make > bwa.make.log 2>&1
 fi
 
 # Some manpage setup
-if [ ! -d ${THIS}/man1 ]
-then
-    mkdir -p ${THIS}/man1
-    # Find all the actual manpages and link them into the man1 directory
-    find . -type f -name '*.1' | while read f
-    do
-        # Manpages start with .TH
-        head -1 "$f" | grep -q '^.TH'
-        if [ $? -eq 0 ]
-        then
-            path_to="$(cd $(dirname "$f") && pwd)/$(basename "$f")"
-            ln -s "$path_to" "${THIS}/man1/$(basename "$f")"
-        fi
-    done
-fi
-
+rm -rf ${THIS}/man1
+mkdir -p ${THIS}/man1
+# Find all the actual manpages and link them into the man1 directory
+find . -type f -name '*.1' | while read f
+do
+    # Manpages start with .TH
+    head -1 "$f" | grep -q '^.TH'
+    if [ $? -eq 0 ]
+    then
+        path_to="$(cd $(dirname "$f") && pwd)/$(basename "$f")"
+        ln -s "$path_to" "${THIS}/man1/$(basename "$f")"
+    fi
+done
