@@ -24,3 +24,5 @@ done | xargs -n 5 -P $CPUS -I CMD bash -c CMD
 
 ${THIS}/graph_mapunmap.py Projects/*/*.qualdepth.json -o MapUnmapReads.png
 convert -quality 25 -compress JPEG Projects/*/*.png QualDepth.pdf
+# Get a graphic to see how long it took to run each sample
+graph_times.py
