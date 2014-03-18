@@ -3,11 +3,15 @@
 import sys
 import os
 from os.path import *
-from subprocess import check_output, PIPE
+import subprocess
 import argparse
 from BamCoverage import bqd, graph_qualdepth as qd
 from BamCoverage.bam_to_qualdepth import set_unmapped_mapped_reads
 import json
+import log
+
+logc = log.get_config( 'graphsample.log' )
+logger = log.setup_logger( 'graphsample.py', logc )
 
 def main( args ):
     args = handle_args( args )
@@ -28,9 +32,55 @@ def make_json( bamfile, outpathprefix ):
     return outfile
 
 def make_image( jfile, outpathprefix ):
-    outfile = outpathprefix + '.qualdepth.png'
-    qd.make_graphic( jfile, outfile, titleprefix=basename(outpathprefix) )
+    prefix = basename( outpathprefix )
+    imgdir = join( dirname(outpathprefix), 'qualdepth' )
+    if not exists( imgdir ):
+        os.mkdir( imgdir )
+    outfile = join( imgdir, basename(outpathprefix) + '.qualdepth.' )
+    j = json.load( open(jfile) )
+    imagelist = []
+    for ref in [r for r in j if r != 'unmapped_reads']:
+        refname=normalize_ref(ref)
+        title = prefix + ' ' + refname
+        of = outfile + refname + '.png'
+        qd.make_graphic( jfile, of, ref=ref, titleprefix=title )
+        imagelist.append( of )
+    imagelist.append( outpathprefix + '.qualdepth.png' )
+    run_montage( *imagelist, compress='JPEG', quality=25, geometry='+1+1' )
     return outfile
+
+def normalize_ref( refname ):
+    '''
+        Replace punctuation with _
+    '''
+    import string
+    name = ''
+    for c in refname:
+        if c in string.punctuation + string.whitespace:
+            name += '_'
+        else:
+            name += c
+    return name
+
+def run_montage( *args, **kwargs ):
+    '''
+        Runs montage on all the images to create the
+        final qualdepth.png file
+        
+        @param outprefix - Prefix that is common to all files to montage together
+
+        @param args - Files to montage with the last item in the list being the output file
+        @param kwargs - options to pass to montage(compress='JPEG',quality=25)
+
+        @returns the output file path which should be outprefix + '.png'
+    '''
+    cmd = ['montage']
+    for k,v in kwargs.items():
+        cmd += ['-{}'.format(k),str(v)]
+    cmd += args
+    logger.debug( 'Running {}'.format( ' '.join(cmd) ) )
+    subprocess.check_call( cmd )
+    return args[-1]
     
 def handle_args( args ):
     if args.outprefix is not None:

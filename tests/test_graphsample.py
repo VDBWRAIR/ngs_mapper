@@ -1,10 +1,4 @@
-import common
-from nose.tools import eq_
-from nose.plugins.attrib import attr
-from mock import Mock
-from os.path import *
-import os
-import sys
+from imports import *
 from subprocess import check_output, CalledProcessError, STDOUT
 import shlex
 
@@ -47,6 +41,51 @@ class TestUnitHandleArgs(Base):
         res = self._call( args )
         eq_( join('somepath','someprefix'), res.outpath )
 
+class TestUnitRunMontage(Base):
+    def _C( self, outprefix, *args, **kwargs ):
+        from graphsample import run_montage
+        return run_montage( outprefix, *args, **kwargs )
+
+    def test_expected_outputfile( self ):
+        images = ['img.'+str(i)+'.png' for i in range(5)]
+        outprefix = 'img.'
+        expected_outfile = 'img.png'
+        eo = expected_outfile
+        # Touch all the files so they exist
+        for f in images:
+            open(f,'w').close()
+        def side_effect( *args, **kwargs ):
+            f = args[0][-1]
+            open( f, 'w' ).close()
+
+        with patch('subprocess.check_call') as check_call:
+            check_call.side_effect = side_effect
+            images = images + [expected_outfile]
+            r = self._C( *images, compress='JPEG', quality=25 )
+            check_call.assert_called_with( ['montage','-compress','JPEG','-quality','25']+images )
+        eq_( eo, r, "Returned file path {} != {}".format(r,eo) )
+        ok_( os.stat( r ), "did not create output file" )
+
+class TestNormalizeRef(object):
+    def _C( self, refname ):
+        from graphsample import normalize_ref
+        return normalize_ref( refname )
+
+    def test_replaces_punctuation( self ):
+        import string
+        r = self._C( string.punctuation )
+        eq_( '_'*len(string.punctuation), r )
+
+    def test_replaces_whitespace( self ):
+        import string
+        r = self._C( string.whitespace )
+        eq_( '_'*len(string.whitespace), r )
+
+    def test_not_replace_other( self ):
+        import string
+        r = self._C( string.letters + string.digits )
+        ok_( '_' not in r )
+
 class TestFunctional(Base):
     def setUp( self ):
         import fixtures
@@ -79,17 +118,26 @@ class TestFunctional(Base):
             assert os.path.isfile( o ), "Did not produce {}".format(o)
         return expected_files
 
-    @attr('current')
     def test_multiple_references( self ):
         res = self._rungraphsample( self.testbam )
+        print res
         for f in self._files_exist( os.getcwd(), basename(self.testbam) ):
             if f.endswith( '.png' ):
-                eq_( 148131, os.stat( f ).st_size )
+                eq_( 152254, os.stat( f ).st_size )
 
     def test_createsfiles( self ):
         res = self._rungraphsample( self.bam )
         self._files_exist( os.getcwd(), basename(self.bam) )
 
+    @attr('current')
+    def test_creates_imgdir( self ):
+        # Puts all the images for each ref in a qualdepth dir
+        from glob import glob
+        res = self._rungraphsample( self.testbam )
+        ok_( exists( 'qualdepth' ) )
+        eq_( 'test.bam.qualdepth.png', glob( '*.png' )[0] )
+
+    @attr('current')
     def test_outfiles_are_expected_size( self ):
         # Now just check filesizes against known
         # to make sure the graphics are correct?
@@ -97,7 +145,7 @@ class TestFunctional(Base):
         for f in self._files_exist( os.getcwd(), basename(self.bam) ):
             esize = 0
             if f.endswith( '.png' ):
-                esize = 148131
+                esize = 233500
             elif f.endswith( '.json' ):
                 esize = 197213
             eq_( esize, os.stat( f ).st_size )
