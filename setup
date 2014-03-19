@@ -3,6 +3,7 @@
 if [ -n "$_OLDPATH" ]
 then
     export PATH=$_OLDPATH
+    export MANPATH=$_OLDMANPATH
 fi
 
 # Reset the traps
@@ -17,15 +18,15 @@ deactivate 2>/dev/null
 # Activate vdbapps for now, but soon we will remove this in favor
 # of git submodules for all the necessary apps
 # This is required for pyBWA, biopython, numpy
-. /home/EIDRUdata/programs/vdbapps/bin/activate
+#. /home/EIDRUdata/programs/vdbapps/bin/activate
 
 # Run the installer just to make sure
 bash ${THIS}/install.sh
 
 # Remember the old path
 _OLDPATH=$PATH
-# Setup the path to include bwa and samtools that we just compiled
-export PATH=${THIS}:${THIS}/BamCoverage:${THIS}/bwa:${THIS}/samtools:$PATH
+# Setup the PATH
+export PATH=${THIS}:${THIS}/bin
 
 # Remember the old manpath
 _OLDMANPATH=$(manpath)

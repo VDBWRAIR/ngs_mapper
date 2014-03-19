@@ -2,19 +2,31 @@
 
 # This gives us the current directory that this script is in
 THIS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Deactivate if possible
-deactivate 2>/dev/null
-
-# Activate vdbapps for now, but soon we will remove this in favor
-# of git submodules for all the necessary apps
-. /home/EIDRUdata/programs/vdbapps/bin/activate
-
 # Grab the current directory the user is in
 CWD=$(pwd)
+# Virtualenvironment path
+virtpath=${THIS}/.venv
+# Where to store our goodies
+binpath=${virtpath}/bin
+# Where are all the source files
+deppath=${THIS}/dependencies
+# Where to store manpages
+manpath=${virtpath}/man1
+
+function pyinstall() {
+    dirpath=$1
+    oldpath=$(pwd)
+    cd $dirpath
+    rm -rf build
+    python setup.py install
+    cd $oldpath
+}
 
 # If any command exits then trap it and print error and exit
 trap 'echo "Error running $BASH_COMMAND"; rm -rf man1; exit;' ERR SIGINT SIGTERM
+
+# Create the virtual environment where everything will install to
+virtualenv ${virtpath}
 
 # Make sure we are in the repository directory
 cd ${THIS}
@@ -26,32 +38,28 @@ then
     exit 1
 fi
 
-# Now ensure submodules are setup correctly(hopefully)
-# This is probably not the correct thing to do, but hacks are great yay!
-# First make sure all submodules are updated and init'd
-git submodule update --init
-# Then just run through all of them and ensure they have HEAD checked out or something
-git submodule foreach git reset --hard HEAD
-
 # Compile samtools if the samtools binary doesn't exist
-if [ ! -e ${THIS}/samtools/samtools ]
+if [ ! -e ${binpath}/samtools ]
 then
-    cd ${THIS}/htslib
-    make > htslib.make.log 2>&1
-    cd ${THIS}/samtools
+    #cd ${THIS}/htslib
+    #make > htslib.make.log 2>&1
+    cd ${deppath}/samtools
     make > samtools.make.log 2>&1
+    ln -s ../dependencies/samtools/samtools ${binpath}/samtools
 fi
 
 # Compile bwa if the bwa binary doesn't exist
-if [ ! -e ${THIS}/bwa/bwa ]
+if [ ! -e ${binpath}/bwa ]
 then
-    cd ${THIS}/bwa
+    cd ${deppath}/bwa
     make > bwa.make.log 2>&1
+    ln -s ../dependencies/bwa/bwa ${binpath}/bwa
 fi
 
 # Some manpage setup
-rm -rf ${THIS}/man1
-mkdir -p ${THIS}/man1
+# First cleanse the manpath dir
+rm -rf ${manpath}
+mkdir ${manpath}
 # Find all the actual manpages and link them into the man1 directory
 find . -type f -name '*.1' | while read f
 do
@@ -60,6 +68,14 @@ do
     if [ $? -eq 0 ]
     then
         path_to="$(cd $(dirname "$f") && pwd)/$(basename "$f")"
-        ln -s "$path_to" "${THIS}/man1/$(basename "$f")"
+        ln -s "$path_to" "${manpath}/$(basename "$f")"
     fi
+done
+
+# Install all python packages
+package_list=( distribute PyVCF numpy biopython nose pyparsing tornado six python-dateutil pyBWA )
+cd ${deppath}
+for package in $package_list
+do
+    pyinstall ${package}*
 done
