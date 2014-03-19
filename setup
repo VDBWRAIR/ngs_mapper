@@ -12,26 +12,19 @@ trap - ERR SIGINT SIGTERM EXIT
 # This gives us the current directory that this script is in
 THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Deactivate if possible
-deactivate 2>/dev/null
+# Virtual env path
+virtpath=${THIS}/.miseqpipeline
 
-# Activate vdbapps for now, but soon we will remove this in favor
-# of git submodules for all the necessary apps
-# This is required for pyBWA, biopython, numpy
-#. /home/EIDRUdata/programs/vdbapps/bin/activate
+# Run the installer if needed
+if [ ! -d ${virtpath} ]
+then
+    bash ${THIS}/install.sh ${virtpath}
+fi
 
-# Run the installer just to make sure
-bash ${THIS}/install.sh
-
-# Remember the old path
-_OLDPATH=$PATH
-# Setup the PATH
-export PATH=${THIS}:${THIS}/bin
+# Activate virtual environment
+. ${virtpath}/bin/activate
 
 # Remember the old manpath
 _OLDMANPATH=$(manpath)
 # Setup the manpath for bwa and samtools
-export MANPATH=$(manpath):${THIS}
-
-# TODO
-# add deactivate function in this file
+export MANPATH=${virtpath}:$(manpath)

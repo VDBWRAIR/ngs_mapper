@@ -1,5 +1,7 @@
 *.pyc
 *.swp
-submodules
 perms.sh
-man1
+.miseqpipeline
+*build
+*dist
+*egg*
