@@ -19,7 +19,7 @@ def main():
     fig.set_size_inches( 20.0, 8.0 )
     ax = plt.gca()
     ax.plot( range(len(x)), y )
-    ax.set_xlim([0,len(x)])
+    ax.set_xlim([1,len(x)-1])
     ax.set_xticks( range(1,len(x)) )
     ax.set_xticklabels( ss.keys(), rotation='vertical' )
     ax.set_ylabel( 'Seconds' )
