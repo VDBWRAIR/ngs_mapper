@@ -8,20 +8,28 @@ import matplotlib.pyplot as plt
 from nose.tools import ok_, eq_
 
 from datetime import datetime
+import log
+
+logc = log.get_config()
+logger = log.setup_logger( 'graph_times', logc )
 
 def main():
     ss = start_stop( 'Projects' )
+    logger.info( "Plotting all projects inside of {}".format('Projects') )
     x,y = [],[]
-    for xx,yy in ss.items():
-        x.append( xx )
-        y.append( yy )
+    samplenames = sorted(ss.keys())
+    for sn in samplenames:
+        x.append( sn )
+        y.append( ss[sn] )
     fig = plt.figure()                                                                                                                                                                                                                                                                
     fig.set_size_inches( 20.0, 8.0 )
+    fig.suptitle( 'Pipeline Time per Sample' )
     ax = plt.gca()
     ax.plot( range(len(x)), y )
-    ax.set_xlim([1,len(x)-1])
-    ax.set_xticks( range(1,len(x)) )
-    ax.set_xticklabels( ss.keys(), rotation='vertical' )
+    ax.set_xlim([0,len(x)-1])
+    ax.set_ylim([0,max(y)])
+    ax.set_xticks( range(0,len(x)) )
+    ax.set_xticklabels( x, rotation='vertical' )
     ax.set_ylabel( 'Seconds' )
     plt.savefig( 'PipelineTimes.png', bbox_inches='tight', dpi=100, pad_inches=0.1 )
 
@@ -48,7 +56,10 @@ def start_stop( basedir ):
     ss = {}
     for p in projects:
         proj = basename( p )
-        ss[proj] = datediff( start_stop_for_project( p ) )
+        diff = datediff( start_stop_for_project( p ) )
+        if diff < 60:
+            logger.warning( "{} ran in only {} seconds".format(p,diff) )
+        ss[proj] = diff
     return ss
 
 def start_stop_for_project( projectpath ):
