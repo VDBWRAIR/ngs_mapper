@@ -1,0 +1,24 @@
+Building mpl on OSX has proven to be a nightmare because of all the
+different types of zlib, png and freetype that may be on your system.
+The recommended and supported way to build is to use a third-party
+package manager to install the required dependencies, and then
+install matplotlib from source using the setup.py script. Two widely
+used package managers are homebrew and MacPorts. The following
+example illustrates how to install libpng and freetype using
+homebrew.
+
+Example usage::
+
+  brew install libpng freetype
+
+If you are using MacPorts, execute the following instead:
+
+Example usage::
+
+  port install libpng freetype
+
+To install matplotlib from source, execute:
+
+Example usage::
+
+  python setup.py install

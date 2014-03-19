@@ -1,0 +1,82 @@
+#Ignore the build directory (and its sub-directories):
+build
+
+#Ignore the distribution directory
+dist
+ 
+#Ignore backup files from some Unix editors,
+*~
+*.swp
+*.bak
+
+#Ignore patches and any original files created by patch command
+*.diff
+*.patch
+*.orig
+*.rej
+
+#Ignore these hidden files from Mac OS X
+.DS_Store
+
+#Ignore hidden files from Dolphin window manager
+.directory
+ 
+#Ignore all compiled python files (e.g. from running the unit tests):
+*.pyc
+*.pyo
+
+#Ignore all Jython class files (present if using Jython)
+*.class
+
+#Ingore the MANIFEST file created automatically from MANIFEST.in
+MANIFEST
+ 
+#The graphics unit tests produce output files for human inspection
+#(at the time of writing, only PDF files are created but I expect
+#this to change).
+Tests/Graphics/*.pdf
+Tests/Graphics/*.eps
+Tests/Graphics/*.svg
+Tests/Graphics/*.png
+
+#TODO - The unit tests shouldn't leave temp files after running:
+Tests/BioSQL/temp_sqlite.db
+Tests/BioSQL/temp_sqlite.db-journal
+
+#Ignore LaTeX temp files, and compiled output
+Doc/*.aux
+Doc/*.log
+Doc/*.out
+Doc/*.toc
+Doc/*.haux
+Doc/*.htoc
+Doc/*/*.aux
+Doc/*/*.log
+Doc/*/*.out
+Doc/*/*.toc
+Doc/*/*.haux
+Doc/*/*.htoc
+Doc/*/*/*.aux
+Doc/*/*/*.log
+Doc/*/*/*.out
+Doc/*/*/*.toc
+Doc/*/*/*.haux
+Doc/*/*/*.htoc
+Doc/Tutorial.txt
+Doc/Tutorial.pdf
+Doc/Tutorial.html
+Doc/biopdb_faq.pdf
+Doc/install/Installation.txt
+Doc/install/Installation.pdf
+Doc/install/Installation.html
+Doc/cookbook/motif/motif.pdf
+Doc/cookbook/motif/motif.html
+
+#Ignore the hevea.sty file if present (used for HTML docs)
+Doc/hevea.sty
+Doc/*/hevea.sty
+Doc/*/*/hevea.sty
+
+#Ignore IntelliJ IDEA directory and project files
+.idea
+*.iml
