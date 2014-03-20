@@ -19,6 +19,10 @@ virtpath=${THIS}/.miseqpipeline
 if [ ! -d ${virtpath} ]
 then
     bash ${THIS}/install.sh ${virtpath}
+    if [ $? -ne 0 ]
+    then
+        return
+    fi
 fi
 
 # Activate virtual environment
