@@ -1,1 +1,0 @@
-/home/EIDRUdata/softwares/Python/packages/distribute/distribute_setup.py

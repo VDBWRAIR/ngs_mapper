@@ -92,7 +92,7 @@ do
     pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
     if [ $_RET -ne 0 ]
     then
-        echo "${package} failed to install. Please check dependencies/${pdir}/${package}.install.log for more details."
+        echo "${package} failed to install. Please check ${THIS}/dependencies/${pdir}/${package}.install.log for more details."
         exit 1
     fi
 done
