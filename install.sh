@@ -91,7 +91,7 @@ do
     pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
     if [ $_RET -ne 0 ]
     then
-        echo "${package} failed to install"
+        echo "${package} failed to install. Please check ${pdir}/${package}.install.log for more details."
     fi
 done
 
