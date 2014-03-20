@@ -12,6 +12,8 @@ echo "Removing ${virtpath}"
 rm -rf ${virtpath}
 echo "Removing build and dist python package directories from ${THIS}/dependencies"
 find ${THIS}/dependencies -type d -name build -o -name dist -exec rm -rf {} \; 2>/dev/null
+# Remove this file too
+rm dependencies/matplotlib-1.3.1/lib/matplotlib/mpl-data/matplotlibrc
 
 echo "miseqpipeline is now uninstalled"
 if [ ! -z "${VIRTUAL_ENV}" ]
