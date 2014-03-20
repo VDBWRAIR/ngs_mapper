@@ -49,24 +49,25 @@ def git_branch():
 
 def set_version():
     ''' Sets the version using the current tag and revision in the git repo '''
-    if not os.path.isdir(".git"):
-        print "This does not appear to be a Git repository."
-        return
-    try:
-        p = subprocess.Popen(["git", "describe", "--tags", "--always"], stdout=subprocess.PIPE)
-    except EnvironmentError:
-        print "unable to run git"
-        return
-    stdout = p.communicate()[0]
-    if p.returncode != 0:
-        print "unable to run git"
-        return
+    if os.path.isdir(".git"):
+        try:
+            p = subprocess.Popen(["git", "describe", "--tags", "--always"], stdout=subprocess.PIPE)
+        except EnvironmentError:
+            print "unable to run git"
+            return
+        stdout = p.communicate()[0]
+        if p.returncode != 0:
+            print "unable to run git"
+            return
 
-    # Full version string
-    ver = stdout.strip()
-    branch = git_branch()
-    if branch:
-        ver += '.' + git_branch()
+        # Full version string
+        ver = stdout.strip()
+        branch = git_branch()
+        if branch:
+            ver += '.' + git_branch()
+    else:
+        # Hack in case no .git dir'
+        ver = '0.0.0'
 
     with open( ver_file, 'w' ) as fh:
         global __version__
