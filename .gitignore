@@ -6,3 +6,4 @@ perms.sh
 *dist
 *egg*
 *.log
+.virtpath

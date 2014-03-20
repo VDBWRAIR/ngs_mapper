@@ -3,6 +3,7 @@ import shutil
 import os
 from os.path import *
 from . import tdir
+import subprocess
 
 class BaseClass( object ):
     @classmethod
@@ -27,6 +28,17 @@ class BaseClass( object ):
                 fh.write(line)
                 linecount += 1
         return linecount
+
+    @classmethod
+    def run_script( self, script, *args ):
+        path = dirname( dirname( __file__ ) )
+        script = join( path, script )
+        cmd = [script] + list(*args)
+        print "Running {}".format(' '.join(cmd))
+        try:
+            return (0,subprocess.check_output( [script] + list(args), stderr=subprocess.STDOUT ))
+        except subprocess.CalledProcessError as e:
+            return (e.returncode, e.output)
 
 import fixtures
 from bam import indexbam

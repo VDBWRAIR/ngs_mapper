@@ -3,8 +3,9 @@
 # Where is this script?
 THIS=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
 
-# Get virtpath from setup
-eval virtpath=$(awk -F'=' '/^virtpath/ {print $2}' setup)
+# Get virtpath
+. ${THIS}/.virtpath
+rm ${THIS}/.virtpath
 
 # Remove virtual env
 echo "Removing ${virtpath}"
