@@ -25,6 +25,7 @@ function pyinstall() {
     cd $dirpath
     rm -rf build dist
     python setup.py install
+    _RET=$?
     cd $oldpath
 }
 
@@ -88,6 +89,10 @@ do
     pdir=$(echo ${package}*)
     echo "Installing ${pdir}"
     pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
+    if [ $_RET -ne 0 ]
+    then
+        echo "${package} failed to install"
+    fi
 done
 
 # Symlink all of our goodies into venv bin

@@ -4,10 +4,12 @@
 THIS=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
 
 # Get virtpath from setup
-virtpath=$(awk -F'=' '/^virtpath/ {print $2}' setup)
+eval virtpath=$(awk -F'=' '/^virtpath/ {print $2}' setup)
 
 # Remove virtual env
+echo "Removing ${virtpath}"
 rm -rf ${virtpath}
+echo "Removing build and dist python package directories from ${THIS}/dependencies"
 find ${THIS}/dependencies -type d -name build -o -name dist -exec rm -rf {} \; 2>/dev/null
 
 echo "miseqpipeline is now uninstalled"
