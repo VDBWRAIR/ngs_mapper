@@ -31,6 +31,14 @@ function pyinstall() {
     cd $oldpath
 }
 
+# Ensure correct python version
+python -V 2>&1 | grep -qE '2.7.[0-9]'
+if [ $? -ne 0 ]
+then
+    echo "Please ensure you have python 2.7 or greater"
+    exit 1
+fi
+
 # Check to make sure required commands are available
 if [ -z "$(which convert)" ]
 then

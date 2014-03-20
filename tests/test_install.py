@@ -48,7 +48,8 @@ class Base(common.BaseClass):
     @classmethod
     def run_installer( klass ):
         # Install to test package tempdir
-        return klass.run_script( 'install.sh', klass.vpath )
+        script = klass.script_path('install.sh')
+        return klass.run_script( '{} {}'.format( script, klass.vpath ) )
 
 class TestFunctional( Base ):
     def test_install_ran_successfully( self ):
@@ -69,8 +70,24 @@ class TestFunctional( Base ):
         for me in self.must_exist:
             ok_( exists( me ), "install did not create {}".format(me) )
 
+    @timed(1)
+    def test_wrong_python_version( self ):
+        # Make a mock python that returns an older version number
+        with open( 'python', 'w' ) as fh:
+            fh.write( "#!/bin/bash\n" )
+            fh.write( "echo 2.6.0" )
+        # Make it executable
+        st = os.stat('python')
+        import stat
+        os.chmod( 'python', st.st_mode | stat.S_IEXEC )
+        script = self.script_path('install.sh')
+        path=tdir + ':' + os.environ['PATH']
+        ret, output = self.run_script( 'export PATH={}; {} {}'.format(path,script,self.vpath) )
+        eq_( 'Please ensure you have python 2.7 or greater', output.rstrip() )
+        eq_( 1, ret )
+
     def test_uninstall_works( self ):
-        print self.run_script( 'uninstall.sh' )
+        print self.run_script( self.script_path( 'uninstall.sh' ) )
         for me in self.must_exist:
             ok_( not exists( me ), "uninstall did not remove {}".format(me) )
 

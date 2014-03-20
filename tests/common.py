@@ -30,13 +30,15 @@ class BaseClass( object ):
         return linecount
 
     @classmethod
-    def run_script( self, script, *args ):
+    def script_path( self, script ):
         path = dirname( dirname( __file__ ) )
-        script = join( path, script )
-        cmd = [script] + list(*args)
-        print "Running {}".format(' '.join(cmd))
+        return join( path, script )
+
+    @classmethod
+    def run_script( self, script ):
+        print "Running {}".format(script)
         try:
-            return (0,subprocess.check_output( [script] + list(args), stderr=subprocess.STDOUT ))
+            return (0,subprocess.check_output( script, stderr=subprocess.STDOUT, shell=True ))
         except subprocess.CalledProcessError as e:
             return (e.returncode, e.output)
 
