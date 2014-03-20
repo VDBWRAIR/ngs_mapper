@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Initially set sam_path to default path
+sam_path=$(which samtools 2>/dev/null)
+
+while getopts ":p:" opt
+do
+    case "$opt" in
+        p)
+            sam_path=$OPTARG
+            ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [ -z "$sam_path" ]
+then
+    echo "Please provide a path to samtools using -p option"
+    echo " or modify your PATH variable to include it"
+    exit 1
+fi
+
+## Convert sai file to indexed bam
+if [ -z $1 ]
+then
+    echo "Please provide an sai file to convert" >&2
+    exit 1
+fi
+
+# Filename sans .sai extension
+filename=${1%.sai}
+
+# Convert sai to bam
+${sam_path} view -Sb "${filename}.sai" > "${filename}_unsorted.bam"
+if [ $? -ne 0 ]
+then
+    echo "Failed to convert ${filename}.sai to unsorted bam" >&2
+    rm ${filename}_unsorted.bam
+    exit $?
+fi
+
+# Sort bam file
+${sam_path} sort "${filename}_unsorted.bam" "${filename}"
+if [ $? -ne 0 ]
+then
+    echo "Failed to sort ${filename}_unsorted.bam" >&2
+    exit $?
+fi
+rm "${filename}_unsorted.bam"
+
+# Index bam file
+${sam_path} index "${filename}.bam"
+if [ $? -ne 0 ]
+then
+    echo "Failed to index ${filename}.bam" >&2
+    exit $?
+fi
+echo "Completed converting ${filename}.sai to ${filename}.bam"
