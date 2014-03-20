@@ -83,10 +83,12 @@ done
 # Install all python packages
 package_list=( distribute PyVCF numpy biopython nose pyparsing tornado six python-dateutil pyBWA )
 cd ${deppath}
+pwd
 for package in ${package_list[@]}
 do
-    echo "Installing ${package}"
-    pyinstall ${package}* > ${package}*/${package}.install.log 2>&1
+    pdir=$(echo ${package}*)
+    echo "Installing ${pdir}"
+    pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
 done
 
 # Symlink all of our goodies into venv bin
