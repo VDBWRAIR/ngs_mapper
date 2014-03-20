@@ -3,8 +3,6 @@ import re
 from cStringIO import StringIO
 from subprocess import Popen, PIPE
 
-import pysam
-
 def get_refstats( bamfile ):
     '''
         Run samtools idxstats on the given bamfile
