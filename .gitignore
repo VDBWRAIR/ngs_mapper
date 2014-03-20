@@ -5,3 +5,4 @@ perms.sh
 *build
 *dist
 *egg*
+*.log
