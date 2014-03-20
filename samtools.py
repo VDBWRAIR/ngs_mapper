@@ -307,7 +307,7 @@ class MPileupColumn(object):
         assert len(bquals) == self.depth, "Somehow length of bases != length of Base Qualities"
         depth = self.depth
         stats = {'depth':depth,'mqualsum':mqualsum,'bqualsum':bqualsum}
-        for b,bq,mq in itertools.izip_longest( bases, bquals, mquals ):
+        for b,bq,mq in itertools.izip_longest( bases, bquals, mquals, fillvalue=0 ):
             if b not in stats:
                 stats[b] = {'baseq':[],'mapq':[]}
             stats[b]['baseq'].append(bq)
