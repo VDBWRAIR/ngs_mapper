@@ -33,7 +33,8 @@ function pyinstall() {
 trap 'echo "Error running $BASH_COMMAND"; rm -rf man1; exit;' ERR SIGINT SIGTERM
 
 # Create the virtual environment where everything will install to
-virtualenv ${virtpath}
+# Don't use setuptools as we will install that later
+virtualenv --no-setuptools ${virtpath}
 # Activate
 . ${virtpath}/bin/activate
 
