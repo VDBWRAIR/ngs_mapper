@@ -29,6 +29,24 @@ function pyinstall() {
     cd $oldpath
 }
 
+# Check to make sure required commands are available
+if [ -z "$(which convert)" ]
+then
+    echo "Please ensure that you have the ImageMagick packages installed and then rerun this installer."
+    echo "Red Hat: yum install -y ImageMagick-c++ ImageMagick"
+    echo "Ubuntu: apt-get install -y imagemagick"
+    exit 1
+fi
+
+# Ensure zlib.h is in include path(I guess we won't assume redhat here and just do rpm -qa stuff)
+if [ -z "$(find $(echo | cpp -x c++ -Wp,-v 2>&1 | grep -v 'ignoring' | grep -v '^#' | grep -v '^End' | xargs) -type f -name zlib.h)" ]
+then
+    echo "Please ensure that the zlib development package is installed and then rerun this installer."
+    echo "Red Hat: yum install -y zlib-devel"
+    echo "Ubuntu: apt-get install -y zlib-devel"
+    exit 1
+fi
+
 # If any command exits then trap it and print error and exit
 trap 'echo "Error running $BASH_COMMAND"; rm -rf man1; exit;' ERR SIGINT SIGTERM
 
@@ -40,13 +58,6 @@ virtualenv --prompt='(miseqpipeline) ' --no-setuptools ${virtpath}
 
 # Make sure we are in the repository directory
 cd ${THIS}
-
-# Ensure zlib.h is in include path(I guess we won't assume redhat here and just do rpm -qa stuff)
-if [ -z "$(find $(echo | cpp -x c++ -Wp,-v 2>&1 | grep -v 'ignoring' | grep -v '^#' | grep -v '^End' | xargs) -type f -name zlib.h)" ]
-then
-    echo "Please ensure that the zlib development package is installed. Probably yum install zlib-devel or apt-get install zlib-devel"
-    exit 1
-fi
 
 # Compile samtools if the samtools binary doesn't exist
 if [ ! -e ${binpath}/samtools ]
