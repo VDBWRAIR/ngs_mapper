@@ -83,7 +83,6 @@ done
 # Install all python packages
 package_list=( distribute PyVCF numpy biopython nose pyparsing tornado six python-dateutil pyBWA )
 cd ${deppath}
-pwd
 for package in ${package_list[@]}
 do
     pdir=$(echo ${package}*)
