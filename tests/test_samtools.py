@@ -13,7 +13,6 @@ class Base(common.BaseBaseCaller):
         super(Base,self).setUp()
         self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}
 
-@attr('current')
 class TestView(Base):
     '''
 Usage:   samtools view [options] <in.bam>|<in.sam> [region1 [...]]
@@ -287,6 +286,12 @@ class TestUnitMQuals(MpileupBase):
         r = self._C( str )
         eq_( [], r.mquals )
 
+    @attr('current')
+    def test_issue_174( self ):
+        str = 'Den3/KDC0070A/Thailand/2010/Den3_1	88	N	36	*********A*********AAAA*********AAAt	CA?<=;=??;B?;;?;==<;;;D==<???=?;H;;:'
+        r = self._C( str )
+        eq_( [], r.mquals )
+
 class TestUnitIter(MpileupBase):
     def test_iterates( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
@@ -309,6 +314,14 @@ class TestUnitIter(MpileupBase):
 class TestUnitBaseStats(MpileupBase):
     def _CA( self, mpstr ):
         return self._C( mpstr ).base_stats()
+
+    @attr('current')
+    def test_issue_174( self ):
+        # Issue when there are no mapping qualities
+        # mapq should be all set to 0
+        str = 'Den3/KDC0070A/Thailand/2010/Den3_1	88	N	36	*********A*********AAAA*********AAAt	CA?<=;=??;B?;;?;==<;;;D==<???=?;H;;:'
+        r = self._CA( str )
+        eq_( [0]*8, r['A']['mapq'] )
 
     def test_qualsums_set( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'

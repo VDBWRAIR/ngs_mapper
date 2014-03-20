@@ -189,9 +189,7 @@ def stats( bamfile, regionstr, minmq, minbq, maxd ):
     out = samtools.mpileup( bamfile, regionstr, minmq, minbq, maxd )
     
     try:
-        import time; st = time.time();
         o = out.next()
-        #print time.time() - st
         col = samtools.MPileupColumn( o )
         out.close()
         return col.base_stats()
