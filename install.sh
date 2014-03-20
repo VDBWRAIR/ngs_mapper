@@ -34,7 +34,7 @@ trap 'echo "Error running $BASH_COMMAND"; rm -rf man1; exit;' ERR SIGINT SIGTERM
 
 # Create the virtual environment where everything will install to
 # Don't use setuptools as we will install that later
-virtualenv --no-setuptools ${virtpath}
+virtualenv --prompt='(miseqpipeline) ' --no-setuptools ${virtpath}
 # Activate
 . ${virtpath}/bin/activate
 
@@ -92,7 +92,7 @@ do
     pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
     if [ $_RET -ne 0 ]
     then
-        echo "${package} failed to install. Please check ${pdir}/${package}.install.log for more details."
+        echo "${package} failed to install. Please check dependencies/${pdir}/${package}.install.log for more details."
         exit 1
     fi
 done
