@@ -76,6 +76,11 @@ then
     #make > htslib.make.log 2>&1
     cd ${deppath}/samtools
     make > samtools.make.log 2>&1
+    if [ $? -ne 0 ]
+    then
+        echo "Samtools failed to compile. Please check the ${deppath}/samtools.make.log for more details."
+        exit 1
+    fi
     ln -s $(pwd)/samtools ${binpath}/samtools
 fi
 
@@ -84,6 +89,11 @@ if [ ! -e ${binpath}/bwa ]
 then
     cd ${deppath}/bwa
     make > bwa.make.log 2>&1
+    if [ $? -ne 0 ]
+    then
+        echo "bwa failed to compile. Please check the ${deppath}/bwa.make.log for more details."
+        exit 1
+    fi
     ln -s $(pwd)/bwa ${binpath}/bwa
 fi
 
