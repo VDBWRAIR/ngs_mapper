@@ -7,8 +7,9 @@ class Base(common.BaseClass):
     @classmethod
     def setUpClass( klass ):
         super(Base,klass).setUpClass()
+        # Uninstall first since __init__.py already installed for us
         # Only install once because it takes a long time
-        klass.returncode, klass.output = klass.run_installer()
+        klass.returncode, klass.output = klass.run_installer( klass.vpath )
 
     def setUp( self ):
         super( Base, self ).setUp()
@@ -46,14 +47,15 @@ class Base(common.BaseClass):
         os.chdir(tdir) 
 
     @classmethod
-    def run_installer( klass ):
+    def run_installer( klass, installpath ):
         # Install to test package tempdir
         script = klass.script_path('install.sh')
-        return klass.run_script( '{} {}'.format( script, klass.vpath ) )
+        return klass.run_script( '{} {}'.format( script, installpath ) )
 
 class TestFunctional( Base ):
     def test_install_ran_successfully( self ):
         eq_( 0, self.returncode )
+        ok_( 'failed' not in self.output )
 
     def test_links_scripts( self ):
         binpath = join( self.vpath, 'bin' )
