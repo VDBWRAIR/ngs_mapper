@@ -135,31 +135,37 @@ class TestFunctional(Base):
 
     def _ensure_expected_output_files( self, outdir, prefix ):
         efiles = self._expected_files( outdir, prefix )
-        ef = set( efiles )
+        ef = set( [x for y,x in efiles] )
         rf = set( [join(outdir,f) for f in os.listdir( outdir )] )
         print "Files missing from project:"
         print ef - rf
         print "Extra files in project:"
         print rf - ef
         eq_( ef, rf )
-        for ef in efiles:     
-            assert isfile( ef ), "{} was not created".format(ef)
-            assert os.stat( ef ).st_size > 0, "{} was not > 0 bytes".format(ef)
+        for typ, ef in efiles:     
+            if typ == 'file':
+                assert isfile( ef ), "{} was not created".format(ef)
+                assert os.stat( ef ).st_size > 0, "{} was not > 0 bytes".format(ef)
+            else:
+                assert isdir( ef ), "{} was not created".format(ef)
 
     def _expected_files( self, outdir, prefix ):
         #00141-98.bam  00141-98.bam.bai 00141-98.bam.qualdepth.json  00141-98.bam.qualdepth.png  00141-98.bam.qualdepth.png.pdq.tsv  00141-98.consensus.fastq  bwa.log  flagstats.txt  variants.failed.log  variants.filter.vcf  variants.indel.filter.vcf  variants.indel.raw.vcf  variants.raw.vcf
         efiles = []
         bamfile = join( outdir, prefix + '.bam' )
-        efiles.append( bamfile )
-        efiles.append( bamfile + '.bai' )
-        efiles.append( bamfile + '.qualdepth.json' )
-        efiles.append( bamfile + '.qualdepth.png' )
-        efiles.append( bamfile + '.consensus.fasta' )
-        efiles.append( join( outdir, 'bwa.log' ) )
-        efiles.append( join( outdir, 'flagstats.txt' ) )
-        efiles.append( join( outdir, prefix + '.std.log' ) )
-        efiles.append( join( outdir, prefix + '.log' ) )
-        efiles.append( bamfile + '.vcf' )
+        f = 'file'
+        d = 'directory'
+        efiles.append( (f,bamfile) )
+        efiles.append( (f,bamfile + '.bai') )
+        efiles.append( (f,bamfile + '.qualdepth.json') )
+        efiles.append( (f,bamfile + '.qualdepth.png') )
+        efiles.append( (f,bamfile + '.consensus.fasta') )
+        efiles.append( (f,join( outdir, 'bwa.log') ) )
+        efiles.append( (f,join( outdir, 'flagstats.txt') ) )
+        efiles.append( (f,join( outdir, prefix + '.std.log') ) )
+        efiles.append( (f,join( outdir, prefix + '.log') ) )
+        efiles.append( (f,bamfile + '.vcf') )
+        efiles.append( (d,join( outdir, 'qualdepth') ) )
 
         return efiles
 

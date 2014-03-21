@@ -10,7 +10,6 @@ import json
 import itertools
 from StringIO import StringIO
 
-import pysam
 import bam
 #from bam import parse_pileup, alignment_info, get_refstats
 from bam import alignment_info, get_refstats

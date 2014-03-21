@@ -42,10 +42,13 @@ class Base(object):
         return subprocess.check_output( cmd )
 
     def get_numreads( self, bam ):
-        import pysam
-        s = pysam.Samfile( bam )
-        nreads = s.mapped + s.unmapped
-        s.close()
+        try:
+            out = subprocess.check_output( 'samtools flagstat {} | head -1 | cut -d\' \' -f 1'.format(bam), shell=True )
+        except subprocess.CalledProcessError as e:
+            print e.output
+            print e
+            raise e
+        nreads = int(out)
         return nreads
 
     def check_tagreadcounts( self, bamfile ):
@@ -56,10 +59,6 @@ class Base(object):
             print "Read Group: {} had {} reads".format(rg,c)
 
         eq_( self.get_numreads(bamfile), read_count )
-
-    def mock_read_pysam( self ):
-        from pysam import AlignedRead
-        return AlignedRead()
 
     def mock_read( self ):
         from samtools import SamRow
@@ -157,11 +156,12 @@ class TestUnitTagReads(Base):
 
     def count_rg( self, bam ):
         ''' Count how many of each uniq read group id '''
-        import pysam
-        s = pysam.Samfile( bam )
+        import samtools
+        s = samtools.view( bam ) 
         counts = {}
-        for aread in s.fetch():
-            tags = dict( aread.tags )
+        for read in s:
+            aread = samtools.SamRow( read )
+            tags = dict( aread.TAGS )
             id = tags['RG']
             if id not in counts:
                 counts[id] = 0
@@ -409,7 +409,7 @@ class TestIntegrate(Base):
         self.check_tagreadcounts( self.bam )
 
     def test_does_multiple_bams( self ):
-        import pysam
+        import samtools
         self.temp_copy_files()
         bam2 = join( self.tempdir, 'sample2.bam' )
         bai2 = join( self.tempdir, 'sample2.bam.bai' )
@@ -419,8 +419,10 @@ class TestIntegrate(Base):
         for b in [self.bam, bam2]:
             self.check_tagreadcounts( b )
             n = basename(b).replace('.bam','')
-            s = pysam.Samfile( b )
-            assert all( rg['SM'] == n for rg in s.header['RG'] ) == True, "Did not set {} as SM for {}".format(n,b)
+            s = samtools.view( b, H=True )
+            rg = [header.split('\t') for header in s if header.startswith( '@RG' )]
+            for rgline in rg:
+                eq_( 'SM:'+n, rgline[2], "Did not set {} as SM for {}. Header: {}".format(n,b,rgline) )
 
     def test_samplename_argument( self ):
         import samtools
