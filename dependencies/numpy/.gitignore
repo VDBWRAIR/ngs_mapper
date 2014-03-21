@@ -1,0 +1,120 @@
+# Editor temporary/working/backup files #
+#########################################
+.#*
+[#]*#
+*~
+*$
+*.bak
+*.diff
+*.org
+.project
+*.rej
+.settings/
+.*.sw[nop]
+.sw[nop]
+*.tmp
+*.vim
+tags
+
+# Compiled source #
+###################
+*.a
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.py[ocd]
+*.so
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.bz2
+*.bzip2
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.tbz2
+*.tgz
+*.zip
+
+# Python files #
+################
+# setup.py working directory
+build
+# sphinx build directory
+_build
+# setup.py dist directory
+dist
+doc/build
+doc/cdoc/build
+# Egg metadata
+*.egg-info
+# The shelf plugin uses this dir
+./.shelf
+MANIFEST
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+# Patches #
+###########
+*.patch
+*.diff
+
+# OS generated files #
+######################
+.DS_Store*
+.VolumeIcon.icns
+.fseventsd
+Icon?
+.gdb_history
+ehthumbs.db
+Thumbs.db
+
+# Things specific to this project #
+###################################
+numpy/core/__svn_version__.py
+doc/numpy.scipy.org/_build
+numpy/__config__.py
+numpy/core/include/numpy/__multiarray_api.h
+numpy/core/include/numpy/__ufunc_api.h
+numpy/core/include/numpy/_numpyconfig.h
+numpy/version.py
+site.cfg
+.tox
+numpy/core/include/numpy/__multiarray_api.c
+numpy/core/include/numpy/__ufunc_api.c
+numpy/core/include/numpy/__umath_generated.c
+numpy/core/include/numpy/config.h
+numpy/core/include/numpy/multiarray_api.txt
+numpy/core/include/numpy/ufunc_api.txt
+numpy/core/lib/
+numpy/core/src/multiarray/arraytypes.c
+numpy/core/src/multiarray/einsum.c
+numpy/core/src/multiarray/lowlevel_strided_loops.c
+numpy/core/src/multiarray/multiarray_tests.c
+numpy/core/src/multiarray/nditer_templ.c
+numpy/core/src/multiarray/scalartypes.c
+numpy/core/src/npymath/ieee754.c
+numpy/core/src/npymath/npy_math.c
+numpy/core/src/npymath/npy_math_complex.c
+numpy/core/src/npysort/heapsort.c
+numpy/core/src/npysort/mergesort.c
+numpy/core/src/npysort/quicksort.c
+numpy/core/src/npysort/sort.c
+numpy/core/src/scalarmathmodule.c
+numpy/core/src/umath/funcs.inc
+numpy/core/src/umath/loops.c
+numpy/core/src/umath/umath_tests.c
+numpy/distutils/__config__.py
+doc/source/reference/generated

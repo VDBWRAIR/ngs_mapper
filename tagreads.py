@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-import pysam
 import samtools
 import re
 import shutil
@@ -48,7 +47,7 @@ def tag_bam( bam, SM, CN ):
 
 def tag_read( untagged_read, tags ):
     '''
-        Tags a given pysam.alignedread with various tags
+        Tags a given samtools.SamRow with various tags
         Does not replace existing tags
 
         @param untagged_read - samtools.SamRow
@@ -74,12 +73,12 @@ def tag_read( untagged_read, tags ):
 
 def tag_readgroup( read ):
     '''
-        Tags a given pysam.AlignedRead with the readgroup that the qname
+        Tags a given read with the readgroup that the qname
         belongs to depending on how it maps to ID_MAP
 
-        @param read - pysam.AlignedRead
+        @param read - samtools.SamRow
         
-        @returns pysam.AlignedRead that is tagged with the appropriate read group
+        @returns SamRow that is tagged with the appropriate read group
     '''
     rg = get_rg_for_read( read )
     #log.debug( "Tagging {} with Read group {}".format(read.qname,rg) )
@@ -121,7 +120,7 @@ def tag_reads( bam, hdr ):
     indexbam( bam )
 
 def get_rg_for_read( aread ):
-    ''' Gets the read group name for the given pysam.AlignedRead '''
+    ''' Gets the read group name for the given samtools.SamRow '''
     rname = aread.QNAME
     for i, p in enumerate( ID_MAP ):
         if p.match( rname ):

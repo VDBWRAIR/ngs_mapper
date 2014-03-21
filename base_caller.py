@@ -7,7 +7,6 @@ from alphabet import iupac_amb
 import sys
 import argparse
 import re
-import pysam
 from Bio import SeqIO
 from StringIO import StringIO
 import vcf

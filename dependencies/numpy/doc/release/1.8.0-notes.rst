@@ -1,0 +1,69 @@
+=========================
+NumPy 1.8.0 Release Notes
+=========================
+
+This release supports  Python 2.6 -2.7 and 3.1 - 3.3.
+
+
+Highlights
+==========
+
+Dropped Support
+===============
+
+Support for Python versions 2.4 and 2.5 has been dropped,
+
+Support for SCons has been removed.
+
+
+Compatibility notes
+===================
+
+numpy.diag, np.diagonal, and the diagonal method of ndarrays return a view
+onto the original array, instead of producing a copy.
+
+selecting multiple fields out of an array also produces a view.
+
+The hash function of numpy.void scalars has been changed.  Previously the
+pointer to the data was hashed as an integer.  Now, the hash function uses
+the tuple-hash algorithm to combine the hash functions of the elements of
+the scalar, but only if the scalar is read-only.
+
+Numpy has switched its build system to using 'separate compilation' by
+default.  In previous releases this was supported, but not default. This
+should produce the same results as the old system, but if you're trying to
+do something complicated like link numpy statically or using an unusual
+compiler, then it's possible you will encounter problems. If so, please
+file a bug and as a temporary workaround you can re-enable the old build
+system by exporting the shell variable NPY_SEPARATE_COMPILATION=0.
+
+New features
+============
+
+Euler's constant is now exposed in numpy as euler_gamma.
+
+
+
+Changes
+=======
+
+General
+-------
+
+The function np.take now allows 0-d arrays as indices.
+
+The separate compilation mode is now enabled by default.
+
+
+Deprecations
+============
+
+General
+-------
+
+Use of non-integer indices has been deprecated. Previously float indices
+were truncated to integers without warning.
+
+C-API
+-----
+

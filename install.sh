@@ -2,56 +2,105 @@
 
 # This gives us the current directory that this script is in
 THIS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Deactivate if possible
-deactivate 2>/dev/null
-
-# Activate vdbapps for now, but soon we will remove this in favor
-# of git submodules for all the necessary apps
-. /home/EIDRUdata/programs/vdbapps/bin/activate
-
 # Grab the current directory the user is in
 CWD=$(pwd)
+# Ensure virtpath is set
+virtpath=$1
+if [ -z "${virtpath}" ]
+then
+    # Virtualenvironment path
+    echo "No virtpath given so using ${THIS}/.miseqpipeline"
+    virtpath=${THIS}/.miseqpipeline
+fi
+# For the uninstaller
+echo "virtpath=${virtpath}" > ${THIS}/.virtpath
+# Where to store our goodies
+binpath=${virtpath}/bin
+# Where are all the source files
+deppath=${THIS}/dependencies
+# Where to store manpages
+manpath=${virtpath}/man1
 
-# If any command exits then trap it and print error and exit
-trap 'echo "Error running $BASH_COMMAND"; rm -rf man1; exit;' ERR SIGINT SIGTERM
+function pyinstall() {
+    dirpath=$1
+    oldpath=$(pwd)
+    cd $dirpath
+    rm -rf build dist
+    python setup.py install
+    _RET=$?
+    cd $oldpath
+}
 
-# Make sure we are in the repository directory
-cd ${THIS}
+# Ensure correct python version
+python -V 2>&1 | grep -qE '2.7.[0-9]'
+if [ $? -ne 0 ]
+then
+    echo "Please ensure you have python 2.7 or greater"
+    exit 1
+fi
+
+# Check to make sure required commands are available
+if [ -z "$(which convert)" ]
+then
+    echo "Please ensure that you have the ImageMagick packages installed and then rerun this installer."
+    echo "Red Hat: yum install -y ImageMagick-c++ ImageMagick"
+    echo "Ubuntu: apt-get install -y imagemagick"
+    exit 1
+fi
 
 # Ensure zlib.h is in include path(I guess we won't assume redhat here and just do rpm -qa stuff)
 if [ -z "$(find $(echo | cpp -x c++ -Wp,-v 2>&1 | grep -v 'ignoring' | grep -v '^#' | grep -v '^End' | xargs) -type f -name zlib.h)" ]
 then
-    echo "Please ensure that the zlib development package is installed. Probably yum install zlib-devel or apt-get install zlib-devel"
+    echo "Please ensure that the zlib development package is installed and then rerun this installer."
+    echo "Red Hat: yum install -y zlib-devel"
+    echo "Ubuntu: apt-get install -y zlib-devel"
     exit 1
 fi
 
-# Now ensure submodules are setup correctly(hopefully)
-# This is probably not the correct thing to do, but hacks are great yay!
-# First make sure all submodules are updated and init'd
-git submodule update --init
-# Then just run through all of them and ensure they have HEAD checked out or something
-git submodule foreach git reset --hard HEAD
+# If any command exits then trap it and print error and exit
+trap 'echo "Error running $BASH_COMMAND"; rm -rf man1; exit;' ERR SIGINT SIGTERM
+
+# Create the virtual environment where everything will install to
+# Don't use setuptools as we will install that later
+virtualenv --prompt='(miseqpipeline) ' --no-setuptools ${virtpath}
+# Activate
+. ${virtpath}/bin/activate
+
+# Make sure we are in the repository directory
+cd ${THIS}
 
 # Compile samtools if the samtools binary doesn't exist
-if [ ! -e ${THIS}/samtools/samtools ]
+if [ ! -e ${binpath}/samtools ]
 then
-    cd ${THIS}/htslib
-    make > htslib.make.log 2>&1
-    cd ${THIS}/samtools
+    #cd ${THIS}/htslib
+    #make > htslib.make.log 2>&1
+    cd ${deppath}/samtools
     make > samtools.make.log 2>&1
+    if [ $? -ne 0 ]
+    then
+        echo "Samtools failed to compile. Please check the ${deppath}/samtools.make.log for more details."
+        exit 1
+    fi
+    ln -s $(pwd)/samtools ${binpath}/samtools
 fi
 
 # Compile bwa if the bwa binary doesn't exist
-if [ ! -e ${THIS}/bwa/bwa ]
+if [ ! -e ${binpath}/bwa ]
 then
-    cd ${THIS}/bwa
+    cd ${deppath}/bwa
     make > bwa.make.log 2>&1
+    if [ $? -ne 0 ]
+    then
+        echo "bwa failed to compile. Please check the ${deppath}/bwa.make.log for more details."
+        exit 1
+    fi
+    ln -s $(pwd)/bwa ${binpath}/bwa
 fi
 
 # Some manpage setup
-rm -rf ${THIS}/man1
-mkdir -p ${THIS}/man1
+# First cleanse the manpath dir
+rm -rf ${manpath}
+mkdir ${manpath}
 # Find all the actual manpages and link them into the man1 directory
 find . -type f -name '*.1' | while read f
 do
@@ -60,6 +109,30 @@ do
     if [ $? -eq 0 ]
     then
         path_to="$(cd $(dirname "$f") && pwd)/$(basename "$f")"
-        ln -s "$path_to" "${THIS}/man1/$(basename "$f")"
+        ln -s "$path_to" "${manpath}/$(basename "$f")"
     fi
 done
+
+# Install all python packages
+package_list=( setuptools PyVCF numpy nose pyparsing tornado six python-dateutil matplotlib biopython pyBWA mock )
+cd ${deppath}
+for package in ${package_list[@]}
+do
+    pdir=$(echo ${package}*)
+    echo "Installing ${pdir}"
+    pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
+    if [ $_RET -ne 0 ]
+    then
+        echo "${package} failed to install. Please check ${THIS}/dependencies/${pdir}/${package}.install.log for more details."
+        exit 1
+    fi
+done
+
+# Symlink all of our goodies into venv bin
+find ${THIS} -maxdepth 1 -type f -perm /u=x,g=x,o=x | while read f
+do
+    echo "Installing $f to $binpath"
+    ln -s ${f} ${binpath}/
+done
+
+echo "miseqpipeline is now installed"

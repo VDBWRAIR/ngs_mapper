@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="generator" content="hevea 2.06">
+<style type="text/css">
+.li-itemize{margin:1ex 0ex;}
+.li-enumerate{margin:1ex 0ex;}
+.dd-description{margin:0ex 0ex 1ex 4ex;}
+.dt-description{margin:0ex;}
+.toc{list-style:none;}
+.footnotetext{margin:0ex; padding:0ex;}
+div.footnotetext P{margin:0px; text-indent:1em;}
+.thefootnotes{text-align:left;margin:0ex;}
+.dt-thefootnotes{margin:0em;}
+.dd-thefootnotes{margin:0em 0em 0em 2em;}
+.footnoterule{margin:1em auto 1em 0px;width:50%;}
+.caption{padding-left:2ex; padding-right:2ex; margin-left:auto; margin-right:auto}
+.title{margin:2ex auto;text-align:center}
+.titlemain{margin:1ex 2ex 2ex 1ex;}
+.titlerest{margin:0ex 2ex;}
+.center{text-align:center;margin-left:auto;margin-right:auto;}
+.flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
+.flushright{text-align:right;margin-left:auto;margin-right:0ex;}
+div table{margin-left:inherit;margin-right:inherit;margin-bottom:2px;margin-top:2px}
+td table{margin:auto;}
+table{border-collapse:collapse;}
+td{padding:0;}
+.cellpadding0 tr td{padding:0;}
+.cellpadding1 tr td{padding:1px;}
+pre{text-align:left;margin-left:0ex;margin-right:auto;}
+blockquote{margin-left:4ex;margin-right:4ex;text-align:left;}
+td p{margin:0px;}
+.boxed{border:1px solid black}
+.textboxed{border:1px solid black}
+.vbar{border:none;width:2px;background-color:black;}
+.hbar{border:none;height:2px;width:100%;background-color:black;}
+.hfill{border:none;height:1px;width:200%;background-color:black;}
+.vdisplay{border-collapse:separate;border-spacing:2px;width:auto; empty-cells:show; border:2px solid red;}
+.vdcell{white-space:nowrap;padding:0px; border:2px solid green;}
+.display{border-collapse:separate;border-spacing:2px;width:auto; border:none;}
+.dcell{white-space:nowrap;padding:0px; border:none;}
+.dcenter{margin:0ex auto;}
+.vdcenter{border:solid #FF8000 2px; margin:0ex auto;}
+.minipage{text-align:left; margin-left:0em; margin-right:auto;}
+.marginpar{border:solid thin black; width:20%; text-align:left;}
+.marginparleft{float:left; margin-left:0ex; margin-right:1ex;}
+.marginparright{float:right; margin-left:1ex; margin-right:0ex;}
+.theorem{text-align:left;margin:1ex auto 1ex 0ex;}
+.part{margin:2ex auto;text-align:center}
+</style>
+<title>Biopython Installation
+</title>
+</head>
+<body >
+<!--HEVEA command line is: /usr/bin/hevea -fix Installation.tex -->
+<!--CUT STYLE article--><!--CUT DEF section 1 --><table class="title"><tr><td style="padding:1ex"><h1 class="titlemain">Biopython Installation</h1><h3 class="titlerest">Brad Chapman, with other contributors</h3></td></tr>
+</table><!--TOC section id="sec1" Contents-->
+<h2 id="sec1" class="section">Contents</h2><!--SEC END --><ul class="toc"><li class="li-toc">
+<a href="#sec2">1&#XA0;&#XA0;Purpose and Assumptions</a>
+</li><li class="li-toc"><a href="#sec3">2&#XA0;&#XA0;C Compiler</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec4">2.1&#XA0;&#XA0;Unix</a>
+</li><li class="li-toc"><a href="#sec5">2.2&#XA0;&#XA0;Mac OS X</a>
+</li><li class="li-toc"><a href="#sec6">2.3&#XA0;&#XA0;Windows</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec7">3&#XA0;&#XA0;Installing Python</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec8">3.1&#XA0;&#XA0;Python installation on UNIX systems</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec9">3.1.1&#XA0;&#XA0;RPM and other Package Manager Installation</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec10">3.2&#XA0;&#XA0;Python installation on Windows</a>
+</li><li class="li-toc"><a href="#sec11">3.3&#XA0;&#XA0;Python installation on Mac OS X</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec12">4&#XA0;&#XA0;Installing Biopython dependencies</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec13">4.1&#XA0;&#XA0;Numerical Python (NumPy) (strongly recommended)</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec14">4.1.1&#XA0;&#XA0;UNIX and Mac OS X systems</a>
+</li><li class="li-toc"><a href="#sec15">4.1.2&#XA0;&#XA0;Windows systems</a>
+</li><li class="li-toc"><a href="#sec16">4.1.3&#XA0;&#XA0;Making sure it installed correctly</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec17">4.2&#XA0;&#XA0;ReportLab (optional)</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec18">4.2.1&#XA0;&#XA0;UNIX and Mac OS X systems</a>
+</li><li class="li-toc"><a href="#sec19">4.2.2&#XA0;&#XA0;Windows systems</a>
+</li><li class="li-toc"><a href="#sec20">4.2.3&#XA0;&#XA0;Making sure it installed correctly</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec21">4.3&#XA0;&#XA0;Database Access (MySQLdb, ...) (optional)</a>
+</li><li class="li-toc"><a href="#sec22">4.4&#XA0;&#XA0;mxTextTools (no longer needed)</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec23">5&#XA0;&#XA0;Installing Biopython</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec24">5.1&#XA0;&#XA0;Obtaining Biopython</a>
+</li><li class="li-toc"><a href="#sec25">5.2&#XA0;&#XA0;Installing on UNIX and Mac OS X</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec26">5.2.1&#XA0;&#XA0;Installation from source on UNIX and Mac OS X</a>
+</li><li class="li-toc"><a href="#sec27">5.2.2&#XA0;&#XA0;Using the Python package index</a>
+</li><li class="li-toc"><a href="#sec28">5.2.3&#XA0;&#XA0;Installation on Mac OS X using the fink package manager</a>
+</li><li class="li-toc"><a href="#sec29">5.2.4&#XA0;&#XA0;Installation on UNIX systems using RPMs</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec30">5.3&#XA0;&#XA0;Installing with a Windows Installer</a>
+</li><li class="li-toc"><a href="#sec31">5.4&#XA0;&#XA0;Installing from source on Windows</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec32">6&#XA0;&#XA0;Making sure everything worked</a>
+</li><li class="li-toc"><a href="#sec33">7&#XA0;&#XA0;Third Party Tools</a>
+</li><li class="li-toc"><a href="#sec34">8&#XA0;&#XA0;Notes for installing with non-administrator permissions</a>
+</li></ul>
+<!--TOC section id="sec2" Purpose and Assumptions-->
+<h2 id="sec2" class="section">1&#XA0;&#XA0;Purpose and Assumptions</h2><!--SEC END --><p>For those of you familiar with installing python packages and who don&#X2019;t
+care for following details instructions can try going to
+<a href="http://biopython.org/wiki/Download"><span style="font-family:monospace">http://biopython.org/wiki/Download</span></a>, installing
+the relevant prerequisites, and Biopython.</p><p>This document describes installing Biopython on your computer. To make
+things as simple as possible, it basically assumes you have nothing
+related to Python or Biopython on your computer and want to end up with
+a working installation of Biopython when you are finished following
+through this documentation. </p><p>Biopython should work on just any operating system where Python works,
+so these instructions contain directions for installation on UNIX/Linux,
+Windows and Macintosh machines. The directions assume 
+that you have permission to install programs on the machine
+(root access on UNIX and Administrator privileges on Windows or Mac
+machines). While it is certainly possible to install things without
+these privileges, this is a serious pain and all the tedious workarounds
+aren&#X2019;t something that I&#X2019;ll go into very much in this documentation.</p><p>With all this said, hopefully these directions will make it
+straightforward to get Biopython installed on your machine so you can
+begin using it as quick as possible.</p>
+<!--TOC section id="sec3" C Compiler-->
+<h2 id="sec3" class="section">2&#XA0;&#XA0;C Compiler</h2><!--SEC END --><p>Although mostly written in Python, Biopython (and some of its dependencies)
+include C code, which must be compiled to run. If you are going to be
+installing from source you will therefore need a C compiler. However,
+in many cases this can be avoided by using pre-compiled packages (which
+is what we recommend on Windows).</p>
+<!--TOC subsection id="sec4" Unix-->
+<h3 id="sec4" class="subsection">2.1&#XA0;&#XA0;Unix</h3><!--SEC END --><p>
+We recommend GCC as the C compiler, this is usually available as part
+of the standard set of packages on any Unix or Linux system.</p>
+<!--TOC subsection id="sec5" Mac OS X-->
+<h3 id="sec5" class="subsection">2.2&#XA0;&#XA0;Mac OS X</h3><!--SEC END --><p>
+Please install Apple&#X2019;s XCode suite from the App Store, and then from
+the Xcode options also install the optional command line utilities.</p>
+<!--TOC subsection id="sec6" Windows-->
+<h3 id="sec6" class="subsection">2.3&#XA0;&#XA0;Windows</h3><!--SEC END --><p>
+We recommend you install Biopython and its dependencies using the
+provided pre-compiled Windows Installers. i.e. You don&#X2019;t <em>need</em>
+a C compiler. See Section&#XA0;<a href="#sec%3Awindows_install">5.4</a> for more details.</p>
+<!--TOC section id="sec7" Installing Python-->
+<h2 id="sec7" class="section">3&#XA0;&#XA0;Installing Python</h2><!--SEC END --><p>Python is a interpreting, interactive object-oriented programming
+language and the home for all things python is
+<a href="http://www.python.org"><span style="font-family:monospace">http://www.python.org</span></a>. Presumedly you have some idea of
+python and what it can do if you are interested in Biopython, but if not
+the python website contains tons of documentation and reasons to learn
+to program in python.</p><p>Biopython is designed to work with Python 2.5 to 2.7 inclusive.
+Python 2.7 is the final 2.x series release, and this would be our
+recommended version (assuming all other Python libraries you plan
+to use support it).</p><p>Upgrading bug-fix releases (for example. 2.6.1 to 2.6.2) 
+is incredibly easy and won&#X2019;t require any re-installation of libraries.</p><p>Upgrading between versions (e.g. 2.6 to 2.7) is more time consuming since you
+need to re-install all libraries you have added to python.</p><p>As of Biopython 1.62 we officially support Python 3, specifically Python 3.3.
+Python 3.0, 3.1 and 3.2 will not be supported.</p><p>Let&#X2019;s get started with installation on various platforms.</p>
+<!--TOC subsection id="sec8" Python installation on UNIX systems-->
+<h3 id="sec8" class="subsection">3.1&#XA0;&#XA0;Python installation on UNIX systems</h3><!--SEC END --><p>First, you should go the main python web site and head over to the information
+page for the latest python release. At the time of this writing the
+latest stable Python 2 release is 2.7.5, which is available from
+<a href="http://www.python.org/download/releases/2.7.5/"><span style="font-family:monospace">http://www.python.org/download/releases/2.7.5/</span></a>. This page contains links
+to all released files for the given release. For UNIX, we&#X2019;ll want to use
+the tarred and gzipped file, which is called <code>Python-2.7.5.tgz</code> at
+the time of this writing.</p><p>Download this file and then unpack it with the following command:</p><pre class="verbatim">$ tar -zxvf Python-2.7.5.tar.gz
+</pre><p>Then enter into the created directory:</p><pre class="verbatim">$ cd Python-2.7
+</pre><p>Now, start the build process by configuring everything to your system:</p><pre class="verbatim">$ ./configure
+</pre><p>Build all of the files with:</p><pre class="verbatim">$ make
+</pre><p>Finally, you&#X2019;ll need to have root permissions on the system and then
+install everything:</p><pre class="verbatim">$ make install
+</pre><p>If there were no errors and everything worked correctly, you should now
+be able to type <code>python</code> at a command prompt and enter into the
+python interpreter:</p><pre class="verbatim">$ python
+Python 2.7.5 (...)
+...
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt;
+</pre><p>(The precise version text and details will depend on the version you installed and your operating system.)</p>
+<!--TOC subsubsection id="sec9" RPM and other Package Manager Installation-->
+<h4 id="sec9" class="subsubsection">3.1.1&#XA0;&#XA0;RPM and other Package Manager Installation</h4><!--SEC END --><p>There are a multitude of package manager systems out there for which
+python is available. One popular one is the RPM (RedHat Package Manager)
+system. Each of these package managing systems has its own quirks and
+tricks and I certainly can&#X2019;t pretend to understand them all so I won&#X2019;t
+try to describe them all here.</p><p>While these package repositories may include Biopython all ready to install,
+you will typically want to install Biopython from source to get the very
+latest version.</p><p>However, there is one general point which it is important to remember
+when installing from any of these systems: you need to download and
+install the development packages for python. A number of distributions
+contain a "basic" python which contains libraries and enough stuff to
+run simple python programs. However, they do not contain the python
+libraries necessary to build third-party python applications (like
+Biopython and it&#X2019;s dependencies). You&#X2019;ll need to install these libraries
+and header files, which are often found in a separate package called
+<code>python-devel</code> or something similar. </p>
+<!--TOC subsection id="sec10" Python installation on Windows-->
+<h3 id="sec10" class="subsection">3.2&#XA0;&#XA0;Python installation on Windows</h3><!--SEC END --><p>Installation on Windows is most easily done using handy windows
+installers. As described above in the UNIX section, you should go to the
+webpage for the current stable version of Python to download this
+installer. At the current time, you&#X2019;d go to
+<a href="http://www.python.org/download/releases/2.7.5/"><span style="font-family:monospace">http://www.python.org/download/releases/2.7.5/</span></a> and download
+<code>Python-2.7.5.msi</code>. </p><p>The installer is an executable program, so you only need to double click
+it to run it. Then just follow the friendly instructions. On all newer Windows
+machines you&#X2019;ll need to have Administrator privileges to do this
+installation.</p>
+<!--TOC subsection id="sec11" Python installation on Mac OS X-->
+<h3 id="sec11" class="subsection">3.3&#XA0;&#XA0;Python installation on Mac OS X</h3><!--SEC END --><p>Apple includes python on Mac OS X, and while you can use this many people have
+preferred to install the latest version of python as well in parallel. We refer
+you to the <a href="http://www.python.org"><span style="font-family:monospace">http://www.python.org</span></a> for more details, although
+otherwise the UNIX instructions apply.</p><p>(See note above about installing XCode to get the compiler tools.)</p>
+<!--TOC section id="sec12" Installing Biopython dependencies-->
+<h2 id="sec12" class="section">4&#XA0;&#XA0;Installing Biopython dependencies</h2><!--SEC END --><p>Once python is installed, the next step is getting the dependencies
+for Biopython installed. Since not all functionality is included in the
+main python installation, Biopython needs some support libraries to save
+us a lot of work re-writing code that already exists. We try to keep
+as few dependencies as possible to make installation as easy as
+possible.</p>
+<!--TOC subsection id="sec13" Numerical Python (NumPy) (strongly recommended)-->
+<h3 id="sec13" class="subsection">4.1&#XA0;&#XA0;Numerical Python (NumPy) (strongly recommended)</h3><!--SEC END --><p>The Numerical Python distribution is a fast implementation of arrays and
+associated array functionality. This is important for a number of Biopython
+modules that deal with number processing (e.g. Bio.Cluster and Bio.PDB).</p><p>As of release 1.49, Biopython supports the standard NumPy distribution.
+Previous releases instead used the older Numeric module (which is no
+longer being maintained).</p><p>The main web site for NumPy is:
+<a href="http://numpy.scipy.org/"><span style="font-family:monospace">http://numpy.scipy.org/</span></a>.</p>
+<!--TOC subsubsection id="sec14" UNIX and Mac OS X systems-->
+<h4 id="sec14" class="subsubsection">4.1.1&#XA0;&#XA0;UNIX and Mac OS X systems</h4><!--SEC END --><p>You should download the <code>tar.gz</code> file, and follow the standard python
+build process. Note you will need a C compiler installed (see above):</p><pre class="verbatim">$ tar -zxvf numpy-1.7.1.tar.gz
+$ cd numpy-1.7.1/
+$ python setup.py build
+</pre><p>Once it is built, you should become root, and then install it:</p><pre class="verbatim">$ python setup.py install
+</pre><p>One important note if you use an package system and not installing
+NumPy from source: you may also need to
+install the header files which are not included with some
+packages. As with the main python distribution, this means
+you&#X2019;ll need to look for something like <code>python-numpy-devel</code> 
+and make sure to install this as well as the basic package.</p>
+<!--TOC subsubsection id="sec15" Windows systems-->
+<h4 id="sec15" class="subsubsection">4.1.2&#XA0;&#XA0;Windows systems</h4><!--SEC END --><p>We recommend using the NumPy provided windows installers for your installed
+version of python. For Python 2.7, at the current time this would be
+<code>numpy-1.7.1-win32-superpack-python2.7.exe</code>. You should follow the 
+now-standard procedure of downloading the installer, double
+clicking it and then following the installation instructions. As before,
+you will need to have administrator permissions to do this.</p>
+<!--TOC subsubsection id="sec16" Making sure it installed correctly-->
+<h4 id="sec16" class="subsubsection">4.1.3&#XA0;&#XA0;Making sure it installed correctly</h4><!--SEC END --><p>To make sure everything went okay during the install, fire up the python
+interpreter and ensure you can import NumPy without any errors:</p><pre class="verbatim">$ python2.7
+Python 2.7.4 (default, Apr  8 2013, 15:01:09) 
+[GCC 4.4.6 20120305 (Red Hat 4.4.6-4)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import numpy
+&gt;&gt;&gt;
+</pre><p>Note that for the import statement, NumPy should be in lower case!</p>
+<!--TOC subsection id="sec17" ReportLab (optional)-->
+<h3 id="sec17" class="subsection">4.2&#XA0;&#XA0;ReportLab (optional)</h3><!--SEC END --><p>The ReportLab package is a library for generating PDF documents. It is
+used in the Biopython Graphics modules, which contains basic
+functionality for drawing biological objects like chromosomes. If you
+are not planning on using this, installing ReportLab is not necessary.
+ReportLab in itself is very useful for a number of tasks besides just
+Biopython, so you may want to check out
+<a href="http://www.reportlab.org"><span style="font-family:monospace">http://www.reportlab.org</span></a> before making your decision.</p><p>The main download page for ReportLab is
+<a href="http://www.reportlab.org/downloads.html"><span style="font-family:monospace">http://www.reportlab.org/downloads.html</span></a>. The ReportLab
+company has some commercial products as well, but just scroll down their
+page to the Open Source software section for the base ReportLab
+downloads.</p><p>If you want to generate bitmap images, you will also need the ReportLab
+module renderPM. This in turn requires the
+<a href="http://www.pythonware.com/products/pil/">Python Imaging Library (PIL)</a>.</p>
+<!--TOC subsubsection id="sec18" UNIX and Mac OS X systems-->
+<h4 id="sec18" class="subsubsection">4.2.1&#XA0;&#XA0;UNIX and Mac OS X systems</h4><!--SEC END --><p>For UNIX installs, you should download the tarred and gzipped version of
+the ReportLab distribution. At the time of this writing, this is called
+<code>ReportLab_2_3.tar.gz</code>. First, unpack the distribution and change
+into the created directory:</p><pre class="verbatim">$ gunzip ReportLab_2_3.tar.gz
+$ tar -xvpf ReportLab_2_3.tar
+$ cd reportlab_2_3/
+</pre><p>Once again, ReportLab uses the standard python installation system which
+you are probably feeling really comfortable with by now. So, first build
+the package:</p><pre class="verbatim">$ python setup.py build
+</pre><p>Now become root, and install it:</p><pre class="verbatim">$ python setup.py install
+</pre>
+<!--TOC subsubsection id="sec19" Windows systems-->
+<h4 id="sec19" class="subsubsection">4.2.2&#XA0;&#XA0;Windows systems</h4><!--SEC END --><p>ReportLab now has graphical windows installers. Nice and easy.</p>
+<!--TOC subsubsection id="sec20" Making sure it installed correctly-->
+<h4 id="sec20" class="subsubsection">4.2.3&#XA0;&#XA0;Making sure it installed correctly</h4><!--SEC END --><p>If reportlab is installed correctly, you should be able to do the
+following:</p><pre class="verbatim">$ python2.7
+Python 2.7.4 (default, Apr  8 2013, 15:01:09) 
+[GCC 4.4.6 20120305 (Red Hat 4.4.6-4)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; from reportlab.graphics import renderPDF
+&gt;&gt;&gt;
+</pre><p>Depending on your version of python and what you have installed, you may
+get the following warning message: 
+<code>Warn: Python Imaging Library not available</code>. This isn&#X2019;t anything
+to worry about unless you want to produce bitmap images, since the
+Biopython parts that use ReportLab will work just fine without it.</p>
+<!--TOC subsection id="sec21" Database Access (MySQLdb, ...) (optional)-->
+<h3 id="sec21" class="subsection">4.3&#XA0;&#XA0;Database Access (MySQLdb, ...) (optional)</h3><!--SEC END --><p>The MySQLdb package is a library for accessing MySQL databases.
+Biopython includes an accessory module, DocSQL, which provides a convenient
+interface to MySQLdb. 
+If you are not planning on using Bio.DocSQL, installing
+MySQLdb is not necessary.</p><p>Additionally, both MySQLdb and psycopg (a PostgreSQL database adaptor)
+can be used for accessing BioSQL databases through Biopython
+(see <a href="http://biopython.org/wiki/BioSQL"><span style="font-family:monospace">http://biopython.org/wiki/BioSQL</span></a>). Again if
+you are not going to use BioSQL, there shouldn&#X2019;t be any need to install
+these modules.</p>
+<!--TOC subsection id="sec22" mxTextTools (no longer needed)-->
+<h3 id="sec22" class="subsection">4.4&#XA0;&#XA0;mxTextTools (no longer needed)</h3><!--SEC END --><p>Historically this was an important Biopython dependency, used extensively
+in a number of parsers. However, we have gradually phased out its use,
+and as of Biopython 1.50, mxTextTools is no longer used at all.</p><p>mxTextTools is available along with the entire mx-base system (which
+contains a number of other useful utilities as well) and the latest
+version is available for download at:
+<a href="http://www.egenix.com/products/python/mxBase/mxTextTools/"><span style="font-family:monospace">http://www.egenix.com/products/python/mxBase/mxTextTools/</span></a>.</p>
+<!--TOC section id="sec23" Installing Biopython-->
+<h2 id="sec23" class="section">5&#XA0;&#XA0;Installing Biopython</h2><!--SEC END -->
+<!--TOC subsection id="sec24" Obtaining Biopython-->
+<h3 id="sec24" class="subsection">5.1&#XA0;&#XA0;Obtaining Biopython</h3><!--SEC END --><p>
+Biopython&#X2019;s internet home is at, naturally enough, 
+<a href="http://www.biopython.org"><span style="font-family:monospace">http://www.biopython.org</span></a>. This is the home of all things 
+Biopython, so it is the best place to start looking around. 
+You have two choices for obtaining Biopython:</p><ol class="enumerate" type=1><li class="li-enumerate">Release code &#X2013; We made available releases on the download page 
+(<a href="http://biopython.org/wiki/Download"><span style="font-family:monospace">http://biopython.org/wiki/Download</span></a>). 
+The releases are also available both as source and as installers 
+(windows installers right now), so you have some choices to pick from 
+on releases if you prefer not to deal with source code directly.</li><li class="li-enumerate">git &#X2013; The current working copy of the Biopython sources is available
+via git hosted on github &#X2013; <a href="http://github.com/biopython/biopython"><span style="font-family:monospace">http://github.com/biopython/biopython</span></a>).
+Concise instructions for accessing this copy are available at
+<a href="http://biopython.org/wiki/SourceCode"><span style="font-family:monospace">http://biopython.org/wiki/SourceCode</span></a>. Our code in git
+is normally quite stable but there is always the caveat that the code
+there is under development.</li></ol><p>Based on which way you choose, you&#X2019;ll need to follow one of the following installation options. Read on for the platform you are working on.</p>
+<!--TOC subsection id="sec25" Installing on UNIX and Mac OS X-->
+<h3 id="sec25" class="subsection">5.2&#XA0;&#XA0;Installing on UNIX and Mac OS X</h3><!--SEC END --><p>
+<a id="sec:unix_install"></a></p>
+<!--TOC subsubsection id="sec26" Installation from source on UNIX and Mac OS X-->
+<h4 id="sec26" class="subsubsection">5.2.1&#XA0;&#XA0;Installation from source on UNIX and Mac OS X</h4><!--SEC END --><p>Biopython uses Distutils, the standard python installation package, for
+its installation. If you read the install instructions above you are
+already quite familiar with its workings. Distutils comes standard with 
+Python 1.6 and beyond.</p><p>Now that we&#X2019;ve got what we need, let&#X2019;s get into the installation:</p><ol class="enumerate" type=1><li class="li-enumerate">First you need to unpack the distribution. If you got the git version, you are all set to go and can skip on ahead. Otherwise, you&#X2019;ll need to unpack it. On UN*X machines, a tar.gz package is provided, which you can unpack with <code>tar -xzvpf biopython-X.X.tar.gz</code>. A zip file is also provided for other platforms.</li><li class="li-enumerate">Now that everything is unpacked, move into the <code> biopython*</code> directory (this will just be <code>biopython</code> for git users, and will be <code>biopython-X.X</code> for those using a packaged download). </li><li class="li-enumerate">Now you are ready for your one step install &#X2013; <code>python setup.py install</code>. This performs the default install, and will put Biopython into the <code>site-packages</code> directory of your python library tree (on my machine this is <code>/usr/local/lib/python2.4/site-packages</code>). You will have to have permissions to write to this directory, so you&#X2019;ll need to have root access on the machine.<ol class="enumerate" type=a><li class="li-enumerate">This install requires that you have the python source available. You can check this by looking for <code>Python.h</code> and <code>config.h</code> in some place like <code>/usr/local/include/python2.5</code>. If you installed python with RPMs or 
+some other packaging system, this means you&#X2019;ll also have to install the
+header files. This requires installing the python development libraries
+as well (normally called something like <code>python-devel-2.5.rpm</code>).</li><li class="li-enumerate">The distutils setup process allows you to do some customization of your install so you don&#X2019;t have to stick everything in the default location (in case you don&#X2019;t have write permissions there, or just want to test Biopython out). You have quite a few choices, which are covered in detail in the distutils installation manual (<a href="http://www.python.org/sigs/distutils-sig/doc/inst/inst.html"><span style="font-family:monospace">http://www.python.org/sigs/distutils-sig/doc/inst/inst.html</span></a>), specifically in the Alternative installation section. For example, to install Biopython into your home directory, you need to type <code>python setup.py install --home=$HOME</code>. This will install the package into someplace like <code>$HOME/lib/python2.5/site-packages</code>. You&#X2019;ll need to subsequently modify the <code>PYTHONPATH</code> environmental variable to include this directory so python will be able to find the installation.</li></ol></li><li class="li-enumerate">That&#X2019;s it! Biopython is installed. Wasn&#X2019;t that easy? Now let&#X2019;s check and make sure it worked properly. Skip on ahead to section&#XA0;<a href="#sec%3Ais_working">6</a>.</li></ol>
+<!--TOC subsubsection id="sec27" Using the Python package index-->
+<h4 id="sec27" class="subsubsection">5.2.2&#XA0;&#XA0;Using the Python package index</h4><!--SEC END --><p>Another simple option is to use the Python package index
+(<a href="http://pypi.python.org/pypi"><span style="font-family:monospace">http://pypi.python.org/pypi</span></a>) with the <code>easy_install</code>
+command:</p><pre class="verbatim">$ easy_install -f http://biopython.org/DIST/ biopython
+</pre><p>If Python is installed in the standard location, you will need administrator
+privileges to do this; the <code>sudo</code> command works well:</p><pre class="verbatim">$ sudo easy_install -f http://biopython.org/DIST/ biopython
+</pre>
+<!--TOC subsubsection id="sec28" Installation on Mac OS X using the fink package manager-->
+<h4 id="sec28" class="subsubsection">5.2.3&#XA0;&#XA0;Installation on Mac OS X using the fink package manager</h4><!--SEC END --><p>Instead of installing from source, on Mac OS X you can also use the fink package manager, see <a href="http://fink.sf.net"><span style="font-family:monospace">http://fink.sf.net</span></a>. Fink should take care of downloading the source code and installing all needed packages for Biopython, including Python itself. Once you have installed fink, you can install biopython using:</p><pre class="verbatim">$ fink install biopython-pyXX
+</pre><p>where XX is the python version you would like to use. Currently, python 2.4, 2.5, and 2.6 are available through fink on Mac OS X 10.4, so you would have to replace XX with 24, 25, or 26, respectively. Most likely, you will have to enable the unstable tree of fink in order to install the most recent versions of the package, see also this item in the Fink FAQ: <a href="http://fink.sourceforge.net/faq/usage-fink.php#unstable"><span style="font-family:monospace">http://fink.sourceforge.net/faq/usage-fink.php#unstable</span></a>. Note that &#X2019;unstable&#X2019; doesn&#X2019;t mean that a package won&#X2019;t work, but only that there has not been feedback to the fink team from users.</p>
+<!--TOC subsubsection id="sec29" Installation on UNIX systems using RPMs-->
+<h4 id="sec29" class="subsubsection">5.2.4&#XA0;&#XA0;Installation on UNIX systems using RPMs</h4><!--SEC END --><p>Warning. Right now we&#X2019;re not making RPMs for biopython (because I
+stopped using an RPM system, basically). If anyone wants to pick this
+up, or feels especially strongly that they&#X2019;d like RPMs, please let us
+know.</p><p>To simplify things for people running RPM-based systems, biopython can
+also be installed via the RPM system. Additionally, this saves the 
+necessity of having a C compiler to install biopython. </p><p>Installing Biopython from a RPM package should be much the same process as used for other RPMs. If you need general information about how RPMs work, the best place to go is <a href="http://www.rpm.org"><span style="font-family:monospace">http://www.rpm.org</span></a>.</p><p>To install it, you should just need to do:</p><pre class="verbatim">$ rpm -i your_biopython.rpm
+</pre><p>To see what you installed try doing <code>rpm -qpl your_biopython.rpm</code> which will list all of the installed files.</p><p>RPMs do not install the documentation, tests, or example code, so you might want to also grab a source distribution, so you can use these resources (and also look at the source code if you want to).</p>
+<!--TOC subsection id="sec30" Installing with a Windows Installer-->
+<h3 id="sec30" class="subsection">5.3&#XA0;&#XA0;Installing with a Windows Installer</h3><!--SEC END --><p>Installing things on Windows with the installer should be really easy (hey, that&#X2019;s why they&#X2019;ve got graphical installers, right?). You should just need to download the <code>Biopython-version.exe</code> installer from biopython web site. Then you just need to double click and voila, a nice little installer will come up and you can stick the libraries where you need to. No need for a C compiler or anything fancy. You will need to have Administrator privileges on the machine to do the installation.</p><p>This does not install the documentation, tests, example code or source code, so it is probably also a good idea to download the zip file containing this so you can test your installation and learn how to use it.</p>
+<!--TOC subsection id="sec31" Installing from source on Windows-->
+<h3 id="sec31" class="subsection">5.4&#XA0;&#XA0;Installing from source on Windows</h3><!--SEC END --><p>
+<a id="sec:windows_install"></a></p><p>This section deals with installing the source (i.&#XA0;e.&#XA0;from git or from a source zip file) on a Windows machine. Much of the information from the UNIX install applies here, so it would be good to read section&#XA0;<a href="#sec%3Aunix_install">5.2</a> before starting. You will need a suitable C compiler.
+What you choose may depend on your version of Python.</p><p>For Python 2.6 we currently use Microsoft&#X2019;s free VC++ 2008 Express Edition from <a href="http://www.microsoft.com/express/download/"><span style="font-family:monospace">http://www.microsoft.com/express/download/</span></a>, installation of this is pretty simple. Then go to the Biopython source directory and run:</p><pre class="verbatim">c:\python26\python setup.py build
+c:\python26\python setup.py test
+c:\python26\python setup.py install
+</pre><p>For older versions of Python, we use mingw32 installed from cygwin (<a href="http://www.cygwin.com"><span style="font-family:monospace">http://www.cygwin.com</span></a>). Once everything is setup (which is a bit complicated), you would again get the source, and from that directory run:</p><pre class="verbatim">c:\python25\python setup.py build --compiler=mingw32
+c:\python25\python setup.py test
+c:\python25\python setup.py install
+</pre><p>Previously (back on Python 2.0), Brad has also managed to use Borland&#X2019;s free C++ compiler (available from <a href="http://www.inprise.com/bcppbuilder/freecompiler/"><span style="font-family:monospace">http://www.inprise.com/bcppbuilder/freecompiler/</span></a>), but this required extra work.</p><p>Now that you&#X2019;ve got everything installed, carry on ahead to section&#XA0;<a href="#sec%3Ais_working">6</a> to make sure everything worked.</p>
+<!--TOC section id="sec32" Making sure everything worked-->
+<h2 id="sec32" class="section">6&#XA0;&#XA0;Making sure everything worked</h2><!--SEC END --><p>
+<a id="sec:is_working"></a></p><p>First, we&#X2019;ll just do a quick test to make sure Biopython is installed correctly. The most important thing is that python can find the biopython installation. Biopython installs into top level <code>Bio</code> and <code>BioSQL</code> directories, so you&#X2019;ll want to make sure these directories are located in a directory specified 
+in your<code> $PYTHONPATH</code> environmental variable. If you used the default install, this shouldn&#X2019;t be a problem, but if not, you&#X2019;ll need to set the <code>PYTHONPATH</code> with something like <code>export PYTHONPATH = $PYTHONPATH':/directory/where/you/put/Biopython'</code> (on UNIX). Now that we think we are ready, fire up your python interpreter and follow along with the following code:</p><pre class="verbatim">$ python
+Python 2.5 (r25:51908, Nov 23 2006, 18:40:28) 
+[GCC 4.1.1 20061011 (Red Hat 4.1.1-30)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; from Bio.Seq import Seq
+&gt;&gt;&gt; from Bio.Alphabet.IUPAC import unambiguous_dna
+&gt;&gt;&gt; new_seq = Seq('GATCAGAAG', unambiguous_dna)
+&gt;&gt;&gt; new_seq[0:2]
+Seq('GA', IUPACUnambiguousDNA())
+&gt;&gt;&gt; new_seq.translate()
+Seq('DQK', HasStopCodon(IUPACProtein(), '*'))
+&gt;&gt;&gt;
+</pre><p>If this worked properly, then it looks like Biopython is in a happy place where python can find it, so now you might want to do some more rigorous tests. The <code>Tests</code> directory inside the distribution contains a number of tests you can run to make sure all of the different parts of biopython are working. These should all work just by running <code>python test_WhateverTheTestIs.py</code>. </p><p>If you didn&#X2019;t do this earlier, you should also all of our tests. To do this, you just need to be in the source code installation directory and type:</p><pre class="verbatim">$ python setup.py test
+</pre><p>You can also run them by typing <code>python run_tests.py</code> in the Tests sub directory.
+See the main Tutorial for further details (there is a whole chapter on the test framework).</p><p>If you&#X2019;ve made it this far, you&#X2019;ve gotten Biopython installed and running.
+Congratulations!</p>
+<!--TOC section id="sec33" Third Party Tools-->
+<h2 id="sec33" class="section">7&#XA0;&#XA0;Third Party Tools</h2><!--SEC END --><p>Note that Biopython includes support for interfacing with or parsing the output from a number of third party command line tools. These are not required to install Biopython, but may be of interest. This includes:</p><ul class="itemize"><li class="li-itemize">
+NCBI Standalone BLAST, which can used with the <code>Bio.Blast</code> module and parsed with the <code>Bio.SearchIO</code> module.
+</li><li class="li-itemize">EMBOSS tools, which can be invoked using the <code>Bio.Emboss</code> module. The <code>Bio.AlignIO</code> module can also parse some alignment formats output by the EMBOSS suite.
+</li><li class="li-itemize">ClustalW, which can be parsed using <code>Bio.AlignIO</code> and invoked using the <code>Bio.Align.Applications</code> module.
+</li><li class="li-itemize">SIMCOAL2 and FDist tools for population genetics can be used via the <code>Bio.PopGen</code> module.
+</li><li class="li-itemize">Bill Pearson&#X2019;s FASTA tools output can be parsed using the <code>Bio.AlignIO</code> and <code>Bio.SearchIO</code> module.
+</li><li class="li-itemize">Wise2 includes the useful tool dnal.
+</li></ul><p>See also the listing on <a href="http://biopython.org/wiki/Download"><span style="font-family:monospace">http://biopython.org/wiki/Download</span></a> which should include URLs for these tools, and may also be more up to date.</p>
+<!--TOC section id="sec34" Notes for installing with non-administrator permissions-->
+<h2 id="sec34" class="section">8&#XA0;&#XA0;Notes for installing with non-administrator permissions</h2><!--SEC END --><p>Although I mentioned above that I wouldn&#X2019;t go much into installing in
+non-root directories, if you are stuck installing
+Biopython and it&#X2019;s dependencies into your home directory here are a
+few notes and tricks to keep you going:</p><ul class="itemize"><li class="li-itemize">Building some C modules, such as <code>Bio.Cluster</code> require that 
+the NumPy include files (normally installed in
+<code>your_dir/include/python/Numeric</code>) be available. If the
+compiler can&#X2019;t find these directories you&#X2019;ll normally get an error
+like:<pre class="verbatim">Bio/Cluster/clustermodule.c:2: NumpPy/arrayobject.h: No such file or directory
+    </pre><p>Followed by a long messy list of syntax errors. To fix this, you&#X2019;ll
+have to edit the <code>setup.py</code> file to let it know where the
+include directories are located. Look for the line in
+<code>setup.py</code> that looks like:</p><pre class="verbatim">    include_dirs=["Bio/Cluster"]
+    </pre><p>and adjust it so that it includes the include directory where the
+NumPy libraries were installed:</p><pre class="verbatim">    include_dirs=["Bio/Cluster", "your_dir/include/python"]
+    </pre><p>Then you should be able to install everything happily.</p></li></ul><p>Yes, it&#X2019;s a bit of a mess installing lots of packages in non-standard
+locations. The best solution is to talk with your friendly system
+administrator and get them to assist with the installation of at least
+the required packages (they are generally quite useful for any python
+install) before going ahead with Biopython installation.</p><!--CUT END -->
+<!--HTMLFOOT-->
+<!--ENDHTML-->
+<!--FOOTER-->
+<hr style="height:2"><blockquote class="quote"><em>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</em><a href="http://hevea.inria.fr/index.html"><em>H</em><em><span style="font-size:small"><sup>E</sup></span></em><em>V</em><em><span style="font-size:small"><sup>E</sup></span></em><em>A</em></a><em>.</em></blockquote></body>
+</html>

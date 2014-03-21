@@ -261,7 +261,7 @@ class TestIntegrateMainArgs(Base):
                 from run_bwa import main
                 return main()
 
-    def _eqsize( self, f1, f2, threshold=100 ):
+    def _eqsize( self, f1, f2, threshold=150 ):
         # Just make sure file sizes are relatively similar
         # threshold size in bytes that they can differ
         s1 = os.stat( f1 ).st_size

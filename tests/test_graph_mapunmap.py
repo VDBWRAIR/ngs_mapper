@@ -129,15 +129,15 @@ class TestFunctional(Base):
     def test_creates_graphic_from_single_json( self ):
         res = self._run_cmd( [self.json] )
         assert isfile( 'mapunmap.png' )
-        eq_( 37729, os.stat( 'mapunmap.png' ).st_size )
+        eq_( 37853, os.stat( 'mapunmap.png' ).st_size )
 
     def test_creates_graphic_from_multiple_json( self ):
         res = self._run_cmd( [self.json, self.json] )
         assert isfile( 'mapunmap.png' )
-        eq_( 34787, os.stat( 'mapunmap.png' ).st_size )
+        eq_( 34853, os.stat( 'mapunmap.png' ).st_size )
 
     def test_outfile_works( self ):
         ofile = join( self.tempdir, 'out.png' )
         res = self._run_cmd( [self.json], ofile )
         assert isfile( ofile )
-        eq_( 37729, os.stat( ofile ).st_size )
+        eq_( 37853, os.stat( ofile ).st_size )
