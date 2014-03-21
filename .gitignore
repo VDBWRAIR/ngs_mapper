@@ -8,3 +8,4 @@ perms.sh
 *.log
 .virtpath
 *.[ao]
+*matplotlibrc
