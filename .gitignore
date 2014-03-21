@@ -5,7 +5,7 @@ perms.sh
 *build
 *dist
 *egg*
-*.log
+*log
 .virtpath
 *.[ao]
 *matplotlibrc
