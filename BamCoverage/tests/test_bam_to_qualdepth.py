@@ -1,0 +1,80 @@
+from nose.tools import eq_, ok_, raises
+from nose.plugins.attrib import attr
+from mock import patch
+import random
+
+from .. import bam_to_qualdepth as btqd
+
+def rand_info( ):
+    ''' Generates random parse_pileup() info '''
+    depth = random.randint(0,1000)
+    quals = [random.randint(0,40) for i in range(depth)]
+    return (0,'N',depth,'N'*depth,quals)
+
+def test_parseinfo( ):
+    tst = rand_info()
+    d,maxq,minq,aq = btqd.parse_info( tst )
+    eq_(tst[2],d)
+    eq_(max(tst[4]),maxq)
+    eq_(min(tst[4]),minq)
+    eq_(sum(tst[4])*1.0/len(tst[4]),aq)
+
+def test_parseainfo( ):
+    tst = [
+        (0,'N',10,'N'*10,[40]*10),
+        (1,'N',5,'N'*5,[20]*5),
+        (2,'N',2,'N'*2,[35]*2)
+    ]
+    maxd,mind,maxq,minq,d,aq = btqd.parse_ainfo( tst )
+    eq_(10,maxd)
+    eq_(2,mind)
+    eq_(40,maxq)
+    eq_(20,minq)
+    eq_([10,5,2],d)
+    eq_([40,20,35],aq)
+
+import common
+class TestSetUMReads(common.Base):
+    def setUp(self):
+        super(TestSetUMReads,self).setUp()
+        from ..bqd import mpileup, parse_pileup
+        #self.pileup = parse_pileup( mpileup( self.bamfile ) )
+        self.pileup = {
+            'chr1': {
+                'maxd': 1000,
+                'mind': 10,
+                'maxq': 40,
+                'minq': 10,
+                'depths': [100]*10 + [1000]*10,
+                'avgquals': [10]*10 + [40]*10,
+                'length': 20
+            }
+        }
+
+        self.idxstats = {
+            'chr1': ['chr1', '20', '1000', '0'],
+            'chr2': ['chr2', '20', '0', '0'],
+            '*': ['*', '0', '0', '100']
+        }
+
+    def _call( self, bamfile, pileup ):
+        from ..bam_to_qualdepth import set_unmapped_mapped_reads as sumr
+        return sumr( bamfile, pileup )
+
+    @patch('BamCoverage.bam.get_refstats')
+    def test_sets_unmapped( self, get_refstats ):
+        get_refstats.return_value = self.idxstats
+        res = self._call( self.bamfile, self.pileup )
+        eq_( 100, self.pileup['unmapped_reads'] )
+
+    @patch('BamCoverage.bam.get_refstats')
+    def test_sets_mapped( self, get_refstats ):
+        get_refstats.return_value = self.idxstats
+        res = self._call( self.bamfile, self.pileup )
+        eq_( 1000, self.pileup['chr1']['mapped_reads'] )
+
+    @patch('BamCoverage.bam.get_refstats')
+    def test_sets_mapped( self, get_refstats ):
+        get_refstats.return_value = self.idxstats
+        res = self._call( self.bamfile, self.pileup )
+        eq_( 1000, self.pileup['chr1']['mapped_reads'] )

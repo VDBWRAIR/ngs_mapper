@@ -1,0 +1,42 @@
+Very pretty Coverage graphics to show Reference coverage for bam files
+
+Requirements:
+pysam
+-> distribute
+-> cython
+Uses jQuery and D3.js(bundled with)
+Probably need some license stuff with them, but for now they are just copied into js & css folders
+
+Very Basic Usage:
+bam_to_json mybamfile.bam > regions.json
+Open bamcoverage.html in web browser
+
+Uses jQuery and D3.js(bundled with)
+Probably need some license stuff with them, but for now they are just copied into js & css folders
+
+This command might be useful to run all bam files in parallel.
+This command assumes that you have created project directories that have the same name as the bam file inside of them. For instance, if you have a sample list of:
+Sample1
+Sample2
+Sample3
+
+Then you would have a directory with the following directory structure:
+Sample1/Sample1.bam
+Sample2/Sample2.bam
+Sample3/Sample3.bam
+
+These command might be useful:
+# Map all the GS Projects with BWA(Requires pyWrairLib be installed)
+. ../bin/activate; ls -d ../../*__*__* | xargs -n 1 -P 0 bwa_map_newbler"
+# Generate all the json files from the indexed bams(uses all available cpus to run each found bam file)
+mkdir -p json; for p in ../*__*__*; do bp=$(basename $p); sn=$(echo $bp | awk -F'__' '{print $1}'); echo "./bam_to_json.py $p/454TrimmedReads.bam --small-json -s $sn |tee json/$sn.json"; done | xargs -n 7 -P 0 -I CMD bash -c "CMD"
+# Compile all json files into a single json file
+echo -n "[" > regions.json; for j in json/*; do cat $j >> regions.json; echo -n "," >> regions.json; done; echo -n "]" >> regions.json;
+# Now remove the trailing , from the json at the end of the file before the last ]
+
+More to come
+
+BamQualDepth
+
+Builds a plot that shows quality depth over the length of the reference for a given bam
+So far only the axis are finished
