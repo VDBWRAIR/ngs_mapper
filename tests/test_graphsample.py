@@ -123,7 +123,7 @@ class TestFunctional(Base):
         print res
         for f in self._files_exist( os.getcwd(), basename(self.testbam) ):
             if f.endswith( '.png' ):
-                eq_( 152254, os.stat( f ).st_size )
+                eq_( 153176, os.stat( f ).st_size )
 
     def test_createsfiles( self ):
         res = self._rungraphsample( self.bam )
@@ -145,7 +145,7 @@ class TestFunctional(Base):
         for f in self._files_exist( os.getcwd(), basename(self.bam) ):
             esize = 0
             if f.endswith( '.png' ):
-                esize = 233500
+                esize = 233126
             elif f.endswith( '.json' ):
                 esize = 197213
             eq_( esize, os.stat( f ).st_size )

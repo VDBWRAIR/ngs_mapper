@@ -185,27 +185,6 @@ class TestIntegrationCompileReads(Base):
         # Read dir will allow relative and abspath testing
         readdir = 'reads'
         os.mkdir(readdir)
-        '''
-        reads = [
-            ('p1_1.fastq','p1_2.fastq'), # current dir paired
-            'np1.fastq', # Current dir np
-            (join(readdir,'p2_1.fastq'), abspath(join(readdir,'p2_2.fastq'))), # relative and abs paired
-            join(readdir,'np2.fastq'), # relative np
-            join(abspath(readdir),'np2.fastq') # relative np
-        ]
-        read_contents = '@Read1\nATGCATGCATGC\n+\n111111111111\n'
-        # Create all the files
-        expected_linecounts = {'F':0,'R':0,'NP':0}
-        for read in reads:
-            if len(read) == 2:
-                f = self.create_file(read[0],read_contents)
-                r = self.create_file(read[1],read_contents)
-                expected_linecounts['F'] += f
-                expected_linecounts['R'] += r
-            else:
-                np = self.create_file(read,read_contents)
-                expected_linecounts['NP'] += np
-        '''
         expected_linecounts = {}
         # Only 1 read F & R since just copied sanger read to fake the miseq paired
         expected_linecounts['F'] = 1*4

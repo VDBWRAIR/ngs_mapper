@@ -65,7 +65,13 @@ def compile_reads( readfilelist, outputdir ):
             if sffs:
                 sff_out = join(outputdir,'sffs.fq')
                 log.debug( "Converting {} to temp fastq file {}".format(sffs,sff_out) )
-                r = seqio.sffs_to_fastq( sffs, sff_out )
+                try:
+                    r = seqio.sffs_to_fastq( sffs, sff_out )
+                except AssertionError as e:
+                    # Skip this error that started occuring in new version of BioPython
+                    # Pretty big assumption that the outfiles are ok
+                    # Check Biopython issue #294
+                    pass
                 cfiles.append( sff_out )
             if other:
                 # Just concat these as normal since they are just text
