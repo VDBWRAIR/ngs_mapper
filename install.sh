@@ -49,7 +49,7 @@ then
 fi
 
 INCLUDE=$(echo | cpp -x c++ -Wp,-v 2>&1 | grep -v 'ignoring' | grep -v '^#' | grep -v '^End' | xargs)
-for dev in zlib.h png.h curses.h
+for dev in zlib.h png.h curses.h freetype.h
 do
     # Ensure dev is in include path
     if [ -z "$(find ${INCLUDE} -type f -name ${dev})" ]
