@@ -53,7 +53,7 @@ setup(
     description='Variant Call Format (VCF) parser for Python',
     long_description=DOC,
     test_suite='vcf.test.test_vcf.suite',
-    install_requires=['distribute'],
+    #install_requires=['distribute'],
     requires=requires,
     entry_points = {
         'vcf.filters': [
