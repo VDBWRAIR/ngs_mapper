@@ -1,12 +1,4 @@
-import common
-import fixtures
-
-from nose.tools import eq_, raises, timed
-from nose.plugins.attrib import attr
-from mock import patch, Mock, MagicMock
-
-from StringIO import StringIO
-from os.path import join, dirname, basename, exists
+from imports import *
 
 # How long you expect each base position on the reference to take to process
 EXPECTED_TIME_PER_BASE = 0.0015
@@ -100,9 +92,9 @@ class TestUnitBiasHQ(StatsBase):
             'depth': 7
         }
         self.update_stats( self.stats )
-        r = self._C( self.stats )
+        r = self._C( self.stats, 50, 2 )
         eq_( self.stats['A']['baseq'] + [50,60], r['A']['baseq'] )
-        r = self._C( self.stats, 15 )
+        r = self._C( self.stats, 15, 2 )
         eq_( self.stats['A']['baseq'] + [20,30,40,50,60], r['A']['baseq'] )
 
     @raises(ValueError)
@@ -112,33 +104,53 @@ class TestUnitBiasHQ(StatsBase):
             r = self._C( self.stats, 1, i )
 
 class TestUnitMarkLQ(StatsBase):
-    def _C( self, stats, minbq, mind ):
+    def _C( self, *args, **kwargs ):
         from base_caller import mark_lq
-        return mark_lq( stats, minbq, mind )
+        return mark_lq( *args, **kwargs )
+
+    def test_bias_reference( self ):
+        # If less than mind then don't call N if base is == ref base
+        # ideally the following would become T
+        # Issue #395
+        base_stats = {
+            'T': {
+                'baseq': [16, 17, 17, 19, 21, 29, 32, 35, 37]
+            }
+        }
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 25, 10, 'T' )
+        eq_( 9, len(r['T']['baseq']) )
+
+        # Now add an A as well just to make sure. Also puts us >= mind of 10
+        base_stats['A'] = {'baseq':[16]}
+        stats = self.make_stats( base_stats )
+        r = self._C( stats, 25, 10, 'T' )
+        eq_( 4, len(r['T']['baseq'] ) )
+        eq_( 6, len(r['?']['baseq'] ) )
 
     def test_minq_lt( self ):
         self.stats['A']['baseq'] = [23,24,25,26]
-        r = self._C( self.stats, 25, 1 )
+        r = self._C( self.stats, 25, 1, 'G' )
         eq_( [23,24], r['?']['baseq'] )
-        r = self._C( self.stats, 25, 100 )
+        r = self._C( self.stats, 25, 100, 'G' )
         eq_( [23,24], r['N']['baseq'] )
 
     def test_removes_empty_bases( self ):
         self.stats['A']['baseq'] = [10]*10
         self.stats['C']['baseq'] = [10]*10
-        r = self._C( self.stats, 25, 1 )
+        r = self._C( self.stats, 25, 1, 'G' )
         assert 'A' not in r, 'A was not removed even though it had all < minq baseq'
         assert 'C' not in r, 'C was not removed even though it had all < minq baseq'
         eq_( [10]*20, r['?']['baseq'] )
-        r = self._C( self.stats, 25, 100 )
+        r = self._C( self.stats, 25, 100, 'G' )
         eq_( [10]*20, r['N']['baseq'] )
 
     def test_adds_n_single_base( self ):
         # A - Depth 10, AQ - 20
         self.stats['A']['baseq'] = [10,10] + [30]*6 + [10,10]
-        r = self._C( self.stats, 25, 1 )
+        r = self._C( self.stats, 25, 1, 'G' )
         eq_( [10]*4, r['?']['baseq'] )
-        r = self._C( self.stats, 25, 100 )
+        r = self._C( self.stats, 25, 100, 'G' )
         eq_( [10]*4, r['N']['baseq'] )
 
     def test_ensure_depth_threshold( self ):
@@ -148,13 +160,13 @@ class TestUnitMarkLQ(StatsBase):
             'A': {'baseq':[20]*10}
         })
         # A's should all get turned to ? because mind == depth is high coverage
-        r = self._C( stats, 25, 10 )
+        r = self._C( stats, 25, 10, 'G' )
         eq_( 10, len(r['?']['baseq']) )
 
     def test_no_n( self ):
-        r = self._C( self.stats, 25, 1 )
+        r = self._C( self.stats, 25, 1, 'G' )
         assert '?' not in r, '? was added to stats when it should not have'
-        r = self._C( self.stats, 25, 100 )
+        r = self._C( self.stats, 25, 100, 'G' )
         assert 'N' not in r, 'N was added to stats when it should not have'
 
 class TestUnitCaller(Base):
@@ -425,12 +437,7 @@ class TestUnitBlankVcfRow(Base):
             r = self._C( 'ref', rseq, i, '-' )
             yield self.sets_, r, rseq[i-1], i, '-'
 
-@patch('base_caller.MPileupColumn')
-class TestUnitGenerateVcfRow(Base):
-    def _C( self, mpilecol, refseq, minbq, maxd, mind, minth, biasth=50, bias=2 ):
-        from base_caller import generate_vcf_row
-        return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias )
-
+class MpileBase(Base):
     def mock_stats( self ):
         base_stats = {
             'G': { 'baseq': [40]*70 },
@@ -447,6 +454,50 @@ class TestUnitGenerateVcfRow(Base):
         mpilemock.ref = ref
         mpilemock.pos = pos
         mpilemock.base_stats.return_value = stats
+
+
+@patch('base_caller.MPileupColumn')
+class TestUnitPileStats(MpileBase):
+    def _C( self, *args, **kwargs ):
+        from base_caller import pile_stats
+        return pile_stats( *args, **kwargs )
+
+    def test_bias_ref_and_bias_hq( self, mpilecol ):
+        # Should bias 2 reads and bias ref
+        base_stats = {
+            'T': {'baseq': [24, 25, 46, 56, 58, 38]}
+        }
+        stats = self.make_stats( base_stats )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'T', 25, 10, 50, 10 )
+        eq_( 23, r['depth'] )
+
+@patch('base_caller.MPileupColumn')
+class TestUnitGenerateVcfRow(MpileBase):
+    def _C( self, mpilecol, refseq, minbq, maxd, mind, minth, biasth=50, bias=2 ):
+        from base_caller import generate_vcf_row
+        return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias )
+
+    @attr('current')
+    def test_thing( self, mpilecol ):
+        base_stats = {
+            'T': {'baseq':[29, 35, 37, 32]}
+        }
+        stats = self.make_stats( base_stats )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'T', 25, 1000, 10, 0.8, 50, 10 )
+        eq_( 'T', r.INFO['CB'] )
+
+    def test_low_coverage_low_quality_ref( self, mpilecol ):
+        base_stats = {
+            'T': {
+                'baseq': [16, 17, 17, 19, 21, 29, 32, 35, 37]
+            }
+        }
+        stats = self.make_stats( base_stats )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'T', 25, 1000, 10, 0.8, 50, 10 )
+        eq_( 'T', r.INFO['CB'] )
 
     def test_highcov_lowqual( self, mpilecol ):
         # Greater than mind but all lq bases should turn into a N

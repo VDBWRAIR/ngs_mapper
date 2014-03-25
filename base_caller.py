@@ -141,12 +141,13 @@ def parse_args( args=sys.argv[1:] ):
             'this value by a factor of what bias is set to[Default: 50]'
     )
 
+    default=10
     parser.add_argument(
         '-bias',
         dest='bias',
-        default=2,
+        default=default,
         type=int,
-        help='What factor to bias high quality bases by. Must be an integer >= 1[Default: 2]'
+        help='What factor to bias high quality bases by. Must be an integer >= 1[Default: {}]'.format(default)
     )
 
     args = parser.parse_args( args )
@@ -155,7 +156,7 @@ def parse_args( args=sys.argv[1:] ):
 
     return args
 
-def mark_lq( stats, minbq, mind ):
+def mark_lq( stats, minbq, mind, refbase ):
     '''
         Labels all qualities < minbq as ?
         Goes through all keys in the stats dictionary that are not in ('depth','mqualsum','bqualsum')
@@ -191,7 +192,11 @@ def mark_lq( stats, minbq, mind ):
                 k = base
                 if q < minbq:
                     if stats2['depth'] < mind:
-                        k = 'N'
+                        if base != refbase:
+                            k = 'N'
+                        else:
+                            # Redundant but easier to see
+                            k = base
                     else:
                         k = '?'
                 # adds the N to the nucleotides (A C G T and N)
@@ -200,7 +205,7 @@ def mark_lq( stats, minbq, mind ):
                 stats2[k]['baseq'].append( q )
     return stats2
 
-def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=2, vcf_template=VCF_HEAD ):
+def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=10, vcf_template=VCF_HEAD ):
     '''
         Generates a vcf file from a given vcf_template file
 
@@ -325,7 +330,7 @@ def blank_vcf_row( refname, refseq, pos, call='-' ):
     record = vcf.model._Record( refname, pos, None, refseq[pos-1], '.', None, None, info, None, None )
     return record
 
-def bias_hq( stats, biasth=50, bias=2 ):
+def bias_hq( stats, biasth=50, bias=10 ):
     '''
         Biases high quality reads in stats so that they are more likely to be selected later on.
         Essentially duplicates quality scores(baseq values) by a factor of bias.
@@ -368,7 +373,32 @@ def bias_hq( stats, biasth=50, bias=2 ):
         stats2['depth'] += len( stats2[k]['baseq'] )
     return stats2
 
-def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=2 ):
+def pile_stats( mpileupcol, refbase, minbq, mind, biasth, bias ):
+    '''
+        Returns the modified statistics from an mpileupcol that are suitable for base calling
+
+        All parameters are identical to generate_vcf_row
+
+        @returns a stats2 dictionary that is modified by biasing reference bases and high quality bases
+    '''
+    # This call needs to be replaced after the mpileupcol parameter is put into place
+    # then stats_for_col( mpileup
+    s = mpileupcol.base_stats()
+    # Bias high quality first as it may change the behavior of mark_lq as the depth may
+    # increase above the mind threshold
+    stats2 = bias_hq( s, biasth, bias )
+    stats2 = mark_lq( stats2, minbq, mind, refbase )
+
+    # Update stats2 so that it does not include low quality bases since we
+    # are equal to or above the min depth
+    if stats2['depth'] >= mind:
+        if '?' in stats2:
+            stats2['depth'] -= len(stats2['?']['baseq'])
+            del stats2['?']
+
+    return stats2
+
+def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=10 ):
     '''
         Generates a vcf row and returns it as a string
 
@@ -384,43 +414,17 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
         @returns a vcf.model._Record
     '''
     from collections import OrderedDict
-    # This call needs to be replaced after the mpileupcol parameter is put into place
-    # then stats_for_col( mpileup
-    #s = stats( bamfile, regionstr, minmq=0, minbq=0, maxd=maxd )
-    s = mpileupcol.base_stats()
-    stats2 = mark_lq( s, minbq, mind )
-    stats2 = bias_hq( stats2, biasth, bias )
-
-    # Update stats2 so that it does not include low quality bases since we
-    # are equal to or above the min depth
-    if stats2['depth'] >= mind:
-        if '?' in stats2:
-            stats2['depth'] -= len(stats2['?']['baseq'])
-            del stats2['?']
-
-    # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
-    '''
-    info = {
-        'DP': 0,
-        'RC': 0,
-        'RAQ': 0,
-        'PRC': 0,
-        'AC': 0,
-        'AAQ': 0,
-        'PAC': 0,
-        'CB': 0,
-        'CBD': 0,
-    }
-    '''
-    # Holds the info dictionary in order
-    info = {}
-
     # The base position should be the same as the second item in the parsed region string
     start = mpileupcol.pos
     # Get the reference base from the reference sequence
     # Python is 0-index, biology is 1 index
     rb = refseq[start-1].upper()
 
+    stats2 = pile_stats( mpileupcol, rb, minbq, mind, biasth, bias )
+
+    # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
+    # Holds the info dictionary in order
+    info = {}
     # Alternate info
     alt_info = info_stats( stats2, rb )
     alt_bases = alt_info['bases']
