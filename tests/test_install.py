@@ -37,6 +37,7 @@ class Base(common.BaseClass):
             'uninstall.sh',
             'vcf_consensus.py',
             'vcf_diff.py',
+            'cutadapt'
         )
         self.python_packages = (
             'matplotlib',
