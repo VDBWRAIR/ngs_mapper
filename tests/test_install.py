@@ -54,6 +54,7 @@ class Base(common.BaseClass):
 
 class TestFunctional( Base ):
     def test_install_ran_successfully( self ):
+        print self.output
         eq_( 0, self.returncode )
         ok_( 'failed' not in self.output )
 
@@ -65,6 +66,7 @@ class TestFunctional( Base ):
             try:
                 os.stat(path)
             except:
+                print self.output
                 ok_( False, "Script {} was not linked into virtenv bin directory to path {}".format(script,path) )
 
     def test_creates_virtenv( self ):
@@ -85,7 +87,7 @@ class TestFunctional( Base ):
         script = self.script_path('install.sh')
         path=tdir + ':' + os.environ['PATH']
         ret, output = self.run_script( 'export PATH={}; {} {}'.format(path,script,self.vpath) )
-        eq_( 'Please ensure you have python 2.7 or greater', output.rstrip() )
+        eq_( 'Please ensure you have python 2.7.3 or greater but less than 3', output.rstrip() )
         eq_( 1, ret )
 
     def test_uninstall_works( self ):
