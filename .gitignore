@@ -9,3 +9,12 @@ perms.sh
 .virtpath
 *.[ao]
 *matplotlibrc
+dependencies/bwa/bwa
+dependencies/samtools/bcftools/bcftools
+dependencies/samtools/misc/ace2sam
+dependencies/samtools/misc/bamcheck
+dependencies/samtools/misc/md5fa
+dependencies/samtools/misc/md5sum-lite
+dependencies/samtools/misc/wgsim
+dependencies/samtools/samtools
+mpilestat.py

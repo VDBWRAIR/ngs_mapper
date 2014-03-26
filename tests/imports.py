@@ -4,6 +4,8 @@ import sys
 from cStringIO import StringIO
 import tempfile
 import shutil
+from glob import glob
+import subprocess
 
 from mock import Mock, MagicMock, patch
 from nose.tools import eq_, ok_, raises, timed

@@ -113,7 +113,7 @@ do
 done
 
 # Install all python packages(the ordering is important because of dependencies on each other)
-package_list=( setuptools PyVCF numpy nose pyparsing tornado six python-dateutil matplotlib biopython pyBWA mock, cutadapt )
+package_list=( setuptools PyVCF numpy nose pyparsing tornado six python-dateutil matplotlib biopython pyBWA mock cutadapt )
 cd ${deppath}
 for package in ${package_list[@]}
 do
