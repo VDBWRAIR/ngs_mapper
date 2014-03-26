@@ -1,16 +1,8 @@
-from nose.tools import eq_, raises
-from nose.plugins.attrib import attr
-from mock import Mock, MagicMock, patch
-
-from .common import BaseClass
-
-import os
-from os.path import *
-from glob import glob
+from imports import *
 
 from data import NoPlatformFound
 
-class Base(BaseClass):
+class Base(common.BaseClass):
     def setUp(self):
         super(Base,self).setUp()
         self.reads = {
@@ -52,16 +44,42 @@ class Base(BaseClass):
                 mapping[readfile] = plat
         return mapping
 
+from data import NoPlatformFound
+class TestUnitPlatformForRead(Base):
+    def _C( self, *args, **kwargs ):
+        from data import platform_for_read
+        return platform_for_read( *args, **kwargs )
+
+    def test_idents_platform( self ):
+        for readfile, plat in self.reads_for_platforms().items():
+            eq_( plat, self._C( readfile ) )
+
+    def test_no_platform_for_read( self ):
+        try:
+            self._C( 'im_lonely' )
+            assert False, "Did not raise NoPlatformFound"
+        except NoPlatformFound as e:
+            pass
+
+    @raises(NoPlatformFound)
+    def test_reads_by_plat_unkownfiles(self):
+        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.ab1' )
+        self.test_idents_platform()
+
+    def test_sff_now_fastq( self ):
+        # Ensure that names that work with .sff exension also work with .fastq extension
+        for plat, reads in self.reads.items():
+            if plat in ('Roche454','IonTorrent'):
+                for read in reads:
+                    eq_( plat, self._C( read ) )
+                    eq_( plat, self._C( read.replace('.sff','.fastq') ) )
+
 class TestFunctional(Base):
     def test_reads_by_plat_emptydir(self):
         from data import reads_by_plat as rbp
         # no files so empty dict returned
         eq_( {}, rbp( self.tempdir ) )
 
-    @raises(NoPlatformFound)
-    def test_reads_by_plat_unkownfiles(self):
-        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.ab1' )
-        self.test_platform_for_read()
 
     def test_reads_by_plat(self):
         with patch('data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]) as a:
@@ -90,20 +108,6 @@ class TestFunctional(Base):
                 # Remove the read as it should not exist
                 del readfiles[readfiles.index( join(self.tempdir,fn) )]
             eq_( readfiles, sorted(result) )
-
-    def test_platform_for_read( self ):
-        from data import platform_for_read as pfr
-        for readfile, plat in self.reads_for_platforms().items():
-            eq_( plat, pfr( readfile ) )
-
-    def test_no_platform_for_read( self ):
-        from data import platform_for_read as pfr
-        from data import NoPlatformFound
-        try:
-            pfr( 'im_lonely' )
-            assert False, "Did not raise NoPlatformFound"
-        except NoPlatformFound as e:
-            pass
 
     def test_platform_has_paired_reads(self):
         reads = ['read1_r1','read1_r2','read2_r1','read3_r1','read3_r2']
