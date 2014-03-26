@@ -12,11 +12,8 @@ trap - ERR SIGINT SIGTERM EXIT
 # This gives us the current directory that this script is in
 THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Virtual env path
-virtpath=${THIS}/.miseqpipeline
-
 # Run the installer if needed
-if [ ! -d ${virtpath} ]
+if [ ! -e ${THIS}/.virtpath ]
 then
     bash ${THIS}/install.sh ${virtpath}
     if [ $? -ne 0 ]
@@ -24,6 +21,9 @@ then
         return
     fi
 fi
+
+# Get virtpath
+. ${THIS}/.virtpath
 
 # Activate virtual environment
 . ${virtpath}/bin/activate
