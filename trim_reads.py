@@ -7,6 +7,10 @@ import sys
 from os.path import basename, join, isdir
 from glob import glob
 
+import log
+lconfig = log.get_config()
+logger = log.setup_logger( 'trim_reads', lconfig )
+
 def main( args ):
     trim_reads_in_dir(
         args.readsdir,
@@ -47,9 +51,11 @@ def trim_read( readpath, qual_th, out_path=None ):
     tfile = None
     if out_path is None:
         out_path = basename( readpath ).replace('.sff','.fastq')
+    logger.debug( "Using {} as the output path".format(out_path) )
 
     # Convert sff to fastq
     if readpath.endswith('.sff'):
+        logger.debug( "Converting {} to fastq".format(readpath) )
         # Just put in temp location then remove later
         tfile = '/tmp/sff.fastq'
         try:
@@ -84,6 +90,7 @@ def run_cutadapt( *args, **kwargs ):
         fout = open(fout,'wb')
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
+    logger.debug( "Running {}".format(cmd) )
     p = subprocess.Popen( cmd, stdout=fout, stderr=subprocess.PIPE )
     # Only stderr should be available
     _,se = p.communicate()

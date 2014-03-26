@@ -6,6 +6,7 @@ import tempfile
 import shutil
 from glob import glob
 import subprocess
+import shlex
 
 from mock import Mock, MagicMock, patch
 from nose.tools import eq_, ok_, raises, timed

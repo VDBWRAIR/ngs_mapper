@@ -46,6 +46,14 @@ def parse_args( args=sys.argv[1:] ):
         help='The prefix to put before every output file generated. Probably the samplename'
     )
 
+    trimqual_default=20
+    parser.add_argument(
+        '-trim_qual',
+        dest='trim_qual',
+        default=trimqual_default,
+        help='The quality threshold to trim ends of reads on[Default: {}]'.format(trimqual_default)
+    )
+
     parser.add_argument(
         '--CN',
         dest='CN',
@@ -131,7 +139,9 @@ def main( args ):
             'flagstats': flagstats,
             'consensus': consensus,
             'vcf': vcf,
-            'CN': CN
+            'CN': CN,
+            'trim_qual': args.trim_qual,
+            'trim_outdir': os.path.join(tdir,'trimmed_reads')
         }
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
@@ -140,9 +150,16 @@ def main( args ):
         # Return code list
         rets = []
 
+        # Trim Reads
+        cmd = 'trim_reads.py {readsdir} -q {trim_qual} -o {trim_outdir}'
+        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        rets.append( p.wait() )
+        if rets[-1] != 0:
+            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+
         # Mapping
         with open(bwalog, 'wb') as blog:
-            cmd = 'run_bwa_on_samplename.py {readsdir} {reference} -o {bamfile}'
+            cmd = 'run_bwa_on_samplename.py {trim_outdir} {reference} -o {bamfile}'
             p = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
             # Wait for the sample to map
             rets.append( p.wait() )

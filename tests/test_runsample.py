@@ -1,39 +1,18 @@
-from nose.tools import eq_, raises, ok_
-from nose.plugins.attrib import attr
-from mock import Mock, MagicMock, patch, mock_open, call
-
-import common
-import fixtures
-
-import os
-from os.path import *
-from glob import glob
-import shlex
-from subprocess import STDOUT, check_output, CalledProcessError
+from imports import *
 
 class Base(common.BaseBamRef):
-    # self.bam
-    # self.ref
-    # self.tempdir
     reads_by_sample = ''
     f = ''
     r = ''
     @classmethod
     def setUpClass(klass):
+        # Sets up a ReadsBySample directory and a reference to map to
         super(Base,klass).setUpClass()
-        klass.reads_by_sample = join(klass.mytempdir,'ReadsBySample')
-        os.mkdir( klass.reads_by_sample )
-        f,r,ref = fixtures.get_sample_paired_reads_compressed()
+        # Setup readsbysample directory
+        klass.reads_by_sample = join(THIS,'fixtures','reads')
 
-        # Rename forward to miseq name
-        f = fixtures.ungiz( f, klass.reads_by_sample )
-        klass.f = join(dirname(klass.f), 'Sample1_S01_L001_R1_001_1979_01_01.fastq' )
-        os.rename( f, klass.f )
-
-        # Rename reverse to miseq name
-        r = fixtures.ungiz( r, klass.reads_by_sample )
-        klass.r = join(dirname(r), 'Sample1_S01_L001_R2_001_1979_01_01.fastq' )
-        os.rename( r, klass.r )
+        # Fetch the reference
+        _,__,ref = fixtures.get_sample_paired_reads_compressed()
 
         # Rename ref to correct extension
         ref = fixtures.ungiz( ref, klass.mytempdir )
@@ -128,8 +107,8 @@ class TestFunctional(Base):
         print "Running: {}".format(cmd)
         cmd = shlex.split( cmd )
         try:
-            sout = check_output( cmd, stderr=STDOUT )
-        except CalledProcessError as e:
+            sout = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+        except subprocess.CalledProcessError as e:
             return (e.output,-1)
         return sout,0
 
@@ -150,7 +129,6 @@ class TestFunctional(Base):
                 assert isdir( ef ), "{} was not created".format(ef)
 
     def _expected_files( self, outdir, prefix ):
-        #00141-98.bam  00141-98.bam.bai 00141-98.bam.qualdepth.json  00141-98.bam.qualdepth.png  00141-98.bam.qualdepth.png.pdq.tsv  00141-98.consensus.fastq  bwa.log  flagstats.txt  variants.failed.log  variants.filter.vcf  variants.indel.filter.vcf  variants.indel.raw.vcf  variants.raw.vcf
         efiles = []
         bamfile = join( outdir, prefix + '.bam' )
         f = 'file'
@@ -166,6 +144,7 @@ class TestFunctional(Base):
         efiles.append( (f,join( outdir, prefix + '.log') ) )
         efiles.append( (f,bamfile + '.vcf') )
         efiles.append( (d,join( outdir, 'qualdepth') ) )
+        efiles.append( (d,join( outdir, 'trimmed_reads' )) )
 
         return efiles
 
@@ -191,12 +170,14 @@ class TestFunctional(Base):
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
         eq_( 0, ret )
         print out
+        print open('outdir/tests.std.log').read()
         self._ensure_expected_output_files( 'outdir', 'tests' )
 
     def test_outdir_not_exist( self ):
         assert not isdir( 'outdir' )
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
         print out
+        print open('outdir/tests.std.log').read()
         eq_( 0, ret )
         assert isdir( 'outdir' )
         self._ensure_expected_output_files( 'outdir', 'tests' )
