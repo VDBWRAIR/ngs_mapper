@@ -94,7 +94,7 @@ def run_cutadapt( *args, **kwargs ):
 
 def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
-        description='Filters/trims reads'
+        description='Trims reads'
     )
 
     parser.add_argument(
@@ -110,7 +110,7 @@ def parse_args( args=sys.argv[1:] ):
         help='Quality threshold to trim[Default:{}]'.format(qual_default)
     )
 
-    outputdir_default='filtered_reads'
+    outputdir_default='trimmed_reads'
     parser.add_argument(
         '-o',
         dest='outputdir',

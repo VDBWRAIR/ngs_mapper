@@ -1,8 +1,8 @@
 from imports import *
 
-class FilterBase(common.BaseClass):
+class TrimBase(common.BaseClass):
     def setUp( self ):
-        super(FilterBase,self).setUp()
+        super(TrimBase,self).setUp()
         # Contains sff, sanger and miseq paired reads
         self.read_dir = join( THIS, 'fixtures', 'reads' )
         # Only fastq files
@@ -12,12 +12,12 @@ class FilterBase(common.BaseClass):
         # All reads
         self.reads = self.fqs + self.sffs
 
-class TestTrimReadsInDir(FilterBase):
+class TestTrimReadsInDir(TrimBase):
     def setUp( self ):
         super( TestTrimReadsInDir, self ).setUp()
 
     def _C( self, *args, **kwargs ):
-        from filter_reads import trim_reads_in_dir
+        from trim_reads import trim_reads_in_dir
         return trim_reads_in_dir( *args, **kwargs )
 
     def test_runs_correctly( self ):
@@ -42,12 +42,12 @@ class TestTrimReadsInDir(FilterBase):
         # Make sure lists are same
         eq_( expectedfiles, resultfiles, 'Expected files({}) was not equal to Resulting files({})'.format(expectedfiles,resultfiles) )
 
-class TestTrimRead(FilterBase):
+class TestTrimRead(TrimBase):
     def setUp( self ):
         super(TestTrimRead,self).setUp()
 
     def _C( self, *args, **kwargs ):
-        from filter_reads import trim_read
+        from trim_reads import trim_read
         return trim_read( *args, **kwargs )
 
     def test_outpath_default( self ):
@@ -76,13 +76,13 @@ class TestTrimRead(FilterBase):
                 'Did not seem to trim the file. Output file s.st_size({}) was not smaller than input file s.st_size({})'.format(rs.st_size,es.st_size)
             )
 
-class TestRunCutadapt(FilterBase):
+class TestRunCutadapt(TrimBase):
     def setUp( self ):
         super(TestRunCutadapt,self).setUp()
         self.read = self.fqs[0]
 
     def _C( self, *args, **kwargs ):
-        from filter_reads import run_cutadapt
+        from trim_reads import run_cutadapt
         return run_cutadapt( *args, **kwargs )
 
     def test_runs_correctly( self ):
@@ -99,11 +99,11 @@ class TestRunCutadapt(FilterBase):
             ok_( False, "Did not create correct file" )
         ok_( os.stat(self.read).st_size != s.st_size, 'No trimming happened' )
 
-class TestIntegrate(FilterBase):
+class TestIntegrate(TrimBase):
     def _C( self, *args, **kwargs ):
-        script = TestIntegrate.script_path('filter_reads.py')
+        script = TestIntegrate.script_path('trim_reads.py')
         return TestIntegrate.run_script( '{} {} -q {} -o {}'.format(
-                script, args[0], kwargs.get('q',20), kwargs.get('o','filtered_reads')
+                script, args[0], kwargs.get('q',20), kwargs.get('o','trimmed_reads')
             )
         )
 
@@ -113,8 +113,8 @@ class TestIntegrate(FilterBase):
         eq_( set([]), files-efiles, "{} did not contain exactly {}".format(dir,efiles) )
 
     def test_runs( self ):
-        r,o = self._C( self.read_dir, q=20, o='filtered_reads' )
+        r,o = self._C( self.read_dir, q=20, o='trimmed_reads' )
         # Make sure exited correctly
         eq_( 0, r )
         # Make sure the file names are same as the input files
-        self.has_files( 'filtered_reads', [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] )
+        self.has_files( 'trimmed_reads', [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] )
