@@ -6,6 +6,7 @@ import argparse
 import sys
 from os.path import basename, join, isdir
 from glob import glob
+import tempfile
 
 import log
 lconfig = log.get_config()
@@ -34,7 +35,11 @@ def trim_reads_in_dir( readdir, qual_th, out_path ):
     # Trim all the reads
     for read in reads:
         reado = read.replace('.sff','.fastq')
-        trim_read( join(readdir,read), qual_th, join(out_path,reado) )
+        try:
+            trim_read( join(readdir,read), qual_th, join(out_path,reado) )
+        except subprocess.CalledProcessError as e:
+            print e.output
+            raise e
 
 def trim_read( readpath, qual_th, out_path=None ):
     '''
@@ -57,7 +62,7 @@ def trim_read( readpath, qual_th, out_path=None ):
     if readpath.endswith('.sff'):
         logger.debug( "Converting {} to fastq".format(readpath) )
         # Just put in temp location then remove later
-        tfile = '/tmp/sff.fastq'
+        _, tfile = tempfile.mkstemp(prefix='trimreads',suffix='sff.fastq')
         try:
             SeqIO.convert( readpath, 'sff', tfile, 'fastq' )
         except AssertionError as e:
