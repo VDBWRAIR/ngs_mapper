@@ -163,12 +163,8 @@ def mark_lq( stats, minbq, mind, refbase ):
         which should be keys that represent nucleotide bases. Those keys then point to a dictionary
         that contain 'mapq': [] and 'baseq': []
 
-        This script loops through baseq and for any value less than minbq it will remove that quality score
-        and place it in a new base key for '?'.
-
-        Essentially creating a new base N with all < minbq base qualities.
-
-        This means that the mapq scores are all removed in the returned dictionary
+        Creating a new base called N or ? depending on the overall depth(N for < mind and ? for > mind)
+        If the base is the reference base and < mind then the base will be preserved to bias the reference in low coverage areas
 
         @param stats - Stats dictionary returned from stats_at_refpos.stats
         @param minbq - The mininum base quality to determine if a quality should belong to N
