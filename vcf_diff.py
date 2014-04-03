@@ -2,21 +2,36 @@
 
 import vcf
 import sys
+import argparse
 
-with open(sys.argv[1]) as fh:
-    for line in fh:
-        line = line.rstrip()
-        if line.startswith( '#' ):
-            continue
-        #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	1090-01.bam
-        try:
-            chrm,pos,id,ref,alt,qual,filter,info = line.split('\t')
-            info = dict( [i.split('=') for i in info.split(';')] )
-            cb = info['CB']
-            if cb != ref:
-                print "{}\t{}\t{}\t{}".format(
-                    pos, ref, alt, info['CB']
+
+def main( args ):
+    vcf_reader = vcf.Reader(open(args.vcf_file, 'r'))
+    print 'Reference\tPosition\tReference Base\tCalled Base'
+    for record in vcf_reader:
+        cb = record.INFO['CB']
+        ref = record.REF
+        pos = record.POS
+        ref_seq = record.CHROM
+
+        if ref != cb:
+            print "{}\t{}\t{}\t{}".format(
+                ref_seq, pos, ref, cb 
                 )
-        except ValueError as e:
-            print line.split( '\t' )
-            print e
+
+
+def parse_args( ):
+    parser = argparse.ArgumentParser(description='vcf_diff')
+    parser.add_argument(
+        dest="vcf_file",
+        help="VCF File"
+    )
+    args = parser.parse_args()
+    return args
+
+if __name__ == '__main__':
+    main( parse_args() )
+
+
+
+
