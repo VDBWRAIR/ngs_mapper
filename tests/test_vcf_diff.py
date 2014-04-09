@@ -40,7 +40,7 @@ class TestUnitMain(Base):
 
     def test_has_main( self, stdout, stderr ):
         args = Mock()
-        args.vcffile = self.test_vcf
+        args.vcf_file = self.test_vcf
         self._C( args )
 
 class TestFunctional(Base):
