@@ -20,7 +20,7 @@ Sample2,2,RL1,'''
 
 class BaseClass( object ):
     def setUp( self ):
-        self.midparse = join(dirname(__file__),'MidParse.conf')
+        self.midparse = join(dirname(dirname(__file__)),'MidParse.conf')
         self.tdir = tempfile.mkdtemp( prefix='rochesync', suffix='tests' )
         os.chdir( self.tdir )
         self.samples = ['Sample1','Sample2']
@@ -187,10 +187,17 @@ class TestSymlinkSigProc( BaseClass ):
         from roche_sync import symlink_sigproc
         return symlink_sigproc( *args, **kwargs )
 
+    def setUp( self ):
+        super( TestSymlinkSigProc, self ).setUp()
+        #sync( self.rdir, 
+        self.ngsdata = 'NGSData'
+        self.readdata = join( self.ngsdata, 'ReadData', 'Roche454' )
+        os.makedirs( self.readdata )
+
     def test_creates_nonexisting_readdata( self ):
         from roche_sync import get_sigprocdir, sync
-        os.mkdir( 'NGSData' )
-        self._C( self.rdir, 'NGSData' )
+        os.rmdir( self.readdata )
+        self._C( self.rdir, self.ngsdata )
         # Just the basename of the sigproc
         dname = basename( get_sigprocdir( self.rdir ) )
         dpath = join( 'NGSData', 'ReadData', 'Roche454', dname )
@@ -198,15 +205,15 @@ class TestSymlinkSigProc( BaseClass ):
 
     def test_symlinks( self ):
         from roche_sync import get_sigprocdir, sync
-        #sync( self.rdir, 
-        ngsdata = 'NGSData'
-        readdata = join( ngsdata, 'ReadData', 'Roche454' )
-        os.makedirs( readdata )
-        self._C( self.rdir, ngsdata )
+        self._C( self.rdir, self.ngsdata )
         dname = basename( get_sigprocdir( self.rdir ) )
-        lnk = join( readdata, dname )
+        lnk = join( self.readdata, dname )
         lnkdst = os.readlink( lnk )
         ok_( exists( lnk ), 'Did not link signal processing dir' )
+
+    def test_already_exists( self ):
+        self.test_symlinks()
+        self.test_symlinks()
 
 class TestSffRegionMap( BaseClass ):
     def setUp( self ):
@@ -226,20 +233,27 @@ def d_read( insff, outsff, bname, midparse ):
     '''mock out of demultiplex_read to avoid having to have real sff files'''
     open(outsff, 'w').close()
 
-@patch('roche_sync.demultiplex_read',d_read)
 class TestLinkReads( BaseClass ):
     def _C( self, *args, **kwargs ):
         from roche_sync import link_reads
         return link_reads( *args, **kwargs )
 
+    def setUp( self ):
+        super( TestLinkReads, self ).setUp()
+        with patch('roche_sync.demultiplex_read',d_read) as dread:
+            from roche_sync import demultiplex_run
+            demultiplex_run( self.rdir, self.midparse )
+            self.ngsdata = 'NGSData'
+            self.readsbysample = join( self.ngsdata, 'ReadsBySample' )
+            os.makedirs( self.readsbysample )
+
     def test_links_reads( self ):
-        from roche_sync import demultiplex_run
-        demultiplex_run( self.rdir, self.midparse )
-        ngsdata = 'NGSData'
-        readsbysample = join( ngsdata, 'ReadsBySample' )
-        os.makedirs( readsbysample )
-        self._C( self.rdir, ngsdata )
-        self.check_reads_by_sample( self.rdir, readsbysample )
+        self._C( self.rdir, self.ngsdata )
+        self.check_reads_by_sample( self.rdir, self.readsbysample )
+
+    def test_already_exists( self ):
+        self.test_links_reads()
+        self.test_links_reads()
 
 @patch('roche_sync.demultiplex_read',d_read)
 class TestDemultiplexRun( BaseClass ):
@@ -254,6 +268,41 @@ class TestDemultiplexRun( BaseClass ):
         from roche_sync import parse_samplesheet
         self._C( self.rdir, self.midparse )
         self.check_demultiplexed( self.rdir )
+
+    def test_demul_dir_already_exist_not_demultiplexed( self ):
+        from roche_sync import get_sigprocdir
+        # Ensure if the demultiplexed directory exists, that it still creates any other files needed
+        self._C( self.rdir, self.midparse )
+        demuldir = join( get_sigprocdir( self.rdir ), 'demultiplexed' )
+        # All sample files (filepath, stattuple)
+        samplefiles = [(f,os.stat(f)) for f in glob( join(demuldir, '*') )]
+        # Remove one of the samples so to test that it gets recreated
+        removesample = samplefiles[0]
+        noremovesample = samplefiles[1]
+        os.unlink( removesample[0] )
+        ok_( not exists(removesample[0]), "{} did not get removed?".format(removesample[0]) )
+        # Make sure mtime will change
+        import time; time.sleep(0.5);
+        # Rerun demultiplex on same directory
+        self._C( self.rdir, self.midparse )
+
+        #Refetch files and stats again
+        removesample_new = (removesample[0],os.stat(removesample[0]))
+        noremovesample_new = (noremovesample[0],os.stat(noremovesample[0]))
+        
+        # Check the removed file
+        eq_(
+            removesample[1].st_size, removesample_new[1].st_size,
+            'Size of demultiplexed removed file is not the same as it was before it was removed'
+        )
+
+        # Check the non-removed file
+        eq_( 
+            noremovesample[1].st_mtime, noremovesample_new[1].st_mtime,
+            "Must have redemultiplexed {} as the mtime's were not the same {} -> {}".format(
+                noremovesample[0], noremovesample[1].st_mtime, noremovesample_new[1].st_mtime
+            )
+        )
 
 class TestParseSampleSheet( BaseClass ):
     def setUp( self ):
@@ -314,6 +363,11 @@ class TestSync( BaseClass ):
         self._C( self.rdir, 'NGSData' )
         self.check_raw_synced( 'NGSData' )
 
+    def test_skips_already_synced( self ):
+        self._C( self.rdir, 'NGSData' )
+        # Just check no errors
+        self._C( self.rdir, 'NGSData' )
+
 class TestFunctional( BaseClass ):
     def setUp( self ):
         super(TestFunctional,self).setUp()
@@ -329,7 +383,7 @@ class TestFunctional( BaseClass ):
         return 'sfffile'
         
     def _C( self, *args, **kwargs ):
-        script = join( dirname(__file__), 'roche_sync.py' )
+        script = join( dirname( dirname(__file__) ), 'roche_sync.py' )
         cmd = 'PATH={}:$PATH {} --ngsdata {} --midparse {} {}'.format(os.getcwd(), script, args[1], args[2], args[0])
         p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True )
         eo = p.communicate()

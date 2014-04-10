@@ -22,6 +22,10 @@ def sync( src, ngsdata ):
         
     '''
     dst = join( ngsdata, 'RawData', 'Roche454', basename( src ) )
+    if isdir( dst ):
+        print "{} already exists so skipping data sync. If this directory was only " \
+            "partially synced you may want to remove everything and start over".format(dst)
+        return
     shutil.copytree( src, dst )
 
 def demultiplex_run( rdir, midparse ):
@@ -31,7 +35,8 @@ def demultiplex_run( rdir, midparse ):
     sigprocdir = get_sigprocdir( rdir )
     demuldir = join( sigprocdir, 'demultiplexed' )
     sffdir = join( sigprocdir, 'sff' )
-    os.mkdir( demuldir )
+    if not isdir( demuldir ):
+        os.mkdir( demuldir )
     region_sff = sff_region_map( sffdir )
     for sample in parse_samplesheet( join(rdir,'SampleSheet.csv') ):
         sname = sample['SampleName']
@@ -43,7 +48,9 @@ def demultiplex_run( rdir, midparse ):
         sample['date'] = rdate
         outread = format_read_name( **sample )
         outread = join( demuldir, outread )
-        demultiplex_read( sff, outread, barcode, midparse )
+        # Don't recreate
+        if not exists( outread ):
+            demultiplex_read( sff, outread, barcode, midparse )
 
 def link_reads( rdir, ngsdata ):
     sigprocdir = get_sigprocdir( rdir )
@@ -60,7 +67,8 @@ def link_reads( rdir, ngsdata ):
         for f in sffs:
             s = relpath( f, sampledir )
             dst = join( sampledir, basename(f) )
-            os.symlink( s, dst )
+            if not exists( dst ):
+                os.symlink( s, dst )
 
 def symlink_sigproc( rdir, ngsdata ):
     sigprocdir = get_sigprocdir( rdir )
@@ -72,7 +80,8 @@ def symlink_sigproc( rdir, ngsdata ):
         pass
     s = relpath( sigprocdir, readdata )
     dst = join( readdata,  basename(sigprocdir) )
-    os.symlink( s, dst )
+    if not exists( dst ):
+        os.symlink( s, dst )
 
 def get_rundate( rochedir ):
     '''
