@@ -111,7 +111,10 @@ def sff_region_map( sffdir ):
     map = {}
     p = re.compile( '\w+?0(\d).sff' )
     for sff in sffs:
-        r = p.search( sff ).group(1)
+        try:
+            r = p.search( sff ).group(1)
+        except AttributeError as e:
+            raise ValueError( "{} is not a standard multiplexed sff file name".format(sff) )
         map[r] = basename(sff)
     return map
 

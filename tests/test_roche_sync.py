@@ -229,6 +229,14 @@ class TestSffRegionMap( BaseClass ):
         r = self._C( sffdir )
         eq_( {'1':'ABCDEFGH01.sff', '2':'ABCDEFGH02.sff'}, r )
 
+    @raises(ValueError)
+    def test_error_on_combosff( self ):
+        sffdir = 'sff'
+        os.mkdir( sffdir )
+        # Just ensure value error when the regex doesn't match
+        open( join(sffdir,'ABCDEFGH01_combo.sff'), 'w' ).close()
+        r = self._C( sffdir )
+
 def d_read( insff, outsff, bname, midparse ):
     '''mock out of demultiplex_read to avoid having to have real sff files'''
     open(outsff, 'w').close()
