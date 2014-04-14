@@ -1,16 +1,85 @@
-from nose.tools import eq_, raises, ok_
-from nose.plugins.attrib import attr
-from mock import Mock, MagicMock, patch, call
+from imports import *
 
-from .common import BaseClass
-import fixtures
+class Base(common.BaseClass):
+    def check_trimmed_against_record( self, trimmedrec, record, trim=True ):
+        ''' Check trimmed seq against initial record '''
+        # Useful values to check
+        origseq = record.seq._data
+        trimseq = trimmedrec.seq._data
+        trimqual = trimmedrec._per_letter_annotations['phred_quality']
+        origqual = record._per_letter_annotations['phred_quality']
+        # Where does trimseq start in origseq
+        start = origseq.index( trimseq )
+        end = start + len(trimseq)
+        cql = record.annotations['clip_qual_left']
+        cqr = record.annotations['clip_qual_right']
+        print 'Orig:' + origseq
+        print 'Trim:' + trimseq
+        if trim:
+            eq_( start, cql, 'clip_qual_left {} and beginning of trim {} did not match'.format(cql,start) )
+            eq_( end, cqr, 'clip_qual_right {} and end of trim {} did not match'.format(cqr,end) )
+            eq_( cqr - cql, len(trimmedrec._per_letter_annotations['phred_quality']), 'Did not trim qualities' )
+        else:
+            eq_( origseq, trimseq, 'Sequence was trimmed when it should not have been' )
+            eq_( origqual, trimqual, 'Qualities were trimmed when they should not have been' )
 
-import os
-from os.path import *
-from glob import glob
+def rand_sff_seqs( ):
+    ''' To aid in mocking Bio.SeqIO.parse '''
+    for i in range( 10 ):
+        yield common.rand_seqrec( 100, 0, 0, 5, 10 )
 
-class Base(BaseClass):
-    pass
+@patch( 'reads.SeqIO.parse' )
+class TestSffsToFastq(Base):
+    def setUp( self ):
+        super( TestSffsToFastq, self ).setUp()
+
+    def _C( self, *args, **kwargs ):
+        from reads import sffs_to_fastq
+        return sffs_to_fastq( *args, **kwargs )
+
+    def _pre( self, bioparse ):
+        self.f1records = [r for r in rand_sff_seqs()]
+        self.f2records = [r for r in rand_sff_seqs()]
+        self.records = self.f1records + self.f2records
+        # parse should now return f1records then f2records
+        bioparse.side_effect = [self.f1records,self.f2records]
+
+    def _post( self, count, trim=True ):
+        from Bio import SeqIO
+        ok_( exists('out.fastq'), 'Did not create out.fastq' )
+        eq_( 20, count )
+        newrecs = SeqIO.index('out.fastq','fastq')
+        for origr in self.records:
+            self.check_trimmed_against_record( newrecs[origr.id], origr, trim )
+
+    def test_trims( self, bioparse ):
+        self._pre( bioparse )
+        count = self._C( ['file1.sff','file2.sff'], 'out.fastq', True )
+        self._post( count )
+
+    def test_no_trims( self, bioparse ):
+        self._pre( bioparse )
+        count = self._C( ['file1.sff','file2.sff'], 'out.fastq', False )
+        self._post( count, False )
+
+class TestClipSeqRecord(Base):
+    def setUp( self ):
+        super(TestClipSeqRecord,self).setUp()
+        self.seqlen = 100
+        self.cal = 0
+        self.car = 0
+        self.cql = 5
+        self.cqr = 10
+        self.rec = common.rand_seqrec( 100, 0, 0, 5, 10 )
+
+    def _C( self, *args, **kwargs ):
+        from reads import clip_seq_record
+        return clip_seq_record( *args, **kwargs )
+
+    def test_trims( self ):
+        from copy import copy
+        trimrec = self._C( self.rec )
+        self.check_trimmed_against_record( trimrec, self.rec )
 
 @patch('bwa.seqio.concat_files')
 class TestFunctionalCompileReads(Base):

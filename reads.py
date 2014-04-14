@@ -1,11 +1,55 @@
 import os
 from os.path import *
+from Bio import SeqIO
 
 import logging
 log = logging.getLogger(__name__)
 
 # Valid Read extensions
 VALID_READ_EXT = ('sff','fastq')
+
+def clip_seq_record( seqrecord ):
+    '''
+        Correctly trims sff Bio.SeqRecord.SeqRecord
+        
+        @seqrecord - Bio.SeqRecord.SeqRecord object to trim phred_quality and sequence based on the
+            annotations
+
+        @returns a new trimmed seqrecord
+    '''
+    from Bio.Seq import Seq
+    from Bio.SeqRecord import SeqRecord
+    lefti = seqrecord.annotations['clip_qual_left']
+    righti = seqrecord.annotations['clip_qual_right']
+    newseq = Seq( seqrecord.seq._data[lefti:righti], seqrecord.seq.alphabet )
+    newrec = SeqRecord(
+        seq = newseq,
+        id = seqrecord.id,
+        description = seqrecord.description
+    )
+    quals = seqrecord._per_letter_annotations['phred_quality']
+    trimquals = quals[lefti:righti]
+    print trimquals
+    newrec._per_letter_annotations['phred_quality'] = trimquals
+    return newrec
+
+def sffs_to_fastq( sfflist, outfile, trim=True ):
+    '''
+        Puts all reads from all sff files into converted fastq outfile
+        
+        @param sfflist - List of sff file locations
+        @param trim - Whether or not to trim using the clip annotations fields
+        
+        @returns - # reads written
+    '''
+    written_count = 0
+    with open( outfile, 'w' ) as fh:
+        for sff in sfflist:
+            for rec in SeqIO.parse( sff, 'sff' ):
+                if trim:
+                    rec = clip_seq_record( rec )
+                written_count += SeqIO.write( rec, fh, 'fastq' )
+    return written_count
 
 class InvalidReadFile(Exception): pass
 

@@ -75,3 +75,40 @@ class BaseBaseCaller(BaseClass):
         self.sam = join( fixpath, 'test.sam' )
         self.vcf = join( fixpath, 'test.vcf' )
         self.template = join( fixpath, 'template.vcf' )
+
+def rand_seqrec( seqlen, cal, car, cql, cqr ):
+    '''
+        Makes a random Bio.SeqRecord.SeqRecord such that the .seq returns
+        a Bio.Seq.Seq with a random sequence that has length seqlen
+        Then the SeqRecord has ._per_letter_annotations['phred_quality'] with random qualities
+        for all the bases
+        SeqRecord.annotations clip_adapter_left, right, clip_qual_left, right are set to cal, car, cql and cqr
+    '''
+    from Bio.SeqRecord import SeqRecord
+    from Bio.Seq import Seq
+    from Bio.Alphabet import generic_dna
+    import random
+    # Random Sequence
+    seq = Seq( rand_seq(seqlen), generic_dna )
+    # Random qualities
+    qual = [random.randint(1,40) for i in range(seqlen)]
+    # Random id. Hopefully random enough so no duplicate ids
+    id = 'seq_{}'.format(random.randint(1,999999999999))
+    record = SeqRecord(
+        seq,
+        id=id,
+        description='Random sequence',
+        name=id
+    )
+    record._per_letter_annotations['phred_quality'] = qual
+    record.annotations['clip_adapter_left'] = cal
+    record.annotations['clip_adapter_right'] = car
+    record.annotations['clip_qual_left'] = cql
+    record.annotations['clip_qual_right'] = cqr
+    return record
+
+def rand_seq( seqlen ):
+    ''' return random sequence length seqlen '''
+    import random
+    dna = ('A','C','G','T')
+    return ''.join( [dna[random.randint(0,3)] for i in range(seqlen)] )
