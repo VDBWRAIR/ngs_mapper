@@ -7,6 +7,7 @@ import sys
 from os.path import basename, join, isdir
 from glob import glob
 import tempfile
+import reads
 
 import log
 lconfig = log.get_config()
@@ -64,7 +65,9 @@ def trim_read( readpath, qual_th, out_path=None ):
         # Just put in temp location then remove later
         _, tfile = tempfile.mkstemp(prefix='trimreads',suffix='sff.fastq')
         try:
-            SeqIO.convert( readpath, 'sff', tfile, 'fastq' )
+            #SeqIO.convert( readpath, 'sff', tfile, 'fastq' )
+            # Clip adapter based on clip_qual values in sff
+            nwritten = reads.sffs_to_fastq( [readpath], tfile, True )
         except AssertionError as e:
             # Ignore the stupid sff bug in BioPython
             pass

@@ -38,6 +38,7 @@ def sffs_to_fastq( sfflist, outfile, trim=True ):
         Puts all reads from all sff files into converted fastq outfile
         
         @param sfflist - List of sff file locations
+        @param outfile - File path to put fastq output in
         @param trim - Whether or not to trim using the clip annotations fields
         
         @returns - # reads written
@@ -110,7 +111,7 @@ def compile_reads( readfilelist, outputdir ):
                 sff_out = join(outputdir,'sffs.fq')
                 log.debug( "Converting {} to temp fastq file {}".format(sffs,sff_out) )
                 try:
-                    r = seqio.sffs_to_fastq( sffs, sff_out )
+                    r = sffs_to_fastq( sffs, sff_out )
                 except AssertionError as e:
                     # Skip this error that started occuring in new version of BioPython
                     # Pretty big assumption that the outfiles are ok

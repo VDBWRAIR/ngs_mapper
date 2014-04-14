@@ -44,23 +44,25 @@ class TestSffsToFastq(Base):
         # parse should now return f1records then f2records
         bioparse.side_effect = [self.f1records,self.f2records]
 
-    def _post( self, count, trim=True ):
+    def _post( self, outfile, count, trim=True ):
         from Bio import SeqIO
-        ok_( exists('out.fastq'), 'Did not create out.fastq' )
+        ok_( exists(outfile), 'Did not create out.fastq' )
         eq_( 20, count )
-        newrecs = SeqIO.index('out.fastq','fastq')
+        newrecs = SeqIO.index(outfile,'fastq')
         for origr in self.records:
             self.check_trimmed_against_record( newrecs[origr.id], origr, trim )
 
     def test_trims( self, bioparse ):
         self._pre( bioparse )
-        count = self._C( ['file1.sff','file2.sff'], 'out.fastq', True )
-        self._post( count )
+        outfile = 'out.fastq'
+        count = self._C( ['file1.sff','file2.sff'], outfile, True )
+        self._post( outfile, count )
 
     def test_no_trims( self, bioparse ):
         self._pre( bioparse )
-        count = self._C( ['file1.sff','file2.sff'], 'out.fastq', False )
-        self._post( count, False )
+        outfile = 'out.fastq'
+        count = self._C( ['file1.sff','file2.sff'], outfile, False )
+        self._post( outfile, count, False )
 
 class TestClipSeqRecord(Base):
     def setUp( self ):
@@ -173,8 +175,9 @@ class TestFunctionalCompileReads(Base):
         eq_( expected, compile_reads( reads, outputdir ) )
         eq_( len(mock.call_args_list), 1 )
 
-    @patch('bwa.seqio.sffs_to_fastq')
-    def test_converts_sff_to_fastq(self,sffs_to_fastq,concat_files):
+    @attr('current')
+    @patch('reads.sffs_to_fastq')
+    def test_converts_sff_to_fastq(self,sffs_to_fastq, concat_files):
         from reads import compile_reads
         def side_effect( ins, out ):
             fh = open(out,'w')
