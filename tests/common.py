@@ -78,8 +78,8 @@ class BaseBaseCaller(BaseClass):
 
 def rand_seqrec( seqlen, cal, car, cql, cqr ):
     '''
-        Makes a random Bio.SeqRecord.SeqRecord such that the .seq returns
-        a Bio.Seq.Seq with a random sequence that has length seqlen
+        Makes a Bio.SeqRecord.SeqRecord such that the .seq returns
+        a Bio.Seq.Seq with a random sequence that has length seqlen if seqlen is int otherwise makes Seq with seqlen
         Then the SeqRecord has ._per_letter_annotations['phred_quality'] with random qualities
         for all the bases
         SeqRecord.annotations clip_adapter_left, right, clip_qual_left, right are set to cal, car, cql and cqr
@@ -88,10 +88,16 @@ def rand_seqrec( seqlen, cal, car, cql, cqr ):
     from Bio.Seq import Seq
     from Bio.Alphabet import generic_dna
     import random
-    # Random Sequence
-    seq = Seq( rand_seq(seqlen), generic_dna )
-    # Random qualities
-    qual = [random.randint(1,40) for i in range(seqlen)]
+    seq = None
+    if isinstance( seqlen, int ):
+        # Random Sequence
+        seq = Seq( rand_seq(seqlen), generic_dna )
+        # Random qualities
+        qual = [random.randint(1,40) for i in range(seqlen)]
+    else:
+        seq = Seq( seqlen, generic_dna )
+        # Random qualities
+        qual = [random.randint(1,40) for i in range(len(seqlen))]
     # Random id. Hopefully random enough so no duplicate ids
     id = 'seq_{}'.format(random.randint(1,999999999999))
     record = SeqRecord(

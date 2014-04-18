@@ -21,6 +21,8 @@ def clip_seq_record( seqrecord ):
     from Bio.SeqRecord import SeqRecord
     lefti = seqrecord.annotations['clip_qual_left']
     righti = seqrecord.annotations['clip_qual_right']
+    if lefti > righti and righti == 0:
+        righti = len(seqrecord.seq._data)
     newseq = Seq( seqrecord.seq._data[lefti:righti], seqrecord.seq.alphabet )
     newrec = SeqRecord(
         seq = newseq,
@@ -29,7 +31,6 @@ def clip_seq_record( seqrecord ):
     )
     quals = seqrecord._per_letter_annotations['phred_quality']
     trimquals = quals[lefti:righti]
-    print trimquals
     newrec._per_letter_annotations['phred_quality'] = trimquals
     return newrec
 

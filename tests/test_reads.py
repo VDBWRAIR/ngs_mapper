@@ -83,6 +83,13 @@ class TestClipSeqRecord(Base):
         trimrec = self._C( self.rec )
         self.check_trimmed_against_record( trimrec, self.rec )
 
+    @attr('current')
+    def test_bug_767( self ):
+        seq = 'tcagtccaagctgcgatCGCCGTTTCCCAGTAGGTCTCGAGAGGGCTGGGGATAATCCCTTCTGGTGTGTTT'
+        rec = common.rand_seqrec( seq, 0, 0, 17, 0 )
+        trimrec = self._C( rec )
+        eq_( 'CGCCGTTTCCCAGTAGGTCTCGAGAGGGCTGGGGATAATCCCTTCTGGTGTGTTT', trimrec.seq._data, 'Did not properly handle IonTorrent clipping' )
+
 @patch('bwa.seqio.concat_files')
 class TestFunctionalCompileReads(Base):
     def test_reads_abspath_basepath_relpath(self,mock):
