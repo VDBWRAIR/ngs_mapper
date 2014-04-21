@@ -76,6 +76,39 @@ class BaseBaseCaller(BaseClass):
         self.vcf = join( fixpath, 'test.vcf' )
         self.template = join( fixpath, 'template.vcf' )
 
+def make_seqrec( seq, quals ):
+    from Bio.SeqRecord import SeqRecord
+    from Bio.Seq import Seq
+    from Bio.Alphabet import generic_dna
+    seq = Seq( seq, generic_dna )
+    rec = SeqRecord(
+        seq,
+        id='id',
+        description='description',
+        name='name'
+    )
+    rec._per_letter_annotations['phred_quality'] = quals
+    return rec
+
+def random_seqs( numseqs=100 ):
+    import random
+    dna = 'ATGC'
+    seqs = []
+    maxlen = 0.0
+    maxqual = 0.0
+    for i in range( 1, numseqs ):
+        randbase = random.choice( dna )
+        randlen = random.randint( 0, 1000 )
+        randseq = ''.join( [random.choice(dna) for i in range(0,randlen)] )
+        randqual = [random.randint(0,60) for i in range(0, randlen)]
+        aqual = 0
+        if randlen != 0:
+            aqual = sum(randqual) * 1.0 / randlen
+            maxqual = max( aqual, maxqual )
+        maxlen = max( maxlen, randlen )
+        seqs.append( make_seqrec( randseq, randqual ) )
+    return (seqs, maxlen, maxqual)
+
 def rand_seqrec( seqlen, cal, car, cql, cqr ):
     '''
         Makes a Bio.SeqRecord.SeqRecord such that the .seq returns
