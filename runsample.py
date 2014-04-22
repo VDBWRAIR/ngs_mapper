@@ -209,6 +209,15 @@ def main( args ):
             logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
 
+        # Read Graphics
+        fastqs = ' '.join( glob.glob( os.path.join( cmd_args['trim_outdir'], '*.fastq' ) ) )
+        cmd = 'fqstats.py -o {}.reads.png {}'.format(cmd_args['bamfile'].replace('.bam',''),fastqs)
+        p = run_cmd( cmd, stdout=lfile, stderr=subprocess.STDOUT )
+        r = p.wait()
+        if r != 0:
+            logger.critical( "{} did not exit sucessfully".format(cmd) )
+        rets.append( r )
+
         # Consensus
         cmd = 'vcf_consensus.py {vcf} -i {samplename} -o {consensus}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )

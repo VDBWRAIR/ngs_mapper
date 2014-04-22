@@ -145,6 +145,7 @@ class TestFunctional(Base):
         efiles.append( (f,bamfile + '.vcf') )
         efiles.append( (d,join( outdir, 'qualdepth') ) )
         efiles.append( (d,join( outdir, 'trimmed_reads' )) )
+        efiles.append( (f,join( outdir, prefix+'.reads.png' )) )
 
         return efiles
 
