@@ -50,15 +50,16 @@ def plot_fqs( iterable, out ):
         print 'Plotting {}, 2, {}'.format(nrows, plotn)
         plt.subplot( nrows, 2, plotn )
         tname = fqname.replace('.fastq', '' )
-        plot( plt.gca(), tname + ' ' + 'Read Length', rlb, maxl, maxreads )
+        plot( plt.gca(), tname + ' ' + 'Read Length', 'Read Length', rlb, maxl, maxreads )
         # Plot the avg qual on right
         plt.subplot( nrows, 2, plotn+1 )
         print 'Plotting {}, 2, {}'.format(nrows, plotn+1)
-        plot( plt.gca(), tname + ' ' + 'Avg Qual', aqb, maxq, maxreadsquals )
+        plot( plt.gca(), tname + ' ' + 'Avg Qual', 'Avg Quality', aqb, maxq, maxreadsquals )
         # 1,2 then 3,4 then 5,6 ....
         plotn += 2
     f = plt.gcf()
     f.set_size_inches( 16.0, 2.0*len(stats) )
+    plt.tight_layout()
     plt.savefig( out )
 
 def fqstats( seqrecs ):
@@ -102,18 +103,16 @@ def read_avg_qual( rec ):
     else:
         return 0
 
-def plot( ax, title, bins, max_x, max_y ):
+def plot( ax, title, xlabel, bins, max_x, max_y ):
     ax.set_title( title )
     vals = sorted( bins.items() )
     x = map( lambda x: x[0], vals )
     y = map( lambda x: x[1], vals )
     plt.xlim( -10, max_x )
     plt.ylim( 0, max_y )
-    # Sanger reads only have 1 read so don't really show up unless we do this
-    if len(x) == 1:
-        x = [x[0]-1,x[0]]
-        y = [y[0],y[0]]
-    plt.fill_between( x, y )
+    plt.plot( x, y, '-o' )
+    plt.xlabel( xlabel )
+    plt.ylabel( '# Reads' )
 
 def bin_values( valuelist ):
     '''
