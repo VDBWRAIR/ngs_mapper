@@ -10,6 +10,7 @@ import shutil
 from glob import glob
 from datetime import datetime
 import gzip
+import csv
 
 import log
 logger = log.setup_logger( basename(__file__), log.get_config() )
@@ -50,6 +51,19 @@ def samplename_from_fq( fastqp ):
     '''
     fastqp = basename( fastqp )
     return fastqp.split( '_' )[0]
+
+def parse_samplesheet( sheetpath ):
+    '''
+        Parses sample sheet returning list of everything under [Data] as a csv.DictReader
+    '''
+    with open( sheetpath ) as fh:
+        for line in fh:
+            line = line.strip()
+            if line.startswith( '[Data]' ):
+                # Eat the header and get to the good stuff
+                break
+        for sample in csv.DictReader( fh ):
+            yield sample
 
 def sync_fastq( srcrun, ngsdata ):
     src_run_path = srcrun

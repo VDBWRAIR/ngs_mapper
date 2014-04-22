@@ -1,0 +1,26 @@
+[Header]
+IEMFileVersion,4
+Investigator Name,
+Project Name,
+Experiment Name,
+Date,1/1/2001
+Workflow,Resequencing
+Application,Resequencing
+Assay,Nextera XT
+Description,
+Chemistry,Amplicon
+
+[Reads]
+251
+251
+
+[Settings]
+Adapter,CTGTCTCTTATACACATCT
+
+[Data]
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description,GenomeFolder
+001,Sample1,Plate1,A01,N701,TAAGGCGA,S501,TAGATCGC,,,PhiX\Illumina\RTA\Sequence\WholeGenomeFASTA
+002,Sample2,Plate1,A02,N702,CGTACTAG,S501,TAGATCGC,,,PhiX\Illumina\RTA\Sequence\WholeGenomeFASTA
+003,Sample2,Plate1,A03,N703,AGGCAGAA,S501,TAGATCGC,,,PhiX\Illumina\RTA\Sequence\WholeGenomeFASTA
+004,Sample3,Plate1,A04,N704,TCCTGAGC,S501,TAGATCGC,,,PhiX\Illumina\RTA\Sequence\WholeGenomeFASTA
+005,Sample4,Plate1,A05,N705,GGACTCCT,S501,TAGATCGC,,,PhiX\Illumina\RTA\Sequence\WholeGenomeFASTA
