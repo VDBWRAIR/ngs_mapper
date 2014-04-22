@@ -9,7 +9,8 @@ from os.path import *
 import numpy as np
 
 def main( args ):
-    plot_fqs( [(basename(fq),parse( fq, 'fastq' )) for fq in args.fastqs], 'out.png' )
+    fqs = [(basename(fq),parse( fq, 'fastq' )) for fq in args.fastqs]
+    plot_fqs( fqs, args.output )
 
 def plot_fqs( iterable, out ):
     '''
@@ -44,16 +45,13 @@ def plot_fqs( iterable, out ):
         # The sequence records
         recs = list( iterable[i][1] )
         fqname = iterable[i][0]
-        print fqname
         rlb, aqb, mlen, mqual, mreads, mquals = stats[i]
         # Plot the read length first on left
-        print 'Plotting {}, 2, {}'.format(nrows, plotn)
         plt.subplot( nrows, 2, plotn )
         tname = fqname.replace('.fastq', '' )
         plot( plt.gca(), tname + ' ' + 'Read Length', 'Read Length', rlb, maxl, maxreads )
         # Plot the avg qual on right
         plt.subplot( nrows, 2, plotn+1 )
-        print 'Plotting {}, 2, {}'.format(nrows, plotn+1)
         plot( plt.gca(), tname + ' ' + 'Avg Qual', 'Avg Quality', aqb, maxq, maxreadsquals )
         # 1,2 then 3,4 then 5,6 ....
         plotn += 2
@@ -129,6 +127,14 @@ def bin_values( valuelist ):
 def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
         description='Stats about fastq files'
+    )
+
+    out_default = 'reads.png'
+    parser.add_argument(
+        '-o',
+        dest='output',
+        default=out_default,
+        help='Path for output png file[Default: {}]'.format(out_default)
     )
 
     parser.add_argument(
