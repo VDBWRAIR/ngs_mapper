@@ -103,7 +103,7 @@ def random_seqs( numseqs=100 ):
         randqual = [random.randint(0,60) for i in range(0, randlen)]
         aqual = 0
         if randlen != 0:
-            aqual = sum(randqual) * 1.0 / randlen
+            aqual = round( sum(randqual) * 1.0 / randlen )
             maxqual = max( aqual, maxqual )
         maxlen = max( maxlen, randlen )
         seqs.append( make_seqrec( randseq, randqual ) )
