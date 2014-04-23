@@ -8,9 +8,8 @@ import shutil
 import os.path
 from bam import sortbam, indexbam
 
-import logging
-logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-log = logging.getLogger('tagreads')
+import log
+logger = log.setup_logger('tagreads',log.get_config())
 
 # Exception for when headers exist
 class HeaderExists(Exception): pass
@@ -41,7 +40,7 @@ def main( args ):
         tag_bam( bam, args.SM, args.CN )
 
 def tag_bam( bam, SM, CN ):
-    log.info( "Gathering existing header for {}".format(bam) )
+    logger.info( "Gathering existing header for {}".format(bam) )
     hdr = get_rg_headers( bam, SM, CN )
     tag_reads( bam, hdr )
 
@@ -57,7 +56,7 @@ def tag_read( untagged_read, tags ):
     '''
     if untagged_read.FLAG >= 2048:
         # Skip supplementary
-        log.debug( "Skipping read {} because it is supplementary".format(untagged_read.QNAME) )
+        logger.debug( "Skipping read {} because it is supplementary".format(untagged_read.QNAME) )
         return untagged_read
     # Append the new tags
     if untagged_read._tags and untagged_read._tags[-1] != '\t':
@@ -81,7 +80,7 @@ def tag_readgroup( read ):
         @returns SamRow that is tagged with the appropriate read group
     '''
     rg = get_rg_for_read( read )
-    #log.debug( "Tagging {} with Read group {}".format(read.qname,rg) )
+    #logger.debug( "Tagging {} with Read group {}".format(read.qname,rg) )
     return tag_read( read, ['RG:Z:'+rg] )
 
 def tag_reads( bam, hdr ):
@@ -100,15 +99,15 @@ def tag_reads( bam, hdr ):
         # Write the hdr to the file first
         sam.write( hdr )
         # Tag the reads
-        log.info( "Tagging reads for {}".format(bam) )
+        logger.info( "Tagging reads for {}".format(bam) )
         for read in untagged_bam:
             samrow = samtools.SamRow(read)
             read = tag_readgroup( samrow )
             sam.write( str(read) + '\n' )
     # Close stdout
     untagged_bam.close()
-    log.info( "Finished tagging reads for {}".format(bam) )
-    log.info( "Sorting {}".format(bam) )
+    logger.info( "Finished tagging reads for {}".format(bam) )
+    logger.info( "Sorting {}".format(bam) )
     b = samtools.view( samf, h=True, S=True, b=True )
     sortbam( b, bam )
     # Close the fh
@@ -116,7 +115,7 @@ def tag_reads( bam, hdr ):
     # Remove temp sam file
     # maybe some day could even just use pipes all the way through :)
     os.unlink( samf )
-    log.info( "Indexing {}".format(bam) )
+    logger.info( "Indexing {}".format(bam) )
     indexbam( bam )
 
 def get_rg_for_read( aread ):
