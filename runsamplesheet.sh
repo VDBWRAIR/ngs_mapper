@@ -27,13 +27,6 @@ then
     exit 1
 fi
 
-#if [ ! -e ${scripts}/perms.sh ]
-#then
-#    echo "Please setup perms.sh first"
-#    echo "You can copy perms.sh-example to perms.sh and then modify it"
-#    exit 1
-#fi
-
 # Loop over each of our samplenames and references
 # File needs to be either space or tab delimeted
 # Samplename ReferencePath
@@ -71,3 +64,8 @@ do
 
     echo ${scripts}/runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od Projects/${sample}
 done | xargs -n 6 -P $CPUS -I CMD bash -c CMD
+
+# Graph all samples
+${scripts}/graphs.sh -norecrate
+# Softlink in consensus sequences into single folder
+${scripts}/consensuses.sh
