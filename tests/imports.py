@@ -15,3 +15,4 @@ from nose.plugins.attrib import attr
 import common
 import fixtures
 from fixtures import THIS
+from common import *

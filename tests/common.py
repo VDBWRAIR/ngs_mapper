@@ -151,3 +151,6 @@ def rand_seq( seqlen ):
     import random
     dna = ('A','C','G','T')
     return ''.join( [dna[random.randint(0,3)] for i in range(seqlen)] )
+
+def touch( filepath ):
+    subprocess.call(['touch',filepath])

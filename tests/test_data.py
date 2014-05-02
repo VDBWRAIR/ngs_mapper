@@ -63,7 +63,7 @@ class TestUnitPlatformForRead(Base):
 
     @raises(NoPlatformFound)
     def test_reads_by_plat_unkownfiles(self):
-        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.ab1' )
+        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.junk' )
         self.test_idents_platform()
 
     def test_sff_now_fastq( self ):
@@ -99,7 +99,7 @@ class TestFunctional(Base):
 
     def test_filter_reads_by_platform_bad_read_skipped(self):
         from data import filter_reads_by_platform as frbp
-        fn = 'Sample_F1_1979_01_01_Den1_Den1_0001_A01.ab1' 
+        fn = 'Sample_F1_1979_01_01_Den1_Den1_0001_A01.junk' 
         self.reads['Sanger'].append( fn )
         expected = self.mock_reads_dir(self.tempdir)
         for plat, readfiles in expected.items():
@@ -147,10 +147,10 @@ class TestIntegration(Base):
             eq_( readfiles, sorted(result[plat]) )
 
     def test_reads_by_all_unkownformats_are_skipped(self):
-        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.ab1' )
+        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.junk' )
         expected = self.mock_reads_dir(self.tempdir)
         # remove the ab1 file from the expected as it should have been skipped
-        expected['Sanger'] = [f for f in expected['Sanger'] if not f.endswith('.ab1')]
+        expected['Sanger'] = [f for f in expected['Sanger'] if not f.endswith('.junk')]
         print expected['Sanger']
         self.mock_expected( expected )
 
