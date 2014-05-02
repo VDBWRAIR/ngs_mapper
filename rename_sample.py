@@ -19,12 +19,15 @@ def main( args ):
     preads = get_reads( args.ngsdata, args.origname )
     funcs = {
         'Sanger': rename_sanger,
-        'MiSeq': rename_miseq
+        'MiSeq': rename_miseq,
+        'Roche454': rename_roche
     }
     for p, reads in preads.iteritems():
         for rs in reads:
             # Miseq returns tuple of paired read so normalize here
-            for r in list(rs):
+            if not isinstance(rs,tuple):
+                rs = [rs]
+            for r in rs:
                 print r
                 funcs[p]( r, args.origname, args.newname, args.ngsdata )
 
@@ -33,6 +36,15 @@ def get_reads( ngsdata, samplename ):
     rbsdir = join( rbs, samplename )
     platreads = data.reads_by_plat( rbsdir )
     return platreads
+
+def rename_roche( rbsfile, old, new, ngsdata ):
+    rund, readp = runread_path( os.readlink(rbsfile), 'Roche454' )
+    rbsd = dirname(rbsfile)
+
+    newrbsd = join( dirname(rbsd), new )
+    if not isdir( newrbsd ):
+        os.mkdir( newrbsd )
+    rename_file( rbsfile, old, new )
 
 def rename_miseq( rbsfile, old, new, ngsdata ):
     '''

@@ -45,6 +45,16 @@ class Base( common.BaseClass ):
                 pdirs.append( v )
         return pdirs
 
+    def make_dirs( self, platform, runname, samplename ):
+        read, raw = self.make_platform_dirs( platform )
+        rbs = join( self.ReadsBySample, samplename )
+        rd = join( read, runname )
+        rw = join( raw, runname )
+        os.mkdir(rbs)
+        os.mkdir(rd)
+        os.mkdir(rw)
+        return rw, rd, rbs
+
 class TestRunReadPath( Base ):
     def _C( self, *args, **kwargs ):
         from rename_sample import runread_path
@@ -173,20 +183,109 @@ class TestRenameFile( Base ):
         ok_( exists( 'some1file.txt' ), 'Link was not renamed' )
         ok_( exists(join('files','some1file.txt')), 'Actual file was not renamed' )
 
-@attr('current')
+class TestRenameRoche( Base ):
+    def _C( self, *args, **kwargs ):
+        from rename_sample import rename_roche
+        return rename_roche( *args, **kwargs )
+
+    def mock_roche( self, runname, samplename, byregion=True, rbsraw=False ):
+        '''
+            if byregion is True then demultiplex will have a region directory where the read is placed
+            otherwise the read is placed directly inside of the demultiplexed directory
+
+            if rbsraw is True then symlink rbsfile directly to RawData otherwise symlink to readdata
+        '''
+        rw, rd, rbs = self.make_dirs('Roche454', runname, samplename)
+        # 454 is different since the R_ directory does not exist in ReadData, but instead
+        # the *signalProcessing does as a symlink to RawData
+        os.rmdir( rd )
+        ddir = 'D_2001_01_01_01_01_01_vnode_signalProcessing'
+        # rd is just the sigproc dir not the R_ dir so we fix it here
+        rd = join( self.ReadData, 'Roche454', ddir )
+
+        rawsample = '{}__1__RL1__2001_01_01__Den1.sff'.format(samplename)
+
+        if byregion:
+            rwdemul = join( rw, ddir, 'demultiplexed', '1' )
+            rddemul = join( rd, 'demultiplexed', '1' )
+        else:
+            rwdemul = join( rw, ddir, 'demultiplexed' )
+            rddemul = join( rd, 'demultiplexed' )
+        # Create demultiplexed directory in RawData
+        os.makedirs( rwdemul )
+
+        # Do the sigproc symlink
+        target = relpath( join(rw,ddir), join(self.ReadData,'Roche454') )
+        os.symlink( target, rd )
+        ok_( exists(rd), 'Sigproc {} -> {} symlink broken'.format(rd, target) )
+
+        ok_( exists(rwdemul), '{} does not exist'.format(rwdemul) )
+        ok_( exists(rddemul), '{} does not exist'.format(rddemul) )
+
+        rawfile = join( rwdemul, rawsample )
+        touch(rawfile)
+
+        readfile = join( rddemul, rawsample )
+        ok_( exists(dirname(readfile)),  )
+        ok_( exists(readfile) )
+        ok_( samefile(rawfile,readfile) )
+
+        rbsfile = join( rbs, rawsample )
+        if rbsraw:
+            os.symlink( relpath(rawfile,rbs), rbsfile )
+        else:
+            os.symlink( relpath(readfile,rbs), rbsfile )
+        ok_( exists(rbsfile) )
+
+        return rawfile, readfile, rbsfile
+
+    @attr('current')
+    def test_renames_roche_byregion( self ):
+        files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=True )
+        rw, rd, rbs = files
+        self.print_tempdir()
+        self._C( rbs, 'sample1', 'sample_1', 'NGSData' )
+        self.print_tempdir()
+
+        for f in files:
+            ok_( not exists(f), '{} still exists'.format(f) )
+        # Only need to do one exist here since it is a symlink all the way through
+        newp = rbs.replace( 'sample1', 'sample_1' )
+        ok_( exists(newp), '{} does not exist'.format(rbs) )
+
+    @attr('current')
+    def test_renames_roche_noregion( self ):
+        files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=False )
+        rw, rd, rbs = files
+        self.print_tempdir()
+        self._C( rbs, 'sample1', 'sample_1', 'NGSData' )
+        self.print_tempdir()
+        for f in files:
+            ok_( not exists(f), '{} still exists'.format(f) )
+        # Only need to do one exist here since it is a symlink all the way through
+        newp = rbs.replace( 'sample1', 'sample_1' )
+        ok_( exists(newp), '{} does not exist'.format(rbs) )
+
+    @attr('current')
+    def test_renames_roche_symlinkrawdata( self ):
+        files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=False, rbsraw=True )
+        rw, rd, rbs = files
+        self.print_tempdir()
+        self._C( rbs, 'sample1', 'sample_1', 'NGSData' )
+        self.print_tempdir()
+        for f in files:
+            ok_( not exists(f), '{} still exists'.format(f) )
+        # Only need to do one exist here since it is a symlink all the way through
+        newp = rbs.replace( 'sample1', 'sample_1' )
+        ok_( exists(newp), '{} does not exist'.format(rbs) )
+
 class TestRenameMiSeq( Base ):
     def _C( self, *args, **kwargs ):
         from rename_sample import rename_miseq
         return rename_miseq( *args, **kwargs )
 
     def mock_miseq( self, runname, samplename ):
-        read, raw = self.make_platform_dirs( 'MiSeq' )
-        rbs = join( self.ReadsBySample, samplename )
-        rd = join( read, runname )
-        rw = join( raw, runname )
-        os.mkdir(rbs)
-        os.mkdir(rd)
-        os.mkdir(rw)
+        rw, rd, rbs = self.make_dirs('MiSeq', runname, samplename)
 
         rawsample = '{}_S01_L001_R1_001.fastq.gz'.format(samplename)
         readsample = rawsample.replace( '.fastq.gz', '_2001_01_01.fastq' )
@@ -222,15 +321,8 @@ class TestRenameSanger( Base ):
         return rename_sanger( *args, **kwargs )
 
     def mock_sanger( self, runname, samplename ):
-        # Creates the full mockup of a sanger read through the data structure
-        read, raw = self.make_platform_dirs( 'Sanger' )
-        rbs = join( self.ReadsBySample, samplename )
-        rd = join( read, runname )
-        rw = join( raw, runname )
-        os.mkdir(rbs)
-        os.mkdir(rd)
-        os.mkdir(rw)
-
+        rw, rd, rbs = self.make_dirs('Sanger', runname, samplename)
+        
         sample = '{}_F1_2001_01_01_Den1_Den1_0001_A01'.format(samplename)
         rawfile = join( rw, sample+'.ab1' )
         ab1read = join( rd, sample+'.ab1' )
