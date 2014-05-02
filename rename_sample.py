@@ -17,15 +17,41 @@ import shutil
 
 def main( args ):
     preads = get_reads( args.ngsdata, args.origname )
-    for r in preads['Sanger']:
-        print r
-        rename_sanger( r, args.origname, args.newname, args.ngsdata )
+    funcs = {
+        'Sanger': rename_sanger,
+        'MiSeq': rename_miseq
+    }
+    for p, reads in preads.iteritems():
+        for rs in reads:
+            # Miseq returns tuple of paired read so normalize here
+            for r in list(rs):
+                print r
+                funcs[p]( r, args.origname, args.newname, args.ngsdata )
 
 def get_reads( ngsdata, samplename ):
     rbs = join( ngsdata, 'ReadsBySample' )
     rbsdir = join( rbs, samplename )
     platreads = data.reads_by_plat( rbsdir )
     return platreads
+
+def rename_miseq( rbsfile, old, new, ngsdata ):
+    '''
+        Rename files
+    '''
+    rund, readp = runread_path( os.readlink(rbsfile), 'MiSeq' )
+    rawd = join( ngsdata, 'RawData', 'MiSeq', rund )
+    rbsd = dirname( rbsfile )
+    bcdir = join( rawd, 'Data', 'Intensities', 'BaseCalls' )
+    # Raw file is fastq.gz without the date before it
+    rawfilename = re.sub( '_\d{4}_\d{2}_\d{2}.fastq', '.fastq.gz', readp )
+    rawfile = join( bcdir, rawfilename )
+    newrbsd = join( dirname(rbsd), new )
+    if not isdir( newrbsd ):
+        os.mkdir( newrbsd )
+    # Rename link and link dest
+    rename_file( rbsfile, old, new )
+    # Rename the rawfile
+    rename_file( rawfile, old, new )
 
 def rename_sanger( rbsfile, old, new, ngsdata ):
     '''

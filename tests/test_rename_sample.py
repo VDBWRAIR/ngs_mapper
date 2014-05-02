@@ -10,6 +10,7 @@ class Base( common.BaseClass ):
         '../../RawData',
     )
     # All possible variations of names
+    # Paths are the ReadData paths to the reads
     platforms = {
         'Sanger': [
             ('Run_3130xl_something','sample_1_F1_2001_01_01_Den1_Den1_0001_A01.fastq'),
@@ -17,11 +18,32 @@ class Base( common.BaseClass ):
         'Roche454': [
             ('R_2013_10_11_16_42_14_FLX12070283_Administrator_10112013_Den1','D_2013_10_12_12_57_22_vnode_signalProcessing/demultiplexed/2/00356_06__2__RL9__2013_10_11__Den1.sff'),
             ('R_2013_10_11_16_42_14_FLX12070283_Administrator_10112013_Den1','D_2013_10_12_12_57_22_vnode_signalProcessing/demultiplexed/00356_06__2__RL9__2013_10_11__Den1.sff'),
+        ],
+        'MiSeq': [
+            ('131217_M02261_0005_000000000-A6F07', '06564-98_S93_L001_R1_001_2013_12_17.fastq')
         ]
     }
 
     def print_tempdir( self ):
         print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
+
+    def create_ngs( self ):
+        self.ngs = 'NGSData'
+        self.dirs = ('ReadsBySample', 'ReadData', 'RawData')
+        for d in self.dirs:
+            v = join( self.ngs, d )
+            setattr(self,d,v)
+            os.makedirs(v)
+
+    def make_platform_dirs( self, platform ):
+        self.create_ngs()
+        pdirs = []
+        for d in self.dirs:
+            if 'ReadsBySample' not in d:
+                v = join( self.ngs, d, platform )
+                os.makedirs( v )
+                pdirs.append( v )
+        return pdirs
 
 class TestRunReadPath( Base ):
     def _C( self, *args, **kwargs ):
@@ -151,28 +173,53 @@ class TestRenameFile( Base ):
         ok_( exists( 'some1file.txt' ), 'Link was not renamed' )
         ok_( exists(join('files','some1file.txt')), 'Actual file was not renamed' )
 
+@attr('current')
+class TestRenameMiSeq( Base ):
+    def _C( self, *args, **kwargs ):
+        from rename_sample import rename_miseq
+        return rename_miseq( *args, **kwargs )
+
+    def mock_miseq( self, runname, samplename ):
+        read, raw = self.make_platform_dirs( 'MiSeq' )
+        rbs = join( self.ReadsBySample, samplename )
+        rd = join( read, runname )
+        rw = join( raw, runname )
+        os.mkdir(rbs)
+        os.mkdir(rd)
+        os.mkdir(rw)
+
+        rawsample = '{}_S01_L001_R1_001.fastq.gz'.format(samplename)
+        readsample = rawsample.replace( '.fastq.gz', '_2001_01_01.fastq' )
+
+        bcdir = join( rw, 'Data', 'Intensities', 'BaseCalls' )
+        os.makedirs( bcdir )
+
+        rawfile = join( bcdir, rawsample )
+        fqread = join( rd, readsample )
+        fqrbs = join( rbs, readsample )
+        touch(rawfile)
+        touch(fqread)
+        os.symlink( relpath(fqread,rbs), fqrbs )
+
+        return rawfile, fqread, fqrbs
+
+    def test_renames( self ):
+        samplename = 'sample_1'
+        run = 'miseqrun'
+        files = self.mock_miseq( run, samplename )
+        raw, read, rbs = files
+        self.print_tempdir()
+        self._C( rbs, samplename, samplename+'rename', 'NGSData' )
+        self.print_tempdir()
+        for f in files:
+            ok_( not exists(f), '{} still exists'.format(f) )
+            newp = f.replace(samplename,samplename+'rename')
+            ok_( exists(newp), '{} did not get created' )
+
 class TestRenameSanger( Base ):
     def _C( self, *args, **kwargs ):
         from rename_sample import rename_sanger
         return rename_sanger( *args, **kwargs )
-    
-    def create_ngs( self ):
-        self.ngs = 'NGSData'
-        self.dirs = ('ReadsBySample', 'ReadData', 'RawData')
-        for d in self.dirs:
-            v = join( self.ngs, d )
-            setattr(self,d,v)
-            os.makedirs(v)
-
-    def make_platform_dirs( self, platform ):
-        self.create_ngs()
-        pdirs = []
-        for d in self.dirs:
-            if 'ReadsBySample' not in d:
-                v = join( self.ngs, d, platform )
-                os.makedirs( v )
-                pdirs.append( v )
-        return pdirs
 
     def mock_sanger( self, runname, samplename ):
         # Creates the full mockup of a sanger read through the data structure
@@ -183,6 +230,7 @@ class TestRenameSanger( Base ):
         os.mkdir(rbs)
         os.mkdir(rd)
         os.mkdir(rw)
+
         sample = '{}_F1_2001_01_01_Den1_Den1_0001_A01'.format(samplename)
         rawfile = join( rw, sample+'.ab1' )
         ab1read = join( rd, sample+'.ab1' )
@@ -190,7 +238,6 @@ class TestRenameSanger( Base ):
         ab1rbs = join( rbs, sample+'.ab1' )
         fqrbs = join( rbs, sample+'.fastq' )
         touch(rawfile)
-        touch(fqread)
         touch(fqread)
         os.symlink( relpath(rawfile,rd), ab1read )
         os.symlink( relpath(ab1read,rbs), ab1rbs )
