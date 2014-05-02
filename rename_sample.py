@@ -115,7 +115,10 @@ def rename_file( path, find, replace ):
 
         If path is a symlink then replace both the symlink and the file it points to
     '''
-    newp = path.replace( find, replace )
+    if isdir(dirname(path)):
+        newp = path.replace( os.sep+find, os.sep+replace )
+    else:
+        newp = path.replace( find, replace )
     if os.path.islink( path ):
         # Resolve the symlink correctly
         # resolves relative to this directory

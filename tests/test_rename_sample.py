@@ -136,6 +136,7 @@ class TestRenameFile( Base ):
         from rename_sample import rename_file
         return rename_file( *args, **kwargs )
 
+    @attr('current')
     def test_symlinksymlink( self ):
         f = 'somefile.txt'
         s1 = join( 'sym1', f )
@@ -154,7 +155,7 @@ class TestRenameFile( Base ):
         print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
 
         # Try to rename a symlink -> symlink -> file
-        self._C( s2, 'file', '1' )
+        self._C( s2, 'somefile', 'some1' )
     
         print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
         ok_( exists( join('sym2','some1.txt') ), 'Did not rename sym2 file' )
@@ -182,6 +183,18 @@ class TestRenameFile( Base ):
 
         ok_( exists( 'some1file.txt' ), 'Link was not renamed' )
         ok_( exists(join('files','some1file.txt')), 'Actual file was not renamed' )
+
+    @attr('current')
+    def test_dir_contains_fromstr( self ):
+        # Only replace when the replace string is immediately preceeded by os.sep
+        f = join( 'Run_3130xl', '313', '313.txt' )
+        os.makedirs( dirname(f) )
+        touch( f )
+        e = join( 'Run_3130xl', 'replaced', 'replaced.txt' )
+        os.makedirs(dirname(e))
+        self._C( f, '313', 'replaced' )
+        ok_( not exists(f.replace('313','replaced')), 'Incorrectly replaced replace string' )
+        ok_( exists(e), '{} was not created'.format(e) )
 
 class TestRenameRoche( Base ):
     def _C( self, *args, **kwargs ):
