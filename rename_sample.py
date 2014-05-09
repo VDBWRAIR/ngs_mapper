@@ -109,6 +109,7 @@ def resolve_symlink( path ):
     resolved = relpath( apath )
     return resolved
 
+class RenameException(Exception): pass
 def rename_file( path, find, replace ):
     '''
         Replace find in path with replace
@@ -130,6 +131,8 @@ def rename_file( path, find, replace ):
         os.unlink( path )
         os.symlink( nf, newp )
     elif os.path.isfile( path ):
+        if exists( newp ):
+            raise RenameException( '{} already exists. Refusing to overwrite it. Please inspect this situation'.format(newp) )
         shutil.move(path,newp)
     else:
         raise Exception("{} is not a valid path".format(path))

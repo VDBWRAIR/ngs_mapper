@@ -1,5 +1,6 @@
 from imports import *
 import common
+from rename_sample import RenameException
 
 class Base( common.BaseClass ):
     # All possible base paths that might be seen
@@ -136,7 +137,6 @@ class TestRenameFile( Base ):
         from rename_sample import rename_file
         return rename_file( *args, **kwargs )
 
-    @attr('current')
     def test_symlinksymlink( self ):
         f = 'somefile.txt'
         s1 = join( 'sym1', f )
@@ -184,7 +184,6 @@ class TestRenameFile( Base ):
         ok_( exists( 'some1file.txt' ), 'Link was not renamed' )
         ok_( exists(join('files','some1file.txt')), 'Actual file was not renamed' )
 
-    @attr('current')
     def test_dir_contains_fromstr( self ):
         # Only replace when the replace string is immediately preceeded by os.sep
         f = join( 'Run_3130xl', '313', '313.txt' )
@@ -195,6 +194,28 @@ class TestRenameFile( Base ):
         self._C( f, '313', 'replaced' )
         ok_( not exists(f.replace('313','replaced')), 'Incorrectly replaced replace string' )
         ok_( exists(e), '{} was not created'.format(e) )
+
+    @attr('current')
+    @raises(RenameException)
+    def test_newp_exists( self ):
+        # Existing file
+        f = join( 'Run_3130xl', 'file1.txt' )
+        ref = join( 'file1', 'file1.txt' )
+        os.makedirs( dirname(f) )
+        os.makedirs( dirname(ref) )
+        touch( f )
+        os.symlink( f, ref )
+        # File to rename to existing file
+        f2 = join( 'Run_3130xl', 'file2.txt' )
+        f2s = join( 'file2', 'file2.txt' )
+        os.makedirs( dirname(f2s) )
+        touch( f2 )
+        os.symlink( f2, f2s )
+        self._C( f2, 'file2', 'file1' )
+        self.print_tempdir()
+        ok_( exists(f2s), 'Broken symlink' )
+        ok_( exists(f2), 'Removed f2 when it should not have' )
+        ok_( samefile(f,f2), 'Overwrote f with f2' )
 
 class TestRenameRoche( Base ):
     def _C( self, *args, **kwargs ):
@@ -252,7 +273,6 @@ class TestRenameRoche( Base ):
 
         return rawfile, readfile, rbsfile
 
-    @attr('current')
     def test_renames_roche_byregion( self ):
         files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=True )
         rw, rd, rbs = files
@@ -266,7 +286,6 @@ class TestRenameRoche( Base ):
         newp = rbs.replace( 'sample1', 'sample_1' )
         ok_( exists(newp), '{} does not exist'.format(rbs) )
 
-    @attr('current')
     def test_renames_roche_noregion( self ):
         files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=False )
         rw, rd, rbs = files
@@ -279,7 +298,6 @@ class TestRenameRoche( Base ):
         newp = rbs.replace( 'sample1', 'sample_1' )
         ok_( exists(newp), '{} does not exist'.format(rbs) )
 
-    @attr('current')
     def test_renames_roche_symlinkrawdata( self ):
         files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=False, rbsraw=True )
         rw, rd, rbs = files
