@@ -178,13 +178,13 @@ class TestUnitCaller(Base):
         return caller( stats2, minbq, maxd, mind, minth )
 
     def test_no_majority( self ):
+        # No > 0.8 majority, so call anything > 0.2 which should only be A
         base_stats = {
             'A': { 'baseq': [25]*76 },
             'G': { 'baseq': [25]*12 },
             'C': { 'baseq': [25]*12 }
         }
         stats = self.make_stats( base_stats )
-        # No > 0.8 majority, so call anything > 0.2 which should only be A
         eq_( ('A',76), self._C( stats, 25, 100000, 10, 0.8 ) )
 
     def test_calls_multiple_ambiguous( self ):
@@ -479,6 +479,58 @@ class TestUnitGenerateVcfRow(MpileBase):
         return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias )
 
     @attr('current')
+    def test_issue_1012_calls_alt_or_ref( self, mpilecol ):
+        base_stats = {
+            'C': {'baseq':[40]*50+[1]*10},
+            '*': {'baseq':[40]*45},
+            'G': {'baseq':[40]*1},
+            'A': {'baseq':[40]*1},
+            'N': {'baseq':[0]*1},
+            'T': {'baseq':[20]*1}
+        }
+        stats = self.make_stats( base_stats )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+    
+        # Ensure Reference is called
+        r = self._C( mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10 )
+        eq_( 'C', r.INFO['CB'] )
+        eq_( 50, r.INFO['CBD'] )
+
+        # Ensure Alt is called
+        r = self._C( mpilecol, 'G', 25, 1000, 10, 0.8, 50, 10 )
+        eq_( 'C', r.INFO['CB'] )
+        eq_( 50, r.INFO['CBD'] )
+
+    @attr('current')
+    def test_issue_1012_calls_n( self, mpilecol ):
+        base_stats = {
+            'C': {'baseq':[40]*45},
+            '*': {'baseq':[40]*50},
+            'G': {'baseq':[40]*1},
+            'A': {'baseq':[40]*1},
+            'N': {'baseq':[0]*1},
+            'T': {'baseq':[20]*1}
+        }
+        stats = self.make_stats( base_stats )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10 )
+        eq_( 'N', r.INFO['CB'] )
+        eq_( 50, r.INFO['CBD'] )
+
+    @attr('current')
+    def test_issue_1012_alt_count_sum_50_ref_50( self, mpilecol ):
+        # Gap and other base depth == 50% as well, but still should call C
+        base_stats = {
+            'C': {'baseq':[40]*50},
+            '*': {'baseq':[40]*25},
+            'G': {'baseq':[40]*25},
+        }
+        stats = self.make_stats( base_stats )
+        self.setup_mpileupcol( mpilecol, stats=stats )
+        r = self._C( mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10 )
+        eq_( 'C', r.INFO['CB'] )
+        eq_( 50, r.INFO['CBD'] )
+
     def test_thing( self, mpilecol ):
         base_stats = {
             'T': {'baseq':[29, 35, 37, 32]}

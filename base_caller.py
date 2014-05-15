@@ -158,12 +158,13 @@ def parse_args( args=sys.argv[1:] ):
 
 def mark_lq( stats, minbq, mind, refbase ):
     '''
-        Labels all qualities < minbq as ?
         Goes through all keys in the stats dictionary that are not in ('depth','mqualsum','bqualsum')
         which should be keys that represent nucleotide bases. Those keys then point to a dictionary
         that contain 'mapq': [] and 'baseq': []
-
-        Creating a new base called N or ? depending on the overall depth(N for < mind and ? for > mind)
+        Creating a new base called N or ? depending on the overall depth
+            - N for < mind & not refbase
+            - Base for < mind & refbase
+            - ? for > mind
         If the base is the reference base and < mind then the base will be preserved to bias the reference in low coverage areas
 
         @param stats - Stats dictionary returned from stats_at_refpos.stats
@@ -183,17 +184,21 @@ def mark_lq( stats, minbq, mind, refbase ):
         if base not in ('depth','mqualsum','bqualsum'):
             # generates a list called bquals
             bquals = quals['baseq']
-            # loop to examine the quality score and identifyes bases with a quality score less than the minbq of 25
+            # loop to examine the quality score and identifyes bases with a quality score less than the minbq
             for q in bquals:
+                # Copy base so we can modify if needed without destroying original base
                 k = base
                 if q < minbq:
+                    # Determine base to use since this base is low quality
                     if stats2['depth'] < mind:
                         if base != refbase:
+                            # N since low qual and low depth
                             k = 'N'
                         else:
-                            # Redundant but easier to see
+                            # Bias reference base
                             k = base
                     else:
+                        # Base is unknown
                         k = '?'
                 # adds the N to the nucleotides (A C G T and N)
                 if k not in stats2:
@@ -421,7 +426,7 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
     # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
     # Holds the info dictionary in order
     info = {}
-    # Alternate info
+    # Alternate base stats info
     alt_info = info_stats( stats2, rb )
     alt_bases = alt_info['bases']
     # Only merge if there is something to merge
@@ -451,6 +456,9 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
 
     # Get Called Base Info
     cb, cbd = caller( stats2, minbq, maxd, mind, minth )
+    # Re-evaluate an N call if gaps are involved
+    if '*' in stats2 and cb == 'N':
+        cb, cbd = caller( stats2, minbq, maxd, mind, 0.51 )
 
     # Set the Called base
     info['CB'] = cb
@@ -469,6 +477,7 @@ def caller( stats2, minbq, maxd, mind=10, minth=0.8 ):
         Calls a given base at refstr inside of bamfile. At this time refstr has to be a single
         base position('refname':N-N). The base is determined by first labeling all bases less than minbq as N and then
         determining if the depth is < mind or >= mind.
+        
         If < and the % of N is > minth then call it an N as it is the majority.
         If >= 10 then remove all N
 
@@ -519,7 +528,7 @@ def call_on_pct( stats2, minth=0.8 ):
             np_2 = len(bquals)/(stats2['depth']*1.0)
             # fix for proper calculations with float
             # If basepercent is greater than minimum threashold
-            if np_2 > round((1-minth),1):
+            if np_2 > round((1-minth),2):
                 nt_list += base
                 count += len(bquals)
     dnalist = sorted(nt_list)
