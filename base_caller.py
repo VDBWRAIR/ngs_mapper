@@ -426,7 +426,7 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
     # info needs to contrain the depth, ref count #, % ref count, Ave ref qual, alt count #, % ref count, Ave alf qual
     # Holds the info dictionary in order
     info = {}
-    # Alternate base stats info
+    # Alternate base stats info(PAC,AC,AAQ...)
     alt_info = info_stats( stats2, rb )
     alt_bases = alt_info['bases']
     # Only merge if there is something to merge
@@ -535,9 +535,8 @@ def call_on_pct( stats2, minth=0.8 ):
     try:
         return (iupac_amb(dnalist), count)
     except ValueError as e:
-        # Only depth from bases for the N
         if dnalist:
-            ndepth = sum([len(stats2[b]['baseq']) for b in dnalist])
+            ndepth = count
         else:
             ndepth = stats2.get( 'depth', 0 )
         return ('N', ndepth)
