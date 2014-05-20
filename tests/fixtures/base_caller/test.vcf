@@ -8,6 +8,7 @@
 ##INFO=<ID=PAC,Number=A,Type=Integer,Description="Percentage Alternate Count">
 ##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
 ##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
+##INFO=<ID=HPOLY,Number=0,Type=Flag,Description="Is a homopolymer">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	test.bam
 Ref1	1	.	A	.	.	.	DP=9;RC=9;RAQ=40;PRC=100;CBD=9;CB=A
 Ref1	2	.	C	A	.	.	DP=9;RC=1;RAQ=40;PRC=11;AC=8;AAQ=40;PAC=89;CBD=8;CB=A
@@ -25,11 +26,11 @@ Ref2	5	.	A	G,T	.	.	DP=3;RC=1;RAQ=40;PRC=33;AC=1,1;AAQ=40,40;PAC=33,33;CBD=3;CB=D
 Ref2	6	.	C	.	.	.	DP=1;RC=1;RAQ=40;PRC=100;CBD=1;CB=C
 Ref2	7	.	G	.	.	.	DP=11;RC=11;RAQ=40;PRC=100;CBD=11;CB=G
 Ref2	8	.	T	.	.	.	DP=11;RC=11;RAQ=40;PRC=100;CBD=11;CB=T
-Ref3	1	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-
-Ref3	2	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-
-Ref3	3	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-
-Ref3	4	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-
-Ref3	5	.	A	.	.	.	DP=1;RC=1;RAQ=1;PRC=100;CBD=1;CB=A
-Ref3	6	.	A	.	.	.	DP=1;RC=1;RAQ=1;PRC=100;CBD=1;CB=A
-Ref3	7	.	A	.	.	.	DP=1;RC=1;RAQ=1;PRC=100;CBD=1;CB=A
-Ref3	8	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-
+Ref3	1	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-;HPOLY
+Ref3	2	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-;HPOLY
+Ref3	3	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-;HPOLY
+Ref3	4	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-;HPOLY
+Ref3	5	.	A	.	.	.	DP=1;RC=1;RAQ=1;PRC=100;CBD=1;CB=A;HPOLY
+Ref3	6	.	A	.	.	.	DP=1;RC=1;RAQ=1;PRC=100;CBD=1;CB=A;HPOLY
+Ref3	7	.	A	.	.	.	DP=1;RC=1;RAQ=1;PRC=100;CBD=1;CB=A;HPOLY
+Ref3	8	.	A	.	.	.	DP=0;RC=0;RAQ=0;PRC=0;CBD=0;CB=-;HPOLY

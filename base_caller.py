@@ -23,6 +23,7 @@ VCF_HEAD = '''##fileformat=VCFv4.2
 ##INFO=<ID=PAC,Number=A,Type=Integer,Description="Percentage Alternate Count">
 ##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
 ##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
+##INFO=<ID=HPOLY,Number=0,Type=Flag,Description="Is a homopolymer">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{}'''
 
 def timeit( func ):
@@ -206,6 +207,29 @@ def mark_lq( stats, minbq, mind, refbase ):
                 stats2[k]['baseq'].append( q )
     return stats2
 
+def hpoly_list( refseqs, minlength=3 ):
+    '''
+    Identify all homopolymer regions inside of each sequence in refseqs
+
+    @param refseqs - Bio.SeqIO.index'd fasta
+    '''
+    hpolys = {}
+    p = r'([ATGC])\1{'+str(minlength-1)+',}'
+    for seq in refseqs:
+        matches = re.finditer( p, str(refseqs[seq].seq) )
+        hpolys[seq] = [(m.group(0),m.start()+1,m.end()) for m in matches]
+    return hpolys
+
+def is_hpoly( hpolylist, seqid, curpos ):
+    '''
+    Identifies if a position is contained inside of a homopolymer
+    '''
+    l = hpolylist[seqid]
+    for polys in l:
+        if curpos >= polys[1] and curpos <= polys[2]:
+            return True
+    return False
+
 def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=10, vcf_template=VCF_HEAD ):
     '''
         Generates a vcf file from a given vcf_template file
@@ -224,6 +248,8 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
     '''
     # All the references indexed by the seq.id(first string after the > in the file until the first space)
     refseqs = SeqIO.index( reffile, 'fasta' )
+    # Homopolymers for references
+    hpolys = hpoly_list( refseqs, 3 )
     # Our pretend file object that has vcf stuff in it
     vcf_head = StringIO( vcf_template )
     vcf_head.name = 'header.vcf'
@@ -252,6 +278,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         curpos = col.pos
         # The reference we are iterating on
         refseq = refseqs[col.ref].seq
+        # Homopolymer regions for sequence
         # Set lastref if we are on first iteration
         if lastref == '':
             lastref = col.ref
@@ -261,14 +288,22 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
             # Insert from lastposition of lastref to end of reference
             # len+1 so that it inserts single bases at the end
             for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
+                if is_hpoly( hpolys, col.ref, rec.POS ):
+                    rec.INFO['HPOLY'] = True
                 out_vcf.write_record( rec )
             lastref = col.ref
             lastpos = 0
         # Insert depth 0 regions
         for rec in blank_vcf_rows( col.ref, refseq, col.pos, lastpos, '-' ):
+            if is_hpoly( hpolys, col.ref, rec.POS ):
+                rec.INFO['HPOLY'] = True
             out_vcf.write_record( rec )
         # Generate the vcf frow for that column
         row = generate_vcf_row( col, refseq, minbq, maxd, mind, minth, biasth, bias )
+        if is_hpoly( hpolys, col.ref, curpos ):
+            if row.INFO['CB'] == 'N':
+                row = generate_vcf_row( col, refseq, 10, maxd, 2, 0.5, biasth, bias )
+            row.INFO['HPOLY'] = True
         # Write the record to the vcf file
         out_vcf.write_record( row )
         # Set last position seen
@@ -278,6 +313,8 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         # Insert from lastposition of lastref to end of reference
         # len+1 so that it inserts single bases at the end
         for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
+            if is_hpoly( hpolys, col.ref, rec.POS ):
+                rec.INFO['HPOLY'] = True
             out_vcf.write_record( rec )
 
     # Close the file

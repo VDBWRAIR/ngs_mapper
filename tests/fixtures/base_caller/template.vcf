@@ -8,4 +8,5 @@
 ##INFO=<ID=PAC,Number=A,Type=Integer,Description="Percentage Alternate Count">
 ##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
 ##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
+##INFO=<ID=HPOLY,Number=0,Type=Flag,Description="Is a homopolymer">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT

@@ -45,6 +45,73 @@ class Base( common.BaseBaseCaller ):
 
         return stats
 
+class Hpoly( BaseClass ):
+    def make_hpoly_fasta( self, hlist ):
+        with open( 'ref.fasta', 'w' ) as fh:
+            seq = ['X'] * hlist[-1][-1]
+            for nucs, s, e in hlist:
+                   seq[s-1:e] = nucs
+            seq = ''.join( seq )
+            fh.write( '>ref\n{}\n'.format(seq) )
+        return 'ref.fasta'
+
+    def setUp( self ):
+        super(Hpoly, self).setUp()
+        #AAATAAAATAAAAA
+        self.hlist = [('AAA',1,3),('AAAA',5,8),('AAAAA',10,14)]
+        self.ref = self.make_hpoly_fasta( self.hlist )
+        self.seqs = SeqIO.index( self.ref, 'fasta' )
+
+@attr('current')
+class TestHpolyList( Hpoly ):
+    def _C( self, *args, **kwargs ):
+        from base_caller import hpoly_list
+        return hpoly_list( *args, **kwargs )
+
+    def make_list( self, hpolys ):
+        # easier to compare
+        r = {}
+        for s in hpolys:
+            r[s] = list(hpolys[s])
+        return r
+
+    def test_single_sequence( self ):
+        r = self._C( self.seqs, 3 )
+        r = self.make_list( r )
+        eq_( {'ref':self.hlist}, r )
+
+    def test_minlength( self ):
+        r = self._C( self.seqs, 4 )
+        r = self.make_list( r )
+        eq_( {'ref':self.hlist[1:]}, r )
+
+@attr('current')
+class TestIsHpoly( Hpoly ):
+    def setUp( self ):
+        super( TestIsHpoly, self ).setUp()
+        from base_caller import hpoly_list
+        self.hpoly = hpoly_list( self.seqs, 3 )
+
+    def _C( self, *args, **kwargs ):
+        from base_caller import is_hpoly
+        return is_hpoly( *args, **kwargs )
+
+    def test_( self ):
+        ok_( self._C( self.hpoly, 'ref', 1 ) )
+        ok_( self._C( self.hpoly, 'ref', 2 ) )
+        ok_( self._C( self.hpoly, 'ref', 3 ) )
+        ok_( not self._C( self.hpoly, 'ref', 4 ) )
+        ok_( self._C( self.hpoly, 'ref', 5 ) )
+        ok_( self._C( self.hpoly, 'ref', 6 ) )
+        ok_( self._C( self.hpoly, 'ref', 7 ) )
+        ok_( self._C( self.hpoly, 'ref', 8 ) )
+        ok_( not self._C( self.hpoly, 'ref', 9 ) )
+        ok_( self._C( self.hpoly, 'ref', 10 ) )
+        ok_( self._C( self.hpoly, 'ref', 11 ) )
+        ok_( self._C( self.hpoly, 'ref', 12 ) )
+        ok_( self._C( self.hpoly, 'ref', 13 ) )
+        ok_( self._C( self.hpoly, 'ref', 14 ) )
+
 class StatsBase(Base):
     def setUp( self ):
         super( StatsBase, self ).setUp()
@@ -478,7 +545,6 @@ class TestUnitGenerateVcfRow(MpileBase):
         from base_caller import generate_vcf_row
         return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias )
 
-    @attr('current')
     def test_issue_1012_calls_alt_or_ref( self, mpilecol ):
         base_stats = {
             'C': {'baseq':[40]*50+[1]*10},
@@ -501,7 +567,6 @@ class TestUnitGenerateVcfRow(MpileBase):
         eq_( 'C', r.INFO['CB'] )
         eq_( 50, r.INFO['CBD'] )
 
-    @attr('current')
     def test_issue_1012_calls_n( self, mpilecol ):
         base_stats = {
             'C': {'baseq':[40]*45},
@@ -517,7 +582,6 @@ class TestUnitGenerateVcfRow(MpileBase):
         eq_( 'N', r.INFO['CB'] )
         eq_( 50, r.INFO['CBD'] )
 
-    @attr('current')
     def test_issue_1012_alt_count_sum_50_ref_50( self, mpilecol ):
         # Gap and other base depth == 50% as well, but still should call C
         base_stats = {

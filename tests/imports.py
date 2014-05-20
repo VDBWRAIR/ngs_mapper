@@ -12,6 +12,8 @@ from mock import Mock, MagicMock, patch
 from nose.tools import eq_, ok_, raises, timed
 from nose.plugins.attrib import attr
 
+from Bio import SeqIO
+
 import common
 import fixtures
 from fixtures import THIS
