@@ -15,7 +15,8 @@ THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Run the installer if needed
 if [ ! -e ${THIS}/.virtpath ]
 then
-    bash ${THIS}/install.sh ${virtpath}
+    echo "Running one time installer"
+    bash ${THIS}/install.sh
     if [ $? -ne 0 ]
     then
         return
