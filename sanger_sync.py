@@ -9,7 +9,7 @@ import re
 import sys
 
 import log
-logger = log.setup_logger( __name__, log.get_config() )
+logger = log.setup_logger( basename(__file__), log.get_config() )
 
 # For invalid formatted filenames
 class InvalidFormat(Exception): pass
