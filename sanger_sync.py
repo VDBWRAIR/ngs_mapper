@@ -1,9 +1,12 @@
+#!/usr/bin/env python
+
 import shutil
 from os.path import *
 import os
 from glob import glob
 from Bio import SeqIO
 import re
+import sys
 
 import log
 logger = log.setup_logger( __name__, log.get_config() )
@@ -12,7 +15,13 @@ logger = log.setup_logger( __name__, log.get_config() )
 class InvalidFormat(Exception): pass
 
 def sync_sanger( runpath, ngsdata ):
-    pass
+    rund = basename( runpath )
+    rawd = join( ngsdata, 'RawData', 'Sanger', rund )
+    readd = join( ngsdata, 'ReadData', 'Sanger', rund )
+
+    sync_run( runpath, ngsdata )
+    sync_readdata( rawd, ngsdata )
+    link_reads( readd, ngsdata )
 
 def sync_run( runpath, ngsdata ):
     '''
@@ -65,13 +74,13 @@ def sync_readdata( rawdir, ngsdata ):
             cd = os.getcwd()
             os.symlink( lnk, rdpath )
         else:
-            logger.info( '{} already existed so it was skipped'.format(rdpath) )
+            logger.info( 'Skipping existing abi file {}'.format(rdpath) )
         fqpath = rdpath.replace('.ab1', '.fastq' )
         if not exists( fqpath ):
             logger.info( 'Converting {} to fastq {}'.format(rdpath,fqpath) )
             SeqIO.convert( rdpath, 'abi', fqpath, 'fastq' )
         else:
-            logger.info( '{} already existed so it was skipped'.format(fqpath) )
+            logger.info( 'Skipping existing fastq file {}'.format(fqpath) )
 
 def samplename_from_read( filepath ):
     p = '(\S+?)_[FR]\d+_\d{4}_\d{2}_\d{2}_\S+?_\S+?_[A-H]\d{2}.(fastq|ab1)'
@@ -80,24 +89,52 @@ def samplename_from_read( filepath ):
         raise InvalidFormat( '{} is not a valid Sanger filename'.format(filepath) )
     return m.groups(0)[0]
 
+def link_reads( readdata, ngsdata ):
+    '''
+    Ensures that all files from readdata are symlinked into ReadsBySample/SampleName/
+    Does not overwrite existing links
 
+    @param readdata - ReadData/Sanger/Rund path
+    @param ngsdata - Root path to NGSData directory
+    '''
+    read_files = glob( join( readdata, '*' ) )
+    rbs_root = join( ngsdata, 'ReadsBySample' )
+    for read in read_files:
+        sn = samplename_from_read( read )
+        rbs = join( rbs_root, sn )
+        lnk = relpath( read, rbs )
+        rdpath = join( rbs, basename( read ) )
+        if not isdir( rbs ):
+            os.makedirs( rbs )
+        if not islink( rdpath ):
+            logger.info( 'Symlinking {} to {}'.format(rdpath, lnk) )
+            os.symlink( lnk, rdpath )
+        else:
+            logger.info( 'Skipping existing file {}'.format(rdpath) )
 
+def main( args ):
+    sync_sanger( args.runpath, args.ngsdata )
 
+def parse_args( args=sys.argv[1:] ):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='Syncs Sanger Run_ directories into the NGSData structure'
+    )
 
+    ngsdata = '/home/EIDRUdata/NGSData'
+    parser.add_argument(
+        '--ngsdata',
+        dest='ngsdata',
+        default=ngsdata,
+        help='NGSData root path'
+    )
 
+    parser.add_argument(
+        'runpath',
+        help='Path to Sanger Run_3130xl directory'
+    )
 
+    return parser.parse_args( args )
 
-
-
-
-'''
- for r in reads:
-...   sn = re.match( '(\S+?)_[FR]\d*', basename(r) ).groups(1)[0]
-...   run = dirname( r )
-...   lnk = relpath( r, join('/home','EIDRUdata','NGSData', 'ReadsBySample', sn ) )
-...   sd = join( '/home', 'EIDRUdata', 'NGSData', 'ReadsBySample', sn )
-...   if not isdir( sd ):
-...     os.makedirs( sd )
-...   os.symlink( lnk, join( sd, basename(r) ) )
-
-'''
+if __name__ == '__main__':
+    main( parse_args() )

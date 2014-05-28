@@ -61,21 +61,22 @@ class Base( common.BaseClass ):
             a = join( readd, abi )
             ok_( islink( a ), '{} is not a valid file/symlink'.format(a) )
             j = a.replace('.ab1', '.fastq')
-            self.print_ngs()
             ok_( isfile( j ), 'Fastq version of {} does not exist'.format(j) )
 
     def print_ngs( self ):
-        print subprocess.check_output( 'find .', shell=True )
+        print subprocess.check_output( 'find . -ls', shell=True )
 
     def check_rbs( self, abilist, rbs ):
         ''' abilist is just basename list of abi files expected '''
+        from sanger_sync import samplename_from_read
+        self.print_ngs()
         for abi in abilist:
-            sn = re.search( '(\S+?)_[RF]\d', abi ).groups(1)[0]
+            sn = samplename_from_read( abi )
             rbsd = join( rbs, sn )
             read = join( rbsd, abi )
-            ok_( islink( read ), '{} is not a valid symlink'.format(read) )
+            ok_( islink( read ), '{}({}) is not a valid symlink'.format(read,os.readlink(read)) )
             fastq = read.replace('.ab1','.fastq')
-            ok_( islink( fastq ), '{} is not a valid symlink'.format(fastq) )
+            ok_( islink( fastq ), '{}({}) is not a valid symlink'.format(fastq,os.readlink(read)) )
 
 class TestSync( Base ):
     def _C( self, *args, **kwargs ):
@@ -86,6 +87,23 @@ class TestSync( Base ):
         rund, samples, abilist = self.make_from_dir()
         ngsdata = 'NGSData'
         self._C( rund, ngsdata )
+        self.check_rawdata( abilist, join(ngsdata,'RawData','Sanger',rund) )
+        self.check_rawdata( abilist, join(ngsdata,'ReadData','Sanger',rund) )
+        self.check_rbs( abilist, join(ngsdata,'ReadsBySample') )
+
+class TestFunctional( Base ):
+    def _C( self, args ):
+        script = TestFunctional.script_path( 'sanger_sync.py' )
+        cmd = script + ' ' + args
+        return TestFunctional.run_script( cmd )
+
+    def test_runscorrectly( self ):
+        rund, samples, abilist = self.make_from_dir()
+        ngsdata = 'NGSData'
+        args = '--ngsdata {} {}'.format(ngsdata, rund)
+        retcode, output = self._C( args )
+        eq_( 0, retcode, output )
+        self.print_ngs()
         self.check_rawdata( abilist, join(ngsdata,'RawData','Sanger',rund) )
         self.check_rawdata( abilist, join(ngsdata,'ReadData','Sanger',rund) )
         self.check_rbs( abilist, join(ngsdata,'ReadsBySample') )
@@ -140,12 +158,26 @@ class TestLinkReads( Base ):
         self.check_rbs( abilist, rbs )
 
     def test_syncs_existing( self ):
+        from sanger_sync import samplename_from_read
         ngsdata = 'NGSData'
         reads, abilist, rund, rawd, readd = self._syncrunread( ngsdata )
-        self._C( readd, ngsdata )
         rbs = join( 'NGSData', 'ReadsBySample' )
-        
+        # Now make one of the directories and ensure it was not recopied
+        read = join( readd, abilist[0] )
+        sn = samplename_from_read( read )
+        abi = join( rbs, sn, basename( read ) )
+        fq = abi.replace( '.ab1', '.fastq' )
+        touch('read.ab1')
+        touch('read.fq')
+        os.makedirs( dirname(abi) )
+        os.symlink('read.ab1',abi)
+        os.symlink('read.fq',fq)
+        self._C( readd, ngsdata )
         self.check_rbs( abilist, rbs )
+
+        # Should not have changed the link
+        eq_( 'read.ab1', os.readlink(abi) )
+        eq_( 'read.fq', os.readlink(fq) )
 
 class TestSyncRead( Base ):
     def _C( self, *args, **kwargs ):
