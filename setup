@@ -28,6 +28,9 @@ fi
 
 # Activate virtual environment
 . ${virtpath}/bin/activate
+# Now modify the PS1 even more than activate does
+gitrev=$(git rev-parse --short HEAD)
+PS1=${PS1/)/:$gitrev)}
 
 # Remember the old manpath
 _OLDMANPATH=$(manpath)
