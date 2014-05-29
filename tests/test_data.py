@@ -8,6 +8,7 @@ class Base(common.BaseClass):
         self.reads = {
             'Roche454': [
                 '1514A00101984N_CP2__1__TI5__2010_03_19__pH1N1.sff',
+                'Vero_WHO_S16803__RL45__2012_05_01__Den2.fastq'
             ],
             'IonTorrent': [
                 'Denv1_45AZ5_Virus_Lot1_82__1__IX031__2013_09_23__Den1.sff',

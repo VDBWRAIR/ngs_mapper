@@ -37,7 +37,7 @@ def platform_for_read( filepath ):
         @returns name of platform that filepath is for
     '''
     MAPPING = {
-        '\S+?__[0-9]__(?:TI|RL)\d+__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)': 'Roche454',
+        '\S+?(?:__[0-9]){0,1}__(?:TI|RL)\d+__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)': 'Roche454',
         '\S+?__[0-9]__IX\d{3}__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)': 'IonTorrent',
         '\S+?_[FR]\d+_\d{4}_\d{2}_\d{2}_\w+_\w+_\d{4}_[A-Z]\d{2}.(fastq|ab1)': 'Sanger',
         '\S+?_S\d+_L\d{3}_R\d_\d{3}_\d{4}_\d{2}_\d{2}.fastq': 'MiSeq'
