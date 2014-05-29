@@ -24,7 +24,7 @@ PLATFORMS = ('L454', 'IONTORRENT', 'ILLUMINA', 'CAPILLARY')
 ID_MAP = (
     re.compile( '[0-9A-Z]{14}' ),
     re.compile( '[A-Z0-9]{5}:\d{1,}:\d{1,}' ),
-    re.compile( 'M[0-9]{5}:\d:\d{9}-[A-Z0-9]{5}:\d:\d{4}:\d{4,5}:\d{4,5}' ),
+    re.compile( 'M[0-9]{5}:\d+:\d{9}-[A-Z0-9]{5}:\d:\d{4}:\d{4,5}:\d{4,5}' ),
     re.compile( '.*' )
 )
 # Read Group Template
