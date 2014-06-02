@@ -72,6 +72,15 @@ def parse_args( args=sys.argv[1:] ):
 
     return parser.parse_args( args )
 
+def make_project_repo( projpath ):
+    '''
+    Turn a project into a git repository. Basically just git init a project path
+    '''
+    gitdir = os.path.join( projpath, '.git' )
+    cmd = ['git', '--work-tree', projpath, '--git-dir', gitdir, 'init']
+    output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+    logger.info( output )
+
 def temp_projdir( prefix, suffix='runsample' ):
     '''
         Get a temporary directory that all files for the sample can be compiled into
@@ -126,6 +135,7 @@ def main( args ):
     if os.path.isdir( args.outdir ):
         if os.listdir( args.outdir ):
             raise AlreadyExists( "{} already exists and is not empty".format(args.outdir) )
+    make_project_repo( tdir )
 
     logger.info( "--- Starting {} --- ".format(args.prefix) )
     # Write all stdout/stderr to a logfile from the various commands
@@ -229,12 +239,15 @@ def main( args ):
             sys.exit( 1 )
         logger.info( "--- Finished {} ---".format(args.prefix) )
 
+        subprocess.call( 'git add -A', cwd=tdir, shell=True )
+        subprocess.call( 'git commit -am \'runsample.py\'', cwd=tdir, shell=True )
+
         logger.debug( "Moving {} to {}".format( tdir, args.outdir ) )
         # Cannot log any more below this line as the log file will be moved in the following code
         if not os.path.isdir( args.outdir ):
             shutil.move( tdir, args.outdir )
         else:
-            file_list = glob.glob( os.path.join( tdir, '*' ) )
+            file_list = [os.path.join(tdir,m) for m in os.listdir(tdir)]
             for f in file_list:
                 shutil.move( f, args.outdir )
 

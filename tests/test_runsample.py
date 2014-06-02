@@ -19,6 +19,16 @@ class Base(common.BaseBamRef):
         klass.ref = join( dirname(ref), 'reference.fa' )
         os.rename( ref, klass.ref )
 
+    def check_git_repo( self, path ):
+        gitdir = join( path, '.git' )
+        cmd = 'git status status'.format( path, gitdir )
+        try:
+            output = subprocess.check_output( cmd, cwd=path, stderr=subprocess.STDOUT, shell=True )
+            return 'Not a git repository' not in output
+        except subprocess.CalledProcessError as e:
+            print e.output
+            return False
+
 class TestUnitArgs(object):
     def _C( self, arglist ):
         from runsample import parse_args
@@ -97,6 +107,29 @@ class TestUnitTempProjdir(object):
         assert bn.startswith( 'shmtest' )
         assert bn.endswith( 'test' )
 
+@attr('current')
+@patch('runsample.logger',Mock())
+class TestMakeProjectRepo(Base):
+    def _C( self, *args, **kwargs ):
+        from runsample import make_project_repo
+        return make_project_repo( *args, **kwargs )
+
+    def test_no_existing_repo( self ):
+        path = 'outdir'
+        os.mkdir( path ) 
+        self._C( path )
+        ok_( self.check_git_repo( path ) )
+    
+    def test_existing_repo( self ):
+        path = 'outdir'
+        os.mkdir( path ) 
+        curd = os.getcwd()
+        os.chdir( path )
+        subprocess.call( 'git init', shell=True )
+        os.chdir( curd )
+        self._C( path )
+        ok_( self.check_git_repo( path ) )
+
 class TestFunctional(Base):
     def _run_runsample( self, readdir, reference, fileprefix, od=None ):
         script_path = dirname( dirname( abspath( __file__ ) ) )
@@ -146,8 +179,14 @@ class TestFunctional(Base):
         efiles.append( (d,join( outdir, 'qualdepth') ) )
         efiles.append( (d,join( outdir, 'trimmed_reads' )) )
         efiles.append( (f,join( outdir, prefix+'.reads.png' )) )
+        efiles.append( (d,(join( outdir, '.git' ))) )
 
         return efiles
+
+    @attr('current')
+    def test_runs_correctly( self ):
+        out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'testsample', 'outdir' )
+        ok_( self.check_git_repo( 'outdir' ), 'Did not create Git repository for project' )
 
     def test_ensure_samplename_in_consensus( self ):
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'testsample', 'outdir' )
@@ -166,6 +205,7 @@ class TestFunctional(Base):
         eq_( -1, ret )
         assert 'AlreadyExists' in res, "Did not raise exception"
 
+    @attr('current')
     def test_outdir_exists_empty( self ):
         os.mkdir( 'outdir' )
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )
