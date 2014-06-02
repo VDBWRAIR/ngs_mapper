@@ -74,7 +74,7 @@ def csv_out( filepath, stats ):
     return '{},{}\n'.format(samplename,','.join([str(v) for v in stats.values()]))
 
 def main( ):
-    flagstats = glob( 'Projects/*/*flagstats*' )
+    flagstats = glob( 'Projects/*/flagstats*' )
     from StringIO import StringIO
     output = StringIO()
     headers = []
