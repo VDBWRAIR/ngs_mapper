@@ -18,3 +18,4 @@ dependencies/samtools/misc/md5sum-lite
 dependencies/samtools/misc/wgsim
 dependencies/samtools/samtools
 dependencies/samtools/misc/maq2sam-long
+maq2sam-short
