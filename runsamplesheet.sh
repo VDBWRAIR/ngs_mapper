@@ -66,6 +66,6 @@ do
 done | xargs -n 6 -P $CPUS -I CMD bash -c CMD
 
 # Graph all samples
-${scripts}/graphs.sh -norecrate
+${scripts}/graphs.sh -norecreate
 # Softlink in consensus sequences into single folder
 ${scripts}/consensuses.sh
