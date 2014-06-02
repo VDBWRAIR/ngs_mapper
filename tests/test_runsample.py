@@ -181,12 +181,22 @@ class TestFunctional(Base):
         efiles.append( (f,join( outdir, prefix+'.reads.png' )) )
         efiles.append( (d,(join( outdir, '.git' ))) )
 
+        # Reference and indexes
+        ref = join(outdir, basename(self.ref))
+        indexes = [(f,ref +'.'+ e) for e in ('sa','amb','ann','bwt','pac')]
+        efiles.append( (f,(join( outdir, basename(self.ref)))) )
+        efiles += indexes
+
         return efiles
 
     @attr('current')
     def test_runs_correctly( self ):
-        out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'testsample', 'outdir' )
-        ok_( self.check_git_repo( 'outdir' ), 'Did not create Git repository for project' )
+        projdir = 'outdir'
+        prefix = 'testsample'
+    
+        out,ret = self._run_runsample( self.reads_by_sample, self.ref, prefix, projdir )
+        ok_( self.check_git_repo( projdir ), 'Did not create Git repository for project' )
+        self._ensure_expected_output_files( projdir, prefix )
 
     def test_ensure_samplename_in_consensus( self ):
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'testsample', 'outdir' )
@@ -205,7 +215,6 @@ class TestFunctional(Base):
         eq_( -1, ret )
         assert 'AlreadyExists' in res, "Did not raise exception"
 
-    @attr('current')
     def test_outdir_exists_empty( self ):
         os.mkdir( 'outdir' )
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, 'tests', 'outdir' )

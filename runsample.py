@@ -144,7 +144,7 @@ def main( args ):
             'samplename': args.prefix,
             'tdir': tdir,
             'readsdir': args.readsdir,
-            'reference': args.reference,
+            'reference': os.path.join(tdir, os.path.basename(args.reference)),
             'bamfile': bamfile,
             'flagstats': flagstats,
             'consensus': consensus,
@@ -156,6 +156,9 @@ def main( args ):
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
         # as multiple samples may be running concurrently already
+
+        logger.info( "Copying reference file {} to {}".format(args.reference,cmd_args['reference']) )
+        shutil.copy( args.reference, cmd_args['reference'] )
 
         # Return code list
         rets = []
