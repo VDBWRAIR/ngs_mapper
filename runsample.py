@@ -79,7 +79,7 @@ def make_project_repo( projpath ):
     gitdir = os.path.join( projpath, '.git' )
     cmd = ['git', '--work-tree', projpath, '--git-dir', gitdir, 'init']
     output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
-    logger.info( output )
+    logger.debug( output )
 
 def temp_projdir( prefix, suffix='runsample' ):
     '''
@@ -157,7 +157,7 @@ def main( args ):
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
         # as multiple samples may be running concurrently already
 
-        logger.info( "Copying reference file {} to {}".format(args.reference,cmd_args['reference']) )
+        logger.debug( "Copying reference file {} to {}".format(args.reference,cmd_args['reference']) )
         shutil.copy( args.reference, cmd_args['reference'] )
 
         # Return code list
@@ -242,8 +242,8 @@ def main( args ):
             sys.exit( 1 )
         logger.info( "--- Finished {} ---".format(args.prefix) )
 
-        subprocess.call( 'git add -A', cwd=tdir, shell=True )
-        subprocess.call( 'git commit -am \'runsample.py\'', cwd=tdir, shell=True )
+        subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        subprocess.call( 'git commit -am \'runsample.py\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
 
         logger.debug( "Moving {} to {}".format( tdir, args.outdir ) )
         # Cannot log any more below this line as the log file will be moved in the following code
