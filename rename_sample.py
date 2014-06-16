@@ -16,11 +16,15 @@ import shutil
 '''
 
 def main( args ):
-    preads = get_reads( args.ngsdata, args.origname )
+    rename_sample( args.origname, args.newname, args.ngsdata )
+
+def rename_sample( origname, newname, ngsdata ):
+    preads = get_reads( ngsdata, origname )
     funcs = {
         'Sanger': rename_sanger,
         'MiSeq': rename_miseq,
-        'Roche454': rename_roche
+        'Roche454': rename_roche,
+        'IonTorrent': rename_iontorrent,
     }
     for p, reads in preads.iteritems():
         for rs in reads:
@@ -29,7 +33,12 @@ def main( args ):
                 rs = [rs]
             for r in rs:
                 print r
-                funcs[p]( r, args.origname, args.newname, args.ngsdata )
+                funcs[p]( r, origname, newname, ngsdata )
+
+    rbs = join( ngsdata, 'ReadsBySample', origname )
+    # If origname has a directory that is now empty
+    if isdir(rbs) and not os.listdir(rbs):
+        os.rmdir( rbs )
 
 def get_reads( ngsdata, samplename ):
     rbs = join( ngsdata, 'ReadsBySample' )
@@ -37,8 +46,10 @@ def get_reads( ngsdata, samplename ):
     platreads = data.reads_by_plat( rbsdir )
     return platreads
 
+def rename_iontorrent( rbsfile, old, new, ngsdata ):
+    rename_roche( rbsfile, old, new, ngsdata )
+
 def rename_roche( rbsfile, old, new, ngsdata ):
-    rund, readp = runread_path( os.readlink(rbsfile), 'Roche454' )
     rbsd = dirname(rbsfile)
 
     newrbsd = join( dirname(rbsd), new )
@@ -115,6 +126,7 @@ def rename_file( path, find, replace ):
         Replace find in path with replace
 
         If path is a symlink then replace both the symlink and the file it points to
+        recursively
     '''
     if isdir(dirname(path)):
         newp = path.replace( os.sep+find, os.sep+replace )
@@ -131,9 +143,21 @@ def rename_file( path, find, replace ):
         os.unlink( path )
         os.symlink( nf, newp )
     elif os.path.isfile( path ):
-        if exists( newp ):
+        # Only do exceptions if the incoming path and the new path are not identical
+        # since that would indicate that you would truely be overwriting 
+        # a different file with new data
+        if exists( newp ) and newp != path:
             raise RenameException( '{} already exists. Refusing to overwrite it. Please inspect this situation'.format(newp) )
-        shutil.move(path,newp)
+        else:
+            # Since this is an actual file
+            # it is the endpoint for recursion and 
+            # as long as the newp and path are not equal we can rename the file
+            # Otherwise the file will just be left as is and the recursive symlinks
+            # will point to the original name which is fine for IonTorrent
+            if newp != path:
+                shutil.move(path,newp)
+            else:
+                pass
     else:
         raise Exception("{} is not a valid path".format(path))
     return newp
