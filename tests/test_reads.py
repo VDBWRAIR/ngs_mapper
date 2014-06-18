@@ -64,6 +64,7 @@ class TestSffsToFastq(Base):
         count = self._C( ['file1.sff','file2.sff'], outfile, False )
         self._post( outfile, count, False )
 
+@attr('current')
 class TestClipSeqRecord(Base):
     def setUp( self ):
         super(TestClipSeqRecord,self).setUp()
@@ -83,12 +84,17 @@ class TestClipSeqRecord(Base):
         trimrec = self._C( self.rec )
         self.check_trimmed_against_record( trimrec, self.rec )
 
-    @attr('current')
     def test_bug_767( self ):
         seq = 'tcagtccaagctgcgatCGCCGTTTCCCAGTAGGTCTCGAGAGGGCTGGGGATAATCCCTTCTGGTGTGTTT'
         rec = common.rand_seqrec( seq, 0, 0, 17, 0 )
         trimrec = self._C( rec )
         eq_( 'CGCCGTTTCCCAGTAGGTCTCGAGAGGGCTGGGGATAATCCCTTCTGGTGTGTTT', trimrec.seq._data, 'Did not properly handle IonTorrent clipping' )
+
+    def test_sanity_check_1( self ):
+        seq = 'tcagctcgcgtgtcTACGGTAGCAGAGACTTGGTCTCTCTGATGGCTGGGTTGGTATCTTAttggcgctgacatgagtttgtacgtcgtcagaattgccatcctgtttctttcgaatttagccatatattggtggtcgtaagactcctaaagccgtagtcttcaaccgtccaacgagttccaagcttctgtttgtgttggtgtagaacccatgtcgtcagtgttcacctaatcgactgatggcgcaagggagcgattacgnnnnnnn'
+        rec = common.rand_seqrec( seq, 0, 0, 14, 61 )
+        trimrec = self._C( rec )
+        eq_( 'TACGGTAGCAGAGACTTGGTCTCTCTGATGGCTGGGTTGGTATCTTA', trimrec.seq._data, 'Did not trim sequence as expected' )
 
 @patch('bwa.seqio.concat_files')
 class TestFunctionalCompileReads(Base):
@@ -182,7 +188,6 @@ class TestFunctionalCompileReads(Base):
         eq_( expected, compile_reads( reads, outputdir ) )
         eq_( len(mock.call_args_list), 1 )
 
-    @attr('current')
     @patch('reads.sffs_to_fastq')
     def test_converts_sff_to_fastq(self,sffs_to_fastq, concat_files):
         from reads import compile_reads
