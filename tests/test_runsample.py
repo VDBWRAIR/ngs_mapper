@@ -180,6 +180,7 @@ class TestFunctional(Base):
         efiles.append( (d,join( outdir, 'trimmed_reads' )) )
         efiles.append( (f,join( outdir, prefix+'.reads.png' )) )
         efiles.append( (d,(join( outdir, '.git' ))) )
+        efiles.append( (d,(join( outdir, 'trim_stats' ))) )
 
         # Reference and indexes
         ref = join(outdir, basename(self.ref))

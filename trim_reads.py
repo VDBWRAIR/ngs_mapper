@@ -4,7 +4,7 @@ import subprocess
 import os
 import argparse
 import sys
-from os.path import basename, join, isdir
+from os.path import basename, join, isdir, dirname
 from glob import glob
 import tempfile
 import reads
@@ -58,6 +58,9 @@ def trim_read( readpath, qual_th, out_path=None ):
     if out_path is None:
         out_path = basename( readpath ).replace('.sff','.fastq')
     logger.debug( "Using {} as the output path".format(out_path) )
+    
+    # Keep the original name for later
+    orig_readpath = readpath
 
     # Convert sff to fastq
     if readpath.endswith('.sff'):
@@ -65,7 +68,6 @@ def trim_read( readpath, qual_th, out_path=None ):
         # Just put in temp location then remove later
         _, tfile = tempfile.mkstemp(prefix='trimreads',suffix='sff.fastq')
         try:
-            #SeqIO.convert( readpath, 'sff', tfile, 'fastq' )
             # Clip adapter based on clip_qual values in sff
             nwritten = reads.sffs_to_fastq( [readpath], tfile, True )
         except AssertionError as e:
@@ -74,7 +76,10 @@ def trim_read( readpath, qual_th, out_path=None ):
         readpath = tfile
 
     # Run cutadapt on the file
-    stats = run_cutadapt( readpath, out_path, q=qual_th )
+    stats_file = join( dirname(dirname(out_path)), 'trim_stats', basename(orig_readpath) + '.trim_stats' )
+    if not isdir(dirname(stats_file)):
+        os.makedirs( dirname(stats_file) )
+    run_cutadapt( readpath, stats=stats_file, o=out_path, q=qual_th )
 
     # Clean up temp file
     if tfile:
@@ -92,13 +97,14 @@ def run_cutadapt( *args, **kwargs ):
 
         @returns the stderr output from cutadapt
     '''
-    cmd = ['cutadapt', '-q', str(kwargs.get('q')), args[0]]
-    fout = args[1]
-    if isinstance( fout, str ):
-        fout = open(fout,'wb')
+    outpath = kwargs.get('o')
+    cmd = ['cutadapt', '-o', outpath, '-q', str(kwargs.get('q')), args[0]]
+    out_stats = kwargs.get( 'stats', outpath + '.trim_stats' )
+    fout = open(out_stats,'wb')
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
     logger.debug( "Running {}".format(cmd) )
+    logger.debug( "Sending stdout to {}".format(out_stats) )
     p = subprocess.Popen( cmd, stdout=fout, stderr=subprocess.PIPE )
     # Only stderr should be available
     _,se = p.communicate()

@@ -75,6 +75,9 @@ class TestTrimRead(TrimBase):
                 es.st_size > rs.st_size, 
                 'Did not seem to trim the file. Output file s.st_size({}) was not smaller than input file s.st_size({})'.format(rs.st_size,es.st_size)
             )
+            ok_( isdir('trim_stats'), 'Did not create trim_stats directory' )
+            trimstatsfile = join( 'trim_stats', bn + '.trim_stats' )
+            ok_( exists(trimstatsfile), 'Did not create trimstats file {}'.format(trimstatsfile) )
 
 class TestRunCutadapt(TrimBase):
     def setUp( self ):
@@ -87,10 +90,13 @@ class TestRunCutadapt(TrimBase):
 
     def test_runs_correctly( self ):
         outfq = 'output.fastq'
-        r = self._C( self.read, outfq, q=20 )
+        os.mkdir( 'trim_stats' )
+        outstat = join( 'trim_stats', outfq + '.trim_stats' )
+        r = self._C( self.read, stats=outstat, o=outfq, q=20 )
         # Make sure output is correct from stderr
         ll = len(r.splitlines())
-        eq_( 14, ll, 'STDERR output was not returned correctly. Got {} lines instead of 12. Output: {}'.format(ll,r) )
+        #eq_( 14, ll, 'STDERR output was not returned correctly. Got {} lines instead of 12. Output: {}'.format(ll,r) )
+        ok_( exists(outstat), 'Did not create {} stats file'.format(outstat) )
         # Ensure it created the correct file name
         # Stat will freak if the file does not exist
         try:
@@ -110,11 +116,17 @@ class TestIntegrate(TrimBase):
     def has_files( self, dir, efiles ):
         files = set( os.listdir( dir ) )
         efiles = set(efiles)
-        eq_( set([]), files-efiles, "{} did not contain exactly {}".format(dir,efiles) )
+        print "Expected files: {}".format(efiles)
+        print "Result files: {}".format(files)
+        eq_( set([]), files-efiles, "{} did not contain exactly {}. Difference: {}".format(dir,efiles,files-efiles) )
 
+    @attr('current')
     def test_runs( self ):
-        r,o = self._C( self.read_dir, q=20, o='trimmed_reads' )
+        outdir = 'trimmed_reads'
+        r,o = self._C( self.read_dir, q=20, o=outdir )
         # Make sure exited correctly
         eq_( 0, r )
+        print o
         # Make sure the file names are same as the input files
-        self.has_files( 'trimmed_reads', [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] )
+        self.has_files( outdir, [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] )
+        self.has_files( 'trim_stats', [f + '.trim_stats' for f in os.listdir(self.read_dir)] )
