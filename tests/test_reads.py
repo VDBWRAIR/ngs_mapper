@@ -64,7 +64,6 @@ class TestSffsToFastq(Base):
         count = self._C( ['file1.sff','file2.sff'], outfile, False )
         self._post( outfile, count, False )
 
-@attr('current')
 class TestClipSeqRecord(Base):
     def setUp( self ):
         super(TestClipSeqRecord,self).setUp()

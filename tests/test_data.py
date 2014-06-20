@@ -45,6 +45,23 @@ class Base(common.BaseClass):
                 mapping[readfile] = plat
         return mapping
 
+class TestIsSangerReadFile(Base):
+    def _C( self, *args, **kwargs ):
+        from data import is_sanger_readfile
+        return is_sanger_readfile( *args, **kwargs )
+
+    def test_detects_sanger( self ):
+        f = 'sample1_F1_1979_01_01_Den2_Den2_0001_A01.fastq'
+        f = join( fixtures.FIXDIR, 'trim_reads', f )
+        r = self._C( f )
+        ok_( r, 'Did not detect Sanger read' )
+
+    def test_detects_not_sanger( self ):
+        f = '1121__2__TI86__2012_04_04__Den2.fastq'
+        f = join( fixtures.FIXDIR, 'trim_reads', f )
+        r = self._C( f )
+        ok_( not r, 'Incorrectly detected another platform as Sanger' )
+
 from data import NoPlatformFound
 class TestUnitPlatformForRead(Base):
     def _C( self, *args, **kwargs ):

@@ -4,10 +4,12 @@ import subprocess
 import os
 import argparse
 import sys
-from os.path import basename, join, isdir, dirname
+from os.path import basename, join, isdir, dirname, expandvars
 from glob import glob
 import tempfile
 import reads
+import shlex
+from data import platform_for_read
 
 import log
 lconfig = log.get_config()
@@ -97,6 +99,48 @@ def trim_read( *args, **kwargs ):
         os.unlink(tfile)
 
     return out_path
+
+def run_trimmomatic( *args, **kwargs ):
+    '''
+        Runs trimmomatic
+        @param arg0 - SE|PE -- Only SE supported at this time
+        @param arg1-arg6 - Input/Ouput files
+        @param arg7-argN - Tuples of (Trimmomatic Step,Options)
+        @param kwargs are any --options
+
+        run_trimmomatic( 'SE', 'input.fq', 'output.fq', ('LEADING','20), ('TRAILING','20'), trim_log='out.log' )
+        would result in
+        java -jar trimmomatic.jar input.fq output.fq LEADING:20 TRAILING:20 --trim_log out.log
+    '''
+    if args[0] == 'SE':
+        inputs = [args[1]]
+        outputs = [args[2]]
+        # Trimmomatic doesn't seem to be able to detect Sanger quality encoding
+        # so we will try to force it here to phred33
+        if platform_for_read( args[1] ) == 'Sanger':
+            kwargs['phred33'] = ''
+        steps = args[3:]
+    elif args[0] == 'PE':
+        inputs = list(args[1:3])
+        outputs = list(args[3:7])
+        steps = args[7:]
+    else:
+        raise ValueError( 'SE or PE need to be supplied' )
+    
+    # Change all steps to strings of STEPNAME:VALUE
+    steps = [':'.join([str(x) for x in s]) for s in steps]
+    # Set all options
+    options = shlex.split( ' '.join( ['-{} {}'.format(k,v) for k,v in kwargs.items()] ) )
+    # Jarpath is in virtualenv's lib directory
+    jarpath = join(expandvars('$VIRTUAL_ENV'), 'lib', 'Trimmo*', '*.jar' )
+    jarpath = glob( jarpath )[0]
+    cmd = ['java', '-jar', jarpath, args[0]] + options + inputs + outputs + steps
+
+    # Write stdout to output argument(should be fastq)
+    # Allow us to read stderr which should be stats from cutadapt
+    logger.debug( "Running {}".format(' '.join(cmd)) )
+    output = subprocess.check_output( cmd )
+    return output
 
 def run_cutadapt( *args, **kwargs ):
     '''

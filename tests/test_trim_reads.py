@@ -3,14 +3,21 @@ from imports import *
 class TrimBase(common.BaseClass):
     def setUp( self ):
         super(TrimBase,self).setUp()
-        # Contains sff, sanger and miseq paired reads
-        self.read_dir = join( THIS, 'fixtures', 'reads' )
+        # Contains sanger, miseq and 454 fastq
+        self.read_dir = join( THIS, 'fixtures', 'trim_reads' )
         # Only fastq files
-        self.fqs = glob( join(self.read_dir,'*.fastq') )
-        # Only sff files
-        self.sffs = glob( join(self.read_dir,'*.sff') )
+        self.se = [
+            'sample1_F1_1979_01_01_Den2_Den2_0001_A01.fastq',
+            '1121__2__TI86__2012_04_04__Den2.fastq',
+        ]
+        self.pe = [
+            ('2952_S14_L001_R1_001_2014_06_13.fastq', '2952_S14_L001_R2_001_2014_06_13.fastq'),
+        ]
+
+        self.se = [join(self.read_dir,se) for se in self.se]
+        self.pe = [[join(self.read_dir,p) for p in pe] for pe in self.pe]
         # All reads
-        self.reads = self.fqs + self.sffs
+        self.reads = self.se + self.pe
 
 class TestTrimReadsInDir(TrimBase):
     def setUp( self ):
@@ -52,8 +59,8 @@ class TestTrimRead(TrimBase):
 
     def test_outpath_default( self ):
         # Make sure output path default option works
-        for read in self.reads:
-            bn = basename(read).replace('.sff','.fastq')
+        for read in self.se:
+            bn = basename(read)
             self._C( read, 20 )
             try:
                 os.stat(bn)
@@ -64,7 +71,7 @@ class TestTrimRead(TrimBase):
         # Make sure output path and returned path are ==
         # Make sure output path exists
         # Make sure output file is smaller than input file
-        for read in self.reads:
+        for read in self.se:
             bn = basename(read)
             r = self._C( read, 40, bn )
             eq_( bn, r, 'Given outpath({}) and returned path({}) were different'.format(bn,r) )
@@ -82,7 +89,7 @@ class TestTrimRead(TrimBase):
 class TestRunCutadapt(TrimBase):
     def setUp( self ):
         super(TestRunCutadapt,self).setUp()
-        self.read = self.fqs[0]
+        self.read = self.se[0]
 
     def _C( self, *args, **kwargs ):
         from trim_reads import run_cutadapt
@@ -105,6 +112,36 @@ class TestRunCutadapt(TrimBase):
             ok_( False, "Did not create correct file" )
         ok_( os.stat(self.read).st_size != s.st_size, 'No trimming happened' )
 
+@attr('current')
+class TestRunTrimmomatic(TrimBase):
+    def setUp( self ):
+        super(TestRunTrimmomatic,self).setUp()
+        os.mkdir( 'trim_stats' )
+        self.outstat = join( 'trim_stats', 'output.trim_stats' )
+
+    def _C( self, *args, **kwargs ):
+        from trim_reads import run_trimmomatic
+        return run_trimmomatic( *args, **kwargs )
+
+    def test_runs_se_correctly( self ):
+        for read in self.se:
+            r = self._C( 'SE', read, 'output.fq', ('LEADING',20), trimlog=self.outstat )
+            # Make sure output is correct from stderr
+            ll = len(r.splitlines())
+            #eq_( 14, ll, 'STDERR output was not returned correctly. Got {} lines instead of 12. Output: {}'.format(ll,r) )
+            ok_( exists(self.outstat), 'Did not create {} stats file'.format(self.outstat) )
+            # Ensure it created the correct file name
+            ok_( exists('output.fq'), "Did not create correct file" )
+            ok_( os.stat(read).st_size != os.stat('output.fq').st_size, 'No trimming happened' )
+
+    def test_runs_pe_correctly( self ):
+        for fread, rread in self.pe:
+            ofp = 'out.forward.paired.fq'
+            ofu = 'out.forward.unpaired.fq'
+            orp = 'out.reverse.paired.fq'
+            oru = 'out.reverse.unpaired.fq'
+            r = self._C( 'PE', fread, rread, ofp, ofu, orp, oru, ('LEADING',20), trimlog=self.outstat )
+
 class TestIntegrate(TrimBase):
     def _C( self, *args, **kwargs ):
         script = TestIntegrate.script_path('trim_reads.py')
@@ -120,7 +157,6 @@ class TestIntegrate(TrimBase):
         print "Result files: {}".format(files)
         eq_( set([]), files-efiles, "{} did not contain exactly {}. Difference: {}".format(dir,efiles,files-efiles) )
 
-    @attr('current')
     def test_runs( self ):
         outdir = 'trimmed_reads'
         r,o = self._C( self.read_dir, q=20, o=outdir )

@@ -4,6 +4,7 @@ import os
 import sys
 import re
 import logging
+from Bio import SeqIO
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,19 @@ def platform_for_read( filepath ):
         if re.match( p, basename(filepath) ):
             return plat
     raise NoPlatformFound("No platform found for {}".format(filepath))
+
+def is_sanger_readfile( filepath ):
+    '''
+        Inspect the top read in the file and see if the quality encoding
+        max > 40
+    '''
+    if not filepath.endswith( '.fastq' ):
+        return False
+
+    reads = SeqIO.parse( filepath, 'fastq' )
+    r1 = next( reads )._per_letter_annotations['phred_quality']
+
+    return max(r1) > 40
 
 def reads_by_plat( path ):
     '''
