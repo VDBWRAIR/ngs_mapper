@@ -112,7 +112,6 @@ class TestRunCutadapt(TrimBase):
             ok_( False, "Did not create correct file" )
         ok_( os.stat(self.read).st_size != s.st_size, 'No trimming happened' )
 
-@attr('current')
 class TestRunTrimmomatic(TrimBase):
     def setUp( self ):
         super(TestRunTrimmomatic,self).setUp()
@@ -133,6 +132,18 @@ class TestRunTrimmomatic(TrimBase):
             # Ensure it created the correct file name
             ok_( exists('output.fq'), "Did not create correct file" )
             ok_( os.stat(read).st_size != os.stat('output.fq').st_size, 'No trimming happened' )
+
+    def test_detects_quality_score_read( self ):
+        # Make sure that it detects sanger and sets -phred33
+        sanger = self.se[0]
+        shutil.copy( sanger, 'different_name.fastq' )
+        sanger = 'different_name.fastq'
+        from data import NoPlatformFound
+        try:
+            out = self._C( 'SE', sanger, 'output.fastq', ('LEADING',20), trimlog=self.outstat )
+            ok_( True )
+        except NoPlatformFound as e:
+            ok_( False, 'Raised NoPlatformFound when it should not have' )
 
     def test_runs_pe_correctly( self ):
         for fread, rread in self.pe:

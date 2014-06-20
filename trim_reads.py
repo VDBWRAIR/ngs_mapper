@@ -9,7 +9,7 @@ from glob import glob
 import tempfile
 import reads
 import shlex
-from data import platform_for_read
+from data import is_sanger_readfile
 
 import log
 lconfig = log.get_config()
@@ -19,7 +19,8 @@ def main( args ):
     trim_reads_in_dir(
         args.readsdir,
         args.q,
-        args.outputdir
+        args.outputdir,
+        head_crop=args.headcrop
     )
 
 def trim_reads_in_dir( *args, **kwargs ):
@@ -33,6 +34,7 @@ def trim_reads_in_dir( *args, **kwargs ):
     readdir = args[0]
     qual_th = args[1]
     out_path = args[2]
+    headcrop = kwargs.get('head_crop', 0)
 
     # Only sff and fastq files
     reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
@@ -43,7 +45,7 @@ def trim_reads_in_dir( *args, **kwargs ):
     for read in reads:
         reado = read.replace('.sff','.fastq')
         try:
-            trim_read( join(readdir,read), qual_th, join(out_path,reado) )
+            trim_read( join(readdir,read), qual_th, join(out_path,reado), head_crop=headcrop )
         except subprocess.CalledProcessError as e:
             print e.output
             raise e
@@ -65,6 +67,7 @@ def trim_read( *args, **kwargs ):
         out_path = args[2]
     else:
         out_path = None
+    headcrop = kwargs.get('head_crop', 0)
 
     from Bio import SeqIO
     tfile = None
@@ -92,7 +95,20 @@ def trim_read( *args, **kwargs ):
     stats_file = join( dirname(dirname(out_path)), 'trim_stats', basename(orig_readpath) + '.trim_stats' )
     if not isdir(dirname(stats_file)):
         os.makedirs( dirname(stats_file) )
-    run_cutadapt( readpath, stats=stats_file, o=out_path, q=qual_th )
+    #run_cutadapt( readpath, stats=stats_file, o=out_path, q=qual_th )
+    output = run_trimmomatic(
+        'SE', readpath, out_path,
+        ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
+        threads=1, trimlog=stats_file
+    )
+
+    # Prepend stats file with stdout from trimmomatic
+    with open(stats_file, 'r+') as fh:
+        contents = fh.read()
+        fh.seek(0)
+        fh.write( output )
+        fh.write( '\n' )
+        fh.write( contents )
 
     # Clean up temp file
     if tfile:
@@ -117,7 +133,7 @@ def run_trimmomatic( *args, **kwargs ):
         outputs = [args[2]]
         # Trimmomatic doesn't seem to be able to detect Sanger quality encoding
         # so we will try to force it here to phred33
-        if platform_for_read( args[1] ) == 'Sanger':
+        if is_sanger_readfile(args[1]):
             kwargs['phred33'] = ''
         steps = args[3:]
     elif args[0] == 'PE':
@@ -139,8 +155,12 @@ def run_trimmomatic( *args, **kwargs ):
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
     logger.debug( "Running {}".format(' '.join(cmd)) )
-    output = subprocess.check_output( cmd )
-    return output
+    try:
+        output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+        return output
+    except subprocess.CalledProcessError as e:
+        logger.critical( "Trimmomatic error: {}".format(e.output) )
+        raise e
 
 def run_cutadapt( *args, **kwargs ):
     '''
@@ -184,6 +204,15 @@ def parse_args( args=sys.argv[1:] ):
         dest='q',
         default=qual_default,
         help='Quality threshold to trim[Default:{}]'.format(qual_default)
+    )
+
+    headcrop_default=0
+    parser.add_argument(
+        '--head-crop',
+        dest='headcrop',
+        default=headcrop_default,
+        help='How many bases to crop off the beginning of the reads after quality' \
+            ' trimming[Default: {}]'.format(headcrop_default)
     )
 
     outputdir_default='trimmed_reads'

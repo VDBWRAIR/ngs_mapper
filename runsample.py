@@ -54,6 +54,14 @@ def parse_args( args=sys.argv[1:] ):
         help='The quality threshold to trim ends of reads on[Default: {}]'.format(trimqual_default)
     )
 
+    headcrop_default=0
+    parser.add_argument(
+        '-head_crop',
+        dest='head_crop',
+        default=headcrop_default,
+        help='How many bases to crop off the beginning of each read after quality trimming[Default: {}]'.format(headcrop_default)
+    )
+
     parser.add_argument(
         '--CN',
         dest='CN',
@@ -151,7 +159,8 @@ def main( args ):
             'vcf': vcf,
             'CN': CN,
             'trim_qual': args.trim_qual,
-            'trim_outdir': os.path.join(tdir,'trimmed_reads')
+            'trim_outdir': os.path.join(tdir,'trimmed_reads'), 
+            'head_crop': args.head_crop,
         }
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
@@ -164,7 +173,7 @@ def main( args ):
         rets = []
 
         # Trim Reads
-        cmd = 'trim_reads.py {readsdir} -q {trim_qual} -o {trim_outdir}'
+        cmd = 'trim_reads.py {readsdir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
         if rets[-1] != 0:
