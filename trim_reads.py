@@ -20,7 +20,7 @@ def main( args ):
         args.outputdir
     )
 
-def trim_reads_in_dir( readdir, qual_th, out_path ):
+def trim_reads_in_dir( *args, **kwargs ):
     '''
         Trims all read files in a given directory and places the resulting files into out_path directory
 
@@ -28,6 +28,10 @@ def trim_reads_in_dir( readdir, qual_th, out_path ):
         @qual_th - What to pass to cutadapt -q
         @out_path - Output directory path
     '''
+    readdir = args[0]
+    qual_th = args[1]
+    out_path = args[2]
+
     # Only sff and fastq files
     reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
     # Make out_path
@@ -42,7 +46,7 @@ def trim_reads_in_dir( readdir, qual_th, out_path ):
             print e.output
             raise e
 
-def trim_read( readpath, qual_th, out_path=None ):
+def trim_read( *args, **kwargs ):
     '''
         Trims the given readpath file and places it in out_path
         If out_path not given then just put it in current directory with the same basename
@@ -53,6 +57,13 @@ def trim_read( readpath, qual_th, out_path=None ):
 
         @returns path to the trimmed fastq file
     '''
+    readpath = args[0]
+    qual_th = args[1]
+    if len(args) == 3:
+        out_path = args[2]
+    else:
+        out_path = None
+
     from Bio import SeqIO
     tfile = None
     if out_path is None:
