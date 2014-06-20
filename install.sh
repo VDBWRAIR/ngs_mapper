@@ -114,6 +114,7 @@ done
 
 # Install all python packages(the ordering is important because of dependencies on each other)
 package_list=( setuptools PyVCF numpy nose pyparsing tornado six python-dateutil matplotlib biopython pyBWA mock cutadapt )
+package_list=( )
 cd ${deppath}
 for package in ${package_list[@]}
 do
@@ -126,6 +127,10 @@ do
         exit 1
     fi
 done
+
+# Install Trimmomatic into $virtpath/lib
+TRIMOPATH=${deppath}/Trimmo*
+cp -R ${TRIMOPATH} ${virtpath}/lib/
 
 # Symlink all of our goodies into venv bin
 find ${THIS} -maxdepth 1 -type f -perm /u=x,g=x,o=x | while read f

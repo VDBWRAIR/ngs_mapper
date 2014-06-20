@@ -102,3 +102,12 @@ class TestFunctional( Base ):
         execfile(activate_this, dict(__file__=activate_this))
         for pkg in self.python_packages:
             ok_( __import__(pkg), "Could not import {}".format(pkg) )
+
+    def test_trimmomatic_installed( self ):
+        trimmomatic_path = glob( join( self.vpath, 'lib', 'Trimmo*' ) )[0]
+        trimmomatic_jar_path = glob( join( trimmomatic_path, 'trimmo*' ) )[0]
+        ok_( exists( trimmomatic_jar_path ), 'Did not install Trimmomatic' )
+        cmd = 'java -jar {}'.format(trimmomatic_jar_path)
+        rc, output = TestFunctional.run_script( cmd )
+        eq_( 1, rc, '{} cannot execute correctly'.format(trimmomatic_jar_path) )
+        ok_( 'Usage:' in output, 'Usage: was not in output from trimmomatic' )
