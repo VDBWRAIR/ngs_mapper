@@ -48,8 +48,10 @@ def trim_reads_in_dir( *args, **kwargs ):
     for plat, reads in platreads.iteritems():
         for r in reads:
             if isinstance(r,str):
-                inreads = r
-                outreads = join(out_path, basename(r).replace('.sff','.fastq'))
+                # Only accept .sff and .fastq
+                if r.endswith('.sff') or r.endswith('.fastq'):
+                    inreads = r
+                    outreads = join(out_path, basename(r).replace('.sff','.fastq'))
             else:
                 inreads = r
                 outreads = [join(out_path, basename(pr).replace('.sff','.fastq')) for pr in r]

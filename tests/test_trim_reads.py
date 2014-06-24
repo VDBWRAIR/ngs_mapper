@@ -28,6 +28,20 @@ class TestTrimReadsInDir(TrimBase):
         return trim_reads_in_dir( *args, **kwargs )
 
     @attr('current')
+    def test_skips_ab1( self ):
+        outdir = 'filtered_reads'
+        readsdir = 'reads'
+        os.mkdir( readsdir )
+        for r in self.se:
+            shutil.copy( r, readsdir )
+        for f,r in self.pe:
+            shutil.copy( f, readsdir )
+            shutil.copy( r, readsdir )
+        with open( join(readsdir,basename(self.se[0]).replace('.fastq','.ab1')), 'w' ) as fh:
+            fh.write( 'abi garbage here\n' )
+        self._C( readsdir, 20, outdir )
+
+    @attr('current')
     def test_does_not_create_empty_unpaired( self ):
         outdir = 'filtered_reads'
         readsdir = 'reads'
