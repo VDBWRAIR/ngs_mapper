@@ -27,11 +27,40 @@ class TestTrimReadsInDir(TrimBase):
         from trim_reads import trim_reads_in_dir
         return trim_reads_in_dir( *args, **kwargs )
 
+    @attr('current')
+    def test_does_not_create_empty_unpaired( self ):
+        outdir = 'filtered_reads'
+        readsdir = 'reads'
+        os.mkdir( readsdir )
+        for se in self.se:
+            shutil.copy( se, readsdir )
+        self._C( readsdir, 20, outdir )
+        unpaired = glob( join(outdir,'unpaired*') )
+        eq_( 0, len(unpaired), 'Created unpaired fastq file when it should not have' )
+
+        shutil.rmtree(outdir)
+        shutil.rmtree(readsdir)
+        os.mkdir( readsdir )
+        for pe1, pe2 in self.pe:
+            shutil.copy( pe1, readsdir )
+            shutil.copy( pe2, readsdir )
+        self._C( readsdir, 20, outdir )
+        unpaired = glob( join(outdir,'unpaired*') )
+        if unpaired:
+            ok_( os.stat( unpaired[0] ).st_size > 0, 'Created empty unpaired file when it should not have' )
+
+    @attr('current')
     def test_runs_correctly( self ):
         # Where to put filtered reads
         outdir = 'filtered_reads'
         # Should be all the basenames with sff replaced with fastq
-        expectedfiles = [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)]
+        expectedfiles = [basename(s) for s in self.se]
+        for f,r in self.pe:
+            f = basename(f)
+            r = basename(r)
+            expectedfiles += [f,r]
+        #expectedfiles.append( 'unpaired__1__TI1__2001_01_01__Unk.fastq' )
+        #expectedfiles = [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)]
         expectedfiles = sorted(expectedfiles)
         # Run
         self._C( self.read_dir, 20, outdir )
@@ -57,34 +86,110 @@ class TestTrimRead(TrimBase):
         from trim_reads import trim_read
         return trim_read( *args, **kwargs )
 
-    def test_outpath_default( self ):
-        # Make sure output path default option works
-        for read in self.se:
-            bn = basename(read)
-            self._C( read, 20 )
-            try:
-                os.stat(bn)
-            except OSError as e:
-                ok_( False, "Did not handle default out_path {}".format(e) )
+    def check_read( self, read, r ):
+        bn = basename(read)
+        eq_( bn, r, 'Given outpath({}) and returned path({}) were different'.format(bn,r) )
+        es = os.stat(read)
+        rs = os.stat(bn)
+        ok_( not samestat( es, rs ), 'Output file and inputfile are the same file' )
+        ok_( 
+            es.st_size > rs.st_size, 
+            'Did not seem to trim the file. Output file s.st_size({}) was not smaller than input file s.st_size({})'.format(rs.st_size,es.st_size)
+        )
+        ok_( isdir('trim_stats'), 'Did not create trim_stats directory' )
+        trimstatsfile = join( 'trim_stats', bn + '.trim_stats' )
+        ok_( exists(trimstatsfile), 'Did not create trimstats file {}'.format(trimstatsfile) )
 
-    def test_trims( self ):
+    def test_trims_se( self ):
         # Make sure output path and returned path are ==
         # Make sure output path exists
         # Make sure output file is smaller than input file
         for read in self.se:
             bn = basename(read)
             r = self._C( read, 40, bn )
-            eq_( bn, r, 'Given outpath({}) and returned path({}) were different'.format(bn,r) )
-            es = os.stat(read)
-            rs = os.stat(bn)
-            ok_( not samestat( es, rs ), 'Output file and inputfile are the same file' )
-            ok_( 
-                es.st_size > rs.st_size, 
-                'Did not seem to trim the file. Output file s.st_size({}) was not smaller than input file s.st_size({})'.format(rs.st_size,es.st_size)
-            )
-            ok_( isdir('trim_stats'), 'Did not create trim_stats directory' )
-            trimstatsfile = join( 'trim_stats', bn + '.trim_stats' )
-            ok_( exists(trimstatsfile), 'Did not create trimstats file {}'.format(trimstatsfile) )
+            self.check_read( read, r[0] )
+
+    def test_trims_pe( self ):
+        for fread, rread in self.pe:
+            fread_bn = basename(fread)
+            rread_bn = basename(rread)
+            r = self._C( (fread,rread), 40, (fread_bn,rread_bn) )
+            self.check_read( fread, r[0] )
+            ok_( exists( r[1] ), 'Did not produce unpaired read for {}'.format(fread_bn) )
+            self.check_read( rread, r[2] )
+            ok_( exists( r[3] ), 'Did not produce unpaired read for {}'.format(rread_bn) )
+
+    def test_head_trim( self ):
+        from Bio import SeqIO
+        seq = 'AAAAAAAAAATTTTTTTTTTGGGGGGGGGGCCCCCCCCCC'
+        qual = [1]*10 + [40]*20 + [1]*10
+        sr = common.make_seqrec( seq, qual )
+        c = SeqIO.write( [sr], 'single.fastq', 'fastq' )
+        eq_( 1, c, 'Sanity check failed' )
+        r = self._C( 'single.fastq', 10, 'single.fastq.trimmed', head_crop=10 )
+        s = next( SeqIO.parse( 'single.fastq.trimmed', 'fastq' ) )
+        # Should have clipped the A's and C's due to quality
+        # Should have cliped the T's from the headcrop
+        eq_( seq[20:30], s.seq._data )
+
+    def test_trims_pe( self ):
+        from Bio import SeqIO
+
+        # F has 1 good read, 1 bad read
+        f = 'F.fastq'
+        # R has 2 good reads
+        r = 'R.fastq' 
+        fr = [
+            common.make_seqrec( 'AAAAAAAAAA', [1]+[40]*9, id='fr1' ),
+            common.make_seqrec( 'AAAAAAAAAA', [1]+[19]*9, id='fr2' ),
+        ]
+        rr = [
+            common.make_seqrec( 'AAAAAAAAAA', [1]+[40]*9, id='rr1' ),
+            common.make_seqrec( 'AAAAAAAAAA', [1]+[40]*9, id='rr2' ),
+        ]
+        SeqIO.write( fr, f, 'fastq' )
+        SeqIO.write( rr, r, 'fastq' )
+
+        print f
+        print open(f).read()
+        print r
+        print open(r).read()
+
+        # Should trim out all of fr2 due to quality
+        fp = 'F.paired.fq'
+        fu = fp + '.unpaired'
+        rp = 'R.paired.fq'
+        ru = rp + '.unpaired'
+        ret = self._C( (f, r), 20, (fp,rp) )
+
+        print fp
+        print open(fp).read()
+        print fu
+        print open(fu).read()
+        print rp
+        print open(rp).read()
+        print ru
+        print open(ru).read()
+
+        fseqs = list( SeqIO.parse( fp, 'fastq' ) )
+        fuseqs = list( SeqIO.parse( fu, 'fastq' ) )
+        rseqs = list( SeqIO.parse( rp, 'fastq' ) )
+        ruseqs = list( SeqIO.parse( ru, 'fastq' ) )
+
+        # 1 paired forward
+        eq_( 1, len(fseqs) )
+        # 1 paired reverse
+        eq_( 1, len(rseqs) )
+        # The second read was stripped because of quality
+        eq_( 0, len(fuseqs) )
+        # Second reverse read remains unpaired
+        eq_( 1, len(ruseqs) )
+
+        # Ensure paired end retuns correct stuff
+        eq_(
+            ret,
+            [fp,fu,rp,ru]
+        )
 
 class TestRunCutadapt(TrimBase):
     def setUp( self ):
@@ -175,5 +280,6 @@ class TestIntegrate(TrimBase):
         eq_( 0, r )
         print o
         # Make sure the file names are same as the input files
-        self.has_files( outdir, [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] )
+        efiles = [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] + ['unpaired__1__TI1__2001_01_01__Unk.fastq']
+        self.has_files( outdir, efiles )
         self.has_files( 'trim_stats', [f + '.trim_stats' for f in os.listdir(self.read_dir)] )

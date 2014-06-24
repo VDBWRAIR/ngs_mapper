@@ -9,7 +9,7 @@ from glob import glob
 import tempfile
 import reads
 import shlex
-from data import is_sanger_readfile
+import data
 
 import log
 lconfig = log.get_config()
@@ -26,6 +26,7 @@ def main( args ):
 def trim_reads_in_dir( *args, **kwargs ):
     '''
         Trims all read files in a given directory and places the resulting files into out_path directory
+        Combines all unpaired trimmed fastq files into a single file as a result of running Trimmomatic
 
         @param readdir - Directory with read files in it(sff and fastq only)
         @qual_th - What to pass to cutadapt -q
@@ -37,70 +38,111 @@ def trim_reads_in_dir( *args, **kwargs ):
     headcrop = kwargs.get('head_crop', 0)
 
     # Only sff and fastq files
-    reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
+    #reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
+    platreads = data.reads_by_plat( readdir )
     # Make out_path
     if not isdir( out_path ):
         os.mkdir( out_path )
     # Trim all the reads
-    for read in reads:
-        reado = read.replace('.sff','.fastq')
-        try:
-            trim_read( join(readdir,read), qual_th, join(out_path,reado), head_crop=headcrop )
-        except subprocess.CalledProcessError as e:
-            print e.output
-            raise e
+    unpaired = []
+    for plat, reads in platreads.iteritems():
+        for r in reads:
+            if isinstance(r,str):
+                inreads = r
+                outreads = join(out_path, basename(r).replace('.sff','.fastq'))
+            else:
+                inreads = r
+                outreads = [join(out_path, basename(pr).replace('.sff','.fastq')) for pr in r]
+            try:
+                r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
+                unpaired += r[1::2]
+            except subprocess.CalledProcessError as e:
+                print e.output
+                raise e
+    #!!
+    # Combine all *.fastq.unpaired into one file that has a 454 name to be used for mapping as SE
+    #!!
+    # Filter out unpaired files that are empty
+    notempty = filter( lambda f: os.stat(f).st_size > 0, unpaired )
+    if notempty:
+        out_unpaired = join( out_path, 'unpaired__1__TI1__2001_01_01__Unk.fastq' )
+        with open( out_unpaired, 'w' ) as fw:
+            for up in notempty:
+                with open(up) as fr:
+                    fw.write( fr.read() )
+    # Remove the read now as it is no longer needed
+    for up in unpaired:
+        os.unlink( up )
 
 def trim_read( *args, **kwargs ):
     '''
         Trims the given readpath file and places it in out_path
         If out_path not given then just put it in current directory with the same basename
 
-        @param readpath - Path to the read to trim .fastq and .sff support only
+        @param readpaths - Path to the read to trim .fastq and .sff support only. Can be a tuple of paired reads
         @param qual_th - Quality threshold to trim reads on
-        @param out_path - Where to put the trimmed file
+        @param out_paths - Where to put the trimmed file[s]
+        @param head_crop - How many bases to trim off the front
 
         @returns path to the trimmed fastq file
     '''
-    readpath = args[0]
+    readpaths = args[0]
+    if isinstance(readpaths,str):
+        readpaths = [readpaths]
     qual_th = args[1]
     if len(args) == 3:
-        out_path = args[2]
+        out_paths = args[2]
+        if isinstance(out_paths,str):
+            out_paths = [out_paths]
     else:
-        out_path = None
+        out_paths = (None,None)
     headcrop = kwargs.get('head_crop', 0)
 
     from Bio import SeqIO
     tfile = None
-    if out_path is None:
-        out_path = basename( readpath ).replace('.sff','.fastq')
-    logger.debug( "Using {} as the output path".format(out_path) )
-    
+    for i, out_path in enumerate(out_paths):
+        if out_path is None:
+            out_paths[i] = basename( readpaths[i] ).replace('.sff','.fastq')
+        logger.debug( "Using {} as the output path".format(out_path) )
+
     # Keep the original name for later
-    orig_readpath = readpath
+    orig_readpaths = readpaths
 
     # Convert sff to fastq
-    if readpath.endswith('.sff'):
-        logger.debug( "Converting {} to fastq".format(readpath) )
-        # Just put in temp location then remove later
-        _, tfile = tempfile.mkstemp(prefix='trimreads',suffix='sff.fastq')
-        try:
-            # Clip adapter based on clip_qual values in sff
-            nwritten = reads.sffs_to_fastq( [readpath], tfile, True )
-        except AssertionError as e:
-            # Ignore the stupid sff bug in BioPython
-            pass
-        readpath = tfile
+    for i,readpath in enumerate(readpaths):
+        if readpath.endswith('.sff'):
+            logger.debug( "Converting {} to fastq".format(readpath) )
+            # Just put in temp location then remove later
+            _, tfile = tempfile.mkstemp(prefix='trimreads',suffix='sff.fastq')
+            try:
+                # Clip adapter based on clip_qual values in sff
+                nwritten = reads.sffs_to_fastq( [readpath], tfile, True )
+            except AssertionError as e:
+                # Ignore the stupid sff bug in BioPython
+                pass
+            readpaths[i] = tfile
 
     # Run cutadapt on the file
-    stats_file = join( dirname(dirname(out_path)), 'trim_stats', basename(orig_readpath) + '.trim_stats' )
+    stats_file = join( dirname(dirname(out_paths[0])), 'trim_stats', basename(orig_readpaths[0]) + '.trim_stats' )
     if not isdir(dirname(stats_file)):
         os.makedirs( dirname(stats_file) )
+
     #run_cutadapt( readpath, stats=stats_file, o=out_path, q=qual_th )
-    output = run_trimmomatic(
-        'SE', readpath, out_path,
-        ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
-        threads=1, trimlog=stats_file
-    )
+    retpaths = []
+    if len(readpaths) == 1:
+        retpaths = [out_paths[0]]
+        output = run_trimmomatic(
+            'SE', readpaths[0], out_paths[0],
+            ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
+            threads=1, trimlog=stats_file
+        )
+    else:
+        retpaths = [out_paths[0],out_paths[0]+'.unpaired',out_paths[1],out_paths[1]+'.unpaired']
+        output = run_trimmomatic(
+            'PE', readpaths[0], readpaths[1], out_paths[0], out_paths[0]+'.unpaired', out_paths[1], out_paths[1]+'.unpaired',
+            ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
+            threads=1, trimlog=stats_file
+        )
 
     # Prepend stats file with stdout from trimmomatic
     with open(stats_file, 'r+') as fh:
@@ -114,7 +156,7 @@ def trim_read( *args, **kwargs ):
     if tfile:
         os.unlink(tfile)
 
-    return out_path
+    return retpaths
 
 def run_trimmomatic( *args, **kwargs ):
     '''
@@ -133,7 +175,7 @@ def run_trimmomatic( *args, **kwargs ):
         outputs = [args[2]]
         # Trimmomatic doesn't seem to be able to detect Sanger quality encoding
         # so we will try to force it here to phred33
-        if is_sanger_readfile(args[1]):
+        if data.is_sanger_readfile(args[1]):
             kwargs['phred33'] = ''
         steps = args[3:]
     elif args[0] == 'PE':

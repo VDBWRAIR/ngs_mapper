@@ -76,14 +76,14 @@ class BaseBaseCaller(BaseClass):
         self.vcf = join( fixpath, 'test.vcf' )
         self.template = join( fixpath, 'template.vcf' )
 
-def make_seqrec( seq, quals ):
+def make_seqrec( seq, quals, id='id' ):
     from Bio.SeqRecord import SeqRecord
     from Bio.Seq import Seq
     from Bio.Alphabet import generic_dna
     seq = Seq( seq, generic_dna )
     rec = SeqRecord(
         seq,
-        id='id',
+        id=id,
         description='description',
         name='name'
     )
