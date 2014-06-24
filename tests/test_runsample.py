@@ -107,7 +107,6 @@ class TestUnitTempProjdir(object):
         assert bn.startswith( 'shmtest' )
         assert bn.endswith( 'test' )
 
-@attr('current')
 @patch('runsample.logger',Mock())
 class TestMakeProjectRepo(Base):
     def _C( self, *args, **kwargs ):
@@ -190,7 +189,6 @@ class TestFunctional(Base):
 
         return efiles
 
-    @attr('current')
     def test_runs_correctly( self ):
         projdir = 'outdir'
         prefix = 'testsample'
@@ -251,7 +249,10 @@ class TestFunctional(Base):
         project = 'project'
         logfile = join( outdir, project+'.log' )
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, project, outdir )
+        print out
         loglines = None
+        print os.listdir('outdir')
+        ok_( exists(logfile), 'Did not create proper log file {}'.format(logfile) )
         with open( logfile ) as fh:
             loglines = fh.read().splitlines()
         # 5 stages + start/finish

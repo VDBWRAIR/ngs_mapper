@@ -269,9 +269,8 @@ class TestIntegrationCompileReads(Base):
         readdir = 'reads'
         os.mkdir(readdir)
         expected_linecounts = {}
-        # Only 1 read F & R since just copied sanger read to fake the miseq paired
-        expected_linecounts['F'] = 1*4
-        expected_linecounts['R'] = 1*4
+        expected_linecounts['F'] = 1*4000
+        expected_linecounts['R'] = 1*4000
         # 100 sff reads + 2 sanger
         expected_linecounts['NP'] = 102*4
 
