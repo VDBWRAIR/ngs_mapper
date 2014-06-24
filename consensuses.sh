@@ -9,7 +9,7 @@ fi
 mkdir -p vcf_consensus
 
 # Link in all the consensus files with samplename instead of lenghty bam samplename
-for f in Projects/*/*.fasta
+for f in Projects/*/*.consensus.fasta
 do
     # Base name of file
     bn=$(basename $f);
