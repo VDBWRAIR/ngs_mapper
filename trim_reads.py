@@ -54,7 +54,7 @@ def trim_reads_in_dir( *args, **kwargs ):
                     outreads = join(out_path, basename(r).replace('.sff','.fastq'))
             else:
                 inreads = r
-                outreads = [join(out_path, basename(pr).replace('.sff','.fastq')) for pr in r]
+                outreads = [join(out_path, basename(pr)) for pr in r]
             try:
                 r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
                 unpaired += r[1::2]
@@ -107,8 +107,8 @@ def trim_read( *args, **kwargs ):
             out_paths[i] = basename( readpaths[i] ).replace('.sff','.fastq')
         logger.debug( "Using {} as the output path".format(out_path) )
 
-    # Keep the original name for later
-    orig_readpaths = readpaths
+    # Keep the original name for later( Have to copy otherwise we are dealing with a pointer )
+    orig_readpaths = [f for f in readpaths]
 
     # Convert sff to fastq
     for i,readpath in enumerate(readpaths):
@@ -125,7 +125,8 @@ def trim_read( *args, **kwargs ):
             readpaths[i] = tfile
 
     # Run cutadapt on the file
-    stats_file = join( dirname(dirname(out_paths[0])), 'trim_stats', basename(orig_readpaths[0]) + '.trim_stats' )
+    trim_stats_dir = join( dirname(dirname(out_paths[0])), 'trim_stats' )
+    stats_file = join( trim_stats_dir, basename(orig_readpaths[0]) + '.trim_stats' )
     if not isdir(dirname(stats_file)):
         os.makedirs( dirname(stats_file) )
 

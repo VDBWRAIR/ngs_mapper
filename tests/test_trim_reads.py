@@ -27,7 +27,6 @@ class TestTrimReadsInDir(TrimBase):
         from trim_reads import trim_reads_in_dir
         return trim_reads_in_dir( *args, **kwargs )
 
-    @attr('current')
     def test_skips_ab1( self ):
         outdir = 'filtered_reads'
         readsdir = 'reads'
@@ -41,7 +40,6 @@ class TestTrimReadsInDir(TrimBase):
             fh.write( 'abi garbage here\n' )
         self._C( readsdir, 20, outdir )
 
-    @attr('current')
     def test_does_not_create_empty_unpaired( self ):
         outdir = 'filtered_reads'
         readsdir = 'reads'
@@ -63,7 +61,6 @@ class TestTrimReadsInDir(TrimBase):
         if unpaired:
             ok_( os.stat( unpaired[0] ).st_size > 0, 'Created empty unpaired file when it should not have' )
 
-    @attr('current')
     def test_runs_correctly( self ):
         # Where to put filtered reads
         outdir = 'filtered_reads'
@@ -204,6 +201,14 @@ class TestTrimRead(TrimBase):
             ret,
             [fp,fu,rp,ru]
         )
+
+    def test_trimlog_for_sff_not_tempfilename( self ):
+        sff = join( THIS, 'fixtures', 'reads', 'sample1__1__TI1__1979_01_01__Den2.sff' )
+        sff_fq = basename(sff).replace('.sff','.fastq')
+        r = self._C( sff, 20, sff_fq )
+        expected_trimfile = join( 'trim_stats', basename(sff) + '.trim_stats' )
+        ok_( exists( expected_trimfile ), '{} was not created'.format(expected_trimfile) )
+
 
 class TestRunCutadapt(TrimBase):
     def setUp( self ):
