@@ -7,8 +7,9 @@ import shutil
 from glob import glob
 import subprocess
 import shlex
+import re
 
-from mock import Mock, MagicMock, patch
+from mock import Mock, MagicMock, patch, mock_open, call
 from nose.tools import eq_, ok_, raises, timed
 from nose.plugins.attrib import attr
 
@@ -18,3 +19,4 @@ import common
 import fixtures
 from fixtures import THIS
 from common import *
+from . import tdir

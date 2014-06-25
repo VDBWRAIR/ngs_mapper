@@ -1,13 +1,5 @@
-from nose.tools import eq_, raises
-from nose.plugins.attrib import attr
-from mock import Mock, MagicMock, patch, mock_open, call
-
-from .common import BaseClass
+from imports import *
 from .fixtures import THIS, ungiz
-
-import os
-from os.path import *
-from glob import glob
 
 class Base(BaseClass):
     pass
@@ -149,7 +141,7 @@ class TestIntegrate(Base):
     def setUpClass(klass):
         super(TestIntegrate,klass).setUpClass()
         import tempfile
-        TestIntegrate.mytempdir = tempfile.mkdtemp()
+        TestIntegrate.mytempdir = tempfile.mkdtemp(dir=tdir)
         TestIntegrate.samfile = ungiz(klass.samfile,klass.mytempdir)
         TestIntegrate.unsortedbam = ungiz(klass.unsortedbam,klass.mytempdir)
         TestIntegrate.sortedbam = ungiz(klass.sortedbam,klass.mytempdir)

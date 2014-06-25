@@ -54,7 +54,7 @@ class BaseBamRef(BaseClass):
         # Unpacks everything once so it doesn't slow down so much
         super(BaseBamRef,klass).setUpClass()
         import tempfile
-        klass.mytempdir = tempfile.mkdtemp(prefix='basebamref',suffix='test')
+        klass.mytempdir = tempfile.mkdtemp(prefix='basebamref',suffix='test',dir=tdir)
         klass.bam = fixtures.ungiz(klass.bam,klass.mytempdir)
         klass.ref = fixtures.ungiz(klass.ref,klass.mytempdir)
         klass.bamindex = indexbam( klass.bam )

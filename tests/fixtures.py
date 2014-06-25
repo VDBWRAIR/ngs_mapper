@@ -1,5 +1,6 @@
 import os
 from os.path import *
+from . import tdir
 
 # This directory
 THIS=dirname(abspath(__file__))
@@ -23,7 +24,7 @@ def get_sample_paired_reads(dir=None):
     paired = get_sample_paired_reads_compressed()
     if not dir:
         import tempfile
-        d = tempfile.mkdtemp(prefix='tests')
+        d = tempfile.mkdtemp(prefix='tests',dir=tdir)
     else:
         d = dir
     a = ungiz( paired[0], d )

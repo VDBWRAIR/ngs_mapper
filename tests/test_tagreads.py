@@ -1,18 +1,8 @@
-from os.path import *
-import os
-import sys
-from glob import glob
-import subprocess
-import tempfile
-import shutil
-import re
-
-from nose.tools import eq_, raises, ok_
-from nose.plugins.attrib import attr
+from imports import *
 
 class Base(object):
     def setUp( self ):
-        self.tempdir = tempfile.mkdtemp( prefix='testTagReads' )
+        self.tempdir = tempfile.mkdtemp( prefix='testTagReads', dir=tdir )
         this = dirname( __file__ )
         self.fixturedir = join( this, 'fixtures', 'tagreads' )
         self.bam = join( self.fixturedir, 'sample1.untagged.bam' )

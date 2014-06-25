@@ -1,18 +1,4 @@
-from nose.tools import eq_, raises, ok_
-from nose.plugins.attrib import attr
-
-from mock import Mock, MagicMock, patch
-
-import os
-from os.path import *
-import sys
-import tempfile
-import shutil
-import tempfile
-from datetime import datetime
-import subprocess
-import re
-from glob import glob
+from imports import *
 
 samplesheet = '''SampleName,Region,Barcode,PrimerFileLocation
 Sample1,1,Mid1,/path/to/primer.fasta
@@ -21,7 +7,7 @@ Sample2,2,RL1,'''
 class BaseClass( object ):
     def setUp( self ):
         self.midparse = join(dirname(dirname(__file__)),'MidParse.conf')
-        self.tdir = tempfile.mkdtemp( prefix='rochesync', suffix='tests' )
+        self.tdir = tempfile.mkdtemp( prefix='rochesync', suffix='tests', dir=tdir )
         os.chdir( self.tdir )
         self.samples = ['Sample1','Sample2']
         self.regions = ['1','2']

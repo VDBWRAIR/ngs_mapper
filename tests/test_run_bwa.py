@@ -1,14 +1,4 @@
-from nose.tools import eq_, raises
-from nose.plugins.attrib import attr
-from mock import MagicMock, patch, Mock, call
-
-from common import BaseClass
-import fixtures
-
-import os
-from os.path import *
-from glob import glob
-import shutil
+from imports import *
 
 class Base(BaseClass):
     pass
