@@ -67,10 +67,17 @@ class TestRunPipeline(BaseFunctional):
         self.returncode = self.__class__.ret
         self.output = self.__class__.out
 
+	print self.output
+
     def test_return_code_and_output(self):
         eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
         for reads, config in self.fixtures:
             sn = basename(reads)
+            p = 'Please check the logfile (/dev/shm/\w+/{}.log)'.format(sn)
+            m = re.search( p, self.output, re.S|re.M )
+            if m:
+	        print m.group(1)
+	        print open(m.group(1)).read()
             ok_( 'Starting {}'.format(sn) in self.output, "Did not start {}".format(sn) )
             ok_( 'Finished {}'.format(sn) in self.output, "Did not finish {}".format(sn) )
 

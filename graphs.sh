@@ -11,6 +11,10 @@ fi
 
 # Ya, pretty ugly
 CPUS=$(for pid in $(awk '/physical id/ {print $4}' /proc/cpuinfo | sort | uniq); do egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo; done | awk '/cpu cores/ {print $4}' | paste -sd+ | bc)
+if [ -z "$CPUS" ]
+then
+    CPUS=1
+fi
 
 for p in Projects/*
 do

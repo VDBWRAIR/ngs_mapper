@@ -27,13 +27,19 @@ then
     exit 1
 fi
 
+# How many CPUS does the computer have(Some ugly stuff here but it works)
+CPUS=$(for pid in $(awk '/physical id/ {print $4}' /proc/cpuinfo | sort | uniq); do egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo; done | awk '/cpu cores/ {print $4}' | paste -sd+ | bc)
+# If CPUS comes back empty just use 1
+if [ -z "$CPUS" ]
+then
+    CPUS=1
+fi
+
 # Loop over each of our samplenames and references
 # File needs to be either space or tab delimeted
 # Samplename ReferencePath
 # Excluding any lines that begin with a #
 mkdir -p Projects
-# How many CPUS does the computer have(Some ugly stuff here but it works)
-CPUS=$(for pid in $(awk '/physical id/ {print $4}' /proc/cpuinfo | sort | uniq); do egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo; done | awk '/cpu cores/ {print $4}' | paste -sd+ | bc)
 
 # Run in parallel
 grep -v '^#' $sample_ref_map_file | while read sample reference
