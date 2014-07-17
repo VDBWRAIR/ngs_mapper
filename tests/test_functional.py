@@ -84,9 +84,11 @@ class TestRunPipeline(BaseFunctional):
     def check_sample_project_files( self, projdir, fixture ):
         # Files defined that should exist
         efiles = self.__class__.parse_conf( fixture[1] )['files'].split()
-        for ef in efiles:
-            e = join( projdir, ef )
-            ok_( exists( e ), 'Pipeline did not produce project file {}'.format(e) )
+        failed = [join(projdir,ef) for ef in efiles if not exists(join(projdir,ef))]
+        for f in failed:
+            print 'Pipeline did not produce project file {}'.format(e)
+        if failed:
+            ok_( False )
 
     def test_pipeline_produced_expected_files_dirs( self ):
         f = 'file'
