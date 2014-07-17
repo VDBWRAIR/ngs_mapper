@@ -86,7 +86,7 @@ class TestRunPipeline(BaseFunctional):
         efiles = self.__class__.parse_conf( fixture[1] )['files'].split()
         failed = [join(projdir,ef) for ef in efiles if not exists(join(projdir,ef))]
         for f in failed:
-            print 'Pipeline did not produce project file {}'.format(e)
+            print 'Pipeline did not produce project file {}'.format(f)
         if failed:
             ok_( False )
 
