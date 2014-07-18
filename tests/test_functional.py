@@ -67,8 +67,6 @@ class TestRunPipeline(BaseFunctional):
         self.returncode = self.__class__.ret
         self.output = self.__class__.out
 
-	print self.output
-
     def test_return_code_and_output(self):
         eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
         for reads, config in self.fixtures:
@@ -76,8 +74,8 @@ class TestRunPipeline(BaseFunctional):
             p = 'Please check the logfile (/dev/shm/\w+/{}.log)'.format(sn)
             m = re.search( p, self.output, re.S|re.M )
             if m:
-	        print m.group(1)
-	        print open(m.group(1)).read()
+                print m.group(1)
+                print open(m.group(1)).read()
             ok_( 'Starting {}'.format(sn) in self.output, "Did not start {}".format(sn) )
             ok_( 'Finished {}'.format(sn) in self.output, "Did not finish {}".format(sn) )
 
@@ -107,14 +105,12 @@ class TestRunPipeline(BaseFunctional):
         for e, typ in expected:
             ok_( exists( e ), 'Pipeline did not produce {}'.format(e) )
 
-
     def test_project_directories_have_expected_files( self ):
         # Ensure each project has correct files too
         for fixture in self.fixtures:
             sn = basename(fixture[0])
             projdir = join( 'Projects', sn )
             self.check_sample_project_files( projdir, fixture )
-
 
     def test_vcf_consensus_has_symlink_consensuses( self ):
         for pdir in glob( join('Projects','*') ):
