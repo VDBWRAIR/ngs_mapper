@@ -91,6 +91,8 @@ def trim_read( *args, **kwargs ):
     readpaths = args[0]
     if isinstance(readpaths,str):
         readpaths = [readpaths]
+    else:
+        readpaths = sorted(readpaths)
     qual_th = args[1]
     if len(args) == 3:
         out_paths = args[2]
@@ -124,7 +126,7 @@ def trim_read( *args, **kwargs ):
                 pass
             readpaths[i] = tfile
 
-    # Run cutadapt on the file
+    # Run trimmer on the file
     trim_stats_dir = join( dirname(dirname(out_paths[0])), 'trim_stats' )
     stats_file = join( trim_stats_dir, basename(orig_readpaths[0]) + '.trim_stats' )
     if not isdir(dirname(stats_file)):
