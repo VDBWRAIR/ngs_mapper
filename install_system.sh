@@ -23,7 +23,7 @@ function ensure_python {
         return 0
     else
         echo "Installing required version of python"
-        cd $(mktemp -d) && wget --no-check-certificate https://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz -O- | tar xzf - && pushd Python-2.7.3 && ./configure --prefix $prefix && make && make install && popd
+        pushd $(mktemp -d) && wget --no-check-certificate https://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz -O- | tar xzf - && pushd Python-2.7.3 && ./configure --prefix $prefix && make && make install && popd && popd
         return $?
     fi
 }
