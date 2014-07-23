@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Where python will be installed if needed
+if [[ -z "$PYTHON_INSTALL_PREFIX" ]]
+then
+    PYTHON_INSTALL_PREFIX=/usr/local
+fi
+
 function ensure_pkg {
     if ! rpm -qa | grep -q "^${1}"
     then
@@ -51,7 +57,6 @@ function install_pipeline {
         # Ensure python is installed
         # I guess for now we will just hardcode it to go to /usr/local(which is the default anyways)
         # It only will be installed if we cannot detect Python 2.7.{3..9} anyways so if they already have python then no harm right?
-        PYTHON_INSTALL_PREFIX=/usr/local
         ensure_python ${PYTHON_INSTALL_PREFIX}
         # Ensure virtualenv is installed
         install_virtualenv ${to}/${pth} ${PYTHON_INSTALL_PREFIX}
