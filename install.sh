@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Optional way to specify where python is installed
+if [[ -z "$PYTHON_INSTALL_PREFIX" ]]
+then
+    PYTHON_INSTALL_PREFIX=/usr/local
+fi
+
 # This gives us the current directory that this script is in
 THIS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Grab the current directory the user is in

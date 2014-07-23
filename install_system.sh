@@ -112,7 +112,7 @@ function main {
 
     if [ $RET -eq 0 ]
     then
-        echo "The miseqpipeline is now installed into $install_path. You can activate the pipeline by issuing the following command:"
+        echo "The miseqpipeline is now installed into $install_pth. You can activate the pipeline by issuing the following command:"
         echo ". ${_INSTALL_PATH}/setup"
         return $RET
     else
