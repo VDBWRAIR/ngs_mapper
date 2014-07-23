@@ -6,6 +6,8 @@ then
     PYTHON_INSTALL_PREFIX=/usr/local
 fi
 
+echo "Using python installation from $PYTHON_INSTALL_PREFIX"
+
 # This gives us the current directory that this script is in
 THIS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Grab the current directory the user is in
@@ -32,13 +34,13 @@ function pyinstall() {
     oldpath=$(pwd)
     cd $dirpath
     rm -rf build dist
-    python setup.py install
+    ${PYTHON_INSTALL_PREFIX}/bin/python setup.py install
     _RET=$?
     cd $oldpath
 }
 
 # Ensure correct python version
-python -V 2>&1 | grep -qE '2.7.[3456789]'
+${PYTHON_INSTALL_PREFIX}/bin/python -V 2>&1 | grep -qE '2.7.[3456789]'
 if [ $? -ne 0 ]
 then
     echo "Please ensure you have python 2.7.3 or greater but less than 3"
