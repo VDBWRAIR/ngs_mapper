@@ -34,7 +34,7 @@ function pyinstall() {
     oldpath=$(pwd)
     cd $dirpath
     rm -rf build dist
-    ${PYTHON_INSTALL_PREFIX}/bin/python setup.py install
+    python setup.py install
     _RET=$?
     cd $oldpath
 }
@@ -68,7 +68,6 @@ do
 done
 
 # Create the virtual environment where everything will install to
-# Don't use setuptools as we will install that later
 ${PYTHON_INSTALL_PREFIX}/bin/virtualenv --prompt='(miseqpipeline) ' ${virtpath}
 # Activate
 . ${virtpath}/bin/activate
