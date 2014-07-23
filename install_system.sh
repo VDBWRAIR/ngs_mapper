@@ -100,7 +100,7 @@ function main {
         return 1
     fi
 
-    install_system_packages $pkg_lst install_pipeline $repo_pth $install_pth #&& install_virtualenv $install_pth
+    install_system_packages $pkg_lst && install_pipeline $repo_pth $install_pth
     RET=$?
 
     if [ $RET -eq 0 ]
