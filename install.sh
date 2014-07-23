@@ -69,7 +69,7 @@ done
 
 # Create the virtual environment where everything will install to
 # Don't use setuptools as we will install that later
-${PYTHON_INSTALL_PREFIX}/virtualenv --prompt='(miseqpipeline) ' ${virtpath}
+${PYTHON_INSTALL_PREFIX}/bin/virtualenv --prompt='(miseqpipeline) ' ${virtpath}
 # Activate
 . ${virtpath}/bin/activate
 
