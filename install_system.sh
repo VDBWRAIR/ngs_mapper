@@ -51,9 +51,10 @@ function install_pipeline {
         # Ensure python is installed
         # I guess for now we will just hardcode it to go to /usr/local(which is the default anyways)
         # It only will be installed if we cannot detect Python 2.7.{3..9} anyways so if they already have python then no harm right?
-        ensure_python /usr/local
+        PYTHON_INSTALL_PREFIX=/usr/local
+        ensure_python ${PYTHON_INSTALL_PREFIX}
         # Ensure virtualenv is installed
-        install_virtualenv ${to}/${pth}
+        install_virtualenv ${to}/${pth} ${PYTHON_INSTALL_PREFIX}
 
         # Install
         ./install.sh
@@ -67,7 +68,8 @@ function install_pipeline {
 
 function install_virtualenv {
     pipeline_install_location=$1
-    python -c "virtualenv" 2>/dev/null || pushd ${pipeline_install_location}/dependencies/virtualenv* && $(dirname $pipeline_install_location)/bin/python setup.py install && popd
+    python_install_prefix=$2
+    ${python_install_prefix}/bin/python -c "virtualenv" 2>/dev/null || pushd ${pipeline_install_location}/dependencies/virtualenv* && ${python_install_prefix}/bin/python setup.py install && popd
 }
 
 function install_system_packages {
