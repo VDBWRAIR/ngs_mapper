@@ -17,7 +17,7 @@ function ensure_python {
         return 0
     else
         echo "Installing required version of python"
-        wget --no-check-certificate https://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz -O- | tar xzf - && pushd Python-2.7.3 && ./configure --prefix $prefix && make && make install && popd
+        cd $(mktemp -d) && wget --no-check-certificate https://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz -O- | tar xzf - && pushd Python-2.7.3 && ./configure --prefix $prefix && make && make install && popd
         return $?
     fi
 }
@@ -48,6 +48,10 @@ function install_pipeline {
             cd $pth
         fi
 
+        # Ensure python is installed
+        # I guess for now we will just hardcode it to go to /usr/local(which is the default anyways)
+        # It only will be installed if we cannot detect Python 2.7.{3..9} anyways so if they already have python then no harm right?
+        ensure_python /usr/local
         # Ensure virtualenv is installed
         install_virtualenv ${to}/${pth}
 
@@ -96,7 +100,7 @@ function main {
         return 1
     fi
 
-    install_system_packages $pkg_lst && ensure_python $install_pth && install_pipeline $repo_pth $install_pth #&& install_virtualenv $install_pth
+    install_system_packages $pkg_lst install_pipeline $repo_pth $install_pth #&& install_virtualenv $install_pth
     RET=$?
 
     if [ $RET -eq 0 ]
