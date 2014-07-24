@@ -6,6 +6,12 @@ then
     PYTHON_INSTALL_PREFIX=/usr/local
 fi
 
+# What version of python
+if [[ -z "$PYTHON_VERSION" ]]
+then
+    PYTHON_VERSION="2.7.3"
+fi
+
 function ensure_pkg {
     if ! rpm -qa | grep -q "^${1}"
     then
@@ -23,8 +29,8 @@ function ensure_python {
         return 0
     else
         echo "Installing required version of python"
-        ver='2.7.3'
-        pushd $(mktemp -d) && wget --no-check-certificate https://www.python.org/ftp/python/${ver}/Python-${ver}.tgz -O- | tar xzf - && pushd Python-${ver} && ./configure --prefix $prefix && make && make install && popd && popd
+        tmpdir=$(mktemp -d)
+        pushd $tmpdir && wget --no-check-certificate https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz -O- | tar xzf - && pushd Python-${PYTHON_VERSION} && ./configure --prefix $prefix && make && make install && popd && popd
         return $?
     fi
 }
