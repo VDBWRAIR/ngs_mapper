@@ -1,5 +1,7 @@
 #!/bin/bash
 
+exec 1 > install_system.log 2>&1
+
 # Where python will be installed if needed
 if [[ -z "$PYTHON_INSTALL_PREFIX" ]]
 then
