@@ -1,2 +1,2 @@
 It is best to check the wiki at:
-https://wrairvdb.herokuapp.com/miseqpipeline/Wiki
+https://vdbpm.org/miseqpipeline/Wiki
