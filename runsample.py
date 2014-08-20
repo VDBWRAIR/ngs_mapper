@@ -62,6 +62,14 @@ def parse_args( args=sys.argv[1:] ):
         help='How many bases to crop off the beginning of each read after quality trimming[Default: {}]'.format(headcrop_default)
     )
 
+    minth_default=0.8
+    parser.add_argument(
+        '-minth',
+        dest='minth',
+        default=minth_default,
+        help='Same as the minth option for base_caller.py'
+    )
+
     parser.add_argument(
         '--CN',
         dest='CN',
@@ -161,6 +169,7 @@ def main( args ):
             'trim_qual': args.trim_qual,
             'trim_outdir': os.path.join(tdir,'trimmed_reads'), 
             'head_crop': args.head_crop,
+            'minth': args.minth
         }
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
@@ -200,7 +209,7 @@ def main( args ):
         rets.append( r )
 
         # Variant Calling
-        cmd = 'base_caller.py {bamfile} {reference} -o {vcf}'
+        cmd = 'base_caller.py {bamfile} {reference} -o {vcf} -minth {minth}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
