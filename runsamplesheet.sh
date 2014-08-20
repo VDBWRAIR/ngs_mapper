@@ -42,7 +42,9 @@ fi
 mkdir -p Projects
 
 # Run in parallel
-grep -v '^#' $sample_ref_map_file | while read sample reference
+# Ignore lines beginning with #
+# Remove windows newlines
+grep -v '^#' $sample_ref_map_file | sed 's/\r//' | while read sample reference
 do
     # Make sure that sample was set
     if [ -z "${sample}" ]
