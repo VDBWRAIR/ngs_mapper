@@ -1,2 +1,4 @@
-It is best to check the wiki at:
+All documentation is here:
 https://vdbpm.org/miseqpipeline/Wiki
+
+[![Build Status](https://travis-ci.org/VDBWRAIR/miseqpipeline.svg)](https://travis-ci.org/VDBWRAIR/miseqpipeline)
