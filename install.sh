@@ -1,9 +1,20 @@
 #!/bin/bash
 
+# Requirements
+#  - Python 2.7.3+ installed and part of your path
+#  - Virtualenv installed inside the above python installation
+
 # Optional way to specify where python is installed
 if [[ -z "$PYTHON_INSTALL_PREFIX" ]]
 then
-    PYTHON_INSTALL_PREFIX=/usr/local
+    # If python is 2.7.3+ then use that version otherwise we will install our own
+    if [[ $(python --version 2>&1) =~ 2.7.[3456789] ]] 
+    then
+        PYTHON_INSTALL_PREFIX=$(dirname $(dirname $(which python)))
+    else
+	echo "Cannot find python version 2.7.3+"
+	exit 1
+    fi
 fi
 
 echo "Using python installation from $PYTHON_INSTALL_PREFIX"
