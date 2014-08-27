@@ -60,6 +60,7 @@ class TestFunctional( Base ):
         ok_( 'failed' not in self.output )
 
     def test_links_scripts( self ):
+        print self.output
         binpath = join( self.vpath, 'bin' )
         print os.listdir( binpath )
         for script in self.scripts:
@@ -71,10 +72,12 @@ class TestFunctional( Base ):
                 ok_( False, "Script {} was not linked into virtenv bin directory to path {}".format(script,path) )
 
     def test_creates_virtenv( self ):
+        print self.output
         print os.listdir( '.' )
         for me in self.must_exist:
             ok_( exists( me ), "install did not create {}".format(me) )
 
+    @attr('current')
     @timed(1)
     def test_wrong_python_version( self ):
         # Make a mock python that returns an older version number
@@ -88,7 +91,7 @@ class TestFunctional( Base ):
         script = self.script_path('install.sh')
         path=tdir + ':' + os.environ['PATH']
         ret, output = self.run_script( 'export PATH={}; {} {}'.format(path,script,self.vpath) )
-        eq_( 'Please ensure you have python 2.7.3 or greater but less than 3', output.rstrip() )
+        eq_( 'Cannot find python version 2.7.3+', output.rstrip() )
         eq_( 1, ret )
 
     def test_uninstall_works( self ):
@@ -104,6 +107,7 @@ class TestFunctional( Base ):
             ok_( __import__(pkg), "Could not import {}".format(pkg) )
 
     def test_trimmomatic_installed( self ):
+        print self.output
         trimmomatic_path = glob( join( self.vpath, 'lib', 'Trimmo*' ) )[0]
         trimmomatic_jar_path = glob( join( trimmomatic_path, 'trimmo*' ) )[0]
         ok_( exists( trimmomatic_jar_path ), 'Did not install Trimmomatic' )

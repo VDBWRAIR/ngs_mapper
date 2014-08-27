@@ -79,9 +79,15 @@ do
 done
 
 # Create the virtual environment where everything will install to
-${PYTHON_INSTALL_PREFIX}/bin/virtualenv --prompt='(miseqpipeline) ' ${virtpath}
-# Activate
-. ${virtpath}/bin/activate
+if [ ! -e ${PYTHON_INSTALL_PREFIX}/bin/virtualenv ]
+then
+    echo "Please ensure virtualenv is installed in ${PYTHON_INSTALL_PREFIX}"
+    exit 1
+else
+    ${PYTHON_INSTALL_PREFIX}/bin/virtualenv --prompt='(miseqpipeline) ' ${virtpath}
+    # Activate
+    . ${virtpath}/bin/activate
+fi
 
 # Make sure we are in the repository directory
 cd ${THIS}
