@@ -137,26 +137,28 @@ do
 done
 
 # Install all python packages(the ordering is important because of dependencies on each other)
-package_list=( PyVCF numpy nose pyparsing tornado six python-dateutil matplotlib biopython pyBWA mock cutadapt )
-cd ${deppath}
-for package in ${package_list[@]}
-do
-    pdir=$(echo ${package}*)
-    echo "Installing ${pdir}"
-    pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
-    if [ $_RET -ne 0 ]
-    then
-        echo "${package} failed to install. Please check ${THIS}/dependencies/${pdir}/${package}.install.log for more details."
-        exit 1
-    fi
-done
+#package_list=( PyVCF numpy nose pyparsing tornado six python-dateutil matplotlib biopython pyBWA mock cutadapt )
+#cd ${deppath}
+#for package in ${package_list[@]}
+#do
+#    pdir=$(echo ${package}*)
+#    echo "Installing ${pdir}"
+#    pyinstall ${pdir} > ${pdir}/${package}.install.log 2>&1
+#    if [ $_RET -ne 0 ]
+#    then
+#        echo "${package} failed to install. Please check ${THIS}/dependencies/${pdir}/${package}.install.log for more details."
+#        exit 1
+#    fi
+#done
+pip install -r ${THIS}/requirements.txt
 
 # Install Trimmomatic into $virtpath/lib
 TRIMOPATH=${deppath}/Trimmo*
 cp -R ${TRIMOPATH} ${virtpath}/lib/
 
 # Symlink all of our goodies into venv bin
-find ${THIS} -maxdepth 1 -type f -perm /u=x,g=x,o=x | while read f
+echo "Locating all executables directly inside of ${THIS}"
+find ${THIS}/ -maxdepth 1 -type f -perm /u=x,g=x,o=x | while read f
 do
     echo "Installing $f to $binpath"
     ln -s ${f} ${binpath}/

@@ -1,3 +1,0 @@
-import numpydoc.traitsdoc
-
-# No tests at the moment...
