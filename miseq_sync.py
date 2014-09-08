@@ -42,6 +42,13 @@ def get_rundate( rundir ):
     y = rundir[0:2]
     m = rundir[2:4]
     d = rundir[4:6]
+    # Ensure all can be converted to integers
+    try:
+        int(y)
+        int(m)
+        int(d)
+    except ValueError as e:
+        raise ValueError( 'run directory does not contain a valid date in the beginning' )
     return '20{}_{}_{}'.format(y,m,d)
 
 #Tested
@@ -86,6 +93,8 @@ def sync( src, ngsdata ):
     '''
         Sync all files/dirs from src into ngsdata
     '''
+    # Fixes #1060. Ensures no trailing slash
+    src = normpath( src )
     sync_fastq( src, ngsdata )
     srundir = join( ngsdata, 'RawData', 'MiSeq', basename(src) )
     create_readdata( srundir, ngsdata )

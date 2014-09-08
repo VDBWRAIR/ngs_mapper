@@ -84,6 +84,11 @@ class TestGetRunDate( Base ):
         r = self._C( run )
         eq_( '2014_03_05', r )
 
+    @raises(ValueError)
+    def test_bad_has_no_rundate( self ):
+        run = 'ABCDEFG'
+        r = self._C( run )
+
 class TestSamplenameFromFq( Base ):
     def _C( self, *args, **kwargs ):
         from miseq_sync import samplename_from_fq
@@ -132,7 +137,6 @@ class FunctionalBase( Base ):
         self.samples = {sample['Sample_ID']:sample for sample in parse_samplesheet(self.samplesheet)}
         self.mock_samples( self.samples, self.bcdir )
 
-@attr('current')
 class TestFunctional( FunctionalBase ):
     def _C( self, *args, **kwargs ):
         script = join( dirname( dirname( __file__ ) ), 'miseq_sync.py' )
@@ -183,4 +187,11 @@ class TestFunctional( FunctionalBase ):
         self.mock_miseq_run()
         ngsdata = 'NGSData'
         eq_( 0, self._C( ngsdata, self.runname ), 'miseq_sync.py did not return 0' )
+        self.ensure_data_structure( self.runname, ngsdata )
+
+    def test_fixes_issue_1060_runpath_has_slash_at_end( self ):
+        self.mock_miseq_run()
+        ngsdata = 'NGSData'
+        runpathwithslash = join( os.getcwd(), self.runname ) + '/'
+        eq_( 0, self._C( ngsdata, runpathwithslash ), 'miseq_sync.py did not return 0' )
         self.ensure_data_structure( self.runname, ngsdata )
