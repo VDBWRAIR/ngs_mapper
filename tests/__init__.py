@@ -4,7 +4,7 @@ import os
 from os.path import *
 from glob import glob
 
-tdir = tempfile.mkdtemp(prefix='tests',suffix='class')
+tdir = tempfile.mkdtemp(prefix='miseqpipelinetests',suffix='package')
 before = []
 
 def setUpPackage():

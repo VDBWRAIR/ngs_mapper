@@ -68,7 +68,7 @@ def compile_reads( readfilelist, outputdir ):
         @returns a dictionary {'F': join(outputdir,'F.fq'), 'R': join(outputdir,'R.fq'), 'NP': join(outputdir,'NP.fq')}
             If there were no mated files given then F & R will be None. Same goes for NP
     '''
-    from bwa import seqio
+    from bwa.bwa import seqio
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
 

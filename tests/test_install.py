@@ -7,12 +7,51 @@ class Base(common.BaseClass):
     @classmethod
     def setUpClass( klass ):
         super(Base,klass).setUpClass()
-        # Uninstall first since __init__.py already installed for us
+
+        # If .virtpath exists then copy it and copy it back during tearDown
+        klass.virtpathfile = join(dirname(dirname(abspath(__file__))), '.virtpath')
+        if exists(klass.virtpathfile):
+            shutil.copy(klass.virtpathfile, klass.virtpathfile + '.bk')
+
+        klass.mock_pip()
+
         # Only install once because it takes a long time
         klass.returncode, klass.output = klass.run_installer( klass.vpath )
 
+    @classmethod
+    def mock_pip( klass ):
+        ''' Because I don't want to wait for pip to finish every time '''
+        # Ensure there is a bin directory to put pip in
+        bindir = join(klass.vpath, 'bin')
+        if not isdir( bindir ):
+            os.makedirs( bindir )
+
+        # Make pip bash script that just echos what is in the supplied requirements.txt file
+        pip = join( bindir, 'pip' )
+        with open(pip, 'w') as fh:
+            fh.write( '#!/bin/bash\n' )
+            fh.write( 'echo "Args to pip: $@"\n' )
+            fh.write( 'echo "Python path: $(which python)"\n' )
+            fh.write( 'cat $3 | while read line\n' )
+            fh.write( 'do\n' )
+            fh.write( '\t[[ $line =~ ^# ]] || echo "Installing $line"\n' )
+            fh.write( 'done\n' )
+
+        # Make pip executable
+        os.chmod( pip, 0755 )
+    
+        return pip
+
+    @classmethod
+    def tearDownClass( klass ):
+        super(Base,klass).tearDownClass()
+        # Resore original virtpath
+        if exists(klass.virtpathfile + '.bk'):
+            shutil.move(klass.virtpathfile + '.bk', klass.virtpathfile)
+
     def setUp( self ):
         super( Base, self ).setUp()
+
         self.must_exist = (
             self.vpath,
             join(self.vpath,'bin'),
@@ -54,6 +93,7 @@ class Base(common.BaseClass):
         return klass.run_script( '{} {}'.format( script, installpath ) )
 
 class TestFunctional( Base ):
+    @attr('current')
     def test_install_ran_successfully( self ):
         print self.output
         eq_( 0, self.returncode )
@@ -77,7 +117,6 @@ class TestFunctional( Base ):
         for me in self.must_exist:
             ok_( exists( me ), "install did not create {}".format(me) )
 
-    @attr('current')
     @timed(1)
     def test_wrong_python_version( self ):
         # Make a mock python that returns an older version number

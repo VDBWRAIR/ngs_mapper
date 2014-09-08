@@ -31,7 +31,7 @@ then
     echo "No virtpath given so using ${THIS}/.miseqpipeline"
     virtpath=${THIS}/.miseqpipeline
 fi
-# For the uninstaller
+# For the uninstaller and setup
 echo "virtpath=${virtpath}" > ${THIS}/.virtpath
 # Where to store our goodies
 binpath=${virtpath}/bin
