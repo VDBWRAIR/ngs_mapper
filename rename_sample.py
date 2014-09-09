@@ -178,6 +178,11 @@ def parse_args( args=sys.argv[1:] ):
     )
 
     parser.add_argument(
+        dest='ngsdata',
+        help='Path to NGSData'
+    )
+
+    parser.add_argument(
         'origname',
         help='Original samplename'
     )
@@ -185,13 +190,6 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         'newname',
         help='New name to rename to'
-    )
-
-    ngsdata='/home/EIDRUdata/NGSData'
-    parser.add_argument(
-        '--ngsdata',
-        default=ngsdata,
-        help='Path to NGSData[Default: {}]'.format(ngsdata)
     )
 
     return parser.parse_args( args )
