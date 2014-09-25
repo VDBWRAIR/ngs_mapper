@@ -4,13 +4,10 @@ from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 
 class Base( common.BaseClass ):
-    pass
+    modulepath = 'miseqpipeline.fqstats'
 
-@attr('current')
 class TestReadAvgQual( Base ):
-    def _C( self, *args, **kwargs ):
-        from fqstats import read_avg_qual
-        return read_avg_qual( *args, **kwargs )
+    functionname = 'read_avg_qual'
 
     def test_correct_avgq( self ):
         rrec = common.make_seqrec( 'ATGCATGC', [0,0,0,0,40,40,40,40] )
@@ -27,11 +24,8 @@ class TestReadAvgQual( Base ):
         r = self._C( rrec )
         eq_( 0.0, r )
 
-@attr('current')
 class TestBinValues( Base ):
-    def _C( self, *args, **kwargs ):
-        from fqstats import bin_values
-        return bin_values( *args, **kwargs )
+    functionname = 'bin_values'
 
     def test_bins_correctly( self ):
         import random
@@ -45,14 +39,12 @@ class TestBinValues( Base ):
         eq_( 10, m, 'Maximum returned was not correct' )
 
 class TestFqstats( Base ):
-    def _C( self, *args, **kwargs ):
-        from fqstats import fqstats
-        return fqstats( *args, **kwargs )
+    functionname = 'fqstats'
 
     def test_expected_return( self ):
         acceptable_time = 0.5
         import time
-        from fqstats import bin_values, read_avg_qual
+        from miseqpipeline.fqstats import bin_values, read_avg_qual
         randseqs, mlen, mqual = common.random_seqs( 10000 )
         s = time.time()
         rlb, aqb, mrl, maq, mrc, mqc = self._C( randseqs )
