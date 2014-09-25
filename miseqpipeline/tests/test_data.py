@@ -1,8 +1,10 @@
 from imports import *
 
-from data import NoPlatformFound
+from miseqpipeline.data import NoPlatformFound
 
 class Base(common.BaseClass):
+    modulepath = 'miseqpipeline.data'
+
     def setUp(self):
         super(Base,self).setUp()
         self.reads = {
@@ -46,9 +48,7 @@ class Base(common.BaseClass):
         return mapping
 
 class TestIsSangerReadFile(Base):
-    def _C( self, *args, **kwargs ):
-        from data import is_sanger_readfile
-        return is_sanger_readfile( *args, **kwargs )
+    functionname = 'is_sanger_readfile'
 
     def test_detects_sanger( self ):
         f = 'sample1_F1_1979_01_01_Den2_Den2_0001_A01.fastq'
@@ -62,11 +62,8 @@ class TestIsSangerReadFile(Base):
         r = self._C( f )
         ok_( not r, 'Incorrectly detected another platform as Sanger' )
 
-from data import NoPlatformFound
 class TestUnitPlatformForRead(Base):
-    def _C( self, *args, **kwargs ):
-        from data import platform_for_read
-        return platform_for_read( *args, **kwargs )
+    functionname = 'platform_for_read'
 
     def test_idents_platform( self ):
         for readfile, plat in self.reads_for_platforms().items():
@@ -94,29 +91,29 @@ class TestUnitPlatformForRead(Base):
 
 class TestFunctional(Base):
     def test_reads_by_plat_emptydir(self):
-        from data import reads_by_plat as rbp
+        from miseqpipeline.data import reads_by_plat as rbp
         # no files so empty dict returned
         eq_( {}, rbp( self.tempdir ) )
 
 
     def test_reads_by_plat(self):
-        with patch('data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]) as a:
-            with patch('data.filter_reads_by_platform', lambda path,plat: self.reads[plat]) as b:
-                import data
+        with patch('miseqpipeline.data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]) as a:
+            with patch('miseqpipeline.data.filter_reads_by_platform', lambda path,plat: self.reads[plat]) as b:
+                from miseqpipeline import data
                 for plat, readfiles in self.reads.items():
                     if plat == 'MiSeq':
                         readfiles = [tuple(readfiles),]
                     eq_( sorted(readfiles), sorted(data.reads_by_plat( '' )[plat]) )
 
     def test_filter_reads_by_platform_all(self):
-        from data import filter_reads_by_platform as frbp
+        from miseqpipeline.data import filter_reads_by_platform as frbp
         expected = self.mock_reads_dir(self.tempdir)
         for plat, readfiles in expected.items():
             result = frbp( self.tempdir, plat )
             eq_( readfiles, sorted(result) )
 
     def test_filter_reads_by_platform_bad_read_skipped(self):
-        from data import filter_reads_by_platform as frbp
+        from miseqpipeline.data import filter_reads_by_platform as frbp
         fn = 'Sample_F1_1979_01_01_Den1_Den1_0001_A01.junk' 
         self.reads['Sanger'].append( fn )
         expected = self.mock_reads_dir(self.tempdir)
@@ -130,31 +127,31 @@ class TestFunctional(Base):
     def test_platform_has_paired_reads(self):
         reads = ['read1_r1','read1_r2','read2_r1','read3_r1','read3_r2']
         mates = [1,-1,4]
-        with patch('data.find_mate', MagicMock(side_effect=mates)):
-            from data import pair_reads
+        with patch('miseqpipeline.data.find_mate', MagicMock(side_effect=mates)):
+            from miseqpipeline.data import pair_reads
             expected = [('read1_r1','read1_r2'),'read2_r1',('read3_r1','read3_r2')]
             eq_( expected, pair_reads(reads) )
 
     def test_find_mate_read_has_mate(self):
-        from data import find_mate
+        from miseqpipeline.data import find_mate
         eq_( 1, find_mate(self.reads['MiSeq'][0], self.reads['MiSeq']) )
 
     def test_find_mate_single_item_list(self):
-        from data import find_mate
+        from miseqpipeline.data import find_mate
         eq_( -1, find_mate(self.reads['Roche454'][0], self.reads['Roche454']) )
 
     def test_find_mate_does_not_have_mate(self):
-        from data import find_mate
+        from miseqpipeline.data import find_mate
         eq_( -1, find_mate(self.reads['Sanger'][0], self.reads['Sanger']) )
 
 class TestIntegration(Base):
     def test_platform_for_read( self ):
-        from data import platform_for_read as pfr
+        from miseqpipeline.data import platform_for_read as pfr
         for readfile, plat in self.reads_for_platforms().items():
             eq_( plat, pfr( readfile ) )
 
     def test_reads_by_plat_individual(self):
-        from data import reads_by_plat as rdp
+        from miseqpipeline.data import reads_by_plat as rdp
         # Test each platform's file format
         expected = self.mock_reads_dir(self.tempdir)
         result = rdp( self.tempdir )
@@ -178,7 +175,7 @@ class TestIntegration(Base):
         self.mock_expected( expected )
 
     def mock_expected( self, expected ):
-        from data import reads_by_plat as rdp
+        from miseqpipeline.data import reads_by_plat as rdp
         expected['MiSeq'] = [tuple(expected['MiSeq']),]
         result = rdp( self.tempdir )
         ex = {}
@@ -187,10 +184,9 @@ class TestIntegration(Base):
         eq_( ex, result )
 
     def test_platform_has_paired_reads(self):
-        from data import pair_reads
+        from miseqpipeline.data import pair_reads
         eq_( [tuple(self.reads['MiSeq']),], pair_reads( self.reads['MiSeq'] ) )
 
     def test_platform_does_not_have_paired_reads(self):
-        from data import pair_reads
+        from miseqpipeline.data import pair_reads
         eq_( self.reads['Sanger'], pair_reads( self.reads['Sanger'] ) )
-
