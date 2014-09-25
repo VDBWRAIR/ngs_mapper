@@ -5,7 +5,17 @@ from os.path import *
 from . import tdir
 import subprocess
 
-class BaseClass( object ):
+class BaseTester(object):
+    def _C( self, *args, **kwargs ):
+        '''
+        Set modulepath as instance variable to be the name of the module
+        Set functionname as instance variable to automagically run that function
+        with self._C
+        '''
+        m = __import__( self.modulepath, fromlist=[self.functionname] )
+        return getattr(m,self.functionname)( *args, **kwargs )
+
+class BaseClass( BaseTester ):
     @classmethod
     def setUpClass(cls):
         pass
@@ -43,7 +53,7 @@ class BaseClass( object ):
             return (e.returncode, e.output)
 
 import fixtures
-from bam import indexbam
+from miseqpipeline.bam import indexbam
 class BaseBamRef(BaseClass):
     bam = join(fixtures.THIS,'fixtures','varcaller','paired.bam.gz')
     ref = join(fixtures.THIS,'fixtures','varcaller','ref.fasta.gz')
