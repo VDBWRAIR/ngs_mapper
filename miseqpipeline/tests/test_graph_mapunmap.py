@@ -10,17 +10,14 @@ import shlex
 import numpy as np
 
 class Base(common.BaseBamRef):
-    pass
+    modulepath = 'miseqpipeline.graph_mapunmap'
 
 class TestUnitArgs(Base):
+    functionname = 'parse_args'
     script = 'graph_mapunmap.py'
 
     def setUp( self ):
         super(TestUnitArgs,self).setUp()
-
-    def _call( self, args ):
-        from graph_mapunmap import parse_args
-        return parse_args( args )
 
     def _mock_args( self ):
         args = Mock()
@@ -29,26 +26,24 @@ class TestUnitArgs(Base):
         return args
 
     def test_outfile_unset( self ):
-        res = self._call( [self.script, 'qd.json'] )
+        res = self._C( [self.script, 'qd.json'] )
         # Should just be in current directory with default name
         eq_( 'mapunmap.png', res.outfile )
 
     def test_outfile_set( self ):
-        res = self._call( [self.script, 'qd.json', '-o', 'mu.png'] )
+        res = self._C( [self.script, 'qd.json', '-o', 'mu.png'] )
         eq_( 'mu.png', res.outfile )
 
     def test_input_single( self ):
-        res = self._call( [self.script, 'qd.json'] )
+        res = self._C( [self.script, 'qd.json'] )
         eq_( ['qd.json'], res.jsons )
 
     def test_input_multiple( self ):
-        res = self._call( [self.script, 'qd1.json', 'qd2.json'] )
+        res = self._C( [self.script, 'qd1.json', 'qd2.json'] )
         eq_( ['qd1.json','qd2.json'], res.jsons )
 
 class TestUnitSampleFromFilename(Base):
-    def _C( self, *args, **kwargs ):
-        from graph_mapunmap import sample_from_filename
-        return sample_from_filename( *args, **kwargs )
+    functionname = 'sample_from_filename'
 
     def test_returns_everything_before_bam( self ):
         res = self._C( 'sample_sample78-sample.bam' )
@@ -63,12 +58,10 @@ class TestUnitSampleFromFilename(Base):
         eq_( 'samplename', res )
 
 class TestUnitGetMapUnmap(Base):
-    def _C( self, jsons ):
-        from graph_mapunmap import get_mapunmap
-        return get_mapunmap( jsons )
+    functionname = 'get_mapunmap'
 
     @patch('__builtin__.open',Mock())
-    @patch('graph_mapunmap.sample_from_filename',Mock(side_effect=['S1','S2']))
+    @patch('miseqpipeline.graph_mapunmap.sample_from_filename',Mock(side_effect=['S1','S2']))
     @patch('json.load')
     def test_gets_values( self, load ):
         load.side_effect = [
@@ -102,7 +95,7 @@ class TestFunctional(Base):
     @classmethod
     def setUpClass( klass ):
         super(TestFunctional,klass).setUpClass()
-        from graphsample import make_json
+        from miseqpipeline.graphsample import make_json
         klass.json = make_json( klass.bam, klass.bam )
 
     def test_ensure_json( self ):
@@ -111,8 +104,7 @@ class TestFunctional(Base):
         assert json.load( open(self.json) )
 
     def _run_cmd( self, jsons, outpath=None ):
-        script_path = dirname( dirname( abspath( __file__ ) ) )
-        script_path = join( script_path, 'graph_mapunmap.py' )
+        script_path = 'graph_mapunmap.py'
         args = ' '.join( jsons )
         if outpath is not None:
             args += ' -o {}'.format(outpath)

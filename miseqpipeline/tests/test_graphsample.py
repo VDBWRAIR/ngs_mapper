@@ -3,12 +3,10 @@ from subprocess import check_output, CalledProcessError, STDOUT
 import shlex
 
 class Base(common.BaseBamRef):
-    pass
+    modulepath = 'miseqpipeline.graphsample'
 
 class TestUnitHandleArgs(Base):
-    def _call( self, args ):
-        from graphsample import handle_args
-        return handle_args( args )
+    functionname = 'handle_args'
 
     def _mock_args( self ):
         args = Mock()
@@ -19,32 +17,30 @@ class TestUnitHandleArgs(Base):
 
     def test_handle_args_nothing_set(self):
         args = self._mock_args()
-        res = self._call( args )
+        res = self._C( args )
         eq_( join(self.tempdir,'bamfile.bam'), res.outpath )
 
     def test_handle_args_outdir_set(self):
         args = self._mock_args()
         args.outdir = 'somepath'
-        res = self._call( args )
+        res = self._C( args )
         eq_( join('somepath','bamfile.bam'), res.outpath )
 
     def test_handle_args_outprefix_set(self):
         args = self._mock_args()
         args.outprefix = 'someprefix'
-        res = self._call( args )
+        res = self._C( args )
         eq_( join(self.tempdir,'someprefix'), res.outpath )
 
     def test_handle_args_outdir_outprefix_set(self):
         args = self._mock_args()
         args.outdir = 'somepath'
         args.outprefix = 'someprefix'
-        res = self._call( args )
+        res = self._C( args )
         eq_( join('somepath','someprefix'), res.outpath )
 
 class TestUnitRunMontage(Base):
-    def _C( self, outprefix, *args, **kwargs ):
-        from graphsample import run_montage
-        return run_montage( outprefix, *args, **kwargs )
+    functionname = 'run_montage'
 
     def test_expected_outputfile( self ):
         images = ['img.'+str(i)+'.png' for i in range(5)]
@@ -66,10 +62,8 @@ class TestUnitRunMontage(Base):
         eq_( eo, r, "Returned file path {} != {}".format(r,eo) )
         ok_( os.stat( r ), "did not create output file" )
 
-class TestNormalizeRef(object):
-    def _C( self, refname ):
-        from graphsample import normalize_ref
-        return normalize_ref( refname )
+class TestNormalizeRef(Base):
+    functionname = 'normalize_ref'
 
     def test_replaces_punctuation( self ):
         import string
@@ -96,8 +90,7 @@ class TestFunctional(Base):
     outfiles = ( '.qualdepth.png', '.qualdepth.json' )
 
     def _rungraphsample( self, bamfile, **kwargs ):
-        script_path = dirname( dirname( abspath( __file__ ) ) )
-        script_path = join( script_path, 'graphsample.py' )
+        script_path = 'graphsample.py'
         args = ' '.join( ['-{} {}'.format(aname,aval) for aname, aval in kwargs.items()] )
         cmd = script_path + ' {} '.format(bamfile) + args
         print "Running: {}".format(cmd)
@@ -129,7 +122,6 @@ class TestFunctional(Base):
         res = self._rungraphsample( self.bam )
         self._files_exist( os.getcwd(), basename(self.bam) )
 
-    @attr('current')
     def test_creates_imgdir( self ):
         # Puts all the images for each ref in a qualdepth dir
         from glob import glob
@@ -137,7 +129,6 @@ class TestFunctional(Base):
         ok_( exists( 'qualdepth' ) )
         eq_( 'test.bam.qualdepth.png', glob( '*.png' )[0] )
 
-    @attr('current')
     def test_outfiles_are_expected_size( self ):
         # Now just check filesizes against known
         # to make sure the graphics are correct?
