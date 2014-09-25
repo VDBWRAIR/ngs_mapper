@@ -6,7 +6,7 @@ import samtools
 import re
 import shutil
 import os.path
-from bam import sortbam, indexbam
+from miseqpipeline.bam import sortbam, indexbam
 
 import log
 logger = log.setup_logger('tagreads',log.get_config())

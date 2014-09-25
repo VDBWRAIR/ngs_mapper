@@ -62,7 +62,6 @@ class Hpoly( BaseClass ):
         self.ref = self.make_hpoly_fasta( self.hlist )
         self.seqs = SeqIO.index( self.ref, 'fasta' )
 
-@attr('current')
 class TestHpolyList( Hpoly ):
     def _C( self, *args, **kwargs ):
         from base_caller import hpoly_list
@@ -1013,8 +1012,7 @@ class TestUnitMain(BaseInty):
 class TestIntegrate(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         import subprocess
-        script_path = join( dirname( dirname( __file__ ) ) )
-        script_path = join( script_path, 'base_caller.py' )
+        script_path = 'base_caller.py'
         cmd = [script_path, bamfile, reffile]
         if regionstr:
             cmd += ['-r', regionstr]

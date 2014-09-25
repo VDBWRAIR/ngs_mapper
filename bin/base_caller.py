@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 #from stats_at_refpos import stats
-from samtools import MPileupColumn, mpileup
+from miseqpipeline.samtools import MPileupColumn, mpileup
+from miseqpipeline.alphabet import iupac_amb
 
-from alphabet import iupac_amb
 import sys
 import argparse
 import re

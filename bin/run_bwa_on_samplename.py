@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import run_bwa
+from miseqpipeline import run_bwa
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
