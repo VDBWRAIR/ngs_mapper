@@ -1,6 +1,8 @@
 from imports import *
 
 class Base(common.BaseClass):
+    modulepath = 'miseqpipeline.reads'
+
     def check_trimmed_against_record( self, trimmedrec, record, trim=True ):
         ''' Check trimmed seq against initial record '''
         # Useful values to check
@@ -28,14 +30,12 @@ def rand_sff_seqs( ):
     for i in range( 10 ):
         yield common.rand_seqrec( 100, 0, 0, 5, 10 )
 
-@patch( 'reads.SeqIO.parse' )
+@patch('miseqpipeline.reads.SeqIO.parse')
 class TestSffsToFastq(Base):
+    functionname = 'sffs_to_fastq'
+
     def setUp( self ):
         super( TestSffsToFastq, self ).setUp()
-
-    def _C( self, *args, **kwargs ):
-        from reads import sffs_to_fastq
-        return sffs_to_fastq( *args, **kwargs )
 
     def _pre( self, bioparse ):
         self.f1records = [r for r in rand_sff_seqs()]
@@ -65,6 +65,8 @@ class TestSffsToFastq(Base):
         self._post( outfile, count, False )
 
 class TestClipSeqRecord(Base):
+    functionname = 'clip_seq_record'
+
     def setUp( self ):
         super(TestClipSeqRecord,self).setUp()
         self.seqlen = 100
@@ -73,10 +75,6 @@ class TestClipSeqRecord(Base):
         self.cql = 5
         self.cqr = 10
         self.rec = common.rand_seqrec( 100, 0, 0, 5, 10 )
-
-    def _C( self, *args, **kwargs ):
-        from reads import clip_seq_record
-        return clip_seq_record( *args, **kwargs )
 
     def test_trims( self ):
         from copy import copy
@@ -97,8 +95,9 @@ class TestClipSeqRecord(Base):
 
 @patch('bwa.seqio.concat_files')
 class TestFunctionalCompileReads(Base):
+    functionname = 'compile_reads' 
+
     def test_reads_abspath_basepath_relpath(self,mock):
-        from reads import compile_reads
         outputdir = 'output'
         outputdir = join(self.tempdir,outputdir)
         # Should return/create 3 files
@@ -109,11 +108,10 @@ class TestFunctionalCompileReads(Base):
             'R':join(outputdir,files[1]),
             'NP':join(outputdir,files[2])
         }
-        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( expected, self._C( reads, outputdir ) )
         eq_( len(mock.call_args_list), 3 )
 
     def test_compile_reads_paired_and_unpaired(self,mock):
-        from reads import compile_reads
         outputdir = 'output'
         outputdir = join(self.tempdir,outputdir)
         # Should return/create 3 files
@@ -124,11 +122,10 @@ class TestFunctionalCompileReads(Base):
             'R':join(outputdir,files[1]),
             'NP':join(outputdir,files[2])
         }
-        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( expected, self._C( reads, outputdir ) )
         eq_( len(mock.call_args_list), 3 )
 
     def test_compile_reads_paired_only_single(self,mock):
-        from reads import compile_reads
         outputdir = 'output'
         outputdir = join(self.tempdir,outputdir)
         # Should return/create 3 files
@@ -139,11 +136,10 @@ class TestFunctionalCompileReads(Base):
             'R':join(outputdir,files[1]),
             'NP':None
         }
-        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( expected, self._C( reads, outputdir ) )
         eq_( len(mock.call_args_list), 2 )
 
     def test_compile_reads_paired_only_multiple(self,mock):
-        from reads import compile_reads
         outputdir = 'output'
         outputdir = join(self.tempdir,outputdir)
         # Should return/create 3 files
@@ -154,12 +150,11 @@ class TestFunctionalCompileReads(Base):
             'R':join(outputdir,files[1]),
             'NP':None
         }
-        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( expected, self._C( reads, outputdir ) )
         print mock.call_args_list
         eq_( len(mock.call_args_list), 2 )
 
     def test_compile_reads_unpaired_only_single(self,mock):
-        from reads import compile_reads
         outputdir = 'output'
         outputdir = join(self.tempdir,outputdir)
         # Should return/create 3 files
@@ -170,11 +165,10 @@ class TestFunctionalCompileReads(Base):
             'R':None,
             'NP':join(outputdir,files[2])
         }
-        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( expected, self._C( reads, outputdir ) )
         eq_( len(mock.call_args_list), 1 )
 
     def test_compile_reads_unpaired_only_multiple(self,mock):
-        from reads import compile_reads
         outputdir = 'output'
         outputdir = join(self.tempdir,outputdir)
         reads = ['p1.fastq','p2.fastq']
@@ -184,12 +178,11 @@ class TestFunctionalCompileReads(Base):
             'R':None,
             'NP':join(outputdir,files[2])
         }
-        eq_( expected, compile_reads( reads, outputdir ) )
+        eq_( expected, self._C( reads, outputdir ) )
         eq_( len(mock.call_args_list), 1 )
 
-    @patch('reads.sffs_to_fastq')
+    @patch('miseqpipeline.reads.sffs_to_fastq')
     def test_converts_sff_to_fastq(self,sffs_to_fastq, concat_files):
-        from reads import compile_reads
         def side_effect( ins, out ):
             fh = open(out,'w')
             fh.write('\n')
@@ -197,17 +190,17 @@ class TestFunctionalCompileReads(Base):
         sffs_to_fastq.side_effect = side_effect
         outputdir = join(self.tempdir,'output')
         reads = ['np.sff','np.fastq',('F.fastq','R.fastq')]
-        compile_reads( reads, outputdir )
+        self._C( reads, outputdir )
         eq_( ['np.sff'], sffs_to_fastq.call_args_list[0][0][0] )
         eq_( 3, len(concat_files.call_args_list) )
 
     def test_compile_reads_non_supported_read_types(self,mock):
         # Only support fastq and sff right now
-        from reads import compile_reads, InvalidReadFile
+        from miseqpipeline.reads import InvalidReadFile
         outputdir = join(self.tempdir,'output')
         reads = ['np.ab1','np.fastq.gz']
         try:
-            compile_reads( reads, outputdir )
+            self._C( reads, outputdir )
             assert False, "Did not raise InvalidReadFile"
         except InvalidReadFile as e:
             pass
@@ -215,32 +208,30 @@ class TestFunctionalCompileReads(Base):
             assert False, "Did not raise InvalidReadFile"
 
     def test_compile_reads_three_item_tuple(self,mock):
-        from reads import compile_reads, InvalidReadFile
+        from miseqpipeline.reads import InvalidReadFile
         outputdir = join(self.tempdir,'output')
         reads = [('one.fastq','two.fastq','three.fastq')]
         try:
-            compile_reads( reads, outputdir )
+            self._C( reads, outputdir )
             assert False, "ValueError not raised"
         except ValueError as e:
             pass
 
     def test_compile_reads_emptyreadfilelist(self,mock):
-        from reads import compile_reads, InvalidReadFile
+        from miseqpipeline.reads import InvalidReadFile
         outputdir = join(self.tempdir,'output')
         reads = ['np.sff','np.ab1','np.fastq.gz']
-        eq_({'F':None,'R':None,'NP':None}, compile_reads( [], outputdir ) )
+        eq_({'F':None,'R':None,'NP':None}, self._C( [], outputdir ) )
 
-class TestUnitIsValidRead(object):
-    def _C( self, readpath ):
-        from reads import is_valid_read
-        return is_valid_read( readpath )
+class TestUnitIsValidRead(Base):
+    functionname = 'is_valid_read'
 
     def test_invalid_read( self ):
         for ext in ('ab1','gz','adasdf'):
             eq_( False, self._C( 'file.'+ext ) )
 
     def test_valid_read( self ):
-        from reads import VALID_READ_EXT
+        from miseqpipeline.reads import VALID_READ_EXT
         for ext in VALID_READ_EXT:
             eq_( True, self._C( 'file.'+ext ) )
 
@@ -258,7 +249,7 @@ class TestIntegrationCompileReads(Base):
         self.run_compile_reads(outputdir)
 
     def run_compile_reads(self,outputdir):
-        from reads import compile_reads
+        from miseqpipeline.reads import compile_reads
         readsdir = join( fixtures.THIS, 'fixtures', 'reads' )
         sff = glob( join(readsdir,'*.sff') )
         miseq = tuple( glob( join(readsdir,'*L001*') ) )
