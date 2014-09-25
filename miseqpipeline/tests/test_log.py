@@ -9,6 +9,8 @@ import logging
 import common
 
 class LogBase(common.BaseClass):
+    modulepath = 'miseqpipeline.log'
+
     def setUp( self ):
         super( LogBase, self ).setUp()
         self.filename = join('Projects','project','project.log')
@@ -17,9 +19,7 @@ class LogBase(common.BaseClass):
         self.format = '%(asctime)-15s %(message)s'
 
 class TestUnitGetConfig(LogBase):
-    def _C( self, *args, **kwargs ):
-        from log import get_config
-        return get_config( *args, **kwargs )
+    functionname = 'get_config'
 
     def is_valid_config( self, config ):
         import logging.config
@@ -51,15 +51,13 @@ class MockLoggingHandler(logging.Handler):
         }
 
 class TestUnitSetupLogger(LogBase):
+    functionname = 'setup_logger'
+
     ''' Ensure logging happens as expected '''
     def setUp( self ):
         super( TestUnitSetupLogger, self ).setUp()
-        from log import get_config
+        from miseqpipeline.log import get_config
         self.config = get_config( self.filename, self.format )
-
-    def _C( self, *args, **kwargs ):
-        from log import setup_logger
-        return setup_logger( *args, **kwargs )
 
     from StringIO import StringIO
     @patch('sys.stdout',new_callable=StringIO)
