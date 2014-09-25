@@ -1,7 +1,7 @@
 from bwa.bwa import BWAMem, index_ref, which_bwa, compile_refs
-from data import reads_by_plat
-from reads import compile_reads
-import bam
+from miseqpipeline.data import reads_by_plat
+from miseqpipeline.reads import compile_reads
+import miseqpipeline.bam
 
 import os
 import sys
@@ -56,19 +56,19 @@ def main():
     if reads['F'] is not None:
         merge += 1
         pairedsai = bwa_mem( reads['F'], reads['R'], ref, join(tdir, 'paired.sai'), t=args.threads )
-        pairedbam = bam.sortbam( bam.samtobam( pairedsai, PIPE ), join(tdir, 'paired.bam') )
+        pairedbam = miseqpipeline.bam.sortbam( miseqpipeline.bam.samtobam( pairedsai, PIPE ), join(tdir, 'paired.bam') )
         #bam.indexbam( pairedbam )
 
     if reads['NP'] is not None:
         merge += 2
         nonpairedsai = bwa_mem( reads['NP'], ref=ref, output=join(tdir, 'nonpaired.sai'), t=args.threads )
-        nonpairedbam = bam.sortbam( bam.samtobam( nonpairedsai, PIPE ), join(tdir, 'nonpaired.bam') )
+        nonpairedbam = miseqpipeline.bam.sortbam( miseqpipeline.bam.samtobam( nonpairedsai, PIPE ), join(tdir, 'nonpaired.bam') )
         #bam.indexbam( nonpairedbam )
 
     # Now decide if any merging needs to happen
     bampath = args.output
     if merge == 3:
-        bam.mergebams( [pairedbam, nonpairedbam], args.output )
+        miseqpipeline.bam.mergebams( [pairedbam, nonpairedbam], args.output )
     elif merge == 1:
         log.debug( "Paired only. Moving result file {} to {}".format(pairedbam, bampath) )
         shutil.move( pairedbam, bampath )
@@ -79,7 +79,7 @@ def main():
         raise Exception( "Somehow no reads were compiled" )
 
     # Index the resulting bam
-    bam.indexbam( bampath )
+    miseqpipeline.bam.indexbam( bampath )
 
     if not args.keep_temp:
         shutil.rmtree( tdir )
