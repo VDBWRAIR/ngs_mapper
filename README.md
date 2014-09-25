@@ -12,36 +12,7 @@ https://vdbpm.org/miseqpipeline/Wiki
 
 2. Ensure pre-requisites
 
-  The miseqpipeline requires python 2.7.3+ but < 3.0
-
-  - Red Hat
-
-  1. Install System Packages
-
-    ```
-    su -c 'yum groupinstall "Development tools"'
-    su -c "yum install -y yum install -y ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel}"
-    ```
-
-  2. Install Python 2.7.3+ into your home directory
-
-    ```
-    prefix=$HOME
-    version=2.7.8
-    wget --no-check-certificate https://www.python.org/ftp/python/${version}/Python-${version}.tgz -O- | tar xzf -
-    cd Python-${version}
-    ./configure --prefix $prefix
-    make
-    make install
-    ```
-
-  3. Quick verify that Python is installed
-
-    The following should return python 2.7.x(where x is somewhere from 3 to 9)
-
-    ```
-    $HOME/bin/python --version
-    ```
+  Read the REQUIREMENTS.md file
 
 3. Setup virtualenv
 
