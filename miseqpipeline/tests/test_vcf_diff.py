@@ -1,6 +1,8 @@
 from imports import *
 
 class Base(common.BaseBaseCaller):
+    modulepath = 'miseqpipeline.vcf_diff'
+
     def setUp( self ):
         super(Base,self).setUp()
         fixpath = join(fixtures.THIS,'fixtures')
@@ -22,7 +24,7 @@ class Base(common.BaseBaseCaller):
 
     def run_vcf_diff( self, vcffile, *args, **kwargs ):
         import subprocess
-        script = join( dirname( dirname( __file__ ) ), 'vcf_diff.py' )
+        script = 'vcf_diff.py'
 
         cmd = [script,vcffile]
         print "Running {}".format(' '.join(cmd))
@@ -34,9 +36,7 @@ class Base(common.BaseBaseCaller):
 @patch( 'sys.stdout', new_callable=StringIO )
 @patch( 'sys.stderr', new_callable=StringIO )
 class TestUnitMain(Base):
-    def _C( self, args ):
-        from vcf_diff import main
-        return main( args )
+    functionname = 'main'
 
     def test_has_main( self, stdout, stderr ):
         args = Mock()
