@@ -6,6 +6,8 @@ EXPECTED_TIME_PER_BASE = 0.0015
 EXPECTED_TOTAL_TIME = 0.6
 
 class Base( common.BaseBaseCaller ):
+    modulepath = 'miseqpipeline.base_caller'
+
     def mock_stats( self ):
         s = { 'baseq': [40]*10, 'mapq': [60]*10 }
         self.stats = self.make_stats({
@@ -45,7 +47,7 @@ class Base( common.BaseBaseCaller ):
 
         return stats
 
-class Hpoly( BaseClass ):
+class Hpoly( Base ):
     def make_hpoly_fasta( self, hlist ):
         with open( 'ref.fasta', 'w' ) as fh:
             seq = ['X'] * hlist[-1][-1]
@@ -63,9 +65,7 @@ class Hpoly( BaseClass ):
         self.seqs = SeqIO.index( self.ref, 'fasta' )
 
 class TestHpolyList( Hpoly ):
-    def _C( self, *args, **kwargs ):
-        from base_caller import hpoly_list
-        return hpoly_list( *args, **kwargs )
+    functionname = 'hpoly_list'
 
     def make_list( self, hpolys ):
         # easier to compare
@@ -84,16 +84,13 @@ class TestHpolyList( Hpoly ):
         r = self.make_list( r )
         eq_( {'ref':self.hlist[1:]}, r )
 
-@attr('current')
 class TestIsHpoly( Hpoly ):
+    functionname = 'is_hpoly'
+
     def setUp( self ):
         super( TestIsHpoly, self ).setUp()
-        from base_caller import hpoly_list
+        from miseqpipeline.base_caller import hpoly_list
         self.hpoly = hpoly_list( self.seqs, 3 )
-
-    def _C( self, *args, **kwargs ):
-        from base_caller import is_hpoly
-        return is_hpoly( *args, **kwargs )
 
     def test_( self ):
         ok_( self._C( self.hpoly, 'ref', 1 ) )
@@ -123,9 +120,7 @@ class StatsBase(Base):
         self.mock_stats()
 
 class TestUnitBiasHQ(StatsBase):
-    def _C( self, *args, **kwargs ):
-        from base_caller import bias_hq
-        return bias_hq( *args, **kwargs )
+    functionname = 'bias_hq'
 
     def test_no_highquality( self ):
         r = self._C( self.stats )
@@ -170,9 +165,7 @@ class TestUnitBiasHQ(StatsBase):
             r = self._C( self.stats, 1, i )
 
 class TestUnitMarkLQ(StatsBase):
-    def _C( self, *args, **kwargs ):
-        from base_caller import mark_lq
-        return mark_lq( *args, **kwargs )
+    functionname = 'mark_lq'
 
     def test_bias_reference( self ):
         # If less than mind then don't call N if base is == ref base
@@ -236,12 +229,10 @@ class TestUnitMarkLQ(StatsBase):
         assert 'N' not in r, 'N was added to stats when it should not have'
 
 class TestUnitCaller(Base):
+    functionname = 'caller'
+
     def setUp( self ):
         super( TestUnitCaller, self ).setUp()
-
-    def _C( self, stats2, minbq, maxd, mind, minth ):
-        from base_caller import caller
-        return caller( stats2, minbq, maxd, mind, minth )
 
     def test_no_majority( self ):
         # No > 0.8 majority, so call anything > 0.2 which should only be A
@@ -333,9 +324,7 @@ class TestUnitCaller(Base):
         eq_( ('D',3), r )
 
 class TestUnitCallOnPct(Base):
-    def _C( self, stats, minth ):
-        from base_caller import call_on_pct
-        return call_on_pct( stats, minth )
+    functionname = 'call_on_pct'
 
     def test_called_ambigious( self ):
         base_stats = {
@@ -432,9 +421,7 @@ def eqs_( v1, v2, msg=None ):
         eq_( str(v1), str(v2) )
 
 class TestUnitBlankVcfRows(Base):
-    def _C( self, refname, refseq, curpos, lastpos, call='-' ):
-        from base_caller import blank_vcf_rows
-        return blank_vcf_rows( refname, refseq, curpos, lastpos, call )
+    functionname = 'blank_vcf_rows'
 
     def test_gap_front( self ):
         # Should return 1 & 2
@@ -480,9 +467,7 @@ class TestUnitBlankVcfRows(Base):
         eq_( 'A', r[0].REF )
 
 class TestUnitBlankVcfRow(Base):
-    def _C( self, refname, refseq, pos, call ):
-        from base_caller import blank_vcf_row
-        return blank_vcf_row( refname, refseq, pos, call )
+    functionname = 'blank_vcf_row'
 
     def sets_( self, record, refbase, pos, call ):
         r = record
@@ -522,11 +507,9 @@ class MpileBase(Base):
         mpilemock.base_stats.return_value = stats
 
 
-@patch('base_caller.MPileupColumn')
+@patch('miseqpipeline.base_caller.MPileupColumn')
 class TestUnitPileStats(MpileBase):
-    def _C( self, *args, **kwargs ):
-        from base_caller import pile_stats
-        return pile_stats( *args, **kwargs )
+    functionname = 'pile_stats'
 
     def test_bias_ref_and_bias_hq( self, mpilecol ):
         # Should bias 2 reads and bias ref
@@ -538,11 +521,9 @@ class TestUnitPileStats(MpileBase):
         r = self._C( mpilecol, 'T', 25, 10, 50, 10 )
         eq_( 23, r['depth'] )
 
-@patch('base_caller.MPileupColumn')
+@patch('miseqpipeline.base_caller.MPileupColumn')
 class TestUnitGenerateVcfRow(MpileBase):
-    def _C( self, mpilecol, refseq, minbq, maxd, mind, minth, biasth=50, bias=2 ):
-        from base_caller import generate_vcf_row
-        return generate_vcf_row( mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias )
+    functionname = 'generate_vcf_row'
 
     def test_issue_1012_calls_alt_or_ref( self, mpilecol ):
         base_stats = {
@@ -689,7 +670,7 @@ class TestUnitGenerateVcfRow(MpileBase):
         }
         stats = self.make_stats( base_stats )
         self.setup_mpileupcol( mpilecol, stats=stats )
-        with patch( 'base_caller.info_stats' ) as info_stats:
+        with patch('miseqpipeline.base_caller.info_stats' ) as info_stats:
             info_stats.return_value = {
                 'AC':[60,21,9],
                 'PAC':[60,21,10],
@@ -712,7 +693,7 @@ class TestUnitGenerateVcfRow(MpileBase):
         }
         stats = self.make_stats( base_stats )
         self.setup_mpileupcol( mpilecol, stats=stats )
-        with patch( 'base_caller.info_stats' ) as info_stats:
+        with patch('miseqpipeline.base_caller.info_stats' ) as info_stats:
             info_stats.return_value = {
                 'AC':[60,20,10],
                 'PAC':[60,20,10],
@@ -771,7 +752,7 @@ class TestUnitGenerateVcfRow(MpileBase):
         self.setup_mpileupcol( mpilecol )
         # So we can check the ordering is correct
         info_stats = {'AC':[1,2,3],'AAQ':[4,5,6],'PAC':[7,8,9],'bases':['A','C','G']}
-        with patch('base_caller.info_stats') as info_stats:
+        with patch('miseqpipeline.base_caller.info_stats') as info_stats:
             info_stats.return_value = info_stats
             r = self._C( mpilecol, 'A', 25, 1000, 10, 0.8 )
         eq_( 'ref', r.CHROM )
@@ -849,12 +830,10 @@ class TestUnitGenerateVCF(Base):
     pass
 
 class TestUnitInfoStats(Base):
+    functionname = 'info_stats'
+
     def setUp( self ):
         self.mock_stats2()
-
-    def _C( self, stats2, refbase ):
-        from base_caller import info_stats
-        return info_stats( stats2, refbase )
 
     def mock_stats2( self ):
         ''' Every base and each base has length 20 with 40 quality so depth 100 '''
@@ -937,7 +916,7 @@ class BaseInty(Base):
 
 class TestUnitGenerateVCF(BaseInty):
     def _C( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, biasth=50, bias=2, vcf_template=None ):
-        from base_caller import generate_vcf, VCF_HEAD
+        from miseqpipeline.base_caller import generate_vcf, VCF_HEAD
         if vcf_template is None:
             template = VCF_HEAD.format(basename(bamfile))
         else:
@@ -982,7 +961,7 @@ class TestUnitGenerateVCF(BaseInty):
 
 class TestUnitMain(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
-        from base_caller import main
+        from miseqpipeline.base_caller import main
         args = Mock(
             bamfile=bamfile,
             reffile=reffile,
