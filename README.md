@@ -62,3 +62,5 @@ https://vdbpm.org/miseqpipeline/Wiki
   ```
   python setup.py install
   ```
+
+  It should be safe to run this more than once in case some dependencies do not fully install.

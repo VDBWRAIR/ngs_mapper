@@ -13,6 +13,12 @@
   You need to ensure that you have a python virtualenv setup and activated prior to installing as these
   instructions assume that you do. The README.md has instructions on how to do that.
 
+## System Packages
+
+  ```
+  su -c "yum install -y libpng{,-devel} ImageMagick"
+  ```
+
 ## Samtools
 
   ```
