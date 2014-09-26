@@ -31,7 +31,7 @@ class Base(common.BaseBamRef):
             print e.output
             return False
 
-class TestUnitArgs(object):
+class TestUnitArgs(Base):
     functionname = 'parse_args'
 
     def test_defaults( self ):
