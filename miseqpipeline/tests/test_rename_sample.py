@@ -1,8 +1,10 @@
 from imports import *
 import common
-from rename_sample import RenameException
+from miseqpipeline.rename_sample import RenameException
 
 class Base( common.BaseClass ):
+    modulepath = 'miseqpipeline.rename_sample'
+
     # All possible base paths that might be seen
     basepaths = (
         '/some/path/NGSData/ReadData',
@@ -172,9 +174,7 @@ class Base( common.BaseClass ):
 
 
 class TestRunReadPath( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import runread_path
-        return runread_path( *args, **kwargs )
+    functionname = 'runread_path'
 
     def iter_plat( self, platform ):
         for bp in self.basepaths:
@@ -206,9 +206,7 @@ class TestRunReadPath( Base ):
             eq_( (rund, read), r )
 
 class TestResolveSymlink( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import resolve_symlink
-        return resolve_symlink( *args, **kwargs )
+    functionname = 'resolve_symlink'
 
     @raises(OSError)
     def test_notexist( self ):
@@ -260,9 +258,7 @@ class TestResolveSymlink( Base ):
         eq_( f, r )
 
 class TestRenameFile( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import rename_file
-        return rename_file( *args, **kwargs )
+    functionname = 'rename_file'
 
     def test_symlinksymlink( self ):
         f = 'somefile.txt'
@@ -367,11 +363,8 @@ class TestRenameFile( Base ):
         ok_( exists(f2), 'Removed f2 when it should not have' )
         ok_( samefile(f,f2), 'Overwrote f with f2' )
 
-@attr('current')
 class TestRenameIonTorrent( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import rename_iontorrent
-        return rename_iontorrent( *args, **kwargs )
+    functionname = 'rename_iontorrent'
 
     def test_renames_correctly( self ):
         raw, read, rbs = self.mock_iontorrent( 'somerunname', 'fromsamplename' ) 
@@ -391,9 +384,7 @@ class TestRenameIonTorrent( Base ):
         ok_( exists(newrbs), 'Did not create the correct ReadsBySample symlink' )
 
 class TestRenameRoche( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import rename_roche
-        return rename_roche( *args, **kwargs )
+    functionname = 'rename_roche'
 
     def test_renames_roche_byregion( self ):
         files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=True )
@@ -433,9 +424,7 @@ class TestRenameRoche( Base ):
         ok_( exists(newp), '{} does not exist'.format(rbs) )
 
 class TestRenameMiSeq( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import rename_miseq
-        return rename_miseq( *args, **kwargs )
+    functionname = 'rename_miseq'
 
     def test_renames( self ):
         samplename = 'sample_1'
@@ -451,9 +440,7 @@ class TestRenameMiSeq( Base ):
             ok_( exists(newp), '{} did not get created' )
 
 class TestRenameSanger( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import rename_sanger
-        return rename_sanger( *args, **kwargs )
+    functionname = 'rename_sanger'
 
     def test_renames( self ):
         samplename = 'sample_1'
@@ -473,9 +460,7 @@ class TestRenameSanger( Base ):
             ok_( exists(newname), '{} does not exist'.format(newname) )
 
 class TestRenameSample( Base ):
-    def _C( self, *args, **kwargs ):
-        from rename_sample import rename_sample
-        return rename_sample( *args, **kwargs )
+    functionname = 'rename_sample'
 
     def test_removes_empty_dirs( self ):
         self.mock_sanger( 'Run_3130xl_something', 'sample_1' )
