@@ -1,6 +1,8 @@
 from imports import *
 
 class Base(common.BaseBamRef):
+    modulepath = 'miseqpipeline.runsample'
+
     reads_by_sample = ''
     f = ''
     r = ''
@@ -30,9 +32,7 @@ class Base(common.BaseBamRef):
             return False
 
 class TestUnitArgs(object):
-    def _C( self, arglist ):
-        from runsample import parse_args
-        return parse_args( arglist )
+    functionname = 'parse_args'
 
     def test_defaults( self ):
         args = ['ReadsBySample','Reference.fasta','Sample1']
@@ -50,11 +50,12 @@ class TestUnitArgs(object):
         eq_( 'Sample1', res.prefix )
         eq_( 'outdir', res.outdir )
 
-@patch('runsample.logger',Mock())
+@attr('current')
+@patch('miseqpipeline.runsample.logger',Mock())
 class TestUnitRunCMD(object):
-    import runsample
+    from miseqpipeline import runsample
     def _C( self, cmdstr, stdin=None, stdout=None, stderr=None, script_dir=None ):
-        from runsample import run_cmd
+        from miseqpipeline.runsample import run_cmd
         if script_dir is None:
             return run_cmd( cmdstr, stdin, stdout, stderr )
         else:
@@ -73,10 +74,14 @@ class TestUnitRunCMD(object):
         eq_( ('test\n',None), p2.communicate() )
 
     def test_script_dir_none( self ):
-        self._C( 'echo', script_dir='' )
+        r = self._C( 'echo', script_dir=None )
+        eq_( r.wait(), 0 )
+        r = self._C( 'echo', script_dir='' )
+        eq_( r.wait(), 0 )
 
     def test_script_dir_somepath( self ):
-        self._C( 'echo', script_dir='/bin' )
+        r = self._C( 'echo', script_dir='/bin' )
+        eq_( r.wait(), 0 )
 
     @raises(runsample.MissingCommand)
     def test_missing_cmd_exception_caught( self ):
@@ -84,10 +89,8 @@ class TestUnitRunCMD(object):
 
 @patch('os.path.isdir')
 @patch('os.path.exists')
-class TestUnitTempProjdir(object):
-    def _C( self, suffix, prefix ):
-        from runsample import temp_projdir
-        return temp_projdir( suffix, prefix )
+class TestUnitTempProjdir(Base):
+    functionname = 'temp_projdir'
 
     def test_has_tempfs( self, exists, isdir ):
         exists.return_value = True
@@ -107,11 +110,9 @@ class TestUnitTempProjdir(object):
         assert bn.startswith( 'shmtest' )
         assert bn.endswith( 'test' )
 
-@patch('runsample.logger',Mock())
+@patch('miseqpipeline.runsample.logger',Mock())
 class TestMakeProjectRepo(Base):
-    def _C( self, *args, **kwargs ):
-        from runsample import make_project_repo
-        return make_project_repo( *args, **kwargs )
+    functionname = 'make_project_repo'
 
     def test_no_existing_repo( self ):
         path = 'outdir'
@@ -131,8 +132,7 @@ class TestMakeProjectRepo(Base):
 
 class TestFunctional(Base):
     def _run_runsample( self, readdir, reference, fileprefix, od=None ):
-        script_path = dirname( dirname( abspath( __file__ ) ) )
-        script_path = join( script_path, 'runsample.py' )
+        script_path = 'runsample.py'
         cmd = script_path + ' {} {} {}'.format(readdir, reference, fileprefix)
         if od is not None:
             cmd += ' -od {}'.format(od)
@@ -238,7 +238,7 @@ class TestFunctional(Base):
             fh.write( '#!/bin/bash\nexit 1\n' )
         os.chmod( join(self.tempdir,'samtools'), 0755 )
         import subprocess
-        script = join( dirname( dirname( abspath( __file__ ) ) ), 'runsample.py' )
+        script = 'runsample.py'
         cmd = 'export PATH={}:$PATH; {} {} {} {} -od {}'.format( self.tempdir, script, self.reads_by_sample, self.ref, 'tests', 'outdir' )
         ret = subprocess.call( cmd, shell=True )
         assert ret != 0, "Return code was 0 even though some executables returned 1"
