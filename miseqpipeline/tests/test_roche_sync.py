@@ -4,7 +4,9 @@ samplesheet = '''SampleName,Region,Barcode,PrimerFileLocation
 Sample1,1,Mid1,/path/to/primer.fasta
 Sample2,2,RL1,'''
 
-class BaseClass( object ):
+class BaseClass( BaseTester ):
+    modulepath = 'miseqpipeline.roche_sync'
+
     def setUp( self ):
         self.midparse = join(dirname(dirname(__file__)),'MidParse.conf')
         self.tdir = tempfile.mkdtemp( prefix='rochesync', suffix='tests', dir=tdir )
@@ -126,7 +128,8 @@ class BaseClass( object ):
             Checks to make sure that demultiplexed files got linked into ReadsBySample with correct name
             Checks to make sure ReadsBySample gets a symlink to signalProcessing
         '''
-        from roche_sync import format_read_name, get_rundate, get_sigprocdir, parse_samplesheet
+        from miseqpipeline.roche_sync import (
+            format_read_name, get_rundate, get_sigprocdir, parse_samplesheet)
         ngsdatadir = dirname( dirname( dirname( rdir ) ) )
         sigprocdir = get_sigprocdir( rdir )
         demuldir = join( sigprocdir, 'demultiplexed' )
@@ -143,7 +146,7 @@ class BaseClass( object ):
             Make sure sigproc has demultiplexed
             Make sure all samples have sff files
         '''
-        from roche_sync import format_read_name, get_rundate, get_sigprocdir, parse_samplesheet
+        from miseqpipeline.roche_sync import format_read_name, get_rundate, get_sigprocdir, parse_samplesheet
         d = get_rundate( rdir )
         demuldir = join( get_sigprocdir( rdir ), 'demultiplexed' )
         ok_( isdir( demuldir ), 'Missing demultiplexed directory' )
@@ -154,7 +157,7 @@ class BaseClass( object ):
             ok_( exists( f ), 'Did not create {}'.format(f) )
 
     def check_reads_by_sample( self, rdir, readsbysampledir ):
-        from roche_sync import format_read_name, get_rundate, get_sigprocdir, parse_samplesheet
+        from miseqpipeline.roche_sync import format_read_name, get_rundate, get_sigprocdir, parse_samplesheet
         d = get_rundate( rdir )
         sigprocdir = get_sigprocdir( rdir )
         for sample in parse_samplesheet( join(rdir,'SampleSheet.csv') ):
@@ -169,9 +172,7 @@ class BaseClass( object ):
             ok_( exists( read ), 'Did not create sample file {}'.format(read) )
 
 class TestSymlinkSigProc( BaseClass ):
-    def _C( self, *args, **kwargs ):
-        from roche_sync import symlink_sigproc
-        return symlink_sigproc( *args, **kwargs )
+    functionname = 'symlink_sigproc'
 
     def setUp( self ):
         super( TestSymlinkSigProc, self ).setUp()
@@ -181,7 +182,7 @@ class TestSymlinkSigProc( BaseClass ):
         os.makedirs( self.readdata )
 
     def test_creates_nonexisting_readdata( self ):
-        from roche_sync import get_sigprocdir, sync
+        from miseqpipeline.roche_sync import get_sigprocdir, sync
         os.rmdir( self.readdata )
         self._C( self.rdir, self.ngsdata )
         # Just the basename of the sigproc
@@ -190,7 +191,7 @@ class TestSymlinkSigProc( BaseClass ):
         ok_( exists( dpath ), 'Failed to create link when ReadData was missing' )
 
     def test_symlinks( self ):
-        from roche_sync import get_sigprocdir, sync
+        from miseqpipeline.roche_sync import get_sigprocdir, sync
         self._C( self.rdir, self.ngsdata )
         dname = basename( get_sigprocdir( self.rdir ) )
         lnk = join( self.readdata, dname )
@@ -202,15 +203,13 @@ class TestSymlinkSigProc( BaseClass ):
         self.test_symlinks()
 
 class TestSffRegionMap( BaseClass ):
+    functionname = 'sff_region_map'
+
     def setUp( self ):
         super( TestSffRegionMap, self ).setUp()
 
-    def _C( self, *args, **kwargs ):
-        from roche_sync import sff_region_map
-        return sff_region_map( *args, **kwargs )
-
     def test_maps_correctly( self ):
-        from roche_sync import get_sigprocdir
+        from miseqpipeline.roche_sync import get_sigprocdir, sync
         sffdir = join( get_sigprocdir(self.rdir), 'sff' )
         r = self._C( sffdir )
         eq_( {'1':'ABCDEFGH01.sff', '2':'ABCDEFGH02.sff'}, r )
@@ -228,14 +227,12 @@ def d_read( insff, outsff, bname, midparse ):
     open(outsff, 'w').close()
 
 class TestLinkReads( BaseClass ):
-    def _C( self, *args, **kwargs ):
-        from roche_sync import link_reads
-        return link_reads( *args, **kwargs )
+    functionname = 'link_reads'
 
     def setUp( self ):
         super( TestLinkReads, self ).setUp()
-        with patch('roche_sync.demultiplex_read',d_read) as dread:
-            from roche_sync import demultiplex_run
+        with patch('miseqpipeline.roche_sync.demultiplex_read',d_read) as dread:
+            from miseqpipeline.roche_sync import demultiplex_run
             demultiplex_run( self.rdir, self.midparse )
             self.ngsdata = 'NGSData'
             self.readsbysample = join( self.ngsdata, 'ReadsBySample' )
@@ -249,22 +246,20 @@ class TestLinkReads( BaseClass ):
         self.test_links_reads()
         self.test_links_reads()
 
-@patch('roche_sync.demultiplex_read',d_read)
+@patch('miseqpipeline.roche_sync.demultiplex_read',d_read)
 class TestDemultiplexRun( BaseClass ):
+    functionname = 'demultiplex_run'
+
     def setUp( self ):
         super( TestDemultiplexRun, self ).setUp()
 
-    def _C( self, *args, **kwargs ):
-        from roche_sync import demultiplex_run
-        return demultiplex_run( *args, **kwargs )
-
     def test_demultiplexes( self ):
-        from roche_sync import parse_samplesheet
+        from miseqpipeline.roche_sync import parse_samplesheet
         self._C( self.rdir, self.midparse )
         self.check_demultiplexed( self.rdir )
 
     def test_demul_dir_already_exist_not_demultiplexed( self ):
-        from roche_sync import get_sigprocdir
+        from miseqpipeline.roche_sync import get_sigprocdir
         # Ensure if the demultiplexed directory exists, that it still creates any other files needed
         self._C( self.rdir, self.midparse )
         demuldir = join( get_sigprocdir( self.rdir ), 'demultiplexed' )
@@ -299,12 +294,10 @@ class TestDemultiplexRun( BaseClass ):
         )
 
 class TestParseSampleSheet( BaseClass ):
+    functionname = 'parse_samplesheet'
+
     def setUp( self ):
         super(TestParseSampleSheet, self ).setUp()
-
-    def _C( self, *args, **kwargs ):
-        from roche_sync import parse_samplesheet
-        return parse_samplesheet( *args, **kwargs )
 
     def test_parses( self ):
         r = self._C( self.sheet )
@@ -321,12 +314,10 @@ class TestParseSampleSheet( BaseClass ):
         next( self._C( '/path/not/exist.csv' ) )
 
 class TestGetSigProcDir( BaseClass ):
+    functionname = 'get_sigprocdir'
+
     def setUp( self ):
         super(TestGetSigProcDir,self).setUp()
-
-    def _C( self, *args, **kwargs ):
-        from roche_sync import get_sigprocdir
-        return get_sigprocdir( *args, **kwargs )
 
     def test_has_sigproc_abspath( self ):
         sig = self._C( self.rdir )
@@ -338,7 +329,7 @@ class TestGetSigProcDir( BaseClass ):
         ok_( sig.endswith('signalProcessing'), 'Returned wrong path' )
 
     def test_func( self ):
-        from roche_sync import sync
+        from miseqpipeline.roche_sync import sync
         sync( self.rdir, 'NGSData' )
         rdir = join( 'NGSData', 'RawData', 'Roche454', basename( self.rdir ) )
         sig = self._C( rdir )
@@ -349,9 +340,7 @@ class TestGetSigProcDir( BaseClass ):
         self._C( 'NGSData' )
 
 class TestSync( BaseClass ):
-    def _C( self, *args, **kwargs ):
-        from roche_sync import sync
-        return sync( *args, **kwargs )
+    functionname = 'sync'
 
     def test_syncs( self ):
         self._C( self.rdir, 'NGSData' )
@@ -377,7 +366,7 @@ class TestFunctional( BaseClass ):
         return 'sfffile'
         
     def _C( self, *args, **kwargs ):
-        script = join( dirname( dirname(__file__) ), 'roche_sync.py' )
+        script = 'roche_sync.py'
         cmd = 'PATH={}:$PATH {} --ngsdata {} --midparse {} {}'.format(os.getcwd(), script, args[1], args[2], args[0])
         p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True )
         eo = p.communicate()
