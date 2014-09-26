@@ -10,6 +10,8 @@ import os
 from collections import OrderedDict
 
 class Base(common.BaseBamRef):
+    modulepath = 'miseqpipeline.stats_at_refpos'
+
     def setUp( self ):
         super(Base,self).setUp()
         self.mp = {1046: join( fixtures.THIS, 'fixtures', 'mpileup_1046.txt' )}
@@ -28,9 +30,7 @@ class StatsAtPos(Base):
             eq_( e[k], res[k] )
 
 class TestStatsAtPos(StatsAtPos):
-    def _C( self, bam, regionstr, minmq=0, minbq=0, maxd=100000 ):
-        from stats_at_refpos import stats_at_pos
-        return stats_at_pos( bam, regionstr, minmq, minbq, maxd )
+    functionname = 'stats_at_pos'
 
     def test_func_works( self ):
         ref = 'Den1/U88535_1/WestPac/1997/Den1_1'
@@ -52,9 +52,7 @@ class TestStatsAtPos(StatsAtPos):
         self._doit( res, eb, e )
 
 class TestCompileStats(Base):
-    def _C( self, stats ):
-        from stats_at_refpos import compile_stats
-        return compile_stats( stats )
+    functionname = 'compile_stats'
 
     def test_func_works( self ):
         stats = {
@@ -83,11 +81,9 @@ class TestCompileStats(Base):
         eq_( 10.0, a['PctTotal'] )
 
 class TestMain(StatsAtPos):
-    def _CM( self, args ):
-        from stats_at_refpos import main
-        return main( args )
+    functionname = 'main'
 
-    @patch('stats_at_refpos.stats_at_pos')
+    @patch('miseqpipeline.stats_at_refpos.stats_at_pos')
     def test_unit_runs( self, stats_at_pos ):
         args = Mock(
             regionstr='ref1:1-1',
@@ -96,7 +92,7 @@ class TestMain(StatsAtPos):
             minbq=0,
             maxd=100000
         )
-        self._CM( args )
+        self._C( args )
 
     def test_func_runs( self ):
         args = Mock(
@@ -117,7 +113,7 @@ class TestMain(StatsAtPos):
             'AvgBaseQ': 33.38,
             'TotalDepth': 13
         }
-        res = self._CM( args )
+        res = self._C( args )
         self._doit( res, eb, e )
 
     def test_func_filters_minmq( self ):
@@ -128,7 +124,7 @@ class TestMain(StatsAtPos):
             minbq=0,
             maxd=100000
         )
-        res = self._CM( args )
+        res = self._C( args )
         #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
         eb = OrderedDict([
                 #('G',{'AvgBaseQ':0.0,'AvgMapQ':37.73,'Depth':11,'PctTotal':84.62}),
@@ -151,7 +147,7 @@ class TestMain(StatsAtPos):
             minbq=30,
             maxd=100000
         )
-        res = self._CM( args )
+        res = self._C( args )
         #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
         eb = OrderedDict([
                 ('G',{'AvgBaseQ':37.73,'AvgMapQ':60.0,'Depth':11,'PctTotal':100.0}),
