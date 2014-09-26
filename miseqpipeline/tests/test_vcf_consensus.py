@@ -1,24 +1,19 @@
-import fixtures
-import common
+from imports import *
 
-from nose.tools import eq_, ok_, raises
-from nose.plugins.attrib import attr
-from mock import Mock, MagicMock, patch
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import generic_dna
 from Bio import SeqIO
 
-from base_caller import VCF_HEAD
+from miseqpipeline.base_caller import VCF_HEAD
 import vcf
 from vcf.model import _Record
 
-from os.path import *
-import sys
-import os
 from StringIO import StringIO
 
 class VCFBase(common.BaseClass):
+    modulepath = 'miseqpipeline.vcf_consensus'
+
     def setUp( self ):
         super(VCFBase, self).setUp()
         self.writer,self.fp = self.vcf_file()
@@ -34,7 +29,7 @@ class VCFBase(common.BaseClass):
         return _Record( *args, **kwargs )
 
     def blank_record( self, *args, **kwargs ):
-        from base_caller import blank_vcf_row
+        from miseqpipeline.base_caller import blank_vcf_row
         return blank_vcf_row( *args, **kwargs )
 
     # quicker alias
@@ -42,9 +37,7 @@ class VCFBase(common.BaseClass):
     br = blank_record
 
 class TestUnitIterRefs(VCFBase):
-    def _C( self, *args, **kwargs):
-        from vcf_consensus import iter_refs
-        return iter_refs( *args, **kwargs )
+    functionname = 'iter_refs'
 
     def test_is_iterable_singleref( self ):
         # Just one entry
@@ -89,9 +82,7 @@ class TestUnitIterRefs(VCFBase):
             eq_( ref, str(row.seq) )
 
 class TestUnitWriteFasta(VCFBase):
-    def _C( self, *args, **kwargs ):
-        from vcf_consensus import write_fasta
-        return write_fasta( *args, **kwargs )
+    functionname = 'write_fasta'
 
     def mock_records( self, num ):
         ''' Just get some blank records to use '''
@@ -144,15 +135,12 @@ class TestUnitWriteFasta(VCFBase):
         self.csr( list(self.mock_records(6)), of )
 
 class TestUnitOutputDiff(VCFBase):
-    def _C( self, vcfrecord ):
-        from vcf_consensus import output_diff
-        return output_diff( vcfrecord )
+    functionname = 'output_diff'
 
 class TestIntegrate(VCFBase):
     def _C( self, vcffile, **kwargs ):
         import subprocess
-        d = join( dirname( dirname( __file__ ) ) )
-        script = join( d, 'vcf_consensus.py' )
+        script = 'vcf_consensus.py'
         cmd = [script, vcffile]
         if kwargs.get( 'o', False ):
             cmd += ['-o', kwargs.get( 'o' )]
