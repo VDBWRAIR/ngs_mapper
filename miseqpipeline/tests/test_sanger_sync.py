@@ -3,19 +3,21 @@ import common
 import string
 
 class Base( common.BaseClass ):
+    modulepath = 'miseqpipeline.sanger_sync'
+
     sampleabi = join( fixtures.FIXDIR, 'sample.ab1' )
     rund = 'Run_3130xl_{year}-{month}-{day}_01-01_{run}_{year}-{month}-{day}'
     sample = '{sample}_{primer}_{year}_{month}_{day}_{virus}_{gene}_{run}_{well}.{ext}'
 
     def _syncrun( self, ngsdata ):
-        from sanger_sync import sync_run
+        from miseqpipeline.sanger_sync import sync_run
         rund, samples, abilist = self.make_from_dir()
         r = sync_run( rund, ngsdata )
         rawd = join( ngsdata, 'RawData', 'Sanger', rund )
         return r, abilist, rund, rawd
 
     def _syncrunread( self, ngsdata ):
-        from sanger_sync import sync_readdata
+        from miseqpipeline.sanger_sync import sync_readdata
         r, abilist, rund, rawd = self._syncrun( ngsdata )
         sync_readdata( rawd, ngsdata )
         readdata = join( ngsdata, 'ReadData', 'Sanger', rund )
@@ -68,7 +70,7 @@ class Base( common.BaseClass ):
 
     def check_rbs( self, abilist, rbs ):
         ''' abilist is just basename list of abi files expected '''
-        from sanger_sync import samplename_from_read
+        from miseqpipeline.sanger_sync import samplename_from_read
         self.print_ngs()
         for abi in abilist:
             sn = samplename_from_read( abi )
@@ -79,9 +81,7 @@ class Base( common.BaseClass ):
             ok_( islink( fastq ), '{}({}) is not a valid symlink'.format(fastq,os.readlink(read)) )
 
 class TestSync( Base ):
-    def _C( self, *args, **kwargs ):
-        from sanger_sync import sync_sanger
-        return sync_sanger( *args, **kwargs )
+    functionname = 'sync_sanger'
 
     def test_sync_works( self ):
         rund, samples, abilist = self.make_from_dir()
@@ -93,7 +93,7 @@ class TestSync( Base ):
 
 class TestFunctional( Base ):
     def _C( self, args ):
-        script = TestFunctional.script_path( 'sanger_sync.py' )
+        script = 'sanger_sync.py'
         cmd = script + ' ' + args
         return TestFunctional.run_script( cmd )
 
@@ -109,9 +109,7 @@ class TestFunctional( Base ):
         self.check_rbs( abilist, join(ngsdata,'ReadsBySample') )
 
 class TestSampleNameFromRead( Base ):
-    def _C( self, *args, **kwargs ):
-        from sanger_sync import samplename_from_read
-        return samplename_from_read( *args, **kwargs )
+    functionname = 'samplename_from_read'
 
     def test_valid_samplename( self ):
         validnames = [
@@ -131,7 +129,7 @@ class TestSampleNameFromRead( Base ):
                 eq_( name, r )
 
     def test_invalid_samplename( self ):
-        from sanger_sync import InvalidFormat
+        from miseqpipeline.sanger_sync import InvalidFormat
         for name, p in (('sample 1', 'F123'), ('sample 1', 'F123')):
             sn = self.sample.format(
                 sample=name, primer=p,
@@ -146,9 +144,7 @@ class TestSampleNameFromRead( Base ):
                 ok_( True )
 
 class TestLinkReads( Base ):
-    def _C( self, *args, **kwargs ):
-        from sanger_sync import link_reads
-        return link_reads( *args, **kwargs )
+    functionname = 'link_reads'
 
     def test_syncs_non_existing( self ):
         ngsdata = 'NGSData'
@@ -158,7 +154,7 @@ class TestLinkReads( Base ):
         self.check_rbs( abilist, rbs )
 
     def test_syncs_existing( self ):
-        from sanger_sync import samplename_from_read
+        from miseqpipeline.sanger_sync import samplename_from_read
         ngsdata = 'NGSData'
         reads, abilist, rund, rawd, readd = self._syncrunread( ngsdata )
         rbs = join( 'NGSData', 'ReadsBySample' )
@@ -180,9 +176,7 @@ class TestLinkReads( Base ):
         eq_( 'read.fq', os.readlink(fq) )
 
 class TestSyncRead( Base ):
-    def _C( self, *args, **kwargs ):
-        from sanger_sync import sync_readdata
-        return sync_readdata( *args, **kwargs )
+    functionname = 'sync_readdata'
 
     def test_syncs_non_existing( self ):
         ngsdata = 'NGSData'
@@ -206,12 +200,10 @@ class TestSyncRead( Base ):
         self.check_readdata( abilist, readd )
 
 class TestSyncRun( Base ):
-    def _C( self, *args, **kwargs ):
-        from sanger_sync import sync_run
-        return sync_run( *args, **kwargs )
+    functionname = 'sync_run'
 
     def test_invalid_filename( self ):
-        from sanger_sync import InvalidFormat
+        from miseqpipeline.sanger_sync import InvalidFormat
         rund, samples, abilist = self.make_from_dir()
         seqfile = self.sample.format( 
             sample='sample 1', primer='F1', year=2001,
