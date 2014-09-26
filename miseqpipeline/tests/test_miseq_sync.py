@@ -2,15 +2,15 @@ from imports import *
 from datetime import date
 
 class Base( common.BaseClass ):
+    modulepath = 'miseqpipeline.miseq_sync'
+
     def setUp( self ):
         super( Base, self ).setUp()
         self.bc_path = join( 'Data', 'Intensities', 'BaseCalls' )
         self.samplesheet = join( fixtures.THIS, 'fixtures', 'SampleSheet.csv' )
 
 class TestParseSamplesheet( Base ):
-    def _C( self, *args, **kwargs ):
-        from miseq_sync import parse_samplesheet
-        return parse_samplesheet( *args, **kwargs )
+    functionname = 'parse_samplesheet'
 
     def test_parses_valid_sheet( self ):
         r = self._C( self.samplesheet )
@@ -36,9 +36,7 @@ class TestParseSamplesheet( Base ):
             pass
 
 class TestGetBasecallsDir( Base ):
-    def _C( self, *args, **kwargs ):
-        from miseq_sync import get_basecalls_dir
-        return get_basecalls_dir( *args, **kwargs )
+    functionname = 'get_basecalls_dir'
 
     def test_correct_dir( self ):
         runpath = '/path/to/run/140305_M02261_0008_000000000-A6F0V'
@@ -47,9 +45,7 @@ class TestGetBasecallsDir( Base ):
         eq_( epath, r, 'Did not return correct BaseCalls path' )
 
 class TestFileAlreadyCopied( Base ):
-    def _C( self, *args, **kwargs ):
-        from miseq_sync import file_already_copied
-        return file_already_copied( *args, **kwargs )
+    functionname = 'file_already_copied'
 
     def test_same_file( self ):
         with open( 'a.txt', 'w' ) as fh:
@@ -70,9 +66,7 @@ class TestFileAlreadyCopied( Base ):
         ok_( not r, 'Files were not the same, but were detected to be the same' )
 
 class TestGetRunDate( Base ):
-    def _C( self, *args, **kwargs ):
-        from miseq_sync import get_rundate
-        return get_rundate( *args, **kwargs )
+    functionname = 'get_rundate'
 
     def test_gets_date_basename( self ):
         run = '140305_M02261_0008_000000000-A6F0V'
@@ -85,9 +79,7 @@ class TestGetRunDate( Base ):
         eq_( '2014_03_05', r )
 
 class TestSamplenameFromFq( Base ):
-    def _C( self, *args, **kwargs ):
-        from miseq_sync import samplename_from_fq
-        return samplename_from_fq( *args, **kwargs )
+    functionname = 'samplename_from_fq'
 
     def test_basenamepath( self ):
         r = self._C( 'samplename-here_S01_L001_R1_001.fastq.gz' )
@@ -118,7 +110,7 @@ class FunctionalBase( Base ):
         return reads
         
     def mock_miseq_run( self ):
-        from miseq_sync import get_basecalls_dir, parse_samplesheet
+        from miseqpipeline.miseq_sync import get_basecalls_dir, parse_samplesheet
         # Fixture samplesheet file
         self.rundate = '010101'
         self.runname = '{}_M02261_0001_00000000-A6F0V'.format(self.rundate)
@@ -132,15 +124,14 @@ class FunctionalBase( Base ):
         self.samples = {sample['Sample_ID']:sample for sample in parse_samplesheet(self.samplesheet)}
         self.mock_samples( self.samples, self.bcdir )
 
-@attr('current')
 class TestFunctional( FunctionalBase ):
     def _C( self, *args, **kwargs ):
-        script = join( dirname( dirname( __file__ ) ), 'miseq_sync.py' )
+        script = 'miseq_sync.py'
         cmd = [script, '--ngsdata', args[0], args[1]]
         return subprocess.call( cmd )
 
     def ensure_fastqfiles( self, runpath ):
-        from miseq_sync import get_basecalls_dir, parse_samplesheet
+        from miseqpipeline.miseq_sync import get_basecalls_dir, parse_samplesheet
         bcdir = get_basecalls_dir( runpath )
         samples = list( parse_samplesheet( join(runpath, 'SampleSheet.csv') ) )
         for sample in samples:
@@ -151,7 +142,7 @@ class TestFunctional( FunctionalBase ):
         ok_( exists( join(runpath,'SampleSheet.csv') ), '{} missing samplesheet'.format(runpath) )
 
     def ensure_data_structure( self, runpath, ngsdata ):
-        from miseq_sync import parse_samplesheet
+        from miseqpipeline.miseq_sync import parse_samplesheet
         listing = [join(root,file) for root, files, dirs in os.walk(ngsdata) for file in files]
         print listing
         print open( 'pipeline.log' ).read()
