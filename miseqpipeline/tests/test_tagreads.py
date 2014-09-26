@@ -1,6 +1,8 @@
 from imports import *
 
-class Base(object):
+class Base(common.BaseTester):
+    modulepath = 'miseqpipeline.tagreads'
+
     def setUp( self ):
         self.tempdir = tempfile.mkdtemp( prefix='testTagReads', dir=tdir )
         this = dirname( __file__ )
@@ -51,13 +53,11 @@ class Base(object):
         eq_( self.get_numreads(bamfile), read_count )
 
     def mock_read( self ):
-        from samtools import SamRow
+        from miseqpipeline.samtools import SamRow
         return SamRow('qname\t0\tRef1\t1\t60\t*\t=\t0\t0\t*\t*')
 
 class TestUnitGetRGForRead(Base):
-    def _C( self, read ):
-        from tagreads import get_rg_for_read
-        return get_rg_for_read( read )
+    functionname = 'get_rg_for_read'
 
     def maread( self, **kwargs ):
         from mock import MagicMock
@@ -107,9 +107,7 @@ class TestUnitGetRGForRead(Base):
             eq_( 'IonTorrent', rg )
 
 class TestUnitGetHeader(Base):
-    def _C( self, bamfile ):
-        from tagreads import get_bam_header
-        return get_bam_header( bamfile )
+    functionname = 'get_bam_header'
 
     def test_gets_header( self ):
         hdr = self._C( self.bam )
@@ -121,17 +119,15 @@ class TestUnitGetHeader(Base):
         hdr = self._C( self.bam )
         with open( 't.sam', 'w' ) as fh:
             fh.write( hdr )
-        import samtools
+        from miseqpipeline import samtools
         h = samtools.view( 't.sam', S=True, H=True )
         eq_( hdr, h.read().rstrip() )
 
 class TestUnitTagReads(Base):
-    def _C( self, bamfile, hdr ):
-        from tagreads import tag_reads
-        return tag_reads( bamfile, hdr )
+    functionname = 'tag_reads'
 
     def test_sets_header( self ):
-        from tagreads import get_bam_header
+        from miseqpipeline.tagreads import get_bam_header
         hdr = get_bam_header( self.bam )
         # Make a copy as we will edit the file
         self.temp_copy_files()
@@ -147,7 +143,7 @@ class TestUnitTagReads(Base):
 
     def count_rg( self, bam ):
         ''' Count how many of each uniq read group id '''
-        import samtools
+        from miseqpipeline import samtools
         s = samtools.view( bam ) 
         counts = {}
         for read in s:
@@ -160,7 +156,7 @@ class TestUnitTagReads(Base):
         return counts
 
     def test_readsin_eq_readsout( self ):
-        from tagreads import get_rg_headers
+        from miseqpipeline.tagreads import get_rg_headers
         self.temp_copy_files()
         hdr = get_rg_headers( self.bam )
         enreads = self.get_numreads( self.bam )
@@ -170,7 +166,7 @@ class TestUnitTagReads(Base):
         eq_( enreads, rnreads )
 
     def test_tags_reads( self ):
-        from tagreads import get_rg_headers
+        from miseqpipeline.tagreads import get_rg_headers
         self.temp_copy_files()
         hdr = get_rg_headers( self.bam )
         enreads = self.get_numreads( self.bam )
@@ -182,9 +178,7 @@ class TestUnitTagReads(Base):
         eq_( 996, counts['MiSeq'] )
 
 class TestUnitTagReadGroup(Base):
-    def _C( self, read ):
-        from tagreads import tag_readgroup
-        return tag_readgroup( read )
+    functionname = 'tag_readgroup'
 
     def test_tags_sanger( self ):
         read = self.mock_read()
@@ -215,9 +209,7 @@ class TestUnitTagReadGroup(Base):
         eq_( 1, len(read.TAGS) )
 
 class TestUnitTagRead(Base):
-    def _C( self, read, tags ):
-        from tagreads import tag_read
-        return tag_read( read, tags )
+    functionname = 'tag_read'
 
     def test_no_tags( self ):
         read = self.mock_read()
@@ -276,14 +268,12 @@ class TestUnitTagRead(Base):
         eq_( [], r.TAGS )
 
 class TestUnitGetRGHeaders(Base):
-    def _C( self, bamfile, SM=None, CN=None ):
-        from tagreads import get_rg_headers
-        return get_rg_headers( bamfile, SM, CN )
+    functionname = 'get_rg_headers'
 
     def test_does_not_readd_headers( self ):
         # Make sure headers that exist are not duplicated
-        from tagreads import get_bam_header
-        import samtools
+        from miseqpipeline.tagreads import get_bam_header
+        from miseqpipeline import samtools
         self.temp_copy_files()
         # Create a new bam file that the header already has a read group in it
         # as well as a new header
@@ -333,7 +323,7 @@ class TestUnitGetRGHeaders(Base):
     def test_correct_header( self ):
         # Make sure the expected number of header lines exist
         self.temp_copy_files()
-        from tagreads import get_bam_header
+        from miseqpipeline.tagreads import get_bam_header
         hdr = get_bam_header( self.bam )
         numlines = len(hdr.splitlines())
         hdr = self._C( self.bam, 'sample1', 'seqcenter' )
@@ -379,12 +369,11 @@ class TestUnitGetRGHeaders(Base):
 
 class TestIntegrate(Base):
     def _C( self, bamfiles, options=[] ):
-        this = dirname( dirname( __file__ ) )
-        cmd = [join( this, 'tagreads.py' )] + bamfiles + options
+        cmd = ['tagreads.py'] + bamfiles + options
         subprocess.check_call( cmd )
 
     def test_does_not_duplicate( self ):
-        from tagreads import get_bam_header
+        from miseqpipeline.tagreads import get_bam_header
         # Make sure if you run tagreads 2x it doesn't duplicate tags and headers
         self.temp_copy_files()
         self._C( [self.bam] )
@@ -400,7 +389,7 @@ class TestIntegrate(Base):
         self.check_tagreadcounts( self.bam )
 
     def test_does_multiple_bams( self ):
-        import samtools
+        from miseqpipeline import samtools
         self.temp_copy_files()
         bam2 = join( self.tempdir, 'sample2.bam' )
         bai2 = join( self.tempdir, 'sample2.bam.bai' )
@@ -416,7 +405,7 @@ class TestIntegrate(Base):
                 eq_( 'SM:'+n, rgline[2], "Did not set {} as SM for {}. Header: {}".format(n,b,rgline) )
 
     def test_samplename_argument( self ):
-        import samtools
+        from miseqpipeline import samtools
         self.temp_copy_files()
         self._C( [self.bam], ['-SM', 'sample1'] )
         s = samtools.view( self.bam, H=True )
@@ -427,7 +416,7 @@ class TestIntegrate(Base):
             ok_( 'SM:sample1\t' in rg, "Samplename did not make it into the headers" )
 
     def test_seqencingcenter_argument( self ):
-        import samtools
+        from miseqpipeline import samtools
         self.temp_copy_files()
         self._C( [self.bam], ['-CN', 'seqcenter'] )
         s = samtools.view( self.bam, H=True )
