@@ -41,8 +41,7 @@ class BaseClass( BaseTester ):
 
     @classmethod
     def script_path( self, script ):
-        path = dirname( dirname( __file__ ) )
-        return join( path, script )
+        return script
 
     @classmethod
     def run_script( self, script ):
