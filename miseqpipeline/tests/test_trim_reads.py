@@ -1,6 +1,8 @@
 from imports import *
 
 class TrimBase(common.BaseClass):
+    modulepath = 'miseqpipeline.trim_reads'
+
     def setUp( self ):
         super(TrimBase,self).setUp()
         # Contains sanger, miseq and 454 fastq
@@ -20,12 +22,10 @@ class TrimBase(common.BaseClass):
         self.reads = self.se + self.pe
 
 class TestTrimReadsInDir(TrimBase):
+    functionname = 'trim_reads_in_dir'
+
     def setUp( self ):
         super( TestTrimReadsInDir, self ).setUp()
-
-    def _C( self, *args, **kwargs ):
-        from trim_reads import trim_reads_in_dir
-        return trim_reads_in_dir( *args, **kwargs )
 
     def test_skips_ab1( self ):
         outdir = 'filtered_reads'
@@ -90,12 +90,10 @@ class TestTrimReadsInDir(TrimBase):
         eq_( expectedfiles, resultfiles, 'Expected files({}) was not equal to Resulting files({})'.format(expectedfiles,resultfiles) )
 
 class TestTrimRead(TrimBase):
+    functionname = 'trim_read'
+
     def setUp( self ):
         super(TestTrimRead,self).setUp()
-
-    def _C( self, *args, **kwargs ):
-        from trim_reads import trim_read
-        return trim_read( *args, **kwargs )
 
     def check_read( self, read, r ):
         bn = basename(read)
@@ -211,13 +209,11 @@ class TestTrimRead(TrimBase):
 
 
 class TestRunCutadapt(TrimBase):
+    functionname = 'run_cutadapt'
+
     def setUp( self ):
         super(TestRunCutadapt,self).setUp()
         self.read = self.se[0]
-
-    def _C( self, *args, **kwargs ):
-        from trim_reads import run_cutadapt
-        return run_cutadapt( *args, **kwargs )
 
     def test_runs_correctly( self ):
         outfq = 'output.fastq'
@@ -237,14 +233,12 @@ class TestRunCutadapt(TrimBase):
         ok_( os.stat(self.read).st_size != s.st_size, 'No trimming happened' )
 
 class TestRunTrimmomatic(TrimBase):
+    functionname = 'run_trimmomatic'
+
     def setUp( self ):
         super(TestRunTrimmomatic,self).setUp()
         os.mkdir( 'trim_stats' )
         self.outstat = join( 'trim_stats', 'output.trim_stats' )
-
-    def _C( self, *args, **kwargs ):
-        from trim_reads import run_trimmomatic
-        return run_trimmomatic( *args, **kwargs )
 
     def test_runs_se_correctly( self ):
         for read in self.se:
@@ -262,7 +256,7 @@ class TestRunTrimmomatic(TrimBase):
         sanger = self.se[0]
         shutil.copy( sanger, 'different_name.fastq' )
         sanger = 'different_name.fastq'
-        from data import NoPlatformFound
+        from miseqpipeline.data import NoPlatformFound
         try:
             out = self._C( 'SE', sanger, 'output.fastq', ('LEADING',20), trimlog=self.outstat )
             ok_( True )
@@ -279,7 +273,7 @@ class TestRunTrimmomatic(TrimBase):
 
 class TestIntegrate(TrimBase):
     def _C( self, *args, **kwargs ):
-        script = TestIntegrate.script_path('trim_reads.py')
+        script = 'trim_reads.py'
         return TestIntegrate.run_script( '{} {} -q {} -o {}'.format(
                 script, args[0], kwargs.get('q',20), kwargs.get('o','trimmed_reads')
             )
