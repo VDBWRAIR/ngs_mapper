@@ -70,10 +70,10 @@ do
         continue
     fi
 
-    echo ${scripts}/runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od Projects/${sample} $RUNSAMPLEOPTIONS
+    echo runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od Projects/${sample} $RUNSAMPLEOPTIONS
 done | xargs -n 6 -P $CPUS -I CMD bash -c CMD
 
 # Graph all samples
-${scripts}/graphs.sh -norecreate
+graphs.sh -norecreate
 # Softlink in consensus sequences into single folder
-${scripts}/consensuses.sh
+consensuses.sh
