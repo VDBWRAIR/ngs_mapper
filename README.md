@@ -33,17 +33,13 @@ https://vdbpm.org/miseqpipeline/Wiki
     - Red Hat/CentOS
 
       ```
-      su -c 'yum groupinstall "Development tools"'
-      ```
-  
-      ```
-      su -c "yum install -y yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel}"
+      su -c 'yum groupinstall "Development tools"; yum install -y yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel} libpng{,-devel} ImageMagick java-1.7.0-openjdk"
       ```
 
     - Ubuntu
 
       ```
-      sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip
+      sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip imagemagick libpng12-dev default-jre
       ```
 
   2. Install Python 2.7.3+ into your home directory
@@ -76,10 +72,23 @@ https://vdbpm.org/miseqpipeline/Wiki
 
 3. Setup virtualenv
 
+  1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
+
+  ```
+  venvpath=/home/myusername-changeme/.miseqpipeline
+  ```
+
+  2. Install the virtualenv to the path you specified
+
   ```
   wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
-  $HOME/bin/python virtualenv-1.11.6/virtualenv.py env 
-  . env/bin/activate
+  $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(miseqpipeline) " $venvpath 
+  ```
+
+  3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
+
+  ```
+  . /home/myuserename-changeme/bin/activate
   ```
 
 4. Ensure pre-requisites

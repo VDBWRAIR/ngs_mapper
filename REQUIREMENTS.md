@@ -7,25 +7,8 @@
 
 # Installation
 
-  You may or may not be able to install these via your package manager(yum/apt) but these instructions
-  will help you manually install them.
-
   You need to ensure that you have a python virtualenv setup and activated prior to installing as these
   instructions assume that you do. The README.md has instructions on how to do that.
-
-## System Packages
-
-  - RedHat/CentOS
-
-    ```
-    su -c "yum install -y libpng{,-devel} ImageMagick java-1.7.0-openjdk"
-    ```
-
-  - Ubuntu
-
-    ```
-    sudo apt-get install -y imagemagick libpng12-dev default-jre
-    ```
 
 ## Samtools
 
@@ -68,7 +51,7 @@
   ```
   mkdir -p ~/src && pushd ~/src
   wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip
-  unzip Trimmo*.zip
+  unzip -o Trimmo*.zip
   cp -R Trimmo*/ ${VIRTUAL_ENV}/lib/
   popd
   ```
