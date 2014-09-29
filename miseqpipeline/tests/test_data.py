@@ -158,7 +158,10 @@ class TestIntegration(Base):
         for plat,readfiles in expected.items():
             assert plat in result, "platform {} not in result".format(plat)
             if plat == 'MiSeq':
-                readfiles = [tuple(readfiles),]
+                readfiles = [tuple(sorted(readfiles)),]
+                eq_( readfiles, [tuple(sorted(x)) for x in result[plat]] )
+            else:
+                eq_( readfiles, sorted(result[plat]) )
             eq_( readfiles, sorted(result[plat]) )
 
     def test_reads_by_all_unkownformats_are_skipped(self):
@@ -176,12 +179,14 @@ class TestIntegration(Base):
 
     def mock_expected( self, expected ):
         from miseqpipeline.data import reads_by_plat as rdp
-        expected['MiSeq'] = [tuple(expected['MiSeq']),]
         result = rdp( self.tempdir )
         ex = {}
         for plat, reads in expected.items():
-            ex[plat] = reads
-        eq_( ex, result )
+            if plat == 'MiSeq':
+                eq_( sorted(reads), sorted(result[plat][0]) )
+            else:
+                eq_( sorted(reads), sorted(result[plat])  )
+        eq_( expected.keys(), result.keys() )
 
     def test_platform_has_paired_reads(self):
         from miseqpipeline.data import pair_reads
