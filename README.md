@@ -20,6 +20,9 @@ https://vdbpm.org/miseqpipeline/Wiki
 
     ```
     su -c 'yum groupinstall "Development tools"'
+    ```
+
+    ```
     su -c "yum install -y yum install -y ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel}"
     ```
 
