@@ -21,7 +21,7 @@ https://vdbpm.org/miseqpipeline/Wiki
   - Ubuntu
 
     ```
-    sudo apt-get install git
+    sudo apt-get install -y git
     ```
 
 2. Python
@@ -37,13 +37,13 @@ https://vdbpm.org/miseqpipeline/Wiki
       ```
   
       ```
-      su -c "yum install -y yum install -y ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel}"
+      su -c "yum install -y yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel}"
       ```
 
     - Ubuntu
 
       ```
-      sudo apt-get install build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,-dev} libreadline6{,-dev} openssl libssl-dev unzip
+      sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip
       ```
 
   2. Install Python 2.7.3+ into your home directory
@@ -93,3 +93,11 @@ https://vdbpm.org/miseqpipeline/Wiki
   ```
 
   It should be safe to run this more than once in case some dependencies do not fully install.
+
+6. Verify install
+
+  You can pseudo test the installation of the pipeline by running the functional tests
+
+  ```
+  nosetests miseqpipeline/tests/test_functional.py
+  ```

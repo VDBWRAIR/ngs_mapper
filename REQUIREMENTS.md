@@ -24,7 +24,7 @@
   - Ubuntu
 
     ```
-    sudo apt-get install imagemagick libpng12-dev default-jre
+    sudo apt-get install -y imagemagick libpng12-dev default-jre
     ```
 
 ## Samtools
