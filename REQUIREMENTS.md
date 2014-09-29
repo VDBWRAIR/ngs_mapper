@@ -15,9 +15,17 @@
 
 ## System Packages
 
-  ```
-  su -c "yum install -y libpng{,-devel} ImageMagick"
-  ```
+  - RedHat/CentOS
+
+    ```
+    su -c "yum install -y libpng{,-devel} ImageMagick java-1.7.0-openjdk"
+    ```
+
+  - Ubuntu
+
+    ```
+    sudo apt-get install imagemagick libpng12-dev default-jre
+    ```
 
 ## Samtools
 
@@ -30,6 +38,11 @@
   eval cp -f $(pwd)/samtools ${VIRTUAL_ENV}/bin/samtools
   eval cp -f $(pwd)/bcftools/bcftools ${VIRTUAL_ENV}/bin/bcftools
   popd
+  ```
+  - Verify Samtools
+
+  ```
+  samtools 2>&1 | grep -q 'Version: 0.1.18' && echo "samtools installed" || echo "Incorrect version or not installed"
   ```
 
 ## BWA
@@ -44,6 +57,12 @@
   popd
   ```
 
+  - Verify BWA
+
+  ```
+  bwa 2>&1 | grep -q 'Version: 0.7.6a' && echo "BWA installed" || echo "Incorrect version or not installed"
+  ```
+
 ## Trimmomatic
 
   ```
@@ -52,4 +71,10 @@
   unzip Trimmo*.zip
   cp -R Trimmo*/ ${VIRTUAL_ENV}/lib/
   popd
+  ```
+
+  - Verify Trimmomatic
+
+  ```
+  [[ $(java -jar /home/vmuser/miseqpipeline/env/lib/Trimmomatic-0.32/trimmomatic-0.32.jar 2>&1 | egrep 'SE|PE' | wc -l) == 2 ]] && echo "Trimmomatic installed" || echo "Trimmomatic not installed"
   ```

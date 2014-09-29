@@ -10,23 +10,49 @@ https://vdbpm.org/miseqpipeline/Wiki
   cd miseqpipeline
   ```
 
+  If you get an error about git not being installed you can install it as follows:
+
+  - Red Hat
+
+    ```
+    su -c "yum install -y git"
+    ```
+
+  - Ubuntu
+
+    ```
+    sudo apt-get install git
+    ```
+
 2. Python
 
   The miseqpipeline requires python 2.7.3+ but < 3.0
 
-  - Red Hat
-
   1. Install System Packages
 
-    ```
-    su -c 'yum groupinstall "Development tools"'
-    ```
+    - Red Hat/CentOS
 
-    ```
-    su -c "yum install -y yum install -y ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel}"
-    ```
+      ```
+      su -c 'yum groupinstall "Development tools"'
+      ```
+  
+      ```
+      su -c "yum install -y yum install -y ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel}"
+      ```
+
+    - Ubuntu
+
+      ```
+      sudo apt-get install build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,-dev} libreadline6{,-dev} openssl libssl-dev unzip
+      ```
 
   2. Install Python 2.7.3+ into your home directory
+
+    Ubuntu starting with Precise(12.04) has had Python 2.7.3+ so you technically 
+    should not have to do this, but best to do it just to be safe.
+
+    On RedHat/CentOS 6 and earlier this is mandatory since only python 2.6.6 comes
+    shipped.
 
     ```
     mkdir -p ~/src && pushd ~/src
