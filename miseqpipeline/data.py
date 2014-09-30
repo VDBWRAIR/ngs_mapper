@@ -27,7 +27,6 @@ def filter_reads_by_platform( path, platform ):
             continue
         if pfr == platform:
             files.append( f )
-    #files = [f for f in glob( join(path,'*') ) if platform_for_read(f) == platform]
     return files
 
 def platform_for_read( filepath ):
@@ -86,6 +85,7 @@ def pair_reads( readlist ):
         @returns the readlist with any reads that are paired end inside of a 2 item tuple with the first(forward) in [0]
             and the second(reverse) in [1]
     '''
+    logger.debug("Attempting to pair readlist {0}".format(readlist))
     paired_reads = []
     skiplist = []
     for i in range(len(readlist)):
@@ -123,20 +123,34 @@ def find_mate( filepath, readlist ):
     cp = re.compile( '(?P<samplename>\S+?)_S\d+_L\d{3}_(?P<fr>R\d)_\d{3}_\d{4}_\d{2}_\d{2}.fastq' )
     m = cp.match( basename(filepath) )
     if not m:
+        logger.debug( "{0} is not a miseq formatted read".format(
+            filepath
+        ))
         return -1
     else:
         i = m.groupdict()
+        # Samplename
         sn = i['samplename']
+        # Forward/Referse aka R1 or R2
         fr = i['fr']
+        # The number portion of R1 or R2
         fri = fr[1]
+        # Swap the number so we look for the other mate name
+        # So if R1 look for R2 or if R2 look for R1
         if fri == '1':
             fri = '2'
         elif fri == '2':
             fri = '1'
         else:
+            logger.debug("R1 or R2 not found in {0}".format(
+                filepath
+            ))
             return -1
         matefn = filepath.replace(fr, 'R'+fri)
         try:
             return readlist.index(matefn)
         except ValueError as e:
+            logger.debug( "Could not find mate in {0} for {1}".format(
+                readlist, filepath
+            ))
             return -1
