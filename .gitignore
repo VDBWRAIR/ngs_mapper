@@ -19,3 +19,4 @@ dependencies/samtools/misc/wgsim
 dependencies/samtools/samtools
 dependencies/samtools/misc/maq2sam-long
 maq2sam-short
+setuptools-*.zip
