@@ -47,6 +47,53 @@ class Base(common.BaseClass):
                 mapping[readfile] = plat
         return mapping
 
+class TestPairReads(Base):
+    functionname = 'pair_reads'
+
+    def test_pairs_reads(self):
+        readlist = sorted(self.reads['MiSeq'],reverse=True)
+        r = self._C( readlist )
+        e = [tuple(sorted(readlist))]
+        eq_( e, r )
+
+    def test_pairs_reads_abs_paths(self):
+        reads = [join('/dev/shm/tdir',read) for read in self.reads['MiSeq']]
+        readlist = sorted(reads,reverse=True)
+        r = self._C( readlist )
+        e = [tuple(sorted(reads))]
+        eq_( e, r )
+
+class TestFindMate(Base):
+    functionname = 'find_mate'
+
+    def test_finds_mate_sorted(self):
+        readlist = self.reads['MiSeq']
+        r = self._C( readlist[0], readlist )
+        eq_( 1, r )
+        r = self._C( readlist[1], readlist )
+        eq_( 0, r )
+
+    def test_finds_mate_reverse_sorted(self):
+        readlist = sorted(self.reads['MiSeq'],reverse=True)
+        r = self._C( readlist[0], readlist )
+        eq_( 1, r )
+        r = self._C( readlist[1], readlist )
+        eq_( 0, r )
+
+    def test_not_miseq_read(self):
+        r = self._C( self.reads['Sanger'][0], self.reads['Sanger'] )
+        eq_( -1, r )
+
+    def test_read_miseq_with_R3(self):
+        readlist = [self.reads['MiSeq'][0].replace('_R1_','_R3_')]
+        r = self._C( readlist[0], readlist )
+        eq_( -1, r )
+
+    def test_miseq_with_no_mate(self):
+        readlist = [self.reads['MiSeq'][0]]
+        r = self._C( readlist[0], readlist )
+        eq_( -1, r )
+
 class TestIsSangerReadFile(Base):
     functionname = 'is_sanger_readfile'
 

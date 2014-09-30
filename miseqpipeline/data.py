@@ -103,7 +103,7 @@ def pair_reads( readlist ):
             else:
                 # Append mate pair
                 logger.debug("Appending mated pairs ({},{})".format(readlist[i],readlist[index]))
-                paired_reads.append( (readlist[i],readlist[index]) )
+                paired_reads.append( tuple(sorted([readlist[i],readlist[index]])) )
                 # Append mate to be skipped so we don't re-add it again
                 skiplist.append(readlist[index])
                 logger.debug("Mate list {}".format(skiplist))
