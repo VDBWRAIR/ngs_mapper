@@ -1,12 +1,6 @@
-import common
-from nose.tools import eq_, raises
-from nose.plugins.attrib import attr
-from mock import Mock, patch, MagicMock
-from os.path import *
-import os
-import sys
+from imports import *
+
 from subprocess import check_output, CalledProcessError, STDOUT
-import shlex
 import numpy as np
 
 class Base(common.BaseBamRef):
@@ -121,15 +115,15 @@ class TestFunctional(Base):
     def test_creates_graphic_from_single_json( self ):
         res = self._run_cmd( [self.json] )
         assert isfile( 'mapunmap.png' )
-        eq_( 37853, os.stat( 'mapunmap.png' ).st_size )
+        ok_( os.stat('mapunmap.png').st_size >= 30000 )
 
     def test_creates_graphic_from_multiple_json( self ):
         res = self._run_cmd( [self.json, self.json] )
         assert isfile( 'mapunmap.png' )
-        eq_( 34853, os.stat( 'mapunmap.png' ).st_size )
+        ok_( os.stat('mapunmap.png').st_size >= 30000 )
 
     def test_outfile_works( self ):
         ofile = join( self.tempdir, 'out.png' )
         res = self._run_cmd( [self.json], ofile )
         assert isfile( ofile )
-        eq_( 37853, os.stat( ofile ).st_size )
+        ok_( os.stat(ofile).st_size >= 30000 )

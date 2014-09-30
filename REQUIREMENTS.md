@@ -59,5 +59,5 @@
   - Verify Trimmomatic
 
   ```
-  [[ $(java -jar /home/vmuser/miseqpipeline/env/lib/Trimmomatic-0.32/trimmomatic-0.32.jar 2>&1 | egrep 'SE|PE' | wc -l) == 2 ]] && echo "Trimmomatic installed" || echo "Trimmomatic not installed"
+  [[ $(java -jar ${VIRTUAL_ENV}/lib/Trimmomatic-0.32/trimmomatic-0.32.jar 2>&1 | egrep 'SE|PE' | wc -l) == 2 ]] && echo "Trimmomatic installed" || echo "Trimmomatic not installed"
   ```
