@@ -9,7 +9,6 @@ before = []
 
 def setUpPackage():
     global before
-    import test_install
     os.chdir(tdir)
     vpath = join(tdir, '.venv')
     before = glob( '/dev/shm/*' ) + glob( '/tmp/*' )
