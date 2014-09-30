@@ -3,46 +3,34 @@ https://vdbpm.org/miseqpipeline/Wiki
 
 # Installation
 
-1. Clone
+1. Install System Packages
+
+  This is the only part of the installation process that you should need to become the super user
+
+  - Red Hat/CentOS
+  
+    ```
+    su -c 'yum groupinstall "Development tools"; yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel} libpng{,-devel} ImageMagick java-1.7.0-openjdk git'
+    ```
+  
+  - Ubuntu
+  
+    ```
+    sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip imagemagick libpng12-dev default-jre git
+    ```
+
+2. Clone
 
   ```
   git clone https://github.com/VDBWRAIR/miseqpipeline.git
   cd miseqpipeline
   ```
 
-  If you get an error about git not being installed you can install it as follows:
-
-  - Red Hat
-
-    ```
-    su -c "yum install -y git"
-    ```
-
-  - Ubuntu
-
-    ```
-    sudo apt-get install -y git
-    ```
-
-2. Python
+3. Python
 
   The miseqpipeline requires python 2.7.3+ but < 3.0
 
-  1. Install System Packages
-
-    - Red Hat/CentOS
-
-      ```
-      su -c 'yum groupinstall "Development tools"; yum install -y yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel} libpng{,-devel} ImageMagick java-1.7.0-openjdk"
-      ```
-
-    - Ubuntu
-
-      ```
-      sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip imagemagick libpng12-dev default-jre
-      ```
-
-  2. Install Python 2.7.3+ into your home directory
+  1. Install Python 2.7.3+ into your home directory
 
     Ubuntu starting with Precise(12.04) has had Python 2.7.3+ so you technically 
     should not have to do this, but best to do it just to be safe.
@@ -62,7 +50,7 @@ https://vdbpm.org/miseqpipeline/Wiki
     popd
     ```
 
-  3. Quick verify that Python is installed
+  2. Quick verify that Python is installed
 
     The following should return python 2.7.x(where x is somewhere from 3 to 9)
 
@@ -70,7 +58,7 @@ https://vdbpm.org/miseqpipeline/Wiki
     $HOME/bin/python --version
     ```
 
-3. Setup virtualenv
+4. Setup virtualenv
 
   1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
 
@@ -91,11 +79,11 @@ https://vdbpm.org/miseqpipeline/Wiki
   . /home/myuserename-changeme/bin/activate
   ```
 
-4. Ensure pre-requisites
+5. Ensure pre-requisites
 
   Read the REQUIREMENTS.md file
 
-5. Install into virtualenv
+6. Install into virtualenv
 
   ```
   python setup.py install
@@ -103,7 +91,7 @@ https://vdbpm.org/miseqpipeline/Wiki
 
   It should be safe to run this more than once in case some dependencies do not fully install.
 
-6. Verify install
+7. Verify install
 
   You can pseudo test the installation of the pipeline by running the functional tests
 

@@ -1,9 +1,9 @@
 from imports import *
-from test_install import Base
+#from test_install import Base
 import json
 
 # Derive from installer base to make life easier
-class BaseFunctional(Base):
+class BaseFunctional(BaseClass):
     @classmethod
     def setUpClass( klass ):
         super(Base,klass).setUpClass()
