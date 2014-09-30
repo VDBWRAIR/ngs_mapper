@@ -162,7 +162,6 @@ class TestIntegration(Base):
                 eq_( readfiles, [tuple(sorted(x)) for x in result[plat]] )
             else:
                 eq_( readfiles, sorted(result[plat]) )
-            eq_( readfiles, sorted(result[plat]) )
 
     def test_reads_by_all_unkownformats_are_skipped(self):
         self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.junk' )
