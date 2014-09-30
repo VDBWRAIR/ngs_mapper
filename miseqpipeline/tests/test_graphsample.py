@@ -116,7 +116,11 @@ class TestFunctional(Base):
         print res
         for f in self._files_exist( os.getcwd(), basename(self.testbam) ):
             if f.endswith( '.png' ):
-                ok_( os.stat(f).st_size > 150000 )
+                rsize = os.stat(f).st_size
+                esize = 150000
+                ok_( rsize > esize, "resulting size of {0} {1} was not larger than {2}".format(
+                    f, rsize, esize
+                ))
 
     def test_createsfiles( self ):
         res = self._rungraphsample( self.bam )
@@ -139,7 +143,10 @@ class TestFunctional(Base):
                 esize = 230000
             elif f.endswith( '.json' ):
                 esize = 195000
-            ok_( os.stat(f).st_size >= esize )
+            rsize = os.stat(f).st_size
+            ok_( rsize > esize, "resulting size of {0} {1} was not larger than {2}".format(
+                f, rsize, esize
+            ))
 
     def test_createsfiles_outdir_set( self ):
         os.mkdir( 'outdir' )
