@@ -1,5 +1,5 @@
 The majority of the documentation is locate at:
-https://vdbpm.org/miseqpipeline/Wiki
+https://vdbpm.org/projects/miseqpipeline/wiki
 
 # Installation
 
