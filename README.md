@@ -32,12 +32,6 @@ https://vdbpm.org/miseqpipeline/Wiki
 
   1. Install Python 2.7.3+ into your home directory
 
-    Ubuntu starting with Precise(12.04) has had Python 2.7.3+ so you technically 
-    should not have to do this, but best to do it just to be safe.
-
-    On RedHat/CentOS 6 and earlier this is mandatory since only python 2.6.6 comes
-    shipped.
-
     ```
     mkdir -p ~/src && pushd ~/src
     prefix=$HOME
@@ -49,6 +43,12 @@ https://vdbpm.org/miseqpipeline/Wiki
     make install
     popd
     ```
+    
+    Ubuntu starting with Precise(12.04) has had Python 2.7.3+ so you technically 
+    should not have to do this, but best to do it just to be safe.
+
+    On RedHat/CentOS 6 and earlier this is mandatory since only python 2.6.6 comes
+    shipped.
 
   2. Quick verify that Python is installed
 
