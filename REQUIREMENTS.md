@@ -8,7 +8,7 @@
 # Installation
 
   You need to ensure that you have a python virtualenv setup and activated prior to installing as these
-  instructions assume that you do. The README.md has instructions on how to do that.
+  instructions assume that you do. The [README.md](README.md) has instructions on how to do that.
 
 ## Samtools
 
@@ -61,3 +61,6 @@
   ```
   [[ $(java -jar ${VIRTUAL_ENV}/lib/Trimmomatic-0.32/trimmomatic-0.32.jar 2>&1 | egrep 'SE|PE' | wc -l) == 2 ]] && echo "Trimmomatic installed" || echo "Trimmomatic not installed"
   ```
+
+
+Back to [README.md](README.md)
