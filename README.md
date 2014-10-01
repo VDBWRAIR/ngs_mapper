@@ -81,7 +81,7 @@ https://vdbpm.org/miseqpipeline/Wiki
 
 5. Ensure pre-requisites
 
-  Read the REQUIREMENTS.md file
+  Read the [Requirements](REQUIREMENTS.md) file
 
 6. Install into virtualenv
 
