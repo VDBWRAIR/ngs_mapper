@@ -59,25 +59,26 @@ https://vdbpm.org/projects/miseqpipeline/wiki
     ```
 
 4. Setup virtualenv
-
+  
+  
   1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
 
-  ```
-  venvpath=/home/myusername-changeme/.miseqpipeline
-  ```
+    ```
+    venvpath=/home/myusername-changeme/.miseqpipeline
+    ```
 
   2. Install the virtualenv to the path you specified
 
-  ```
-  wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
-  $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(miseqpipeline) " $venvpath 
-  ```
+    ```
+    wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
+    $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(miseqpipeline) " $venvpath 
+    ```
 
   3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
 
-  ```
-  . /home/myuserename-changeme/.miseqpipeline/bin/activate
-  ```
+    ```
+    . /home/myuserename-changeme/.miseqpipeline/bin/activate
+    ```
 
 5. Ensure pre-requisites
 
