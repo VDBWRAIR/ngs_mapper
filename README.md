@@ -76,7 +76,7 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
 
   ```
-  . /home/myuserename-changeme/bin/activate
+  . /home/myuserename-changeme/.miseqpipeline/bin/activate
   ```
 
 5. Ensure pre-requisites
