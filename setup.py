@@ -2,11 +2,13 @@
 from ez_setup import use_setuptools
 use_setuptools()
 
+from glob import glob
+import sys
+from os.path import join
+
 # Use setuptools
 from setuptools import setup, find_packages
 from version import __version__
-
-from glob import glob
 
 def pip_install( pkg ):
     ''' Just run pip install pkg '''
@@ -16,6 +18,11 @@ def pip_install( pkg ):
 # Numpy doesn't seem to install correctly through the install_requires section
 # https://github.com/numpy/numpy/issues/2434
 pip_install( 'numpy==1.8.0' )
+
+# Prefix path for installation
+prefix = sys.prefix
+bindir = join(prefix,'bin')
+libdir = join(prefix,'lib')
 
 setup(
     name = "miseqpipeline",
@@ -38,6 +45,7 @@ setup(
         'git+https://github.com/VDBWRAIR/pyBWA#egg=pyBWA-v0.2.2',
     ],
     setup_requires = [
+        'tempdir'
     ],
     tests_require = [
     ],
@@ -48,3 +56,16 @@ setup(
     keywords = 'miseq iontorrent roche 454 fastq vcf',
     url = 'https://github.com/VDBWRAIR/miseqpipeline'
 )
+
+# URLs for dependencies
+bwa_url = 'http://github.com/lh3/bwa'
+samtools_url = 'http://github.com/samtools/samtools'
+
+# Install samtools and bwa
+from miseqpipeline.dependency import (
+        install_samtools,
+        install_bwa
+)
+# Requires tempdir to be installed
+install_bwa(bwa_url, '0.7.6a', prefix)
+install_samtools(samtools_url, '96b5f2294ac005423', prefix)
