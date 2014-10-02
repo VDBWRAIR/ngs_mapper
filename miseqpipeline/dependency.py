@@ -90,3 +90,44 @@ def install_samtools( source, gitsha, dstprefix, tdir=None ):
         for copypath in copypaths:
             # Copy bwa executable into dstprefix/bin
             shutil.copy2(copypath, dstprefixbin)
+
+def clone_checkout_make_copy( source, gitsha, dstprefix, copypaths=[], tdir=None ):
+    '''
+    Enters temporary directory
+    Clones source
+    Enters basename(source)
+    Checks out gitsha
+    runs make
+    Copies all copypaths(these are relative to cloned repo path) into dstprefix/bin
+    Removes temporary directory
+    '''
+    # Ensure dstprefix/bin is absolute path
+    if not isabs(dstprefix):
+        dstprefixbin = join(abspath(dstprefix),'bin')
+    else:
+        dstprefixbin = join(dstprefix,'bin')
+    # Ensure dstprefixbin exists
+    if not isdir(dstprefixbin):
+        os.makedirs(dstprefixbin)
+    # Run in a tempdir that gets auto cleaned up after
+    with tempdir.in_tempdir(basedir=tdir) as tdir:
+        # Clone the source path
+        cmd = ['git','clone',source]
+        subprocess.call(cmd)
+        # Cloned dir name
+        cloneddir = basename(source)
+        # pushd
+        curdir = os.getcwd()
+        # Enter cloned dir
+        os.chdir(cloneddir)
+        # Checkout version
+        cmd = ['git','checkout',gitsha]
+        subprocess.call(cmd)
+        # Compile
+        cmd = ['make']
+        subprocess.call(cmd)
+        for copypath in copypaths:
+            # Copy bwa executable into dstprefix/bin
+            shutil.copy2(copypath, dstprefixbin)
+        # popd
+        os.chdir(curdir)
