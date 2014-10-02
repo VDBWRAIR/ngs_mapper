@@ -36,6 +36,14 @@ def mock_bwasamtools_subprocess_call( *args, **kwargs ):
         # Have to be in a git directory
         if isdir('.git'):
             open('Makefile','w').close()
+            sys.stdout.write( 'Note: checking out \'{0}\'.\n'.format(
+                    cmd[2]
+                )
+            )
+            sys.stdout.write( 'HEAD is now at {0}... init\n'.format(
+                    cmd[2]
+                )
+            )
         else:
             return 1
     elif cmd[0] == 'make':
@@ -43,6 +51,9 @@ def mock_bwasamtools_subprocess_call( *args, **kwargs ):
             make_mock_exec_file('bwa')
             make_mock_exec_file('samtools')
             make_mock_exec_file('bcftools/bcftools')
+            sys.stdout.write('Making bwa\n')
+            sys.stdout.write('Making samtools\n')
+            sys.stdout.write('Making bcftools/bcftools\n')
         else:
             sys.stderr.write('make: *** No targets specified and no ' \
                 'makefile found.  Stop.\n')
@@ -61,6 +72,7 @@ class Base(common.BaseClass):
         super(Base,self).setUp()
         self.prefix = 'prefixdir'
         self.bindir = join(self.prefix,'bin')
+        self.libdir = join(self.prefix,'lib')
         self.bwapath = join(self.bindir,'bwa')
         self.sampath = join(self.bindir,'samtools')
         self.bcfpath = join(self.bindir,'bcftools')
@@ -128,6 +140,39 @@ class TestVerifyBwaInstall(Base):
         eq_( True, r )
 
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
+class TestVerifySamtoolsInstall(Base):
+    functionname = 'verify_samtools_install'
+
+    def setUp(self):
+        super(TestVerifySamtoolsInstall,self).setUp()
+        os.makedirs(self.bindir)
+
+    def test_executable_exists_in_bin_not_executable_returns_false(self):
+        open(self.sampath,'w').close()
+        open(self.bcfpath,'w').close()
+        os.chmod(self.sampath,0644)
+        os.chmod(self.bcfpath,0644)
+        
+        r = self._C(self.prefix)
+        eq_( False, r )
+
+    def test_executable_exists_in_bin_executable_returns_true(self):
+        open(self.sampath,'w').close()
+        open(self.bcfpath,'w').close()
+        os.chmod(self.sampath,0755)
+        os.chmod(self.bcfpath,0755)
+        
+        r = self._C(self.prefix)
+        eq_( True, r )
+
+    def test_integration_verifies_install_samtools(self):
+        from miseqpipeline.dependency import install_samtools
+        install_samtools(self.samtools_github_url, 'HEAD', self.prefix)
+        r = self._C(self.prefix)
+        eq_( True, r )
+
+
+@patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestInstallSamtools(Base):
     functionname = 'install_samtools'
 
@@ -176,3 +221,41 @@ class TestCloneCheckoutMakeCopy(Base):
 
         content = open(self.bwapath).read()
         ok_(content != '', 'Did not overwrite existing executable')
+
+class TestVerifyExistExecutable(Base):
+    functionname = 'prefix_has_files'
+
+    def setUp(self):
+        super(TestVerifyExistExecutable,self).setUp()
+        self.exefile = join(self.bindir,'myexe')
+        self.libfile = join(self.libdir,'libfile')
+        self.nested = join(self.libdir,'mylib','libfile')
+        make_mock_exec_file( self.exefile )
+        make_mock_exec_file( self.libfile )
+        make_mock_exec_file( self.nested )
+        self.files = [
+            'bin/myexe',
+            'lib/libfile',
+            'lib/mylib/libfile',
+        ]
+
+    def test_verifies_paths_in_list_exist_and_executable(self):
+        r = self._C( self.prefix, self.files )
+        eq_( [], r )
+
+    def test_missing_files_are_returned_as_list(self):
+        os.unlink(self.exefile)
+        r = self._C( self.prefix, self.files )
+        eq_( self.files[0:1], r )
+        os.unlink(self.libfile)
+        r = self._C( self.prefix, self.files )
+        eq_( self.files[0:2], r )
+        os.unlink(self.nested)
+        r = self._C( self.prefix, self.files )
+        eq_( self.files, r )
+
+    def test_checks_accessmode_for_files(self):
+        modes = [os.X_OK, os.F_OK, os.F_OK]
+        os.chmod(self.exefile, 0644)
+        r = self._C( self.prefix, zip(self.files,modes) )
+        eq_( r, ['bin/myexe'] )
