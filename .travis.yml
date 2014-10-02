@@ -13,4 +13,4 @@ install:
     - cp -R Trimmomatic-0.32 ${VIRTUAL_ENV}/lib/
     - python setup.py install
 # # command to run tests, e.g. python setup.py test
-script:  nosetests -v miseqpipeline/tests/test_functional.py
+script:  nosetests -v
