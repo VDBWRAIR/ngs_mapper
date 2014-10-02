@@ -58,8 +58,8 @@ setup(
 )
 
 # URLs for dependencies
-bwa_url = 'http://github.com/lh3/bwa'
-samtools_url = 'http://github.com/samtools/samtools'
+bwa_url = 'https://github.com/lh3/bwa'
+samtools_url = 'https://github.com/samtools/samtools'
 
 # Install samtools and bwa
 from miseqpipeline.dependency import (
