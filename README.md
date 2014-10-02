@@ -64,7 +64,7 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
 
     ```
-    venvpath=/home/myusername-changeme/.miseqpipeline
+    venvpath=$HOME/.miseqpipeline
     ```
 
   2. Install the virtualenv to the path you specified
@@ -77,7 +77,7 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
 
     ```
-    . /home/myuserename-changeme/.miseqpipeline/bin/activate
+    . $HOME/.miseqpipeline/bin/activate
     ```
 
 5. Ensure pre-requisites
@@ -100,7 +100,19 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   nosetests miseqpipeline/tests/test_functional.py
   ```
 
-# Running a single sample
+# Running the pipeline
+
+  Before you use the pipeline you always need to ensure that you have the virtualenv activated that you installed into. Activating a virtualenv more than once is fine as it is smart enough to know if you already have done it. So if you are unsure, just do it anyways.
+  
+  If you copy pasted the installation instructions verbatim, then you can activate as follows:
+  
+  ```
+  . $HOME/.miseqpipeline/bin/activate
+  ```
+  
+  If you changed the venvpath in the installation then you will need to use that path instead of the above.
+
+## Running a single sample
 
   You can run a single sample by using the runsample.py command. There are 2 examples that you can use. Sample 780 and Sample 947 which are both located in the
   miseqpipeline/tests/fixtures/functional directory.
