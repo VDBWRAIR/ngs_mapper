@@ -32,6 +32,7 @@ setup(
         'nose',
         'mock',
         'pyBWA==v0.2.2',
+        'tempdir',
     ],
     dependency_links = [
         'git+https://github.com/VDBWRAIR/pyBWA#egg=pyBWA-v0.2.2',
