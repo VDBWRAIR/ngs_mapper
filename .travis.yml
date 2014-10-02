@@ -4,11 +4,15 @@ python:
 before_install:
     - sudo apt-get update -qq
     - sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip imagemagick libpng12-dev default-jre git
+    - "export DISPLAY=:99.0" # Should fix matplotlib errors
+    - "sh -e /etc/init.d/xvfb start"
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
     - wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip
     - unzip -o Trimmomatic-0.32.zip
     - cp -R Trimmomatic-0.32.zip ${VIRTUAL_ENV}/lib/
+    - echo "copied Trimmomatic-0.32.zip to ${VIRTUAL_ENV}/lib"
+    - ls ${VIRTUAL_ENV}/lib
     - python setup.py install
 # # command to run tests, e.g. python setup.py test
-script:  nosetests
+script:  nosetests -v miseqpipeline/tests/test_functional.py
