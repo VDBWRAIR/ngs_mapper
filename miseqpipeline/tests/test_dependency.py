@@ -1,6 +1,18 @@
 from imports import *
 
-def mock_bwa_subprocess_call( *args, **kwargs ):
+def make_mock_exec_file( path ):
+    ''' just make a mock bwa to be called '''
+    path = abspath(path)
+    # Ensure directories all the way up to basename are made
+    if not isdir(dirname(path)):
+        os.makedirs(dirname(path))
+    # Just make a simple bash script that is executable
+    with open(path,'w') as fh:
+        fh.write('#!/bin/bash\n')
+        fh.write('exit 0\n')
+    os.chmod(path,0755)
+
+def mock_bwasamtools_subprocess_call( *args, **kwargs ):
     ''' Mock all subprocess.call calls for bwa install '''
     cmd = args[0]
     if ' '.join(cmd[0:2]) == 'git clone':
@@ -28,10 +40,9 @@ def mock_bwa_subprocess_call( *args, **kwargs ):
             return 1
     elif cmd[0] == 'make':
         if isfile('Makefile'):
-            with open('bwa','w') as fh:
-                fh.write('#!/bin/bash\n')
-                fh.write('echo "BWA"\n')
-            os.chmod('bwa',0755)
+            make_mock_exec_file('bwa')
+            make_mock_exec_file('samtools')
+            make_mock_exec_file('bcftools/bcftools')
         else:
             sys.stderr.write('make: *** No targets specified and no ' \
                 'makefile found.  Stop.\n')
@@ -46,7 +57,7 @@ class Base(common.BaseClass):
     samtools_github_url = 'https://github.com/samtools/samtools'
     trimmomatic_download_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
 
-@patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwa_subprocess_call))
+@patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestInstallBWA(Base):
     functionname = 'install_bwa'
 
@@ -90,3 +101,28 @@ class TestInstallBWA(Base):
         newsize = os.stat('bin/bwa').st_size
 
         ok_( size != newsize, 'Did not replace existing bwa' )
+
+@patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
+class TestVerifyBwaInstall(Base):
+    functionname = 'verify_bwa_install'
+
+    def setUp(self):
+        super(TestVerifyBwaInstall,self).setUp()
+        self.prefix = 'prefixdir'
+        self.bindir = join(self.prefix,'bin')
+        self.bwapath = join(self.bindir,'bwa')
+        os.makedirs(self.bindir)
+
+    def test_executable_exists_in_bin_not_executable_returns_false(self):
+        open(self.bwapath,'w').close()
+        os.chmod(self.bwapath,0644)
+        
+        r = self._C(self.prefix)
+        eq_( False, r )
+
+    def test_executable_exists_in_bin_executable_returns_true(self):
+        open(self.bwapath,'w').close()
+        os.chmod(self.bwapath,0755)
+        
+        r = self._C(self.prefix)
+        eq_( True, r )

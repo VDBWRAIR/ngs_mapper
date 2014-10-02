@@ -42,3 +42,11 @@ def install_bwa( source, gitsha, dstprefix, tdir=None ):
         if not isdir(dirname(dst_bwa_path)):
             os.makedirs(dirname(dst_bwa_path))
         shutil.copy2(bwa_path,dst_bwa_path)
+
+def verify_bwa_install( dstprefix ):
+    '''
+    Make sure that bwa is installed correctly into dstprefix
+    Just checks that bin/bwa exists and is executable by current user
+    '''
+    bwapath = join(dstprefix,'bin','bwa')
+    return os.access(bwapath,os.X_OK)
