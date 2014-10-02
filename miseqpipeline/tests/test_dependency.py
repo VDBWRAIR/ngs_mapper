@@ -57,39 +57,36 @@ class Base(common.BaseClass):
     samtools_github_url = 'https://github.com/samtools/samtools'
     trimmomatic_download_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
 
+    def setUp( self ):
+        super(Base,self).setUp()
+        self.prefix = 'prefixdir'
+        self.bindir = join(self.prefix,'bin')
+        self.bwapath = join(self.bindir,'bwa')
+        self.sampath = join(self.bindir,'samtools')
+        self.bcfpath = join(self.bindir,'bcftools')
+
+    def _exist_executable( self, path ):
+        ok_(exists(path), "{0} did not exist")
+        ok_(os.access(path,os.X_OK), "{0} is not executable")
+
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestInstallBWA(Base):
     functionname = 'install_bwa'
 
-    def test_runs_from_tempdir_and_removes_it(self):
-        curlisting = os.listdir('.')
-        tmplisting = os.listdir('/tmp')
+    def test_dstprefix_bin_does_not_exist_and_is_created(self):
+        self._C(self.bwa_github_url,'HEAD',self.prefix)
+        self._exist_executable(self.bwapath)
 
-        # Just run it 
-        self._C(self.bwa_github_url, '', os.getcwd())
+        ok_( isdir(self.bindir), "{0} not created".format(self.bindir) )
 
-        # Current directory and temp should be the same
-        # except if something wrote into temp in the mean time...fail
-        eq_( curlisting + ['bin'], os.listdir('.') )
-        eq_( tmplisting, os.listdir('/tmp') )
-
-        ok_( os.access('bin/bwa', os.X_OK), 'bwa was not executable' )
+    def test_dstprefix_bin_exists(self):
+        self._C(self.bwa_github_url,'HEAD',self.prefix)
+        self._exist_executable(self.bwapath)
 
     def test_installs_bwa_into_dstprefix(self):
-        dstprefix = 'dstprefix'
-        os.makedirs(dstprefix)
-
-        self._C(self.bwa_github_url, '', dstprefix)
-
-        expectedbwa = join(dstprefix,'bin','bwa')
-        ok_(
-            exists(expectedbwa),
-            'Did not create bwa executable at {0}'.format(expectedbwa)
-        )
-        ok_(
-            os.access(expectedbwa,os.X_OK),
-            '{0} is not executable'.format(expectedbwa)
-        )
+        self._C(self.bwa_github_url, '', self.prefix)
+        expectedbwa = join(self.prefix,'bin','bwa')
+        self._exist_executable(expectedbwa)
 
     def test_bwa_executable_already_exists_and_is_overwritten(self):
         os.mkdir('bin')
@@ -97,9 +94,9 @@ class TestInstallBWA(Base):
         size = os.stat('bin/bwa').st_size
         
         self._C(self.bwa_github_url,'',os.getcwd())
+        self._exist_executable('bin/bwa')
 
         newsize = os.stat('bin/bwa').st_size
-
         ok_( size != newsize, 'Did not replace existing bwa' )
 
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
@@ -108,9 +105,6 @@ class TestVerifyBwaInstall(Base):
 
     def setUp(self):
         super(TestVerifyBwaInstall,self).setUp()
-        self.prefix = 'prefixdir'
-        self.bindir = join(self.prefix,'bin')
-        self.bwapath = join(self.bindir,'bwa')
         os.makedirs(self.bindir)
 
     def test_executable_exists_in_bin_not_executable_returns_false(self):
@@ -126,3 +120,34 @@ class TestVerifyBwaInstall(Base):
         
         r = self._C(self.prefix)
         eq_( True, r )
+
+    def test_integration_verifies_install_bwa(self):
+        from miseqpipeline.dependency import install_bwa
+        install_bwa(self.bwa_github_url, 'HEAD', self.prefix)
+        r = self._C(self.prefix)
+        eq_( True, r )
+
+@patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
+class TestInstallSamtools(Base):
+    functionname = 'install_samtools'
+
+    def _C( self, *args, **kwargs ):
+        super(TestInstallSamtools,self)._C(*args, **kwargs)
+        self._exist_executable(self.sampath)
+        self._exist_executable(self.bcfpath)
+
+    def test_dstprefix_bin_does_not_exist_and_is_created(self):
+        self._C(self.samtools_github_url, 'HEAD', self.prefix)
+
+    def test_dstprefix_bin_exists(self):
+        os.makedirs(self.bindir)
+        self._C(self.samtools_github_url, 'HEAD', self.prefix)
+
+    def test_executable_already_exists_and_is_overwritten(self):
+        os.makedirs(self.bindir)
+        open(self.sampath,'w').close()
+        open(self.bcfpath,'w').close()
+        self._C(self.samtools_github_url, 'HEAD', self.prefix)
+
+class TestCloneCheckoutMakeCopy(Base):
+    functionname = 'clone_checkout_make_copy'
