@@ -24,6 +24,7 @@ prefix = sys.prefix
 bindir = join(prefix,'bin')
 libdir = join(prefix,'lib')
 
+# Run setuptools setup
 setup(
     name = "miseqpipeline",
     version = __version__,
@@ -68,7 +69,7 @@ from miseqpipeline.dependency import (
         install_bwa,
         install_trimmomatic
 )
-# Requires tempdir to be installed
+# Install all dependencies outside fo pypi
 install_bwa(bwa_url, '0.7.6a', prefix)
 install_samtools(samtools_url, '96b5f2294ac005423', prefix)
 install_trimmomatic(trimmomatic_url, libdir)
