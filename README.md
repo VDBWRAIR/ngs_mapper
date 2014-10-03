@@ -127,5 +127,3 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   and put their results inside of their own directory named after themselves.
 
   From there you can explore them on your own
-
-[![Build Status](https://travis-ci.org/VDBWRAIR/miseqpipeline.svg)](https://travis-ci.org/VDBWRAIR/miseqpipeline)
