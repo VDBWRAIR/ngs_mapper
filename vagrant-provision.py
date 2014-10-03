@@ -41,7 +41,7 @@ def install_redhat_packages():
         True
     )
 
-def instal_ubuntu_packages():
+def install_ubuntu_packages():
     shell_cmd(
         'apt-get install -y build-essential libncurses5{,-dev} ' \
         'zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} ' \
