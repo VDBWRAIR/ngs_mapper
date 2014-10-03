@@ -4,13 +4,48 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-    #config.vm.box = "ubuntu/trusty64"
-    config.vm.box = "chef/centos-6.5"
+# Do all the install steps
+def provision_pipeline( config )
+    # Clone the repo
+    config.vm.provision "shell", privileged: false,
+        inline: "echo 'Cloning'; [ -e ~/miseqpipeline ] && (cd ~/miseqpipeline && git pull && cd ..) || git clone /vagrant ~/miseqpipeline"
 
-    # The url from where the 'config.vm.box' box will be fetched if it
-    # doesn't already exist on the user's system.
-    # config.vm.box_url = "http://domain.com/path/to/above.box"
+    # Run the provisioning system-packages
+    config.vm.provision "shell", privileged: false,
+        inline: "echo 'Installing system packages'; cd ~/miseqpipeline; sudo python vagrant-provision.py --install-system-packages"
+
+    # Run the provisioning pipeline install
+    config.vm.provision "shell", privileged: false,
+        inline: "echo 'Installing pipeline'; cd ~/miseqpipeline; python vagrant-provision.py --install-pipline"
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.define "ubuntu1404" do |ubuntu1404|
+        ubuntu1404.vm.box = "hashicorp/precise64"
+        # Use a different mirror in case the ubuntu one is blocked...
+        ubuntu1404.vm.provision "shell", privileged: true,
+            inline: "sed -i -e 's/us.archive.ubuntu.com/ubuntu.osuosl.org/' -e 's|security.ubuntu.com|ubuntu.osuosl.org|' /etc/apt/sources.list"
+
+        # Update
+        ubuntu1404.vm.provision "shell", privileged: true,
+            inline: "apt-get update"
+
+        # Ensure git installed
+        ubuntu1404.vm.provision "shell", privileged: true,
+            inline: "apt-get install -y git"
+
+        provision_pipeline(ubuntu1404)
+    end
+
+    config.vm.define "centos65" do |centos65|
+        centos65.vm.box = "chef/centos-6.5"
+        # Ensure git installed
+        config.vm.provision "shell", privileged: true,
+            inline: "yum install -y git"
+    
+        #provision_pipeline(centos65)
+    end
+
 
     # Set the memory to 4GB
     config.vm.provider :virtualbox do |vb|
