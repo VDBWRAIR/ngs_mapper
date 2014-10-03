@@ -123,12 +123,18 @@ def download_unpack( source, dest ):
     '''
     # Get the basename and extension
     base_name, ext = splitext(basename(source))
+
+    # Ensure dest is absolute path
+    if not isabs(dest):
+        dest = abspath(dest)
     
     # Determine how we will read the file
     if ext == '.zip':
+        print "Detected zipfile"
         opener = zipfile.ZipFile
         openmode = 'r'
     elif 'tar' in ext or 'gz' in ext or 'bz' in ext:
+        print "Detected tarfile(tar, gz or bz)"
         opener = tarfile.open
         openmode = 'r:*'
     else:
@@ -138,22 +144,23 @@ def download_unpack( source, dest ):
         ))
 
     # Do it all in tempdir
-    with tempdir.TempDir() as tdir:
-        # Create a fifo
-        fifopth = 'dlfifo'
-        fifo = os.mkfifo(fifopth)
+    with tempdir.in_tempdir() as tdir:
+        print "Entered temporary directory {0}".format(tdir)
 
         # Download into the fifo
-        dlfile, headers = urllib.urlretrieve(source,fifo)
+        print "Downloading {0}".format(source)
+        dlfile, headers = urllib.urlretrieve(source)
 
         # Extract from fifo into dest
         with opener(dlfile, openmode) as fh:
+            print "Extracting all into {0}".format(dest)
             fh.extractall(dest)
 
 def install_trimmomatic( source, dst ):
     '''
     Download and unpack trimmomatic into dstprefix/lib
     '''
+    print "Unpacking trimmomatic into {0}".format(dst)
     download_unpack( source, dst )
 
 def verify_trimmomatic( dstprefix, version='0.32' ):

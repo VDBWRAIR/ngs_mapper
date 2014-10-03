@@ -79,6 +79,11 @@ class Base(common.BaseClass):
         self.bcfpath = join(self.bindir,'bcftools')
         self.trimmopath = join(self.libdir, 'Trimmomatic-0.01', 'trimmomatic-0.01.jar')
 
+    def _print_prefix( self, prefix ):
+        for root, dirs, files in os.walk(prefix):
+            for f in files:
+                print join(root,f)
+
     def _exist( self, path ):
         ok_(exists(path), "{0} did not exist".format(path))
 
@@ -269,8 +274,10 @@ def urllib_urlretrieve_mock( url, filename=None, reporthook=None, data=None ):
     ''' Just creates a compressed text file with hello in it '''
     if filename is None:
         dst = basename(url)
+    else:
+        dst = filename
 
-    base_name, ext = splitext(dst)
+    base_name, ext = splitext(basename(url))
     # Mocked trimmomatic zip
     os.mkdir('Trimmomatic-0.01')
     with open('Trimmomatic-0.01/trimmomatic-0.01.jar','w') as fh:
@@ -293,41 +300,61 @@ def urllib_urlretrieve_mock( url, filename=None, reporthook=None, data=None ):
         elif ext == '.tar':
             compression = 'w'
         else:
-            raise Exception('I do not know this compression')
+            raise Exception('Cannot determine compression for file {0}'.format(dst))
         with tarfile.open(dst, compression) as tar:
             tar.add('Trimmomatic-0.01')
             tar.add('hello.txt')
+    shutil.rmtree('Trimmomatic-0.01')
+    os.unlink('hello.txt')
     return (dst, '')
 
 @patch('miseqpipeline.dependency.urllib',Mock(urlretrieve=urllib_urlretrieve_mock))
 class TestDownloadUnpack(Base):
     functionname = 'download_unpack'
 
+    def setUp(self):
+        super(TestDownloadUnpack,self).setUp()
+        self.unpackdir = 'unpackdir'
+        self.hellopath = join(self.unpackdir,'hello.txt')
+
     def _check_hellofile( self, hellopath ):
-        ok_( exists(hellopath), 'Did not unpack hello.txt' )
+        ok_( exists(hellopath), 'Did not unpack {0}'.format(hellopath) )
         with open(hellopath) as fh:
             eq_( 'hello\n', fh.read(), 'Contents of hello.txt are not correct' )
 
-    #trimmomatic_download_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
     def test_unpacks_zip_files(self):
-        self._C( 'http://www.example.com/zipfile.zip', os.getcwd() )
-        self._check_hellofile('hello.txt')
+        self._C( 'http://www.example.com/zipfile.zip', self.unpackdir )
+        self._check_hellofile(self.hellopath)
 
     def test_unpacks_tar_files(self):
-        self._C( 'http://www.example.com/zipfile.tar', '.' )
-        self._check_hellofile('hello.txt')
+        self._C( 'http://www.example.com/zipfile.tar', self.unpackdir )
+        self._check_hellofile(self.hellopath)
 
     def test_unpacks_tgz_files(self):
-        self._C( 'http://www.example.com/zipfile.tgz', './' )
-        self._check_hellofile('hello.txt')
+        self._C( 'http://www.example.com/zipfile.tgz', self.unpackdir )
+        self._check_hellofile(self.hellopath)
 
     def test_unpacks_tbz_files(self):
-        self._C( 'http://www.example.com/zipfile.tar.bz2', '.' )
-        self._check_hellofile('hello.txt')
+        self._C( 'http://www.example.com/zipfile.tar.bz2', self.unpackdir )
+        self._check_hellofile(self.hellopath)
+
+    def test_unpacks_into_abspath(self):
+        self._C( 'http://www.example.com/zipfile.tar.bz2', abspath(self.unpackdir) )
+        self._check_hellofile(self.hellopath)
+
+    def test_unpacks_into_relativepath(self):
+        self._C( 'http://www.example.com/zipfile.tar.bz2', self.unpackdir )
+        self._check_hellofile(self.hellopath)
 
     @raises(ValueError)
     def test_unkown_format_raises_exception(self):
         self._C( 'http://www.example.com/unkown.txt', '.' )
+
+    def test_ensure_no_leftover_files_in_current_directory(self):
+        self._C( 'http://www.example.com/file.zip', self.unpackdir)
+        # These files are ok for our tests
+        okfiles = [self.unpackdir]
+        eq_( sorted(okfiles), sorted(os.listdir('.')) )
 
 @patch('miseqpipeline.dependency.urllib',Mock(urlretrieve=urllib_urlretrieve_mock))
 class TestInstallTrimmomatic(Base):
@@ -349,11 +376,6 @@ class TestInstallTrimmomatic(Base):
 
 class TestVerifyTrimmomatic(Base):
     functionname = 'verify_trimmomatic'
-
-    def _print_prefix( self, prefix ):
-        for root, dirs, files in os.walk(prefix):
-            for f in files:
-                print join(root,f)
 
     def _make_trimmo_version( self, prefix, version ):
         ''' Make trimmodir and trimmo jar with version '''

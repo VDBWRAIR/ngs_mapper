@@ -80,11 +80,7 @@ https://vdbpm.org/projects/miseqpipeline/wiki
     . $HOME/.miseqpipeline/bin/activate
     ```
 
-5. Ensure pre-requisites
-
-  Read the [Requirements](REQUIREMENTS.md) file
-
-6. Install into virtualenv
+5. Install the pipeline into virtualenv
 
   ```
   python setup.py install
@@ -92,7 +88,7 @@ https://vdbpm.org/projects/miseqpipeline/wiki
 
   It should be safe to run this more than once in case some dependencies do not fully install.
 
-7. Verify install
+6. Verify install
 
   You can pseudo test the installation of the pipeline by running the functional tests
 

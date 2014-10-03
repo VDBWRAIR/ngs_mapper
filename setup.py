@@ -60,12 +60,15 @@ setup(
 # URLs for dependencies
 bwa_url = 'https://github.com/lh3/bwa'
 samtools_url = 'https://github.com/samtools/samtools'
+trimmomatic_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
 
 # Install samtools and bwa
 from miseqpipeline.dependency import (
         install_samtools,
-        install_bwa
+        install_bwa,
+        install_trimmomatic
 )
 # Requires tempdir to be installed
 install_bwa(bwa_url, '0.7.6a', prefix)
 install_samtools(samtools_url, '96b5f2294ac005423', prefix)
+install_trimmomatic(trimmomatic_url, libdir)
