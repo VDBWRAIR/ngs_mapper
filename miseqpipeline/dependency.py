@@ -1,11 +1,20 @@
 import subprocess
-from os.path import dirname, basename, join, abspath, isdir, isabs, exists
+from os.path import (
+    dirname, basename,
+    join, abspath,
+    isdir, isabs,
+    exists, splitext
+)
 import shutil
 import os
+import urllib
+import zipfile
+import tarfile
+from glob import glob
 
 import tempdir
 
-def install_bwa( source, gitsha, dstprefix, tdir=None ):
+def install_bwa( source, gitsha, dstprefix ):
     '''
     Uses git source path to any git repo(local or http[s])
     Installs the bwa executable into dstprefix/bin
@@ -13,7 +22,7 @@ def install_bwa( source, gitsha, dstprefix, tdir=None ):
     after its usage
     '''
     copypaths = ['bwa']
-    clone_checkout_make_copy(source, gitsha, dstprefix, tdir=tdir, copypaths=copypaths )
+    clone_checkout_make_copy(source, gitsha, dstprefix, copypaths=copypaths )
 
 def verify_bwa_install( dstprefix ):
     '''
@@ -45,7 +54,7 @@ def prefix_has_files( prefix, checkfiles ):
     os.chdir(cwd)
     return missing
 
-def install_samtools( source, gitsha, dstprefix, tdir=None ):
+def install_samtools( source, gitsha, dstprefix ):
     '''
     Uses git source path to any git repo(local or remote)
     Installs samtools and bcftools into dstprefix/bin
@@ -55,7 +64,7 @@ def install_samtools( source, gitsha, dstprefix, tdir=None ):
         'samtools',
         'bcftools/bcftools'
     ]
-    clone_checkout_make_copy(source, gitsha, dstprefix, tdir=tdir, copypaths=copypaths)
+    clone_checkout_make_copy(source, gitsha, dstprefix, copypaths=copypaths)
 
 def verify_samtools_install( dstprefix ):
     '''
@@ -107,3 +116,54 @@ def clone_checkout_make_copy( source, gitsha, dstprefix, copypaths=[], tdir=None
             shutil.copy2(copypath, dstprefixbin)
         # popd
         os.chdir(curdir)
+
+def download_unpack( source, dest ):
+    '''
+    Downloads or copies source and then unpacks it into dest
+    '''
+    # Get the basename and extension
+    base_name, ext = splitext(basename(source))
+    
+    # Determine how we will read the file
+    if ext == '.zip':
+        opener = zipfile.ZipFile
+        openmode = 'r'
+    elif 'tar' in ext or 'gz' in ext or 'bz' in ext:
+        opener = tarfile.open
+        openmode = 'r:*'
+    else:
+        raise ValueError(
+            '{0} cannot be extract as it is an unknown format'.format(
+                source
+        ))
+
+    # Do it all in tempdir
+    with tempdir.TempDir() as tdir:
+        # Create a fifo
+        fifopth = 'dlfifo'
+        fifo = os.mkfifo(fifopth)
+
+        # Download into the fifo
+        dlfile, headers = urllib.urlretrieve(source,fifo)
+
+        # Extract from fifo into dest
+        with opener(dlfile, openmode) as fh:
+            fh.extractall(dest)
+
+def install_trimmomatic( source, dst ):
+    '''
+    Download and unpack trimmomatic into dstprefix/lib
+    '''
+    download_unpack( source, dst )
+
+def verify_trimmomatic( dstprefix, version='0.32' ):
+    '''
+    Ensures that the trimmomatic-<version>.jar is located inside of 
+    dstprefix/lib/Trimmomatic-<version>
+    '''
+    paths = [
+        ('lib/Trimmomatic-{0}/trimmomatic-{0}.jar'.format(version), os.R_OK)
+    ]
+    missing = prefix_has_files(dstprefix, paths)
+    print missing
+    return [] == missing

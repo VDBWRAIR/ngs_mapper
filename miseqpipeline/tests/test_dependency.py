@@ -1,4 +1,5 @@
 from imports import *
+import tempdir
 
 def make_mock_exec_file( path ):
     ''' just make a mock bwa to be called '''
@@ -76,9 +77,13 @@ class Base(common.BaseClass):
         self.bwapath = join(self.bindir,'bwa')
         self.sampath = join(self.bindir,'samtools')
         self.bcfpath = join(self.bindir,'bcftools')
+        self.trimmopath = join(self.libdir, 'Trimmomatic-0.01', 'trimmomatic-0.01.jar')
+
+    def _exist( self, path ):
+        ok_(exists(path), "{0} did not exist".format(path))
 
     def _exist_executable( self, path ):
-        ok_(exists(path), "{0} did not exist".format(path))
+        self._exist( path )
         ok_(os.access(path,os.X_OK), "{0} is not executable".format(path))
 
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
@@ -259,3 +264,135 @@ class TestVerifyExistExecutable(Base):
         os.chmod(self.exefile, 0644)
         r = self._C( self.prefix, zip(self.files,modes) )
         eq_( r, ['bin/myexe'] )
+
+def urllib_urlretrieve_mock( url, filename=None, reporthook=None, data=None ):
+    ''' Just creates a compressed text file with hello in it '''
+    if filename is None:
+        dst = basename(url)
+
+    base_name, ext = splitext(dst)
+    # Mocked trimmomatic zip
+    os.mkdir('Trimmomatic-0.01')
+    with open('Trimmomatic-0.01/trimmomatic-0.01.jar','w') as fh:
+        fh.write('#!/bin/bash\n')
+        fh.write('echo "trimmomatic"\n')
+    with open('hello.txt','w') as fh:
+        fh.write('hello\n')
+    if ext == '.zip':
+        import zipfile
+        with zipfile.ZipFile(dst,'w') as zfh:
+            zfh.write('Trimmomatic-0.01/trimmomatic-0.01.jar')
+            zfh.write('hello.txt')
+    else:
+        import tarfile
+        compression = ''
+        if ext in ('.gz','.gzip','.tgz'):
+            compression = 'w:gz'
+        elif ext in ('.bz','.bzip','.bz2','.tbz'):
+            compression = 'w:bz2'
+        elif ext == '.tar':
+            compression = 'w'
+        else:
+            raise Exception('I do not know this compression')
+        with tarfile.open(dst, compression) as tar:
+            tar.add('Trimmomatic-0.01')
+            tar.add('hello.txt')
+    return (dst, '')
+
+@patch('miseqpipeline.dependency.urllib',Mock(urlretrieve=urllib_urlretrieve_mock))
+class TestDownloadUnpack(Base):
+    functionname = 'download_unpack'
+
+    def _check_hellofile( self, hellopath ):
+        ok_( exists(hellopath), 'Did not unpack hello.txt' )
+        with open(hellopath) as fh:
+            eq_( 'hello\n', fh.read(), 'Contents of hello.txt are not correct' )
+
+    #trimmomatic_download_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
+    def test_unpacks_zip_files(self):
+        self._C( 'http://www.example.com/zipfile.zip', os.getcwd() )
+        self._check_hellofile('hello.txt')
+
+    def test_unpacks_tar_files(self):
+        self._C( 'http://www.example.com/zipfile.tar', '.' )
+        self._check_hellofile('hello.txt')
+
+    def test_unpacks_tgz_files(self):
+        self._C( 'http://www.example.com/zipfile.tgz', './' )
+        self._check_hellofile('hello.txt')
+
+    def test_unpacks_tbz_files(self):
+        self._C( 'http://www.example.com/zipfile.tar.bz2', '.' )
+        self._check_hellofile('hello.txt')
+
+    @raises(ValueError)
+    def test_unkown_format_raises_exception(self):
+        self._C( 'http://www.example.com/unkown.txt', '.' )
+
+@patch('miseqpipeline.dependency.urllib',Mock(urlretrieve=urllib_urlretrieve_mock))
+class TestInstallTrimmomatic(Base):
+    functionname = 'install_trimmomatic'
+
+    def test_creates_intermediate_directories(self):
+        self._C( self.trimmomatic_download_url, self.libdir )
+        self._exist( self.trimmopath )
+
+    def test_intermediate_directories_exist(self):
+        os.makedirs(self.libdir)
+        self._C( self.trimmomatic_download_url, self.libdir )
+        self._exist( self.trimmopath )
+
+    def test_absolute_path_to_prefix(self):
+        self.libdir = abspath(self.libdir)
+        self._C( self.trimmomatic_download_url, self.libdir )
+        self._exist( self.trimmopath )
+
+class TestVerifyTrimmomatic(Base):
+    functionname = 'verify_trimmomatic'
+
+    def _print_prefix( self, prefix ):
+        for root, dirs, files in os.walk(prefix):
+            for f in files:
+                print join(root,f)
+
+    def _make_trimmo_version( self, prefix, version ):
+        ''' Make trimmodir and trimmo jar with version '''
+        trimname = 'Trimmomatic-{0}'.format(version)
+        trimodir = join(self.libdir,trimname)
+        trimmopath = join(trimodir,trimname.lower()+'.jar')
+        os.makedirs(trimodir)
+        with open(trimmopath,'w') as fh:
+            fh.write('i exist')
+        return trimodir
+
+    def test_jarfile_missing_from_dstprefix_lib_trimmomatic(self):
+        os.makedirs(self.libdir)
+        self._print_prefix(self.prefix)
+
+        r = self._C( self.prefix )
+        eq_( False, r )
+
+    def test_jarfile_exists_in_dstprefix_lib_trimmomatic(self):
+        os.makedirs(self.libdir)
+        self._make_trimmo_version(self.prefix, '0.01')
+        self._print_prefix(self.prefix)
+
+        r = self._C( self.prefix, '0.01' )
+        eq_( True, r )
+
+    def test_incorrect_version_returns_false(self):
+        os.makedirs(self.libdir)
+        self._make_trimmo_version(self.prefix, '0.01')
+        self._print_prefix(self.prefix)
+
+        r = self._C(self.prefix, '0.32')
+        eq_(False, r)
+
+    def test_correct_version_with_multiple_installed_returns_true(self):
+        os.makedirs(self.libdir)
+        self._make_trimmo_version(self.prefix, '0.01')
+        self._make_trimmo_version(self.prefix, '0.32')
+        self._print_prefix(self.prefix)
+
+        r = self._C(self.prefix, '0.32')
+        eq_( True, r )
