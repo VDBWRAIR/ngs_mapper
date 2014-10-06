@@ -3,28 +3,28 @@ https://vdbpm.org/projects/miseqpipeline/wiki
 
 # Installation
 
-1. Install System Packages
+1. Clone
+
+  ```
+  git clone https://github.com/VDBWRAIR/miseqpipeline.git
+  cd miseqpipeline
+  ```
+
+2. Install System Packages
 
   This is the only part of the installation process that you should need to become the super user
 
   - Red Hat/CentOS
   
     ```
-    su -c 'yum groupinstall "Development tools"; yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel} libpng{,-devel} ImageMagick java-1.7.0-openjdk git bzip2 bzip2-devel'
+    su -c 'python setup.py install --system-packages'
     ```
   
   - Ubuntu
   
     ```
-    sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip imagemagick libpng12-dev default-jre git libbz2-dev
+    sudo 'python setup.py install --system-packages'
     ```
-
-2. Clone
-
-  ```
-  git clone https://github.com/VDBWRAIR/miseqpipeline.git
-  cd miseqpipeline
-  ```
 
 3. Python
 
