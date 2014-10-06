@@ -47,7 +47,7 @@ class CustomInstallCommand(setuptools_install.install):
             print "Installing ext deps"
             self._install_external_dependencies()
 
-    def install_external_dependencies(self):
+    def _install_external_dependencies(self):
         # URLs for dependencies
         bwa_url = 'https://github.com/lh3/bwa'
         samtools_url = 'https://github.com/samtools/samtools'
