@@ -19,7 +19,7 @@ UBUNTU_SYSTEM_PACKAGES = [
         'zlib1g', 'zlib1g-dev', 'libpango1.0-0', 'libpango1.0-dev',
         'libreadline6', 'libreadline6-dev', 'openssl', 'libssl-dev',
         'unzip', 'imagemagick', 'libpng12-dev', 'default-jre',
-        'git',
+        'git', 'libbz2-dev'
 ]
 
 # These are all the yum packages
@@ -28,7 +28,8 @@ REDHAT_SYSTEM_PACKAGES = [
     'zlib-devel', 'freetype', 'freetype-devel',
     'readline', 'readline-devel', 'openssl',
     'openssl-devel', 'libpng', 'libpng-devel',
-    'ImageMagick', 'java-1.7.0-openjdk', 'git'
+    'ImageMagick', 'java-1.7.0-openjdk', 'git',
+    'python-setuptools', 'bzip2', 'bzip2-devel'
 ]
 
 class NotSuperUserError(Exception): pass
@@ -49,12 +50,17 @@ def shell_cmd( cmdstr, requireroot=False ):
 
 def install_redhat_packages( packages ):
     shell_cmd(
-        'yum groupinstall "Development tools"',
+        'yum groupinstall -y "Development tools"',
         True
     )
     pkglist = ' '.join( packages )
     cmd = 'yum install -y ' + pkglist
     shell_cmd( cmd, True )
+    # Because redhat/centos uses 2.6.6 which does not
+    # contain argparse
+    shell_cmd(
+        'easy_install argparse'
+    )
 
 def install_ubuntu_packages( packages ):
     pkglist = ' '.join(packages)

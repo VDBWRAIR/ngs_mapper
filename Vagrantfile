@@ -34,6 +34,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         ubuntu1404.vm.provision "shell", privileged: true,
             inline: "apt-get install -y git"
 
+        # Install and test pipeline
         provision_pipeline(ubuntu1404)
     end
 
@@ -42,8 +43,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # Ensure git installed
         config.vm.provision "shell", privileged: true,
             inline: "yum install -y git"
-    
-        #provision_pipeline(centos65)
+
+        # Install and test pipeline
+        provision_pipeline(centos65)
     end
 
 
