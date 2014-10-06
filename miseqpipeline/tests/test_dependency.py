@@ -69,6 +69,13 @@ class Base(common.BaseClass):
     samtools_github_url = 'https://github.com/samtools/samtools'
     trimmomatic_download_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
 
+    distros = [
+        ('Red Hat Enterprise Linux Workstation', '6.5', 'Santiago'),
+        ('CentOS', '6.5', 'Final'),
+        ('Ubuntu', '14.04', 'Precise'),
+        ('debian', 'wheezy/sid', ''),
+    ]
+
     def setUp( self ):
         super(Base,self).setUp()
         self.prefix = 'prefixdir'
@@ -423,19 +430,13 @@ class TestGetDistributionPackageManager(Base):
     functionname = 'get_distribution_package_manager'
 
     def test_returns_correct_distribution_with_version(self):
-        distros = [
-            ('Red Hat Enterprise Linux Workstation', '6.5', 'Santiago'),
-            ('CentOS', '6.5', 'Final'),
-            ('Ubuntu', '14.04', 'Precise'),
-            ('debian', 'wheezy/sid', ''),
-        ]
         pkgmanagers = [
             'yum',
             'yum',
             'apt-get',
             'apt-get',
         ]
-        for dist, pkgmanager in zip(distros,pkgmanagers):
+        for dist, pkgmanager in zip(self.distros,pkgmanagers):
             with patch('miseqpipeline.dependency.platform') as platform:
                 platform.linux_distribution.return_value = dist
                 r = self._C()
@@ -452,3 +453,103 @@ class TestGetDistributionPackageManager(Base):
                 ok_( False, "Did not raise UnknownDistributionError" )
             except UnknownDistributionError as e:
                 ok_( True )
+
+@patch('miseqpipeline.dependency.os')
+@patch('miseqpipeline.dependency.subprocess')
+@patch('miseqpipeline.dependency.platform')
+class TestInstallSystemPackages(Base):
+    functionname = 'install_system_packages'
+
+    def test_installs_yum_packages(self, platform, subprocess, os):
+        os.getuid.return_value = 0
+        platform.linux_distribution.return_value = self.distros[1]
+        subprocess.check_call.return_value = 0
+        r = self._C( ['pkg1', 'pkg2'] )
+        subprocess.check_call.assert_has_calls(
+            call(['yum','install','-y','pkg1','pkg2'])
+        )
+
+    def test_installs_aptget_packages(self, platform, subprocess, os):
+        os.getuid.return_value = 0
+        platform.linux_distribution.return_value = self.distros[2]
+        subprocess.check_call.return_value = 0
+        r = self._C( ['pkg1', 'pkg2'] )
+        subprocess.check_call.assert_has_calls(
+            call(['apt-get','install','-y','pkg1','pkg2'])
+        )
+
+    def test_unknown_distribution_raises_unknowndistribution(self, platform, subprocess, os):
+        from miseqpipeline.dependency import UnknownDistributionError
+        os.getuid.return_value = 0
+        platform.linux_distribution.return_value = ('Unknown','14.04','Precise')
+        subprocess.check_call.side_effect = OSError
+        try:
+            r = self._C(['pkg1'])
+            ok_( False, "Did not raise UnknownDistributionError" )
+        except UnknownDistributionError as e:
+            ok_(True)
+
+    def test_uid_is_not_zero_raises_exception(self, platform, subprocess, os):
+        from miseqpipeline.dependency import UserNotRootError
+        os.getuid.return_value = 500
+        platform.linux_distribution.return_value = self.distros[2]
+        subprocess.check_call.side_effect = subprocess.CalledProcessError
+
+        try:
+            r = self._C( ['pkg1'] )
+            ok_(False, "Did not raise Exception when user was not root")
+        except UserNotRootError as e:
+            ok_(True)
+
+@attr('current')
+@patch('miseqpipeline.dependency.platform')
+class TestGetDistributionPackageList(Base):
+    functionname = 'get_distribution_package_list'
+
+    def setUp(self):
+        super(TestGetDistributionPackageList, self).setUp()
+        self.pkglist = {
+            'yum': [
+                'yum-pkg1',
+                'yum-pkg2'
+            ],
+            'apt-get': [
+                'aptget-pkg1',
+                'aptget-pkg2'
+            ]
+        }
+        self.pkglistfile = self._write_pkglistfile(
+            self.pkglist,'system_packages.lst'
+        )
+
+    def _write_pkglistfile( self, pkglistdict, outpath ):
+        import json
+        with open(outpath,'w') as fh:
+            json.dump(pkglistdict, fh, indent=4)
+        return outpath
+
+    def test_gets_correct_list_for_yum_platform(self, platform):
+        platform.linux_distribution.return_value = self.distros[0]
+        r = self._C( self.pkglistfile )
+        eq_( self.pkglist['yum'], r )
+
+    def test_gets_correct_list_for_aptget_platform(self, platform):
+        platform.linux_distribution.return_value = self.distros[2]
+        r = self._C( self.pkglistfile )
+        eq_( self.pkglist['apt-get'], r )
+
+    def test_pkglistfile_does_not_contain_pkgmanager_entry_raises_exception(self, platform):
+        from miseqpipeline.dependency import MissingPackageListEntry
+        platform.linux_distribution.return_value = self.distros[0]
+
+        # Remove yum entry
+        del self.pkglist['yum']
+        self.pkglistfile = self._write_pkglistfile(
+            self.pkglist, 'system_packages.lst'
+        )
+
+        try:
+            r = self._C( self.pkglistfile )
+            ok_(False, "Did not raise exception")
+        except MissingPackageListEntry as e:
+            ok_(True)

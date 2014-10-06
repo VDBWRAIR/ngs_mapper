@@ -9,28 +9,11 @@ import shutil
 from glob import glob
 import tempfile
 
+from miseqpipeline import dependency
+
 # Provisions pipeline into Ubuntu, CentOS or RedHat VM
 # Will essentially do everything in the README.md for installation
 # Then runs nosetests -v miseqpipeline at the end
-
-# These are all the apt-get packages for ubuntu
-UBUNTU_SYSTEM_PACKAGES = [
-        'build-essential', 'libncurses5', 'libncurses5-dev',
-        'zlib1g', 'zlib1g-dev', 'libpango1.0-0', 'libpango1.0-dev',
-        'libreadline6', 'libreadline6-dev', 'openssl', 'libssl-dev',
-        'unzip', 'imagemagick', 'libpng12-dev', 'default-jre',
-        'git', 'libbz2-dev'
-]
-
-# These are all the yum packages
-REDHAT_SYSTEM_PACKAGES = [
-    'wget', 'ncurses', 'ncurses-devel', 'zlib',
-    'zlib-devel', 'freetype', 'freetype-devel',
-    'readline', 'readline-devel', 'openssl',
-    'openssl-devel', 'libpng', 'libpng-devel',
-    'ImageMagick', 'java-1.7.0-openjdk', 'git',
-    'bzip2', 'bzip2-devel'
-]
 
 class NotSuperUserError(Exception): pass
 
@@ -47,20 +30,6 @@ def shell_cmd( cmdstr, requireroot=False ):
     return subprocess.check_call(
         cmdstr, shell=True
     )
-
-def install_redhat_packages( packages ):
-    shell_cmd(
-        'yum groupinstall -y "Development tools"',
-        True
-    )
-    pkglist = ' '.join( packages )
-    cmd = 'yum install -y ' + pkglist
-    shell_cmd( cmd, True )
-
-def install_ubuntu_packages( packages ):
-    pkglist = ' '.join(packages)
-    cmd = 'apt-get install -y ' + pkglist
-    shell_cmd( cmd, True )
 
 def clone_pipeline( source, dst ):
     dst = expanduser(dst)
@@ -147,15 +116,6 @@ def create_virtualenv( venvpath='$HOME/.miseqpipeline', pythonprefix='$HOME' ):
 
     return venvpath
 
-def install_system_packages():
-    dist, vers, name = get_distribution()
-    if dist == 'Ubuntu':
-        install_ubuntu_packages( UBUNTU_SYSTEM_PACKAGES )
-    elif dist in ('CentOS','Red Hat Enterprise Linux Workstation'):
-        install_redhat_packages( REDHAT_SYSTEM_PACKAGES )
-    else:
-        raise ValueError("Unsupported distribution {0}".format(dist))
-
 def run_setup( venvpath ):
     activatepath = join(venvpath,'bin','activate')
     shell_cmd(
@@ -195,7 +155,7 @@ def parse_args(args=sys.argv[1:]):
 
 def main( args ):
     if args.install_system:
-        install_system_packages()
+        dependency.install_system_packages('system_packages.lst')
     else:
         install_pipeline()
 

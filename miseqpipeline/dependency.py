@@ -12,6 +12,7 @@ import zipfile
 import tarfile
 from glob import glob
 import platform
+import json
 
 import tempdir
 
@@ -176,6 +177,7 @@ def verify_trimmomatic( dstprefix, version='0.32' ):
     print missing
     return [] == missing
 
+''' Class for when an unknown linux distribution is encountered '''
 class UnknownDistributionError(Exception): pass
 
 def get_distribution_package_manager( ):
@@ -198,3 +200,50 @@ def get_distribution_package_manager( ):
         raise UnknownDistributionError(
             "{0} is an unknown distribution".format(dist)
         )
+
+''' Class for when user needs to be root and is not '''
+class UserNotRootError(Exception): pass
+
+def install_system_packages( packagelist ):
+    '''
+    Uses the given packagemanager and package manager options to install the given
+    package list
+    '''
+    # Get the package manager for current distribution
+    pkgmanager = get_distribution_package_manager()
+
+    # Ensure super-user or raise exception
+    if os.getuid() != 0:
+        raise UserNotRootError(
+            "Using the package manager {0} requires super-user".format(
+                pkgmanager
+            )
+        )
+
+    # Run the package manager install without prompt(-y)
+    cmd = [pkgmanager, 'install', '-y'] + packagelist
+    subprocess.check_call( cmd )
+
+''' Class for when package manager entry is missing from pkglistfile '''
+class MissingPackageListEntry(Exception): pass
+
+def get_distribution_package_list( pkglistfile ):
+    '''
+    Return the package list from a given pkglistfile
+    Essentially just a dictionary lookup after loading a json encoded file
+    '''
+    pkgmanager = get_distribution_package_manager()
+
+    # Load the json file with the package lists for each package manager
+    pkglists = None
+    with open(pkglistfile) as fh:
+        pkglist = json.load(fh)
+
+    # Ensure pkgmanager has an entry
+    if pkgmanager not in pkglist:
+        raise MissingPackageListEntry(
+            "{0} does not contain a package list for package " \
+            "manager {1}".format(pkglistfile,pkgmanager)
+        )
+    # return the list
+    return pkglist[pkgmanager]

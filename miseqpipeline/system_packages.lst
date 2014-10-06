@@ -1,0 +1,41 @@
+{
+'yum': [
+    'wget',
+	'ncurses',
+	'ncurses-devel',
+	'zlib',
+    'zlib-devel',
+	'freetype',
+	'freetype-devel',
+    'readline',
+	'readline-devel',
+	'openssl',
+    'openssl-devel',
+	'libpng',
+	'libpng-devel',
+    'ImageMagick',
+	'java-1.7.0-openjdk',
+	'git',
+    'bzip2',
+	'bzip2-devel'
+],
+'apt-get': [
+    'build-essential',
+	'libncurses5',
+	'libncurses5-dev',
+    'zlib1g',
+	'zlib1g-dev',
+	'libpango1.0-0',
+	'libpango1.0-dev',
+    'libreadline6',
+	'libreadline6-dev',
+	'openssl',
+	'libssl-dev',
+    'unzip',
+	'imagemagick',
+	'libpng12-dev',
+	'default-jre',
+    'git',
+	'libbz2-dev'
+]
+}
