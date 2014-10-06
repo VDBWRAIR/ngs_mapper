@@ -29,7 +29,7 @@ REDHAT_SYSTEM_PACKAGES = [
     'readline', 'readline-devel', 'openssl',
     'openssl-devel', 'libpng', 'libpng-devel',
     'ImageMagick', 'java-1.7.0-openjdk', 'git',
-    'python-setuptools', 'bzip2', 'bzip2-devel'
+    'bzip2', 'bzip2-devel'
 ]
 
 class NotSuperUserError(Exception): pass
@@ -56,11 +56,6 @@ def install_redhat_packages( packages ):
     pkglist = ' '.join( packages )
     cmd = 'yum install -y ' + pkglist
     shell_cmd( cmd, True )
-    # Because redhat/centos uses 2.6.6 which does not
-    # contain argparse
-    shell_cmd(
-        'easy_install argparse'
-    )
 
 def install_ubuntu_packages( packages ):
     pkglist = ' '.join(packages)

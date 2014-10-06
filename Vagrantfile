@@ -44,6 +44,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         config.vm.provision "shell", privileged: true,
             inline: "yum install -y git"
 
+        # Install setuptools so we can get argparse
+        config.vm.provision "shell", privileged: true,
+            inline: "yum install -y python-setuptools; easy_install argparse"
+
         # Install and test pipeline
         provision_pipeline(centos65)
     end
