@@ -14,6 +14,10 @@ from version import __version__
 class CustomInstallCommand(setuptools_install.install):
     '''
     Custom setup.py install keyword to initiate system-package installation
+    Probably should clean this up better at some point. Here is a good example of how
+    https://github.com/quasiyoke/keys_of_peace/blob/master/setup.py
+    I guess you shouldn't really override install as much as the bdist_egg. Also this won't
+    work for say the develop command unless you do what that guy did in the link above
     '''
     user_options = setuptools_install.install.user_options + [
         ('system-packages', None, 'Install system packages'),
@@ -42,7 +46,7 @@ class CustomInstallCommand(setuptools_install.install):
             self.pip_install( 'numpy==1.8.0' )
             # Run normal setuptools install
             print "Installing pipeline"
-            setuptools_install.install.run(self)
+            self.do_egg_install()
             # Install dependencies outside of python
             print "Installing ext deps"
             self._install_external_dependencies()
