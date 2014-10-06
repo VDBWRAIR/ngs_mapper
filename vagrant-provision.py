@@ -13,6 +13,24 @@ import tempfile
 # Will essentially do everything in the README.md for installation
 # Then runs nosetests -v miseqpipeline at the end
 
+# These are all the apt-get packages for ubuntu
+UBUNTU_SYSTEM_PACKAGES = [
+        'build-essential', 'libncurses5', 'libncurses5-dev',
+        'zlib1g', 'zlib1g-dev', 'libpango1.0-0', 'libpango1.0-dev',
+        'libreadline6', 'libreadline6-dev', 'openssl', 'libssl-dev',
+        'unzip', 'imagemagick', 'libpng12-dev', 'default-jre',
+        'git',
+]
+
+# These are all the yum packages
+REDHAT_SYSTEM_PACKAGES = [
+    'wget', 'ncurses', 'ncurses-devel', 'zlib',
+    'zlib-devel', 'freetype', 'freetype-devel',
+    'readline', 'readline-devel', 'openssl',
+    'openssl-devel', 'libpng', 'libpng-devel',
+    'ImageMagick', 'java-1.7.0-openjdk', 'git'
+]
+
 class NotSuperUserError(Exception): pass
 
 def get_distribution():
@@ -25,35 +43,38 @@ def shell_cmd( cmdstr, requireroot=False ):
             cmdstr
         ))
     # Run command in shell
-    return subprocess.check_output(
+    return subprocess.check_call(
         cmdstr, shell=True
     )
 
-def install_redhat_packages():
+def install_redhat_packages( packages ):
     shell_cmd(
         'yum groupinstall "Development tools"',
         True
     )
-    shell_cmd(
-        'yum install -y wget ncurses{,-devel} zlib{,-devel} ' \
-        'freetype{,-devel} readline{,-devel} openssl{,-devel} ' \
-        'libpng{,-devel} ImageMagick java-1.7.0-openjdk git',
-        True
-    )
+    pkglist = ' '.join( packages )
+    cmd = 'yum install -y ' + pkglist
+    shell_cmd( cmd, True )
 
-def install_ubuntu_packages():
-    shell_cmd(
-        'apt-get install -y build-essential libncurses5{,-dev} ' \
-        'zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} ' \
-        'openssl libssl-dev unzip imagemagick libpng12-dev default-jre git',
-        True
-    )
+def install_ubuntu_packages( packages ):
+    pkglist = ' '.join(packages)
+    cmd = 'apt-get install -y ' + pkglist
+    shell_cmd( cmd, True )
 
-def clone_pipeline():
-    shell_cmd(
-        'git clone https://github.com/VDBWRAIR/miseqpipeline.git'
-    )
-    os.chdir('miseqpipeline')
+def clone_pipeline( source, dst ):
+    dst = expanduser(dst)
+    source = expanduser(source)
+    if not isdir(dst):
+        cmd = 'git clone {0} {1}'.format(source,dst)
+    else:
+        cmd = 'd=$(pwd); cd {0} && git stash && git pull && cd $d'.format(
+            dst
+        )
+    shell_cmd( cmd ) 
+    os.chdir(dst)
+
+def get_python_version():
+    return sys.version_info[0:3]
 
 def install_python( version='2.7.8', installprefix='$HOME' ):
     '''
@@ -64,6 +85,13 @@ def install_python( version='2.7.8', installprefix='$HOME' ):
     
     # where to install
     prefix = expandvars(installprefix)
+    
+    # Where python will be located
+    pythonexe = join(prefix,'bin','python')
+
+    # Check to see if it is installed already
+    if isfile(pythonexe):
+        return pythonexe
 
     # Download and unpack
     shell_cmd(
@@ -73,6 +101,9 @@ def install_python( version='2.7.8', installprefix='$HOME' ):
 
     os.chdir('Python-{0}'.format(version))
     shell_cmd(
+        './configure --prefix {0}'.format(installprefix)
+    )
+    shell_cmd(
         'make'
     )
     shell_cmd(
@@ -81,6 +112,9 @@ def install_python( version='2.7.8', installprefix='$HOME' ):
 
     #popd
     os.chdir(cwd)
+
+    # Path to python executable
+    return pythonexe
 
 def create_virtualenv( venvpath='$HOME/.miseqpipeline', pythonprefix='$HOME' ):
     '''
@@ -110,25 +144,28 @@ def create_virtualenv( venvpath='$HOME/.miseqpipeline', pythonprefix='$HOME' ):
         '. {0}/bin/activate'.format(venvpath)
     )
 
+    return venvpath
+
 def install_system_packages():
     dist, vers, name = get_distribution()
     if dist == 'Ubuntu':
-        install_ubuntu_packages()
+        install_ubuntu_packages( UBUNTU_SYSTEM_PACKAGES )
     elif dist in ('CentOS','Red Hat Enterprise Linux Workstation'):
-        install_redhat_packages()
+        install_redhat_packages( REDHAT_SYSTEM_PACKAGES )
     else:
         raise ValueError("Unsupported distribution {0}".format(dist))
 
-def run_setup():
+def run_setup( venvpath ):
+    activatepath = join(venvpath,'bin','activate')
     shell_cmd(
-        'python setup.py install'
+        '. {0}; python setup.py install'.format(activatepath)
     )
 
 def install_pipeline():
-    clone_pipeline()
+    clone_pipeline('/vagrant', '~/miseqpipeline')
     install_python()
-    create_virtualenv()
-    run_setup()
+    venvpath = create_virtualenv()
+    run_setup( venvpath )
 
 def parse_args(args=sys.argv[1:]):
     import argparse
