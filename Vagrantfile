@@ -16,7 +16,7 @@ def provision_pipeline( config )
 
     # Run the provisioning pipeline install
     config.vm.provision "shell", privileged: false,
-        inline: "echo 'Installing pipeline'; cd ~/miseqpipeline; python vagrant-provision.py --install-pipline"
+        inline: "echo 'Installing pipeline'; cd ~/miseqpipeline; python vagrant-provision.py --install-pipeline"
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
