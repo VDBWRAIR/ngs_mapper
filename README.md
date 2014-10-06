@@ -10,13 +10,13 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   - Red Hat/CentOS
   
     ```
-    su -c 'yum groupinstall "Development tools"; yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel} libpng{,-devel} ImageMagick java-1.7.0-openjdk git'
+    su -c 'yum groupinstall "Development tools"; yum install -y wget ncurses{,-devel} zlib{,-devel} freetype{,-devel} readline{,-devel} openssl{,-devel} libpng{,-devel} ImageMagick java-1.7.0-openjdk git bzip2 bzip2-devel'
     ```
   
   - Ubuntu
   
     ```
-    sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip imagemagick libpng12-dev default-jre git
+    sudo apt-get install -y build-essential libncurses5{,-dev} zlib1g{,-dev} libpango1.0-{0,dev} libreadline6{,-dev} openssl libssl-dev unzip imagemagick libpng12-dev default-jre git libbz2-dev
     ```
 
 2. Clone
