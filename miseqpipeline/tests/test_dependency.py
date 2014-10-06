@@ -418,3 +418,37 @@ class TestVerifyTrimmomatic(Base):
 
         r = self._C(self.prefix, '0.32')
         eq_( True, r )
+
+class TestGetDistributionPackageManager(Base):
+    functionname = 'get_distribution_package_manager'
+
+    def test_returns_correct_distribution_with_version(self):
+        distros = [
+            ('Red Hat Enterprise Linux Workstation', '6.5', 'Santiago'),
+            ('CentOS', '6.5', 'Final'),
+            ('Ubuntu', '14.04', 'Precise'),
+            ('debian', 'wheezy/sid', ''),
+        ]
+        pkgmanagers = [
+            'yum',
+            'yum',
+            'apt-get',
+            'apt-get',
+        ]
+        for dist, pkgmanager in zip(distros,pkgmanagers):
+            with patch('miseqpipeline.dependency.platform') as platform:
+                platform.linux_distribution.return_value = dist
+                r = self._C()
+                eq_( pkgmanager, r )
+
+    def test_raises_exception_with_unknown_distrubution(self):
+        from miseqpipeline.dependency import UnknownDistributionError
+        with patch('miseqpipeline.dependency.platform') as platform:
+            platform.linux_distribution.return_value = (
+                'Unknown Distribution', '1.0', 'Final'
+            )
+            try:
+                r = self._C()
+                ok_( False, "Did not raise UnknownDistributionError" )
+            except UnknownDistributionError as e:
+                ok_( True )

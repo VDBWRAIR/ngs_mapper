@@ -11,6 +11,7 @@ import urllib
 import zipfile
 import tarfile
 from glob import glob
+import platform
 
 import tempdir
 
@@ -174,3 +175,26 @@ def verify_trimmomatic( dstprefix, version='0.32' ):
     missing = prefix_has_files(dstprefix, paths)
     print missing
     return [] == missing
+
+class UnknownDistributionError(Exception): pass
+
+def get_distribution_package_manager( ):
+    '''
+    Return the package manager that should be used for this distribution
+
+    Ubuntu - apt-get
+    Debian - apt-get
+    CentOS - yum
+    Red Hat - yum
+
+    All others will raise UnknownDistributionError
+    '''
+    dist, version, name = platform.linux_distribution()
+    if dist in ('Ubuntu', 'debian'):
+        return 'apt-get'
+    elif dist.startswith('Red Hat Enterprise') or dist == 'CentOS':
+        return 'yum'
+    else:
+        raise UnknownDistributionError(
+            "{0} is an unknown distribution".format(dist)
+        )
