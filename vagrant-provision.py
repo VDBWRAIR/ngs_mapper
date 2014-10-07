@@ -9,8 +9,6 @@ import shutil
 from glob import glob
 import tempfile
 
-from miseqpipeline import dependency
-
 # Provisions pipeline into Ubuntu, CentOS or RedHat VM
 # Will essentially do everything in the README.md for installation
 # Then runs nosetests -v miseqpipeline at the end
@@ -155,7 +153,7 @@ def parse_args(args=sys.argv[1:]):
 
 def main( args ):
     if args.install_system:
-        dependency.install_system_packages('system_packages.lst')
+        shell_cmd('python setup.py install_system_packages',True)
     else:
         install_pipeline()
 

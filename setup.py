@@ -7,49 +7,56 @@ import sys
 from os.path import join
 
 from setuptools import setup, find_packages
-import setuptools.command.install as setuptools_install
+import setuptools
+from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
+from setuptools.command.develop import develop as _develop
 
 from version import __version__
 
-class CustomInstallCommand(setuptools_install.install):
+class InstallSystemPackagesCommand(setuptools.Command):
     '''
     Custom setup.py install keyword to initiate system-package installation
-    Probably should clean this up better at some point. Here is a good example of how
-    https://github.com/quasiyoke/keys_of_peace/blob/master/setup.py
-    I guess you shouldn't really override install as much as the bdist_egg. Also this won't
-    work for say the develop command unless you do what that guy did in the link above
     '''
-    user_options = setuptools_install.install.user_options + [
-        ('system-packages', None, 'Install system packages'),
-    ]
+    user_options = []
+    description = 'Installs all system packages via the package manager(Requires super-user)'
 
     def initialize_options(self):
-        setuptools_install.install.initialize_options(self)
-        self.system_packages = False
+        pass
+
+    def finalize_options(self):
+        pass
 
     def run(self):
-        if self.system_packages:
-            from miseqpipeline.dependency import (
-                install_system_packages,
-                get_distribution_package_list,
-                UserNotRootError
-            )
-            try:
-                system_packages = get_distribution_package_list('system_packages.lst')
-                install_system_packages(system_packages)
-            except UserNotRootError as e:
-                print "You need to be root to install system packages"
-        else:
-            # Numpy doesn't seem to install correctly through the install_requires section
-            # https://github.com/numpy/numpy/issues/2434
-            print "Installing numpy"
-            self.pip_install( 'numpy==1.8.0' )
-            # Run normal setuptools install
-            print "Installing pipeline"
-            self.do_egg_install()
-            # Install dependencies outside of python
-            print "Installing ext deps"
-            self._install_external_dependencies()
+        from miseqpipeline.dependency import (
+            install_system_packages,
+            get_distribution_package_list,
+            UserNotRootError
+        )
+        try:
+            system_packages = get_distribution_package_list('system_packages.lst')
+            install_system_packages(system_packages)
+        except UserNotRootError as e:
+            print "You need to be root to install system packages"
+
+class PipelineInstallCommand(_bdist_egg):
+    '''
+    Custom install command which should install everything needed
+    '''
+    description = 'Installs the pipeline'
+
+    def run(self):
+        # Numpy doesn't seem to install correctly through the install_requires section
+        # https://github.com/numpy/numpy/issues/2434
+        print "Installing numpy"
+        self.pip_install( 'numpy==1.8.0' )
+        # Run normal setuptools install
+        print "Installing pipeline"
+        _bdist_egg.run(self)
+        # Install dependencies outside of python
+        # May require that setup_requires has been processed
+        # so has to come after _bdist_egg.run
+        print "Installing ext deps"
+        self._install_external_dependencies()
 
     def _install_external_dependencies(self):
         # URLs for dependencies
@@ -79,6 +86,17 @@ class CustomInstallCommand(setuptools_install.install):
         from subprocess import check_call, PIPE
         check_call( ['pip', 'install', pkg] )
 
+class bdist_egg(_bdist_egg):
+    def run(self):
+        self.run_command('install_pipeline')
+
+class develop(_develop):
+    def run(self):
+        install_pipeline = self.distribution.get_command_obj('install_pipeline')
+        install_pipeline.develop = True
+        self.run_command('install_pipeline')
+        _develop.run(self)
+
 # Run setuptools setup
 setup(
     name = "miseqpipeline",
@@ -86,8 +104,8 @@ setup(
     packages = find_packages(),
     scripts = glob('bin/*'),
     install_requires = [
+        #'numpy==1.8.0',
         'PyVCF==0.6.6',
-        'numpy==1.8.0',
         'python-dateutil==2.1',
         'matplotlib==1.3.1',
         'biopython==1.63',
@@ -112,6 +130,9 @@ setup(
     keywords = 'miseq iontorrent roche 454 fastq vcf',
     url = 'https://github.com/VDBWRAIR/miseqpipeline',
     cmdclass = {
-        'install': CustomInstallCommand,
+        'install_system_packages': InstallSystemPackagesCommand,
+        'install_pipeline': PipelineInstallCommand,
+        'bdist_egg': PipelineInstallCommand,
+        'develop': develop,
     },
 )
