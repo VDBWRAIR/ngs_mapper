@@ -13,6 +13,9 @@ from subprocess import PIPE
 
 log = logging.getLogger(__name__)
 
+# For bwa errors
+class BWAError(Exception): pass
+
 def main():
     '''
         Compiles and runs everything
@@ -56,12 +59,16 @@ def main():
     if reads['F'] is not None:
         merge += 1
         pairedsai = bwa_mem( reads['F'], reads['R'], ref, join(tdir, 'paired.sai'), t=args.threads )
+        if isinstance(pairedsai,int):
+            raise BWAError("There was an error running bwa")
         pairedbam = miseqpipeline.bam.sortbam( miseqpipeline.bam.samtobam( pairedsai, PIPE ), join(tdir, 'paired.bam') )
         #bam.indexbam( pairedbam )
 
     if reads['NP'] is not None:
         merge += 2
         nonpairedsai = bwa_mem( reads['NP'], ref=ref, output=join(tdir, 'nonpaired.sai'), t=args.threads )
+        if isinstance(nonpairedsai,int):
+            raise BWAError("There was an error running bwa")
         nonpairedbam = miseqpipeline.bam.sortbam( miseqpipeline.bam.samtobam( nonpairedsai, PIPE ), join(tdir, 'nonpaired.bam') )
         #bam.indexbam( nonpairedbam )
 
