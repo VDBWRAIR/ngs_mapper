@@ -10,6 +10,7 @@ from setuptools import setup, find_packages
 import setuptools
 from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 from setuptools.command.develop import develop as _develop
+from setuptools.command.install import install as _install
 
 from version import __version__
 
@@ -38,25 +39,32 @@ class InstallSystemPackagesCommand(setuptools.Command):
         except UserNotRootError as e:
             print "You need to be root to install system packages"
 
-class PipelineInstallCommand(_bdist_egg):
+class PipelineInstallCommand(_install):
     '''
     Custom install command which should install everything needed
     '''
+    #user_options = []
     description = 'Installs the pipeline'
 
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
     def run(self):
-        # Numpy doesn't seem to install correctly through the install_requires section
-        # https://github.com/numpy/numpy/issues/2434
-        print "Installing numpy"
-        self.pip_install( 'numpy==1.8.0' )
-        # Run normal setuptools install
-        print "Installing pipeline"
-        _bdist_egg.run(self)
+        # Because setuptools is so terrible at handling this
+        self.pip_install( 'requirements.txt' )
         # Install dependencies outside of python
         # May require that setup_requires has been processed
         # so has to come after _bdist_egg.run
         print "Installing ext deps"
         self._install_external_dependencies()
+
+    def pip_install( self, reqfile ):
+        ''' Just run pip install pkg '''
+        from subprocess import check_call, PIPE
+        check_call( ['pip', 'install', '-r', reqfile] )
 
     def _install_external_dependencies(self):
         # URLs for dependencies
@@ -81,14 +89,10 @@ class PipelineInstallCommand(_bdist_egg):
         install_samtools(samtools_url, '96b5f2294ac005423', prefix)
         install_trimmomatic(trimmomatic_url, libdir)
 
-    def pip_install( self, pkg ):
-        ''' Just run pip install pkg '''
-        from subprocess import check_call, PIPE
-        check_call( ['pip', 'install', pkg] )
-
 class bdist_egg(_bdist_egg):
     def run(self):
         self.run_command('install_pipeline')
+        _bdist_egg.run(self)
 
 class develop(_develop):
     def run(self):
@@ -103,21 +107,6 @@ setup(
     version = __version__,
     packages = find_packages(),
     scripts = glob('bin/*'),
-    install_requires = [
-        #'numpy==1.8.0',
-        'PyVCF==0.6.6',
-        'python-dateutil==2.1',
-        'matplotlib==1.3.1',
-        'biopython==1.63',
-        'cutadapt==1.2.1',
-        'nose',
-        'mock',
-        'pyBWA==v0.2.2',
-        'tempdir',
-    ],
-    dependency_links = [
-        'git+https://github.com/VDBWRAIR/pyBWA#egg=pyBWA-v0.2.2',
-    ],
     setup_requires = [
         'tempdir'
     ],
@@ -132,7 +121,7 @@ setup(
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,
-        'bdist_egg': PipelineInstallCommand,
+        'bdist_egg': bdist_egg,
         'develop': develop,
     },
 )
