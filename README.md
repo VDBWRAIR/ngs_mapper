@@ -19,13 +19,13 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   - Red Hat/CentOS
   
     ```
-    su -c 'python setup.py install --system-packages'
+    su -c 'python setup.py install_system_packages'
     ```
   
   - Ubuntu
   
     ```
-    sudo 'python setup.py install --system-packages'
+    sudo 'python setup.py install_system_packages'
     ```
 
 3. Python
