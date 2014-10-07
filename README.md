@@ -36,7 +36,7 @@ https://vdbpm.org/projects/miseqpipeline/wiki
   python setup.py install_python
   ```
 
-  Quick verify that Python is installed
+  - Quick verify that Python is installed
 
     The following should return python 2.7.x(where x is somewhere from 3 to 9)
 
