@@ -214,6 +214,18 @@ class TestUnitMain(Base):
         res = self._C()
         bwa_mem_mock.assert_called_with('NP.fq', ref='reference.fa', output='tdir/nonpaired.sai', t=8)
 
+    @attr('current')
+    def test_bwa_error_should_raise_exception(self,*args):
+        with patch('miseqpipeline.run_bwa.os') as os:
+            from miseqpipeline.run_bwa import BWAError
+            bwa_mem_mock = args[4]
+            bwa_mem_mock.return_value = 1
+            try:
+                self._C()
+                ok_(False,"Did not raise Exception for bwa error")
+            except BWAError as e:
+                ok_(True)
+
 class TestIntegrateMainArgs(Base):
     def setUp(self):
         super(TestIntegrateMainArgs,self).setUp()
