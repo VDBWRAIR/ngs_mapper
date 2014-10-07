@@ -68,6 +68,7 @@ class Base(common.BaseClass):
     bwa_github_url = 'https://github.com/lh3/bwa'
     samtools_github_url = 'https://github.com/samtools/samtools'
     trimmomatic_download_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
+    python_download_url = 'https://www.python.org/ftp/python/{0}/Python-{0}.tgz'
 
     distros = [
         ('Red Hat Enterprise Linux Workstation', '6.5', 'Santiago'),
@@ -501,7 +502,6 @@ class TestInstallSystemPackages(Base):
         except UserNotRootError as e:
             ok_(True)
 
-@attr('current')
 @patch('miseqpipeline.dependency.platform')
 class TestGetDistributionPackageList(Base):
     functionname = 'get_distribution_package_list'
@@ -553,3 +553,185 @@ class TestGetDistributionPackageList(Base):
             ok_(False, "Did not raise exception")
         except MissingPackageListEntry as e:
             ok_(True)
+
+def mock_python_configure_make_makeinstall( *args, **kwargs ):
+    ''' mock out subprocess.calls for configure, make, make instlal '''
+    cmd = args[0][0]
+    cmd = basename(cmd)
+    print os.getcwd()
+    print os.listdir('.')
+    if cmd == 'configure':
+        print 'configure running'
+        # Just make a Makefile that contains the args to configure
+        if not isfile('configure'):
+            raise OSError('configure not found')
+        with open('Makefile','w') as fh:
+            fh.write(' '.join(args[0])+'\n')
+    elif cmd == 'make':
+        if not isfile('Makefile'):
+            raise OSError("No Makefile")
+        # Copy python into the prefix/bin from Makefile
+        if len(args[0]) > 1 and args[0][1] == 'install':
+            print "Make install running"
+            with open('Makefile') as fh:
+                contents = fh.read()
+                configargs = shlex.split(contents)
+                prefix = None
+                # Find prefix argument and value
+                for i, carg in enumerate(configargs):
+                    if carg == '--prefix':
+                        prefix = configargs[i+1]
+                        break
+                if prefix is None:
+                    prefix = '/usr/local'
+                print "Installing into prefix {0}".format(prefix)
+                bindir = join(prefix,'bin')
+                libdir = join(prefix,'lib')
+                pylibdir = join(libdir,'python2.7')
+                # Make bin and libdir
+                if not isdir(bindir):
+                    os.makedirs(bindir)
+                if not isdir(pylibdir):
+                    os.makedirs(pylibdir)
+                # Now copy python exe to prefix/bin
+                shutil.copy('python', bindir)
+        else:
+            print "Make running"
+            verfile = join('Lib','distutils','__init__.py')
+            # Get version(should be created when unpacked)
+            print open(verfile).read()
+            g = {}
+            execfile(verfile, g)
+            version = g['__version__']
+            # Create a mock python executable
+            # Just knows how to spit out version
+            with open('python','w') as fh:
+                fh.write('#!/bin/bash\n')
+                fh.write('echo Python {0} 1>&2\n'.format(version))
+            os.chmod('python',0755)
+    else:
+        raise Exception("Unknown configuremakemakeinstall stuff")
+
+def urllib_urlretrieve_python_mock( url, filename=None, reporthook=None, data=None ):
+    ''' Just creates a compressed text file with hello in it '''
+    if filename is None:
+        dst = basename(url)
+    else:
+        dst = filename
+
+    base_name, ext = splitext(basename(url))
+    # Should return 2.7.8 or whatever
+    version = base_name.split('-')[1]
+    # Mock up the python tarball with just version file and configure command
+    verfile = join(base_name,'Lib','distutils','__init__.py')
+    os.makedirs(dirname(verfile))
+    with open(verfile,'w') as fh:
+        fh.write('__version__ = "{0}"\n'.format(version))
+    with open(join(base_name,'configure'),'w') as fh:
+        fh.write('mocked\n')
+    import tarfile
+    compression = ''
+    if ext in ('.gz','.gzip','.tgz'):
+        compression = 'w:gz'
+    elif ext in ('.bz','.bzip','.bz2','.tbz'):
+        compression = 'w:bz2'
+    elif ext == '.tar':
+        compression = 'w'
+    else:
+        raise Exception('Cannot determine compression for file {0}'.format(dst))
+    with tarfile.open(dst, compression) as tar:
+        tar.add(base_name)
+    shutil.rmtree(base_name)
+    return (dst, '')
+
+def check_output( *args, **kwargs ):
+    return subprocess.check_output(*args, **kwargs)
+
+def Popen( *args, **kwargs ):
+    p = Mock()
+    sout = None
+    sin = None
+    if kwargs.get('stderr',None) == subprocess.STDOUT and \
+        kwargs.get('stdout',None) == subprocess.PIPE:
+        del kwargs['stdout']
+        output = check_output(*args, **kwargs)
+        p.communicate.return_value = (output,None)
+    else:
+        p.communicate.return_value = (None,None)
+    return p
+
+@attr('current')
+@patch('miseqpipeline.dependency.subprocess',
+        Mock(
+            check_call=mock_python_configure_make_makeinstall,
+            check_output=check_output,
+            Popen=Popen,
+            PIPE=subprocess.PIPE,
+            STDOUT=subprocess.STDOUT,
+        )
+)
+@patch('miseqpipeline.dependency.urllib',
+    Mock(
+        urlretrieve=urllib_urlretrieve_python_mock
+    )
+)
+class TestInstallPython(Base):
+    functionname = 'install_python'
+
+    def _check_python_prefix(self, prefix, version):
+        exepth = join(prefix,'bin','python')
+        libpth = join(prefix,'lib','python{0}'.format(version[0:3]))
+        
+        print "Prefix dir listing:"
+        for root, files, dirs in os.walk(prefix):
+            for f in files:
+                print join(root,f)
+
+        ok_( isfile(exepth), "Did not copy python executable into prefix/bin" )
+        ok_( isdir(libpth), "Did not create {0} in prefix/lib".format(libpth) )
+
+        rversion = subprocess.check_output([exepth], stderr=subprocess.STDOUT)
+        eq_( 'Python {0}\n'.format(version), rversion )
+
+    def test_installs_into_given_prefix(self):
+        prefix = abspath('dstprefix')
+        self._C( prefix, '2.7.8' )
+        self._check_python_prefix(prefix, '2.7.8')
+
+    def test_installs_correct_version(self):
+        prefix = abspath('dstprefix')
+        self._C( prefix, '2.7.3' )
+        self._check_python_prefix(prefix, '2.7.3')
+
+    def test_python_requirement_already_satisfied_does_not_reinstall(self):
+        prefix = abspath('dstprefix')
+        self._C( prefix, '2.7.8' )
+        pythonstat = os.stat(join(prefix,'bin','python'))
+        self._C( prefix, '2.7.8' )
+        pythonstat2 = os.stat(join(prefix,'bin','python'))
+        eq_( pythonstat, pythonstat2 )
+
+    def test_replaces_older_python(self):
+        prefix = abspath('dstprefix')
+        self._C( prefix, '2.7.3' )
+        self._check_python_prefix(prefix, '2.7.3')
+        self._C( prefix, '2.7.8' )
+        self._check_python_prefix(prefix, '2.7.8')
+
+@attr('current')
+class TestWhichNewerVersion(Base):
+    functionname = 'which_newer_version'
+
+    def test_returns_correct_minor(self):
+        r = self._C( '2.7.8', '2.7.3' )
+        eq_( '2.7.8', r )
+        r = self._C( '3.0.0', '2.9.9' )
+        eq_( '3.0.0', r )
+
+    def test_returns_correct_major(self):
+        r = self._C( '2.6.6', '2.7.6' )
+        eq_( '2.7.6', r )
+
+    def test_returns_correct_version(self):
+        r = self._C( '3.0.0', '2.0.0' )
+        eq_( '3.0.0', r )

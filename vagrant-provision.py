@@ -48,38 +48,15 @@ def install_python( version='2.7.8', installprefix='$HOME' ):
     '''
     Install python and leave python tempdir behind
     '''
-    # to cd back later
-    cwd = os.getcwd()
-    
     # where to install
     prefix = expandvars(installprefix)
-    
     # Where python will be located
     pythonexe = join(prefix,'bin','python')
 
-    # Check to see if it is installed already
-    if isfile(pythonexe):
-        return pythonexe
-
-    # Download and unpack
-    shell_cmd(
-        'wget --no-check-certificate https://www.python.org/ftp/python/{0}/' \
-        'Python-{0}.tgz -O- | tar xzf -'.format(version)
+    cmd = 'python setup.py install_python --prefix {0} --version {1}'.format(
+        installprefix, version
     )
-
-    os.chdir('Python-{0}'.format(version))
-    shell_cmd(
-        './configure --prefix {0}'.format(installprefix)
-    )
-    shell_cmd(
-        'make'
-    )
-    shell_cmd(
-        'make install'
-    )
-
-    #popd
-    os.chdir(cwd)
+    shell_cmd( cmd )
 
     # Path to python executable
     return pythonexe

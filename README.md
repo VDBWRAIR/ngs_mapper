@@ -32,27 +32,11 @@ https://vdbpm.org/projects/miseqpipeline/wiki
 
   The miseqpipeline requires python 2.7.3+ but < 3.0
 
-  1. Install Python 2.7.3+ into your home directory
+  ```
+  python setup.py install_python
+  ```
 
-    ```
-    mkdir -p ~/src && pushd ~/src
-    prefix=$HOME
-    version=2.7.8
-    wget --no-check-certificate https://www.python.org/ftp/python/${version}/Python-${version}.tgz -O- | tar xzf -
-    cd Python-${version}
-    ./configure --prefix $prefix
-    make
-    make install
-    popd
-    ```
-    
-    Ubuntu starting with Precise(12.04) has had Python 2.7.3+ so you technically 
-    should not have to do this, but best to do it just to be safe.
-
-    On RedHat/CentOS 6 and earlier this is mandatory since only python 2.6.6 comes
-    shipped.
-
-  2. Quick verify that Python is installed
+  Quick verify that Python is installed
 
     The following should return python 2.7.x(where x is somewhere from 3 to 9)
 

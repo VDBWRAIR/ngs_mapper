@@ -154,9 +154,9 @@ def download_unpack( source, dest ):
         dlfile, headers = urllib.urlretrieve(source)
 
         # Extract from fifo into dest
-        with opener(dlfile, openmode) as fh:
-            print "Extracting all into {0}".format(dest)
-            fh.extractall(dest)
+        fh = opener(dlfile, openmode)
+        print "Extracting all into {0}".format(dest)
+        fh.extractall(dest)
 
 def install_trimmomatic( source, dst ):
     '''
@@ -247,3 +247,51 @@ def get_distribution_package_list( pkglistfile ):
         )
     # return the list
     return pkglist[pkgmanager]
+
+def which_newer_version( version1, version2 ):
+    '''
+    Return the highest version of the two
+    '''
+    return sorted([version1,version2])[1]
+
+def install_python( prefix, version='2.7.8' ):
+    '''
+    Just runs configure, make and make install after downloading
+    Python
+    '''
+    # Don't reinstall unless we are upgrading
+    pyexepth = join(prefix,'bin','python')
+    if exists(pyexepth):
+        # Because python 2.6 doesn't have check_output
+        p = subprocess.Popen([pyexepth,'--version'], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        sout,sin = p.communicate()
+        versionoutput = sout.split()[1]
+        highversion = which_newer_version(version, versionoutput)
+        # If the higher of the two versions is already installed then do not
+        # reinstall or if the versions are identical
+        if highversion != version or version == versionoutput:
+            print "{0} already installed and satisfies requirements".format(versionoutput)
+            return
+
+    # pushd
+    cwd = os.getcwd()
+
+    # Download and unpack Python-version
+    dl_url = 'https://www.python.org/ftp/python/{0}/Python-{0}.tgz'
+    dl_url = dl_url.format(version)
+    download_unpack(dl_url, os.getcwd())
+
+    # Enter Python unpacked directory
+    os.chdir('Python-{0}'.format(version))
+
+    # Run configure
+    cmd = ['./configure', '--prefix', prefix]
+    subprocess.check_call(cmd)
+
+    # Run make
+    subprocess.check_call(['make'])
+
+    # Run make install to install into prefix
+    subprocess.check_call(['make','install'])
+
+    os.chdir(cwd)

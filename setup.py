@@ -4,7 +4,7 @@ use_setuptools()
 
 from glob import glob
 import sys
-from os.path import join
+from os.path import join, expanduser
 
 from setuptools import setup, find_packages
 import setuptools
@@ -38,6 +38,27 @@ class InstallSystemPackagesCommand(setuptools.Command):
             install_system_packages(system_packages)
         except UserNotRootError as e:
             print "You need to be root to install system packages"
+
+class InstallPythonCommand(setuptools.Command):
+    '''
+    Wrapper around installing python into HOME prefix
+    '''
+    description = 'Allows the user to easily install python into a prefix'
+    user_options = [
+        ('prefix=', None, 'Where to install python to. Default is $HOME'),
+        ('version=', None, 'What version to install. Default is 2.7.8')
+    ]
+
+    def initialize_options(self):
+        self.prefix = expanduser('~/')
+        self.version = '2.7.8'
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        from miseqpipeline.dependency import install_python
+        install_python( self.prefix, self.version )
 
 class PipelineInstallCommand(_install):
     '''
@@ -121,6 +142,7 @@ setup(
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,
+        'install_python': InstallPythonCommand,
         'bdist_egg': bdist_egg,
         'develop': develop,
     },
