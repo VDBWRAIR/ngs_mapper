@@ -16,7 +16,7 @@ https://vdbpm.org/projects/miseqpipeline/wiki
 
   This is the only part of the installation process that you should need to become the super user
 
-  - Red Hat/CentOS
+  - Red Hat/CentOS(Requires the root password)
   
     ```
     su -c 'python setup.py install_system_packages'
