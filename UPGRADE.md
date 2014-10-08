@@ -1,9 +1,9 @@
-# If you installed using the install.sh or install_system.sh(aka you activate the pipeline via . miseqpipeline/setup)
+# If you activate the pipeline via ". miseqpipeline/setup"
 
   - Completely remove the existing miseqpipeline directory. 
   - Then follow "README.md":https://github.com/VDBWRAIR/miseqpipeline/blob/master/README.md file
 
-# If you installed using (setup.py)
+# If you installed using [setup.py](setup.py)
 
   1. First fetch any possible updates
 
