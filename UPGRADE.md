@@ -29,4 +29,8 @@
     . ~/.miseqpipeline/bin/activate
     ```
     
-  5. Follow the install section in the [README.md](README.md)
+  5. Run setup.py install
+
+    ```
+    python setup.py install
+    ```
