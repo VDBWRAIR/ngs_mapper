@@ -1,7 +1,7 @@
 # If you activate the pipeline via miseqpipeline/setup
 
   - Completely remove the existing miseqpipeline directory. 
-  - Then follow "README.md":https://github.com/VDBWRAIR/miseqpipeline/blob/master/README.md file
+  - Then follow [INSTALL.md](INSTALL.md)
 
 # If you installed using [setup.py](setup.py)
 
