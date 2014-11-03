@@ -29,7 +29,7 @@ done | xargs -n 5 -P $CPUS -I CMD bash -c CMD
 # Graph the mapped and unmapped reads
 graph_mapunmap.py Projects/*/*.qualdepth.json -o MapUnmapReads.png
 # Create the Sample Coverage graphic
-sample_coverage Projects/* -o SampleCoverage.png
+sample_coverage Projects/* --output SampleCoverage.png
 # Create one graphic for all QualDepth graphics
 convert -quality 25 -compress JPEG Projects/*/*.qualdepth.png QualDepth.pdf
 # Get a graphic to see how long it took to run each sample
