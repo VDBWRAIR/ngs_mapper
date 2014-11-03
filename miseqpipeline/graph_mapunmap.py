@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os.path
 
-from BamCoverage.graph_qualdepth import plot_mapunmap
+from graph_qualdepth import plot_mapunmap
 
 def parse_args( args=sys.argv ):
     parser = argparse.ArgumentParser(

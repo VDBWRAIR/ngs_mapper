@@ -10,9 +10,10 @@ import json
 import itertools
 from StringIO import StringIO
 
-import bam
+import miseqpipeline.bam
 #from bam import parse_pileup, alignment_info, get_refstats
-from bam import alignment_info, get_refstats
+from miseqpipeline.bam import get_refstats
+from bam import alignment_info
 
 class RegionTypes(object):
     # It is ok to be lazy sometimes

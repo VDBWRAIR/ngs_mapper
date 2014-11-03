@@ -3,17 +3,6 @@ import re
 from cStringIO import StringIO
 from subprocess import Popen, PIPE
 
-def get_refstats( bamfile ):
-    '''
-        Run samtools idxstats on the given bamfile
-
-        @returns dictionary keyed by refname and values of [refname, reflen, #mapped reads, singletons]
-    '''
-    cmd = ['samtools','idxstats',bamfile]
-    p = Popen( cmd, stdout=PIPE )
-    sout,serr = p.communicate()
-    return {line.split()[0]:line.split() for line in sout.splitlines()}
-
 def alignment_info( bam, regionstr=None ):
     '''
         Gets information for a bam file for every column in its alignment
@@ -29,8 +18,9 @@ def alignment_info( bam, regionstr=None ):
 
         @yields (get_refstat output for current ref, [parse_pileup() dictionary for each reference])
     '''
+    from miseqpipeline.bam import get_refstats
+    from miseqpipeline.bqd import mpileup, parse_pileup
     refstats = get_refstats( bam )
-    from bqd import mpileup, parse_pileup
     pileup = parse_pileup( mpileup( bam, regionstr ) )
     for ref, stats in pileup.iteritems():
         yield refstats[ref], stats

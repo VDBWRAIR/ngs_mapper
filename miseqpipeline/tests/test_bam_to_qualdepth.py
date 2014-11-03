@@ -1,9 +1,10 @@
-from nose.tools import eq_, ok_, raises
-from nose.plugins.attrib import attr
-from mock import patch
 import random
 
-from .. import bam_to_qualdepth as btqd
+from imports import *
+from fixtures import FIXDIR
+
+#from .. import bam_to_qualdepth as btqd
+from miseqpipeline import bam_to_qualdepth as btqd
 
 def rand_info( ):
     ''' Generates random parse_pileup() info '''
@@ -33,8 +34,19 @@ def test_parseainfo( ):
     eq_([10,5,2],d)
     eq_([40,20,35],aq)
 
-import common
-class TestSetUMReads(common.Base):
+class Base(object):
+    def setUp( self ):
+        self.samplename = '00103-01'
+        self.bamfile = join(FIXDIR,'jsonfix','00103-01.bam')
+        self.jsonfile = join(FIXDIR,'jsonfix','00103-01.json')
+        self.refstats = {
+            'Den4/AY618992_1/Thailand/2001/Den4_1':
+                ['Den4/AY618992_1/Thailand/2001/Den4_1','10649','147751','220'],
+            '*':
+                ['*','0','0','23842']
+        }
+
+class TestSetUMReads(Base):
     def setUp(self):
         super(TestSetUMReads,self).setUp()
         from ..bqd import mpileup, parse_pileup
@@ -61,19 +73,19 @@ class TestSetUMReads(common.Base):
         from ..bam_to_qualdepth import set_unmapped_mapped_reads as sumr
         return sumr( bamfile, pileup )
 
-    @patch('BamCoverage.bam.get_refstats')
+    @patch('miseqpipeline.bam.get_refstats')
     def test_sets_unmapped( self, get_refstats ):
         get_refstats.return_value = self.idxstats
         res = self._call( self.bamfile, self.pileup )
         eq_( 100, self.pileup['unmapped_reads'] )
 
-    @patch('BamCoverage.bam.get_refstats')
+    @patch('miseqpipeline.bam.get_refstats')
     def test_sets_mapped( self, get_refstats ):
         get_refstats.return_value = self.idxstats
         res = self._call( self.bamfile, self.pileup )
         eq_( 1000, self.pileup['chr1']['mapped_reads'] )
 
-    @patch('BamCoverage.bam.get_refstats')
+    @patch('miseqpipeline.bam.get_refstats')
     def test_sets_mapped( self, get_refstats ):
         get_refstats.return_value = self.idxstats
         res = self._call( self.bamfile, self.pileup )
