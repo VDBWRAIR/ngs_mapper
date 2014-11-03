@@ -128,6 +128,11 @@ setup(
     version = __version__,
     packages = find_packages(),
     scripts = glob('bin/*'),
+    entry_points = {
+        'console_scripts': [
+            'sample_coverage = miseqpipeline.coverage:main',
+        ]
+    },
     setup_requires = [
         'tempdir'
     ],
