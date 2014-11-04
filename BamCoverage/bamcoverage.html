@@ -344,6 +344,15 @@ function init( pathToJson ) {
         if( error ) {
             alert( "Error loading json" );
         }
+        /* Hack to fix the issue where it doesn't auto-load the first reference */
+        json.unshift(
+            {
+                "Name":"Ignore",
+                "references":{
+                    "References":{}
+                }
+            }
+        )
         samples = json;
         setReference();
         createTabs();

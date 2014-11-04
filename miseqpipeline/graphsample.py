@@ -3,8 +3,9 @@ import os
 from os.path import *
 import subprocess
 import argparse
-from BamCoverage import bqd, graph_qualdepth as qd
-from BamCoverage.bam_to_qualdepth import set_unmapped_mapped_reads
+
+import bqd, graph_qualdepth as qd
+from bam_to_qualdepth import set_unmapped_mapped_reads
 import json
 import log
 

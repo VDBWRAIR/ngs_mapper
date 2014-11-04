@@ -1,5 +1,5 @@
 import common
-from fixtures import FIXTURES
+from fixtures import FIXDIR
 
 from mock import Mock, MagicMock, patch, call
 from nose.tools import eq_, raises, timed
@@ -8,6 +8,7 @@ from nose.plugins.attrib import attr
 from os.path import *
 from StringIO import StringIO
 import sys
+import json
 
 # For patching because I don't know a better way
 PKG_BASE = __package__.rsplit('.', 1)[0]
@@ -18,14 +19,26 @@ t.LCAQT = 10
 t.GDT = 5
 t.GAQT = 5
 
-class TestIntegrate(common.Base):
+class Base(common.BaseTester):
+    def setUp( self ):
+        self.samplename = '00103-01'
+        self.bamfile = join(FIXDIR,'jsonfix','00103-01.bam')
+        self.jsonfile = join(FIXDIR,'jsonfix','00103-01.json')
+        self.refstats = {
+            'Den4/AY618992_1/Thailand/2001/Den4_1':
+                ['Den4/AY618992_1/Thailand/2001/Den4_1','10649','147751','220'],
+            '*':
+                ['*','0','0','23842']
+        }
+
+class TestIntegrate(Base):
     def setUp(self):
         s = super(TestIntegrate,self)
         if hasattr(s,'setUp'):
             s.setUp()
 
     def test_get_refstats(self):
-        from ..bam import get_refstats
+        from miseqpipeline.bam import get_refstats
         rs = get_refstats( self.bamfile )
         eq_( self.refstats, rs, "{} != {}. You may want to try to run nose with -s".format(self.refstats,rs) )
 
@@ -47,8 +60,8 @@ class TestIntegrate(common.Base):
         eq_( f1, f2 )
 
     def test_parse_mapstats(self):
-        from ..bam import alignment_info
-        from ..bam_to_json import parse_mapstats
+        from BamCoverage.bam import alignment_info
+        from BamCoverage.bam_to_json import parse_mapstats
         import json
         regions = json.load(open(self.jsonfile))
         regions = regions['references']['Den4/AY618992_1/Thailand/2001/Den4_1']['regions']
@@ -65,45 +78,22 @@ class TestIntegrate(common.Base):
             eq_( exp, res )
 
     @timed(30)
-    @patch('BamCoverage.bam.get_refstats')
+    @patch('miseqpipeline.bam.get_refstats')
     @attr('slow')
     def test_ouput_json(self,refstats):
         refstats.return_value = self.refstats
-        from ..bam import alignment_info
-        from ..bam_to_json import output_json
+        from BamCoverage.bam import alignment_info
+        from BamCoverage.bam_to_json import output_json
         ai = alignment_info( self.bamfile )
         with patch('sys.stdout',new_callable=StringIO) as stdout:
             output_json( ai, self.samplename )
             self._cmpcontents( open(self.jsonfile), stdout )
 
-class TestRegionType(common.Base):
-    def _CRT( self, d, aq ):
-        from ..bam_to_json import region_type
-        return region_type( d, aq )
-
-    @patch('BamCoverage.bam_to_json.Thresholds',t)
-    def _do( self, d, q, e ):
-        eq_( e, self._CRT( d, q ) )
-
-    def test_all(self):
-        tstexp = [
-            (4,11,'Gap'),
-            (11,4,'Gap'),
-            (4,4,'Gap'),
-            (5,5,'Gap'),
-            (9,11,'LowCoverage'),
-            (11,9,'LowQuality'),
-            (10,10,'LowCoverage'),
-            (11,11,'Normal'),
-        ]
-        for d, q, e in tstexp:
-            yield self._do, d, q, e
-
 # Integratish testing
 @patch('BamCoverage.bam_to_json.Thresholds',t)
-class TestParseMapstats(common.Base):
+class TestParseMapstats(common.BaseTester):
     def _CPM( self, stats ):
-        from ..bam_to_json import parse_mapstats
+        from BamCoverage.bam_to_json import parse_mapstats
         return parse_mapstats( stats )
     
     def test_beginning_gap(self):
@@ -203,41 +193,8 @@ class TestParseMapstats(common.Base):
         stats = {'depths':[100,100,6,6,100],'avgquals':[40,40,6,6,40]}
         eq_( [(1,3,'Normal'),(3,5,'LowCoverage'),(5,5,'Normal')], self._CPM( stats ) )
 
-class TestAlignmentInfo(common.Base):
-    def _CAI( self, bam, rs ):
-        from ..bam import alignment_info
-        return alignment_info( bam, rs )
 
-    @patch('BamCoverage.bam.get_refstats')
-    @patch('BamCoverage.bqd.mpileup')
-    @patch('BamCoverage.bqd.parse_pileup')
-    def test_all(self,parse_pileup,mpileup,get_refstats):
-        pp = {
-            'ref1': dict(
-                mind=1,maxd=5,minq=32.0,maxq=36.0,length=4,depths=[1,5,3,3],avgquals=[32.0,34.0,33.0,33.0]
-            ),
-            'ref2': dict(
-                mind=1,maxd=1,minq=32.0,maxq=32.0,length=1,depths=[1],avgquals=[32.0]
-            )
-        }
-        rs = {
-            'ref1': ['ref1','5','100','10'],
-            'ref2': ['ref2','10','100','10'],
-            '*': ['*','0','0','0']
-        }
-        parse_pileup.return_value = pp
-        get_refstats.return_value = rs
-        g = self._CAI( 'test', '' )
-
-        first = next(g)
-        eq_( rs['ref1'], first[0] )
-        eq_( pp['ref1'], first[1] )
-
-        second = next(g)
-        eq_( rs['ref2'], second[0] )
-        eq_( pp['ref2'], second[1] )
-
-class TestGetRefstats(common.Base):
+class TestGetRefstats(common.BaseTester):
     def _deq( self, d1, d2 ):
         # ensure same reference keys
         eq_( sorted(d1.keys()), sorted(d2.keys()) )
@@ -248,10 +205,10 @@ class TestGetRefstats(common.Base):
             eq_( d1list, d2list )
 
     def _CGR( self, bam ):
-        from ..bam import get_refstats
+        from miseqpipeline.bam import get_refstats
         return get_refstats( bam )
 
-    @patch('BamCoverage.bam.Popen')
+    @patch('miseqpipeline.bam.Popen')
     def test_parses( self, popen ):
         popen.return_value.communicate.return_value = (
             'ref1\t5\t100\t10\n' \
@@ -267,7 +224,7 @@ class TestGetRefstats(common.Base):
         }
         self._deq( exp, res )
 
-class TestParsePileup(common.Base):
+class TestParsePileup(common.BaseTester):
     def _deq( self, d1, d2 ):
         # ensure same reference keys
         eq_( sorted(d1.keys()), sorted(d2.keys()) )
@@ -278,7 +235,7 @@ class TestParsePileup(common.Base):
             eq_( d1items, d2items )
 
     def _CPP( self, pileup ):
-        from ..bqd import parse_pileup
+        from miseqpipeline.bqd import parse_pileup
         return parse_pileup( pileup )
 
     def test_missingpositions(self):
@@ -328,26 +285,26 @@ class TestParsePileup(common.Base):
         res = self._CPP( lines )
         self._deq( exp, res )
 
-class TestMpileup(common.Base):
+class TestMpileup(common.BaseTester):
     cmd = ['samtools','mpileup','-d','100000']
 
     def _RMP( self, bam, rg ):
-        from ..bqd import mpileup
+        from miseqpipeline.bqd import mpileup
         return mpileup( bam, rg )
 
-    @patch('BamCoverage.bqd.Popen')
+    @patch('miseqpipeline.bqd.Popen')
     def test_retvalue(self,popen):
         popen.return_value.stdout = 'great'
         res = self._RMP( 'test', None )
         eq_( res, 'great' )
 
-    @patch('BamCoverage.bqd.Popen')
+    @patch('miseqpipeline.bqd.Popen')
     def test_runs_mpileup_nors(self,popen):
         res = self._RMP( 'test', None )
         ecmd = self.cmd + ['test']
         eq_( [call(ecmd, stdout=-1)], popen.call_args_list )
 
-    @patch('BamCoverage.bqd.Popen')
+    @patch('miseqpipeline.bqd.Popen')
     def test_runs_mpileup_rs(self,popen):
         res = self._RMP( 'test', 'test2' )
         ecmd = self.cmd + ['-r','test2','test']

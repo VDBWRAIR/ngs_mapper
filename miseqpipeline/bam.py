@@ -110,3 +110,15 @@ def indexbam( sortedbam ):
     p.wait()
 
     return sortedbam + '.bai'
+
+def get_refstats( bamfile ):
+    '''
+        UNTESTED
+        Run samtools idxstats on the given bamfile
+
+        @returns dictionary keyed by refname and values of [refname, reflen, #mapped reads, singletons]
+    '''
+    cmd = ['samtools','idxstats',bamfile]
+    p = Popen( cmd, stdout=PIPE )
+    sout,serr = p.communicate()
+    return {line.split()[0]:line.split() for line in sout.splitlines()}
