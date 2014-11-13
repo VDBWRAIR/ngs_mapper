@@ -35,11 +35,14 @@ then
     CPUS=1
 fi
 
+# Where to place all analysis output directories
+PROJDIR=Projects
+
 # Loop over each of our samplenames and references
 # File needs to be either space or tab delimeted
 # Samplename ReferencePath
 # Excluding any lines that begin with a #
-mkdir -p Projects
+mkdir -p $PROJDIR
 
 # Run in parallel
 # Ignore lines beginning with #
@@ -64,13 +67,13 @@ do
     fi
     # If the sample already has been run
     #  then don't rerun it
-    if [ -d ${sample} ]
+    if [ -d ${PROJDIR}/${sample} ]
     then
         echo "Skipping ${sample} because it already exists" >&2
         continue
     fi
 
-    echo runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od Projects/${sample} $RUNSAMPLEOPTIONS
+    echo runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od ${PROJDIR}/${sample} $RUNSAMPLEOPTIONS
 done | xargs -n 6 -P $CPUS -I CMD bash -c CMD
 
 # Graph all samples
