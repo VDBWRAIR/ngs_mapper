@@ -16,13 +16,13 @@
   - Red Hat/CentOS(Requires the root password)
   
     ```
-    su -c 'python setup.py install_system_packages'
+    su -c 'python setup.py install_system_packages && chmod 666 setuptools*'
     ```
   
   - Ubuntu
   
     ```
-    sudo 'python setup.py install_system_packages'
+    sudo 'python setup.py install_system_packages && chmod 666 setuptools*'
     ```
 
 3. Python
