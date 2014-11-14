@@ -5,7 +5,7 @@
   Assumes you already have git installed. If not you will need to get it installed by your system administrator.
 
   ```
-  git clone https://github.com/VDBWRAIR/miseqpipeline.git
+  git clone https://githubusername@github.com/VDBWRAIR/miseqpipeline.git
   cd miseqpipeline
   ```
 
