@@ -80,6 +80,7 @@ def verify_samtools_install( dstprefix ):
 
 def clone_checkout_make_copy( source, gitsha, dstprefix, copypaths=[], tdir=None ):
     '''
+    Does not redownload/compile if all bin files already exist
     Enters temporary directory
     Clones source
     Enters basename(source)
@@ -93,31 +94,43 @@ def clone_checkout_make_copy( source, gitsha, dstprefix, copypaths=[], tdir=None
         dstprefixbin = join(abspath(dstprefix),'bin')
     else:
         dstprefixbin = join(dstprefix,'bin')
-    # Ensure dstprefixbin exists
-    if not isdir(dstprefixbin):
-        os.makedirs(dstprefixbin)
-    # Run in a tempdir that gets auto cleaned up after
-    with tempdir.in_tempdir(basedir=tdir) as tdir:
-        # Clone the source path
-        cmd = ['git','clone',source]
-        subprocess.call(cmd)
-        # Cloned dir name
-        cloneddir = basename(source)
-        # pushd
-        curdir = os.getcwd()
-        # Enter cloned dir
-        os.chdir(cloneddir)
-        # Checkout version
-        cmd = ['git','checkout',gitsha]
-        subprocess.call(cmd)
-        # Compile
-        cmd = ['make']
-        subprocess.call(cmd)
-        for copypath in copypaths:
-            # Copy bwa executable into dstprefix/bin
-            shutil.copy2(copypath, dstprefixbin)
-        # popd
-        os.chdir(curdir)
+    # Check to see if all copypaths exist in dstprefix/bin already
+    # If they do we can just return since nothing to be done
+    # We can use a set as the end it will contain either
+    # False -> All bin files missing
+    # True - All bin files exist
+    # False and True - Some exist, some missing
+    cpexist = set()
+    for cp in copypaths:
+        cp = join(dstprefixbin, basename(cp))
+        cpexist.add(os.access(cp,os.X_OK))
+    # only continue if some bin files missing
+    if False in cpexist:
+        # Ensure dstprefixbin exists
+        if not isdir(dstprefixbin):
+            os.makedirs(dstprefixbin)
+        # Run in a tempdir that gets auto cleaned up after
+        with tempdir.in_tempdir(basedir=tdir) as tdir:
+            # Clone the source path
+            cmd = ['git','clone',source]
+            subprocess.call(cmd)
+            # Cloned dir name
+            cloneddir = basename(source)
+            # pushd
+            curdir = os.getcwd()
+            # Enter cloned dir
+            os.chdir(cloneddir)
+            # Checkout version
+            cmd = ['git','checkout',gitsha]
+            subprocess.call(cmd)
+            # Compile
+            cmd = ['make']
+            subprocess.call(cmd)
+            for copypath in copypaths:
+                # Copy bwa executable into dstprefix/bin
+                shutil.copy2(copypath, dstprefixbin)
+            # popd
+            os.chdir(curdir)
 
 def download_unpack( source, dest ):
     '''
