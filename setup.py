@@ -4,7 +4,7 @@ use_setuptools()
 
 from glob import glob
 import sys
-from os.path import join, expanduser
+from os.path import join, expanduser, exists
 
 from setuptools import setup, find_packages
 import setuptools
@@ -13,6 +13,10 @@ from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
 from version import __version__
+
+if not exists('miseqpipeline/config.yaml'):
+    print "You need to create miseqpipeline/config.yaml before installing"
+    sys.exit(1)
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''

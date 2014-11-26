@@ -32,7 +32,7 @@
   1. Copy the default config to config.yaml
 
     ```
-    cp miseqpipeline/config.yaml.default miseqpipelin/config.yaml
+    cp miseqpipeline/config.yaml.default miseqpipeline/config.yaml
     ```
 
   2. Then edit the config file which is in yaml(http://docs.ansible.com/YAMLSyntax.html) format

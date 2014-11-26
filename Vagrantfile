@@ -10,6 +10,10 @@ def provision_pipeline( config )
     config.vm.provision "shell", privileged: false,
         inline: "echo 'Cloning'; [ -e ~/miseqpipeline ] && (cd ~/miseqpipeline && git pull && cd ..) || git clone /vagrant ~/miseqpipeline"
 
+    # Setup config.yaml
+    config.vm.provision "shell", privileged: false,
+        inline: "echo 'Creating config.yaml'; mkdir -p ~/NGSDATA; sed 's|/path/to/NGSDATA|~/NGSDATA|' ~/miseqpipeline/config.yaml.default > ~/miseqpipeline/config.yaml"
+
     # Ensure that setup.py and vagrant-provision.sh are up to date in case they are not committed
     config.vm.provision "shell", privileged: false,
         inline: "cp -f /vagrant/setup.py ~/miseqpipeline; cp -f /vagrant/vagrant-provision.py ~/miseqpipeline;"
