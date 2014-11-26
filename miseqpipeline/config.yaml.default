@@ -8,7 +8,7 @@ trim_reads:
     q:
         default: 20
         help: Quality threshold to trim
-    head-crop:
+    headcrop:
         default: 0
         help: How many bases to crop off the beginning of the reads after quality trimming
     outputdir:
