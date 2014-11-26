@@ -48,6 +48,9 @@ def main( args ):
     )
 
 def parse_args( args=sys.argv[1:] ):
+    from miseqpipeline.config import load_default_config
+    defaults = load_default_config()['base_caller']
+
     parser = argparse.ArgumentParser(
         description = 'Generates a VCF that has called bases in it which follow ' \
             'the WRAIR VDB SOP for calling bases',
@@ -82,9 +85,7 @@ def parse_args( args=sys.argv[1:] ):
     )
 
     parser.add_argument(
-        '-o',
         dest='vcf_output_file',
-        default=None,
         help='Where to save the vcf'
     )
 
@@ -92,61 +93,56 @@ def parse_args( args=sys.argv[1:] ):
         '-r',
         '--regionstr',
         dest='regionstr',
-        default=None,
-        help='See the samtools documentation for how to specify a region string.' \
-            'Essentially: \'refname\':START-STOP'
+        default=defaults['regionstr']['default'],
+        help=defaults['regionstr']['help']
     )
 
     parser.add_argument(
         '-minbq',
         dest='minbq',
-        default=25,
+        default=defaults['minbq']['default'],
         type=int,
-        help='The minimum base quality to be considered high quality[Default: 25]'
+        help=defaults['minbq']['help']
     )
 
     parser.add_argument(
         '-maxd',
         dest='maxd',
-        default=100000,
+        default=defaults['maxd']['default'],
         type=int,
-        help='Maximum depth to use for the pileup[Default: 100000]'
+        help=defaults['maxd']['help']
     )
 
     parser.add_argument(
         '-mind',
         dest='mind',
-        default=10,
+        default=defaults['mind']['default'],
         type=int,
-        help='Minimum depth for base trimming. Below this depth low quality bases' \
-            ' will be called N.[Default: 10]'
+        help=defaults['mind']['help']
     )
 
     parser.add_argument(
         '-minth',
         dest='minth',
-        default=0.8,
+        default=defaults['minth']['default'],
         type=float,
-        help='Minimum fraction of all remaining bases after trimming/N calling that ' \
-            'will trigger a base to be called.[Default: 0.8]'
+        help=defaults['minth']['help']
     )
 
     parser.add_argument(
         '-biasth',
         dest='biasth',
-        default=50,
+        default=defaults['biasth']['default'],
         type=float,
-        help='Minimum base quality threshold to bias towards. Will increase the amount of bases that have >= ' \
-            'this value by a factor of what bias is set to[Default: 50]'
+        help=defaults['biasth']['help']
     )
 
-    default=10
     parser.add_argument(
         '-bias',
         dest='bias',
-        default=default,
+        default=defaults['bias']['default'],
         type=int,
-        help='What factor to bias high quality bases by. Must be an integer >= 1[Default: {}]'.format(default)
+        help=defaults['bias']['help']
     )
 
     args = parser.parse_args( args )

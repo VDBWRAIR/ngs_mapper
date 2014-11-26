@@ -996,7 +996,7 @@ class TestIntegrate(BaseInty):
         if regionstr:
             cmd += ['-r', regionstr]
         if vcf_output_file:
-            cmd += ['-o', vcf_output_file]
+            cmd += [vcf_output_file]
         cmd += ['-minbq', minbq, '-maxd', maxd, '-mind', mind, '-minth', minth, '-biasth', biasth, '-bias', bias]
         cmd = [str(x) for x in cmd]
         #print cmd

@@ -193,7 +193,7 @@ def main( args ):
         rets.append( r )
 
         # Variant Calling
-        cmd = 'base_caller.py {bamfile} {reference} -o {vcf} -minth {minth}'
+        cmd = 'base_caller.py {bamfile} {reference} {vcf} -minth {minth}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:

@@ -45,9 +45,6 @@ tagreads:
         default:
         help: Sets the CN tag inside of each read group to the value specified.
 base_caller:
-    vcf_output_file:
-        default:
-        help: Where to save the vcf file
     regionstr:
         default:
         help: Specify a region string in the format of REFERENCE:START-STOP. See samtools documentation for more information.
