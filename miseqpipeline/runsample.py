@@ -118,7 +118,8 @@ def main( args ):
     # So we can set the global logger
     global logger
 
-    tdir = tempfile.mkdtemp('runsample', args.prefix, dir=os.environ['TMPDIR'])
+    tmpdir = os.environ.get('TMPDIR', tempfile.tempdir)
+    tdir = tempfile.mkdtemp('runsample', args.prefix, dir=tmpdir)
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
     consensus = os.path.join( tdir, bamfile+'.consensus.fasta' )
