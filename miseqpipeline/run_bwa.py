@@ -103,6 +103,8 @@ def parse_args( args=sys.argv[1:] ):
 
         @returns Namespace object with parsed args in it(Same as ArgumentParser.parse_args)
     '''
+    from miseqpipeline.config import load_default_config
+    defaults = load_default_config()['run_bwa_on_samplename']
     import argparse
     parser = argparse.ArgumentParser(
         description='Runs the bwa mem argument on a given set of reads and references for the given platform\'s reads',
@@ -125,40 +127,37 @@ def parse_args( args=sys.argv[1:] ):
         help='Location of the reference to map to. Should be a fasta file or directory of fasta files that will be compiled together.'
     )
 
-    valid_platforms = ['MiSeq','Sanger','Roche454','IonTorrent']
     parser.add_argument(
         '--platforms',
         dest='platforms',
         nargs='+',
-        choices=valid_platforms,
-        default=valid_platforms,
-        help='List of platforms to include[Default:{}]'.format(valid_platforms)
+        choices=defaults['platforms']['choices'],
+        default=defaults['platforms']['default'],
+        help=defaults['platforms']['help']
     )
 
     parser.add_argument(
         '-o',
         '--output',
         dest='output',
-        default='bwa_mem.bam',
-        help='Where the output bam should be placed[Default: bwa_mem.bam]'
+        default=defaults['output']['default'],
+        help=defaults['output']['default']
     )
 
     parser.add_argument(
         '--keep-temp',
         dest='keep_temp',
         action='store_true',
-        default=False,
-        help='Flag to indicate that you want the temporary files kept instead of removing them which is the default action'
+        default=defaults['keep_temp']['default'],
+        help=defaults['keep_temp']['help']
     )
 
-    import multiprocessing
-    default_threads = multiprocessing.cpu_count()
     parser.add_argument(
         '-t',
         dest='threads',
-        default=default_threads,
+        default=defaults['threads']['default'],
         type=int,
-        help='How many threads to use[Default: {}]'.format(default_threads)
+        help=defaults['threads']['help']
     )
 
     return parser.parse_args( args )
