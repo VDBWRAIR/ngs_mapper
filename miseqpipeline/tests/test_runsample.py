@@ -87,29 +87,6 @@ class TestUnitRunCMD(object):
     def test_missing_cmd_exception_caught( self ):
         self._C( 'missing.sh' )
 
-@patch('os.path.isdir')
-@patch('os.path.exists')
-class TestUnitTempProjdir(Base):
-    functionname = 'temp_projdir'
-
-    def test_has_tempfs( self, exists, isdir ):
-        exists.return_value = True
-        isdir.return_value = True
-        res = self._C( 'shmtest', 'test' )
-        d, bn = split( res )
-        eq_( '/dev/shm', d )
-        assert bn.startswith( 'shmtest' )
-        assert bn.endswith( 'test' )
-
-    def test_nothas_tempfs( self, exists, isdir ):
-        exists.return_value = False
-        isdir.return_value = False
-        res = self._C( 'shmtest', 'test' )
-        d, bn = split( res )
-        eq_( '/tmp', d )
-        assert bn.startswith( 'shmtest' )
-        assert bn.endswith( 'test' )
-
 @patch('miseqpipeline.runsample.logger',Mock())
 class TestMakeProjectRepo(Base):
     functionname = 'make_project_repo'

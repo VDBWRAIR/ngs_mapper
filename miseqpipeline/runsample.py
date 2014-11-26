@@ -95,21 +95,6 @@ def make_project_repo( projpath ):
     output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
     logger.debug( output )
 
-def temp_projdir( prefix, suffix='runsample' ):
-    '''
-        Get a temporary directory that all files for the sample can be compiled into
-        Prefer /dev/shm
-
-        @param prefix/suffix - look these up in tempdir.mkdtemp docs
-
-        @returns the temporary directory used
-    '''
-    tdir = '/dev/shm'
-    if not os.path.isdir( '/dev/shm' ):
-        tdir = '/tmp'
-
-    return tempfile.mkdtemp( suffix, prefix, dir=tdir )
-
 def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, script_dir=None ):
     '''
         Runs a subprocess on cmdstr and logs some timing information for each command
@@ -133,7 +118,7 @@ def main( args ):
     # So we can set the global logger
     global logger
 
-    tdir = temp_projdir( args.prefix )
+    tdir = tempfile.mkdtemp('runsample', args.prefix, dir=os.environ['TMPDIR'])
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
     consensus = os.path.join( tdir, bamfile+'.consensus.fasta' )
