@@ -25,12 +25,17 @@ def verify_config(config):
             )
         )
 
-def load_config_file(config_file):
+def load_config(config_file):
     '''
     Loads a yaml config file from the given config_file path
+     or from a stream
     Returns a dictionary
     '''
-    config = yaml.load(open(config_file))
+    if hasattr(config_file, 'read'):
+        config_stream = config_file
+    else:
+        config_stream = open(config_file)
+    config = yaml.load(config_file)
     verify_config(config)
     return config
 
@@ -39,8 +44,8 @@ def load_default_config():
     Loads the default config from pkg_resources
     Returns the config dictionary
     '''
-    config_path = pkg_resources.resource_string(__name__, 'config.yaml')
-    return load_config_file(config_path)
+    config_stream = pkg_resources.resource_stream(__name__, 'config.yaml')
+    return load_config(config_stream)
 
 def make_example_config(savepath=os.getcwd()):
     '''

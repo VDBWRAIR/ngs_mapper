@@ -21,15 +21,22 @@ class Base(common.BaseClass):
         return yaml.dump(config)
 
 @patch('miseqpipeline.config.yaml')
-@patch('__builtin__.open', Mock())
 class TestLoadConfigFile(Base):
-    functionname = 'load_config_file'
+    functionname = 'load_config'
 
-    def test_loads_config(self, mock_yaml):
+    def test_loads_config_stream(self, mock_yaml):
+        mock_yaml.load.return_value = self.config
+        config_stream = mock_open(read_data=self._create_yaml_from_config(self.config))()
+        r = self._C(config_stream)
+        eq_(self.tempdir, r['NGSDATA'])
+
+    @patch('__builtin__.open', Mock())
+    def test_loads_config_filepath(self, mock_yaml):
         mock_yaml.load.return_value = self.config
         r = self._C('/path/to/file.yaml')
         eq_(self.tempdir, r['NGSDATA'])
 
+    @patch('__builtin__.open', Mock())
     def test_invalid_config_raises_exception(self, mock_yaml):
         self.config['NGSDATA'] = '/missing/path'
         mock_yaml.load.return_value = self.config
@@ -53,13 +60,14 @@ class TestVerifyConfig(Base):
         self.config['NGSDATA'] = self.tempdir
         self._C(self.config)
 
-@patch('miseqpipeline.config.yaml')
 @patch('__builtin__.open', Mock())
-@patch('pkg_resources.resource_string', Mock(return_value='/path/to/file.yaml'))
+@patch('pkg_resources.resource_stream')
+@patch('miseqpipeline.config.yaml')
 class TestLoadDefaultConfig(Base):
     functionname = 'load_default_config'
 
-    def test_loads_from_pkg_resources(self, mock_yaml):
+    def test_loads_from_pkg_resources(self, mock_yaml, mock_stream):
+        mock_stream.return_value = mock_open(read_data=self._create_yaml_from_config(self.config))()
         mock_yaml.load.return_value = self.config
         r = self._C()
         eq_(self.tempdir, r['NGSDATA'])
@@ -71,16 +79,16 @@ class TestMakeExampleConfig(Base):
     functionname = 'make_example_config'
 
     def test_makes_config_cwd_is_default(self, mock_yaml):
-        from miseqpipeline.config import load_config_file
+        from miseqpipeline.config import load_config
         mock_yaml.load.return_value = self.config
         r = self._C()
-        config = load_config_file(r)
+        config = load_config(r)
         eq_(self.tempdir,config['NGSDATA'])
 
     def test_makes_config_to_specified_path(self, mock_yaml):
-        from miseqpipeline.config import load_config_file
+        from miseqpipeline.config import load_config
         mock_yaml.load.return_value = self.config
         os.mkdir('configdir')
         r = self._C('configdir')
-        config = load_config_file(r)
+        config = load_config(r)
         eq_(self.tempdir,config['NGSDATA'])

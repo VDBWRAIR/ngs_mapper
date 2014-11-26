@@ -144,6 +144,9 @@ setup(
     license = '',
     keywords = 'miseq iontorrent roche 454 fastq vcf',
     url = 'https://github.com/VDBWRAIR/miseqpipeline',
+    package_data = {
+        '': ['*.yaml']
+    },
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,
