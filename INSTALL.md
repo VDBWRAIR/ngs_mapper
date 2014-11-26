@@ -25,7 +25,21 @@
     sudo 'python setup.py install_system_packages && chmod 666 setuptools*'
     ```
 
-3. Python
+3. Configure the defaults
+
+  You need to configure the miseqpipeline/config.yaml file.
+
+  1. Copy the default config to config.yaml
+
+    ```
+    cp miseqpipeline/config.yaml.default miseqpipelin/config.yaml
+    ```
+
+  2. Then edit the config file which is in yaml(http://docs.ansible.com/YAMLSyntax.html) format
+
+    The most important thing is that you edit the NGSDATA value so that it contains the path to your NGSDATA directory
+
+4. Python
 
   The miseqpipeline requires python 2.7.3+ but < 3.0
 
@@ -41,7 +55,7 @@
     $HOME/bin/python --version
     ```
 
-4. Setup virtualenv
+5. Setup virtualenv
   
   
   1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
@@ -63,7 +77,7 @@
     . $HOME/.miseqpipeline/bin/activate
     ```
 
-5. Install the pipeline into virtualenv
+6. Install the pipeline into virtualenv
 
   ```
   python setup.py install
@@ -71,7 +85,7 @@
 
   It should be safe to run this more than once in case some dependencies do not fully install.
 
-6. Verify install
+7. Verify install
 
   You can pseudo test the installation of the pipeline by running the functional tests
 

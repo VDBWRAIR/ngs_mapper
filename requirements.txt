@@ -8,3 +8,4 @@ nose
 mock
 git+https://github.com/VDBWRAIR/pyBWA
 tempdir
+yaml
