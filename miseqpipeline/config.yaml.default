@@ -40,7 +40,10 @@ run_bwa_on_samplename:
 tagreads:
     SM:
         default:
-        help: Sets the CN tag value inside of each read group
+        help: Sets the SM tag value inside of each read group. Default is the portion of the filname that preceeds the .bam
+    CN:
+        default:
+        help: Sets the CN tag inside of each read group to the value specified.
 base_caller:
     vcf_output_file:
         default:
