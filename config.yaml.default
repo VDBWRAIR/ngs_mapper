@@ -1,0 +1,71 @@
+# Make sure to set this to the absolute path of your NGS Data structure
+NGSDATA: &NGSDATA /path/to/NGSDATA
+
+# All scripts by name should be top level items
+# Sub items then are the option names(the dest portion of the add_arugment for the script)
+# Each option needs to define the default as well as the help message
+trim_reads:
+    q:
+        default: 20
+        help: Quality threshold to trim
+    head-crop:
+        default: 0
+        help: How many bases to crop off the beginning of the reads after quality trimming
+    outputdir:
+        default: trimmed_reads
+        help: Where to output the resulting files
+run_bwa_on_samplename:
+    platforms:
+        choices:
+            - MiSeq
+            - Sanger
+            - Roche454
+            - IonTorrent
+        default:
+            - MiSeq
+            - Sanger
+            - Roche454
+            - IonTorrent
+        nargs: +
+        help: List of platforms to include data for
+    output:
+        default: bwa_mem.bam
+        help: Where the output bam should be placed
+    keep_temp:
+        default: False
+        help: Flag to indicate that you want the temporary files kept instead of removing them
+    threads:
+        default: 1
+        help: How many threads to use for bwa
+tagreads:
+    SM:
+        default:
+        help: Sets the CN tag value inside of each read group
+base_caller:
+    vcf_output_file:
+        default:
+        help: Where to save the vcf file
+    regionstr:
+        default:
+        help: Specify a region string in the format of REFERENCE:START-STOP. See samtools documentation for more information.
+    minbq:
+        default: 25
+        help: The minimum base quality to be considered high quality
+    maxd:
+        default: 100000
+        help: The maximum depth to use for the pileup
+    mind:
+        default: 10
+        help: Minimum depth for base trimming. Below this depth low quality bases will be called N
+    minth:
+        default: 0.8
+        help: Minimum fraction of all remaining bases after trimming/N calling that will trigger a base to be called
+    biasth:
+        default: 50
+        help: Minimum base quality threshold to bias towards. Will increase the amount of bases that have >= this value by a factor of what bias is set to
+    bias:
+        default: 10
+        help: What factor to bias high quality bases by. Must be an integer >= 1
+miseq_sync:
+    ngsdata:
+        default: *NGSDATA

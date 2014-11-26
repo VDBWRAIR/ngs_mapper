@@ -10,7 +10,7 @@ import shlex
 import re
 
 from mock import Mock, MagicMock, patch, mock_open, call
-from nose.tools import eq_, ok_, raises, timed
+from nose.tools import eq_, ok_, raises, timed, assert_raises
 from nose.plugins.attrib import attr
 
 from Bio import SeqIO
