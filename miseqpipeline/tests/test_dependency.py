@@ -212,9 +212,14 @@ class TestInstallSamtools(Base):
         open(self.bcfpath,'w').close()
         self._C(self.samtools_github_url, 'HEAD', self.prefix)
 
+@attr('current')
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestCloneCheckoutMakeCopy(Base):
     functionname = 'clone_checkout_make_copy'
+
+    def setUp(self):
+        super(TestCloneCheckoutMakeCopy,self).setUp()
+        self.copypaths = ['bwa','samtools','bcftools/bcftools']
 
     def _C( self, *args, **kwargs ):
         super(TestCloneCheckoutMakeCopy,self)._C(*args, **kwargs)
@@ -223,19 +228,31 @@ class TestCloneCheckoutMakeCopy(Base):
             self._exist_executable(execpath)
 
     def test_ensures_prefix_bin_exists(self):
-        copypaths = ['bwa','samtools','bcftools/bcftools']
-        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=copypaths)
+        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths)
 
     def test_prefix_bin_exists_no_error(self):
         os.makedirs(self.bindir)
-        copypaths = ['bwa','samtools','bcftools/bcftools']
-        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=copypaths)
+        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths)
+
+    @patch('miseqpipeline.dependency.tempdir.in_tempdir')
+    def test_does_not_recompile_if_all_copypath_exist(self,in_tempdir):
+        os.makedirs(self.bindir)
+        # Make call copy paths in bin
+        for cp in self.copypaths:
+            # Only basename in bin
+            cp = join(self.bindir,basename(cp))
+            # Make mock file and executable
+            open(cp,'w').close()
+            os.chmod(cp, 0755)
+        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths)
+        # Should never call tempdir stuff
+        eq_(0, in_tempdir.call_count, 'Tempdir was created even though all bin files exist')
+        #ok_(False)
 
     def test_overwrites_existing_executable(self):
         os.makedirs(self.bindir)
         open(self.bwapath,'w').close()
-        copypaths = ['bwa','samtools','bcftools/bcftools']
-        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=copypaths)
+        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths)
 
         content = open(self.bwapath).read()
         ok_(content != '', 'Did not overwrite existing executable')
