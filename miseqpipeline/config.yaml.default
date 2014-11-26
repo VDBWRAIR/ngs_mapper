@@ -69,3 +69,4 @@ base_caller:
 miseq_sync:
     ngsdata:
         default: *NGSDATA
+        help: Path to the root of the NGSData structure 

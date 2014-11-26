@@ -150,6 +150,9 @@ def link_reads( rundir, ngsdata ):
             logger.debug( '{} already exists.'.format( lnkdst ) )
 
 def parse_args( args=sys.argv[1:] ):
+    from miseqpipeline.config import load_default_config
+    defaults = load_default_config()['miseq_sync']
+
     parser = argparse.ArgumentParser(
         description='Sync MiSeq run into the NGSData structure'
     )
@@ -159,11 +162,10 @@ def parse_args( args=sys.argv[1:] ):
         help='Path to the run to be synced(/path/to/YYMMDD_)'
     )
 
-    ngsdata_default = '/home/EIDRUdata/NGSData'
     parser.add_argument(
         '--ngsdata',
-        default=ngsdata_default,
-        help='Path to the root of the NGSData data structure[Default: {}]'.format(ngsdata_default)
+        default=defaults['ngsdata']['default'],
+        help=defaults['ngsdata']['help']
     )
 
     return parser.parse_args( args )
