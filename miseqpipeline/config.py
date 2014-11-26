@@ -1,7 +1,8 @@
-from os.path import exists
+from os.path import exists, isdir, join
 import os
 import yaml
 import pkg_resources
+import argparse
 
 # Raised when invalid config is loaded
 class InvalidConfigError(Exception): pass
@@ -51,7 +52,28 @@ def make_example_config(savepath=os.getcwd()):
     '''
     Load default config and dump to savepath
     '''
+    if not exists(savepath):
+        raise ValueError('{0} is not a valid path to save to'.format(savepath))
+    if isdir(savepath):
+        savepath = join(savepath, 'config.yaml')
     config = load_default_config()
     with open(savepath,'w') as fh:
-        fh.write(yaml.dump(config))
+        fh.write(
+            yaml.dump(config, indent=4, default_flow_style=False)
+        )
     return savepath
+
+def main():
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(
+        description='Generate a config file that you can customize'
+    )
+
+    parser.add_argument(
+        '--save-to',
+        default=os.getcwd(),
+        help='Where to generate the default config[Default: %s(default)]'
+    )
+
+    args = parser.parse_args()

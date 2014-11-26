@@ -78,6 +78,9 @@ class TestLoadDefaultConfig(Base):
 class TestMakeExampleConfig(Base):
     functionname = 'make_example_config'
 
+    def test_invalid_savepath_raises_exception(self, mock_yaml):
+        assert_raises(ValueError, self._C, '/non/existant/path.yaml')
+
     def test_makes_config_cwd_is_default(self, mock_yaml):
         from miseqpipeline.config import load_config
         mock_yaml.load.return_value = self.config
@@ -89,6 +92,8 @@ class TestMakeExampleConfig(Base):
         from miseqpipeline.config import load_config
         mock_yaml.load.return_value = self.config
         os.mkdir('configdir')
+        savepath = join('configdir', 'config.yaml')
         r = self._C('configdir')
         config = load_config(r)
         eq_(self.tempdir,config['NGSDATA'])
+        eq_(r, savepath)

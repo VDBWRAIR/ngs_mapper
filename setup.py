@@ -131,6 +131,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'sample_coverage = miseqpipeline.coverage:main',
+            'make_example_config = miseqpipeline.config:make_example_config',
         ]
     },
     setup_requires = [
