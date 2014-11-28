@@ -152,12 +152,14 @@ def get_bam_header( bam ):
     return hdr.rstrip()
 
 def parse_args( args=sys.argv[1:] ):
-    from miseqpipeline.config import load_default_config
-    defaults = load_default_config()['tagreads']
+    from miseqpipeline import config
+    conf_parser, args, config = config.get_config_argparse(args)
+    defaults = config['tagreads']
 
     parser = argparse.ArgumentParser(
         description='''Adds Sanger, MiSeq, 454 and IonTorrent read groups to a bam file.
-        Will tag all reads in the alignment for each of the platforms based on the read name'''
+        Will tag all reads in the alignment for each of the platforms based on the read name''',
+        parents=[conf_parser]
     )
 
     parser.add_argument(

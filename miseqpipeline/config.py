@@ -63,6 +63,34 @@ def make_example_config(savepath=os.getcwd()):
         )
     return savepath
 
+def get_config_argparse(argv):
+    '''
+    Setup an argparse instance for allowing user to specify the config file
+    Then partially parse the command line args and return either the
+    default config or the config the user specified
+
+    Returns (config_parser, [rest of command line args], config)
+    '''
+    conf_parser = argparse.ArgumentParser(
+        add_help=False
+    )
+    conf_parser.add_argument(
+        '--config',
+        '-c',
+        dest='config',
+        default=None,
+        help='Path to config.yaml file'
+    )
+
+    args, rest = conf_parser.parse_known_args(argv)
+
+    if args.config:
+        config = load_config(args.config)
+    else:
+        config = load_default_config()
+
+    return conf_parser, rest, config
+
 def main():
     from argparse import ArgumentParser
 

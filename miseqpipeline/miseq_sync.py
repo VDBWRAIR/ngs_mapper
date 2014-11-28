@@ -150,8 +150,9 @@ def link_reads( rundir, ngsdata ):
             logger.debug( '{} already exists.'.format( lnkdst ) )
 
 def parse_args( args=sys.argv[1:] ):
-    from miseqpipeline.config import load_default_config
-    defaults = load_default_config()['miseq_sync']
+    from miseqpipeline import config
+    conf_parser, args, config = config.get_config_argparse(args)
+    defaults = config['miseq_sync']
 
     parser = argparse.ArgumentParser(
         description='Sync MiSeq run into the NGSData structure'

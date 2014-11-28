@@ -237,10 +237,12 @@ def run_cutadapt( *args, **kwargs ):
     return se
 
 def parse_args( args=sys.argv[1:] ):
-    from miseqpipeline.config import load_default_config
-    defaults = load_default_config()['trim_reads']
+    from miseqpipeline import config
+    conf_parser, args, config = config.get_config_argparse(args)
+    defaults = config['trim_reads']
 
     parser = argparse.ArgumentParser(
+        parents=[conf_parser],
         description='Trims reads'
     )
 
@@ -271,4 +273,3 @@ def parse_args( args=sys.argv[1:] ):
     )
 
     return parser.parse_args( args )
-

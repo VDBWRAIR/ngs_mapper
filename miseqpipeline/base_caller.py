@@ -48,8 +48,9 @@ def main( args ):
     )
 
 def parse_args( args=sys.argv[1:] ):
-    from miseqpipeline.config import load_default_config
-    defaults = load_default_config()['base_caller']
+    from miseqpipeline import config
+    conf_parser, args, config = config.get_config_argparse(args)
+    defaults = config['base_caller']
 
     parser = argparse.ArgumentParser(
         description = 'Generates a VCF that has called bases in it which follow ' \
@@ -71,7 +72,8 @@ def parse_args( args=sys.argv[1:] ):
                  20%
                     - or -
                 The majority base is called
-        '''
+        ''',
+        parents=[conf_parser]
     )
 
     parser.add_argument(

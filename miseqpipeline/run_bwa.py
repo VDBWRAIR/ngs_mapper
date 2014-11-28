@@ -103,9 +103,12 @@ def parse_args( args=sys.argv[1:] ):
 
         @returns Namespace object with parsed args in it(Same as ArgumentParser.parse_args)
     '''
-    from miseqpipeline.config import load_default_config
-    defaults = load_default_config()['run_bwa_on_samplename']
     import argparse
+
+    from miseqpipeline import config
+    conf_parser, args, config = config.get_config_argparse(args)
+    defaults = config['run_bwa_on_samplename']
+
     parser = argparse.ArgumentParser(
         description='Runs the bwa mem argument on a given set of reads and references for the given platform\'s reads',
         epilog='You should consider this script an autonomous bwa operation. That is, it will select the reads for ' \
@@ -114,7 +117,8 @@ def parse_args( args=sys.argv[1:] ):
             'will map any mated reads against to those refs and also map the nonpaired reads against that ref in a separate ' \
             'call. Then when both are finished it will convert to bam/sort/index/merge/reindex the results. It attempts all of ' \
             'this inside of the /dev/shm filesystem which should be very fast. If /dev/shm cannot be used then /tmp will be used. '\
-            'If you want the temporary files that are created to stay then you can use the --keep-temp argument'
+            'If you want the temporary files that are created to stay then you can use the --keep-temp argument',
+        parents=[conf_parser]
     )
     
     parser.add_argument(
