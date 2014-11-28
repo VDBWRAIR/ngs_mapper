@@ -155,7 +155,8 @@ def parse_args( args=sys.argv[1:] ):
     defaults = config['miseq_sync']
 
     parser = argparse.ArgumentParser(
-        description='Sync MiSeq run into the NGSData structure'
+        description='Sync MiSeq run into the NGSData structure',
+        parents=[conf_parser]
     )
 
     parser.add_argument(

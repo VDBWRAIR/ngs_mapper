@@ -69,6 +69,15 @@ def get_config_argparse(argv):
     Then partially parse the command line args and return either the
     default config or the config the user specified
 
+    Can be used easily as follows in code:
+
+    import argparse
+    from miseqpipeline import config
+    conf_parser, args, config = config.get_config_argparse(args)
+    myparser = argparse.ArgumentParser(parents=[confparser])
+    ...
+    args = myparser.parse_args(args)
+
     Returns (config_parser, [rest of command line args], config)
     '''
     conf_parser = argparse.ArgumentParser(
