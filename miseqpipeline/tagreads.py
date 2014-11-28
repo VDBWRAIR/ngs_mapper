@@ -153,7 +153,7 @@ def get_bam_header( bam ):
 
 def parse_args( args=sys.argv[1:] ):
     from miseqpipeline import config
-    conf_parser, args, config = config.get_config_argparse(args)
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
     defaults = config['tagreads']
 
     parser = argparse.ArgumentParser(

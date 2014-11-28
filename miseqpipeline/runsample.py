@@ -25,8 +25,12 @@ class AlreadyExists(Exception):
     pass
 
 def parse_args( args=sys.argv[1:] ):
+    from miseqpipeline import config
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
+
     parser = argparse.ArgumentParser(
-        description='Runs a single sample through the pipeline'
+        description='Runs a single sample through the pipeline',
+        parents=[conf_parser]
     )
 
     parser.add_argument(
@@ -44,35 +48,33 @@ def parse_args( args=sys.argv[1:] ):
         help='The prefix to put before every output file generated. Probably the samplename'
     )
 
-    trimqual_default=20
     parser.add_argument(
         '-trim_qual',
         dest='trim_qual',
-        default=trimqual_default,
-        help='The quality threshold to trim ends of reads on[Default: {}]'.format(trimqual_default)
+        default=config['trim_reads']['q']['default'],
+        help=config['trim_reads']['q']['help'],
     )
 
-    headcrop_default=0
     parser.add_argument(
         '-head_crop',
         dest='head_crop',
-        default=headcrop_default,
-        help='How many bases to crop off the beginning of each read after quality trimming[Default: {}]'.format(headcrop_default)
+        default=config['trim_reads']['headcrop']['default'],
+        help=config['trim_reads']['headcrop']['help'],
     )
 
     minth_default=0.8
     parser.add_argument(
         '-minth',
         dest='minth',
-        default=minth_default,
-        help='Same as the minth option for base_caller.py'
+        default=config['base_caller']['minth']['default'],
+        help=config['base_caller']['minth']['help'],
     )
 
     parser.add_argument(
         '--CN',
         dest='CN',
-        default='WRAIRVDB',
-        help='What to set the CN argument to for tagreads.py[Default: WRAIRVDB]'
+        default=config['tagreads']['CN']['default'],
+        help=config['tagreads']['CN']['help'],
     )
 
     default_outdir = os.getcwd()
@@ -84,7 +86,9 @@ def parse_args( args=sys.argv[1:] ):
         help='The output directory for all files to be put[Default: {}]'.format(default_outdir)
     )
 
-    return parser.parse_args( args )
+    args = parser.parse_args( args )
+    args.config = configfile
+    return args
 
 def make_project_repo( projpath ):
     '''
@@ -154,7 +158,8 @@ def main( args ):
             'trim_qual': args.trim_qual,
             'trim_outdir': os.path.join(tdir,'trimmed_reads'), 
             'head_crop': args.head_crop,
-            'minth': args.minth
+            'minth': args.minth,
+            'config': args.config
         }
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
@@ -168,6 +173,8 @@ def main( args ):
 
         # Trim Reads
         cmd = 'trim_reads.py {readsdir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
+        if cmd_args['config']:
+            cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
         if rets[-1] != 0:
@@ -176,6 +183,8 @@ def main( args ):
         # Mapping
         with open(bwalog, 'wb') as blog:
             cmd = 'run_bwa_on_samplename.py {trim_outdir} {reference} -o {bamfile}'
+            if cmd_args['config']:
+                cmd += ' -c {config}'
             p = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
             # Wait for the sample to map
             rets.append( p.wait() )
@@ -187,6 +196,8 @@ def main( args ):
 
         # Tag Reads
         cmd = 'tagreads.py {bamfile} -CN {CN}'
+        if cmd_args['config']:
+            cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
@@ -195,6 +206,8 @@ def main( args ):
 
         # Variant Calling
         cmd = 'base_caller.py {bamfile} {reference} {vcf} -minth {minth}'
+        if cmd_args['config']:
+            cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:

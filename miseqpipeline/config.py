@@ -36,7 +36,7 @@ def load_config(config_file):
         config_stream = config_file
     else:
         config_stream = open(config_file)
-    config = yaml.load(config_file)
+    config = yaml.load(config_stream)
     verify_config(config)
     return config
 
@@ -93,12 +93,14 @@ def get_config_argparse(argv):
 
     args, rest = conf_parser.parse_known_args(argv)
 
+    configfile = None
     if args.config:
         config = load_config(args.config)
+        configfile = args.config
     else:
         config = load_default_config()
 
-    return conf_parser, rest, config
+    return conf_parser, rest, config, configfile
 
 def main():
     from argparse import ArgumentParser

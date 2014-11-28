@@ -1,5 +1,6 @@
 from imports import *
 from mock import mock_open
+import yaml
 
 class Base(common.BaseClass):
     modulepath = 'miseqpipeline.config'
@@ -20,7 +21,7 @@ class Base(common.BaseClass):
         import yaml
         return yaml.dump(config)
 
-@patch('miseqpipeline.config.yaml')
+@patch('miseqpipeline.config.yaml', autospec=True)
 class TestLoadConfigFile(Base):
     functionname = 'load_config'
 
@@ -30,11 +31,13 @@ class TestLoadConfigFile(Base):
         r = self._C(config_stream)
         eq_(self.tempdir, r['NGSDATA'])
 
-    @patch('__builtin__.open', Mock())
     def test_loads_config_filepath(self, mock_yaml):
         mock_yaml.load.return_value = self.config
-        r = self._C('/path/to/file.yaml')
-        eq_(self.tempdir, r['NGSDATA'])
+        with patch('__builtin__.open') as mock_open:
+            r = self._C('/path/to/file.yaml')
+            eq_(self.tempdir, r['NGSDATA'])
+            mock_open.assert_called_once_with('/path/to/file.yaml')
+            mock_yaml.load.assert_called_once_with(mock_open())
 
     @patch('__builtin__.open', Mock())
     def test_invalid_config_raises_exception(self, mock_yaml):
@@ -105,14 +108,14 @@ class TestGetConfigArgparse(Base):
     def test_does_not_parse_help(self, mock_yaml):
         mock_yaml.load.return_value = self.config
         r = self._C(['--help'])
-        parser, args, config = r
+        parser, args, config, configfile = r
         ok_('--help' in args, 'Parsed --help when it should not have')
     
     def test_returns_valid_argparse(self, mock_yaml):
         mock_yaml.load.return_value = self.config
         from argparse import ArgumentParser
         r = self._C(['--foo', 'foo'])
-        parser, args, config = r
+        parser, args, config, configfile = r
         parser = ArgumentParser(parents=[parser])
         parser.add_argument('--foo')
         args = parser.parse_args(args)
@@ -121,12 +124,14 @@ class TestGetConfigArgparse(Base):
     def test_returns_default_config(self, mock_yaml):
         mock_yaml.load.return_value = self.config
         r = self._C([])
-        parser, args, config = r
+        parser, args, config, configfile = r
         eq_(self.tempdir, config['NGSDATA'])
+        eq_(configfile, None)
 
     def test_returns_specified_config(self, mock_yaml):
         mock_yaml.load.return_value = self.config
         with patch('miseqpipeline.config.load_config') as mock_load_config:
             r = self._C(['-c','/path/to/file.yaml'])
-            parser, args, config = r
+            parser, args, config, configfile = r
             mock_load_config.assert_called_once_with('/path/to/file.yaml')
+            eq_('/path/to/file.yaml', configfile)

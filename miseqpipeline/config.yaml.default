@@ -7,13 +7,13 @@ NGSDATA: &NGSDATA /path/to/NGSDATA
 trim_reads:
     q:
         default: 20
-        help: Quality threshold to trim
+        help: 'Quality threshold to trim[Default: %(default)s]'
     headcrop:
         default: 0
-        help: How many bases to crop off the beginning of the reads after quality trimming
+        help: 'How many bases to crop off the beginning of the reads after quality trimming[Default: %(default)s]'
     outputdir:
         default: trimmed_reads
-        help: Where to output the resulting files
+        help: 'Where to output the resulting files[Default: %(default)s]'
 run_bwa_on_samplename:
     platforms:
         choices:
@@ -27,46 +27,46 @@ run_bwa_on_samplename:
             - Roche454
             - IonTorrent
         nargs: +
-        help: List of platforms to include data for
+        help: 'List of platforms to include data for[Default: %(default)s]'
     output:
         default: bwa_mem.bam
-        help: Where the output bam should be placed
+        help: 'Where the output bam should be placed[Default: %(default)s]'
     keep_temp:
         default: False
-        help: Flag to indicate that you want the temporary files kept instead of removing them
+        help: 'Flag to indicate that you want the temporary files kept instead of removing them[Default: %(default)s]'
     threads:
         default: 1
-        help: How many threads to use for bwa
+        help: 'How many threads to use for bwa[Default: %(default)s]'
 tagreads:
     SM:
         default:
-        help: Sets the SM tag value inside of each read group. Default is the portion of the filname that preceeds the .bam
+        help: 'Sets the SM tag value inside of each read group. Default is the portion of the filname that preceeds the .bam[Default: %(default)s]'
     CN:
         default:
-        help: Sets the CN tag inside of each read group to the value specified.
+        help: 'Sets the CN tag inside of each read group to the value specified.[Default: %(default)s]'
 base_caller:
     regionstr:
         default:
-        help: Specify a region string in the format of REFERENCE:START-STOP. See samtools documentation for more information.
+        help: 'Specify a region string in the format of REFERENCE:START-STOP. See samtools documentation for more information.[Default: %(default)s]'
     minbq:
         default: 25
-        help: The minimum base quality to be considered high quality
+        help: 'The minimum base quality to be considered high quality[Default: %(default)s]'
     maxd:
         default: 100000
-        help: The maximum depth to use for the pileup
+        help: 'The maximum depth to use for the pileup[Default: %(default)s]'
     mind:
         default: 10
-        help: Minimum depth for base trimming. Below this depth low quality bases will be called N
+        help: 'Minimum depth for base trimming. Below this depth low quality bases will be called N[Default: %(default)s]'
     minth:
         default: 0.8
-        help: Minimum fraction of all remaining bases after trimming/N calling that will trigger a base to be called
+        help: 'Minimum fraction of all remaining bases after trimming/N calling that will trigger a base to be called[Default: %(default)s]'
     biasth:
         default: 50
-        help: Minimum base quality threshold to bias towards. Will increase the amount of bases that have >= this value by a factor of what bias is set to
+        help: 'Minimum base quality threshold to bias towards. Will increase the amount of bases that have >= this value by a factor of what bias is set to[Default: %(default)s]'
     bias:
         default: 10
-        help: What factor to bias high quality bases by. Must be an integer >= 1
+        help: 'What factor to bias high quality bases by. Must be an integer >= 1[Default: %(default)s]'
 miseq_sync:
     ngsdata:
         default: *NGSDATA
-        help: Path to the root of the NGSData structure 
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'

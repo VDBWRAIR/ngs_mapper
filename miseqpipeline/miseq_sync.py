@@ -151,7 +151,7 @@ def link_reads( rundir, ngsdata ):
 
 def parse_args( args=sys.argv[1:] ):
     from miseqpipeline import config
-    conf_parser, args, config = config.get_config_argparse(args)
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
     defaults = config['miseq_sync']
 
     parser = argparse.ArgumentParser(
