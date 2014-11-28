@@ -26,7 +26,6 @@ run_bwa_on_samplename:
             - Sanger
             - Roche454
             - IonTorrent
-        nargs: +
         help: 'List of platforms to include data for[Default: %(default)s]'
     output:
         default: bwa_mem.bam
