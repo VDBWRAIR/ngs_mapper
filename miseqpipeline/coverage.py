@@ -130,7 +130,7 @@ def set_figure_size(perreference, figure):
     # Max num samples per referece * num references/2 * 0.357
     # num references / 2 because 2 columns
     numrefs = len(perreference)
-    length = maxnumsamples * (numrefs / 2) * 0.375
+    length = maxnumsamples * (numrefs / 2.0) * 0.375
     if length > 400:
         # Scale dpi down
         scale = 400.0 / length
