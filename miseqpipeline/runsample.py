@@ -83,7 +83,7 @@ def parse_args( args=sys.argv[1:] ):
         '--outdir',
         dest='outdir',
         default=default_outdir,
-        help='The output directory for all files to be put[Default: {}]'.format(default_outdir)
+        help='The output directory for all files to be put[Default: {0}]'.format(default_outdir)
     )
 
     args = parser.parse_args( args )
@@ -111,12 +111,12 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
     cmd = shlex.split( cmdstr )
     if script_dir is not None:
         cmd[0] = os.path.join( script_dir, cmd[0] )
-    logger.debug( "Running {}".format(' '.join(cmd)) )
+    logger.debug( "Running {0}".format(' '.join(cmd)) )
     try:
         p = subprocess.Popen( cmd, stdout=stdout, stderr=stderr, stdin=stdin )
         return p
     except OSError as e:
-        raise MissingCommand( "{} is not an executable?".format(cmd[0]) )
+        raise MissingCommand( "{0} is not an executable?".format(cmd[0]) )
 
 def main( args ):
     # So we can set the global logger
@@ -139,10 +139,12 @@ def main( args ):
 
     if os.path.isdir( args.outdir ):
         if os.listdir( args.outdir ):
-            raise AlreadyExists( "{} already exists and is not empty".format(args.outdir) )
+            raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
     make_project_repo( tdir )
 
-    logger.info( "--- Starting {} --- ".format(args.prefix) )
+    logger.info( "--- Starting {0} --- ".format(args.prefix) )
+    if args.config:
+        logger.info( "--- Using custom config from {0} ---".format(args.config) )
     # Write all stdout/stderr to a logfile from the various commands
     with open(stdlog,'wb') as lfile:
         cmd_args = {
@@ -165,7 +167,7 @@ def main( args ):
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
         # as multiple samples may be running concurrently already
 
-        logger.debug( "Copying reference file {} to {}".format(args.reference,cmd_args['reference']) )
+        logger.debug( "Copying reference file {0} to {1}".format(args.reference,cmd_args['reference']) )
         shutil.copy( args.reference, cmd_args['reference'] )
 
         # Return code list
@@ -178,7 +180,7 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
         if rets[-1] != 0:
-            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
 
         # Mapping
         with open(bwalog, 'wb') as blog:
@@ -191,7 +193,7 @@ def main( args ):
             # Everything else is dependant on bwa finishing so might as well die here
             if rets[-1] != 0:
                 cmd = cmd.format(**cmd_args)
-                logger.critical( "{} failed to complete sucessfully. Please check the log file {} for more details".format(cmd,bwalog) )
+                logger.critical( "{0} failed to complete sucessfully. Please check the log file {1} for more details".format(cmd,bwalog) )
                 sys.exit(1)
 
         # Tag Reads
@@ -201,7 +203,7 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
 
         # Variant Calling
@@ -211,11 +213,11 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
         if rets[-1] != 0:
             cmd = cmd.format(**cmd_args)
-            logger.critical( '{} failed to complete successfully'.format(cmd.format(**cmd_args)) )
+            logger.critical( '{0} failed to complete successfully'.format(cmd.format(**cmd_args)) )
 
         # Flagstats
         with open(flagstats,'wb') as flagstats:
@@ -223,7 +225,7 @@ def main( args ):
             p = run_cmd( cmd.format(**cmd_args), stdout=flagstats, stderr=lfile, script_dir='' )
             r = p.wait()
             if r != 0:
-                logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+                logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
             rets.append( r )
 
         # Graphics
@@ -231,16 +233,16 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
 
         # Read Graphics
         fastqs = ' '.join( glob.glob( os.path.join( cmd_args['trim_outdir'], '*.fastq' ) ) )
-        cmd = 'fqstats.py -o {}.reads.png {}'.format(cmd_args['bamfile'].replace('.bam',''),fastqs)
+        cmd = 'fqstats.py -o {0}.reads.png {1}'.format(cmd_args['bamfile'].replace('.bam',''),fastqs)
         p = run_cmd( cmd, stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            logger.critical( "{} did not exit sucessfully".format(cmd) )
+            logger.critical( "{0} did not exit sucessfully".format(cmd) )
         rets.append( r )
 
         # Consensus
@@ -248,20 +250,20 @@ def main( args ):
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
-            logger.critical( "{} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
 
         # If sum is > 0 then one of the commands failed
         if sum(rets) != 0:
             logger.critical( "!!! There was an error running part of the pipeline !!!" )
-            logger.critical( "Please check the logfile {}".format(logfile) )
+            logger.critical( "Please check the logfile {0}".format(logfile) )
             sys.exit( 1 )
-        logger.info( "--- Finished {} ---".format(args.prefix) )
+        logger.info( "--- Finished {0} ---".format(args.prefix) )
 
         subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
         subprocess.call( 'git commit -am \'runsample.py\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
 
-        logger.debug( "Moving {} to {}".format( tdir, args.outdir ) )
+        logger.debug( "Moving {0} to {1}".format( tdir, args.outdir ) )
         # Cannot log any more below this line as the log file will be moved in the following code
         if not os.path.isdir( args.outdir ):
             shutil.move( tdir, args.outdir )
