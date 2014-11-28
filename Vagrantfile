@@ -12,7 +12,7 @@ def provision_pipeline( config )
 
     # Setup config.yaml
     config.vm.provision "shell", privileged: false,
-        inline: "echo 'Creating config.yaml'; mkdir -p ~/NGSDATA; sed 's|/path/to/NGSDATA|~/NGSDATA|' ~/miseqpipeline/config.yaml.default > ~/miseqpipeline/config.yaml"
+        inline: "echo 'Creating config.yaml'; mkdir -p ~/NGSDATA; sed 's|/path/to/NGSDATA|/home/vagrant/NGSDATA|' ~/miseqpipeline/miseqpipeline/config.yaml.default > ~/miseqpipeline/miseqpipeline/config.yaml"
 
     # Ensure that setup.py and vagrant-provision.sh are up to date in case they are not committed
     config.vm.provision "shell", privileged: false,
