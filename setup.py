@@ -4,7 +4,7 @@ use_setuptools()
 
 from glob import glob
 import sys
-from os.path import join, expanduser, exists
+from os.path import join, expanduser
 
 from setuptools import setup, find_packages
 import setuptools
@@ -13,10 +13,6 @@ from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
 from version import __version__
-
-if not exists('miseqpipeline/config.yaml'):
-    print "You need to create miseqpipeline/config.yaml before installing"
-    sys.exit(1)
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''
@@ -111,7 +107,7 @@ class PipelineInstallCommand(_install):
 
         # Install all dependencies outside fo pypi
         install_bwa(bwa_url, '0.7.6a', prefix)
-        install_samtools(samtools_url, '96b5f2294ac005423', prefix)
+        install_samtools(samtools_url, 'ccf1da91b29b75764402e20f46ec21fc293fe5f5', prefix)
         install_trimmomatic(trimmomatic_url, libdir)
 
 class bdist_egg(_bdist_egg):
@@ -135,13 +131,14 @@ setup(
     entry_points = {
         'console_scripts': [
             'sample_coverage = miseqpipeline.coverage:main',
-            'make_example_config = miseqpipeline.config:make_example_config',
         ]
     },
     setup_requires = [
         'tempdir'
     ],
     tests_require = [
+        'nosetests',
+        'mock',
     ],
     author = 'Tyghe Vallard',
     author_email = 'vallardt@gmail.com',
@@ -149,9 +146,6 @@ setup(
     license = '',
     keywords = 'miseq iontorrent roche 454 fastq vcf',
     url = 'https://github.com/VDBWRAIR/miseqpipeline',
-    package_data = {
-        'miseqpipeline': ['config.yaml'],
-    },
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,
