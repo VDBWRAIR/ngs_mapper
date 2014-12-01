@@ -23,7 +23,7 @@ Supplemental
 
 These are scripts that you can run manually, however, they are run automatically by the User Scripts above
 
-* :py:mod:`run_bwa_on_samplename <miseqpipeline.run_bwa_on_samplename>`
+* :py:mod:`run_bwa_on_samplename <miseqpipeline.run_bwa>`
 * :py:mod:`vcf_consensus <miseqpipeline.vcf_consensus>`
 * :doc:`gen_flagstats`
 * :py:mod:`graphsample <miseqpipeline.graphsample>`
@@ -40,21 +40,21 @@ Libraries
 
 Python Scripts/Modules that you can import to do other analysis
 
-* :py:mod:`run_bwa <miseqpipeline.run_bwa>`
-* :py:mod:`reads <miseqpipeline.reads>`
-* :py:mod:`data <miseqpipeline.data>`
-* :py:mod:`bam <miseqpipeline.bam>`
-* :py:mod:`alphabet <miseqpipeline.alphabet>`
-* :py:mod:`stats_at_refpos <miseqpipeline.stats_at_refpos>`
-* :py:mod:`samtools <miseqpipeline.samtools>`
-* :py:mod:`log <miseqpipeline.log>`
+* :py:mod:`miseqpipeline.run_bwa`
+* :py:mod:`miseqpipeline.reads`
+* :py:mod:`miseqpipeline.data`
+* :py:mod:`miseqpipeline.bam`
+* :py:mod:`miseqpipeline.alphabet`
+* :py:mod:`miseqpipeline.stats_at_refpos`
+* :py:mod:`miseqpipeline.samtools`
+* :py:mod:`miseqpipeline.log`
 
 Deprecated
 ----------
 
 Scripts that are no longer used, but kept for reference in the deprecated directory
 
-* :py:mod:`varcaller <miseqpipeline.varcaller>`
+* varcaller.py
 * variants.sh
 * perms.sh
 * gen_consensus.sh
