@@ -1,3 +1,82 @@
+"""
+Purpose
+=======
+
+This script is now the main script for running everything necessary on a single sample. It is the script that is modified when more stages are added/removed/changed for the entirety of the pipeline.
+Keep in mind that runsample.py simply requires all inputs that all stages provide that they do not provide for each other.
+
+Current Pipeline Stages
+-----------------------
+
+* :py:mod:`miseqpipeline.trim_reads`
+* :py:mod:`miseqpipeline.run_bwa_on_samplename <miseqpipeline.run_bwa>`
+* :py:mod:`miseqpipeline.tagreads`
+* :py:mod:`miseqpipeline.base_caller`
+* :doc:`gen_flagstats`
+* :py:mod:`miseqpipeline.graphsample`
+* :py:mod:`miseqpipeline.fqstats`
+* :py:mod:`miseqpipeline.vcf_consensus`
+
+Basic Usage
+===========
+
+Get help usage
+
+    .. code-block:: bash
+
+        runsample.py -h
+
+Usage Examples
+==============
+
+Creates a folder in the current directory called 00005-01 and puts all files from the run into that folder
+
+    .. code-block:: bash
+
+        runsample.py /path/to/ReadsBySample/00005-01 /path/to/Analysis/References/Den3__Thailand__FJ744727__2001.fasta 00005-01 -od 00005-01
+
+Same example as above, but shortened a bit using bash variables
+
+    .. code-block:: bash
+
+        SAMPLE=00005-01
+        REF=Den3__Thailand__FJ744727__2001.fasta
+        READSDIR=/path/to/ReadsBySample
+        REFDIR=/path/to/Analysis/References
+
+        runsample.py ${READSDIR}/${SAMPLE} ${REFDIR}/${REF} ${SAMPLE} -od ${SAMPLE}
+
+Output Analysis Directory
+-------------------------
+
+* samplename.bam (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
+* samplename.bam.bai (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
+* samplename.bam.consensus.fasta (:py:mod:`miseqpipeline.vcf_consensus`)
+* samplename.bam.qualdepth.json (:py:mod:`miseqpipeline.graphs`)
+* samplename.bam.qualdepth.png (:py:mod:`miseqpipeline.graphs`)
+* samplename.bam.vcf (:py:mod:`miseqpipeline.base_caller`)
+* samplename.log (:py:mod:`miseqpipeline.runsample`)
+* samplename.reads.png (:py:mod:`miseqpipeline.fqstats`)
+* samplename.std.log (:py:mod:`miseqpipeline.runsample`)
+* bwa.log (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
+* reference.fasta (:py:mod:`miseqpipeline.runsample`)
+* reference.fasta.amb (:py:mod:`miseqpipeline.runsample`)
+* reference.fasta.ann (:py:mod:`miseqpipeline.runsample`)
+* reference.fasta.bwt (:py:mod:`miseqpipeline.runsample`)
+* reference.fasta.pac (:py:mod:`miseqpipeline.runsample`)
+* reference.fasta.sa( :py:mod:`miseqpipeline.runsample`)
+* flagstats.txt (:py:mod:`miseqpipeline.gen_flagstats`)
+* qualdepth (:py:mod:`miseqpipeline.graphs`)
+    * sample.bam.qualdepth.referencename.png
+    * ...
+* trimmed_reads (:py:mod:`miseqpipeline.trim_reads`)
+    * sampleread1.fasta
+    * sampleread2.fasta
+    * unpaired.fastq
+* trim_stats (:py:mod:`miseqpipeline.trim_reads`)
+    * sampleread.trim
+"""
+
 import argparse
 import subprocess
 import shlex

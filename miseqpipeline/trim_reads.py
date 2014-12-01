@@ -1,3 +1,7 @@
+"""
+Here be some documentation
+"""
+
 import subprocess
 import os
 import argparse

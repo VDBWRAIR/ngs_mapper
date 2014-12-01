@@ -15,8 +15,8 @@ New Run Setup
 Single Sample
 -------------
 
-If you need to run a single sample you can now use the :doc:`scripts/runsample.py` script to do so easily.
-Things you need to provide :doc:`runsample.py`:
+If you need to run a single sample you can now use the :py:mod:`runsample.py <miseqpipeline.runsample>` script to do so easily.
+Things you need to provide :py:mod:`runsample.py <miseqpipeline.runsample>`:
 
 * Path to the ReadsBySample directory for the samplename
     * Example: /path/to/NGSData/ReadsBySample/1090-01
@@ -32,7 +32,7 @@ Run the sample
 
         . $HOME/.miseqpipeline/bin/activate
 
-#. Run the sample(this will put the project in the current directory you are in, you may want to look at the -od argument of :doc:`runsample.py`)
+#. Run the sample(this will put the project in the current directory you are in, you may want to look at the -od argument of :py:mod:`runsample.py <miseqpipeline.runsample>`)
 
     .. code-block:: bash
 
@@ -44,7 +44,7 @@ Run the sample
 Changing defaults for pipeline stages
 =====================================
 
-If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config.yaml` and supply it to :doc:`runsample.py` using the -c option. You can read more about how to create the config and edit it via the :doc:`scripts/make_example_config` script's page
+If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config` and supply it to :py:mod:`runsample.py <miseqpipeline.runsample>` using the -c option. You can read more about how to create the config and edit it via the :doc:`make_example_config` script's page
 
 Multiple Samples
 ================
@@ -64,7 +64,7 @@ Typically you will want to run many samples in parallel by utilizing a :doc:`sam
         runsamplesheet.sh /path/to/NGSData/ReadsBySample samplesheet.tsv
 
     * **Note** If you did not name the samplesheet samplesheet.tsv you will need to put the path to it instead of ../samplesheet.tsv in the above command
-    * Basically just calls :doc:`scripts/runsample.py` over and over for each sample/reference pair in the :doc:`samplesheet` that you created
+    * Basically just calls :py:mod:`runsample.py <miseqpipeline.runsample>` over and over for each sample/reference pair in the :doc:`samplesheet` that you created
 
 Rerunning Samples
 =================
@@ -75,7 +75,7 @@ Rerunning samples is very similar to just running samples.
 #. Run the :doc:`scripts/runsamplesheet.sh` script on the modified samplesheet
     * **Note**: As of right now, you will have to manually remove the existing project directories that you want to rerun.
 #. Regenerate graphics for all samples
-    * The -norecreate tells it not to recreate the qualdepth.json for each sample which is very time consuming. The reran samples should already have recreated their qualdepth.json files when runsample.py was run on them.
+    * The -norecreate tells it not to recreate the qualdepth.json for each sample which is very time consuming. The reran samples should already have recreated their qualdepth.json files when :doc:`scripts/runsample.py` was run on them.
 
         .. code-block:: bash
 

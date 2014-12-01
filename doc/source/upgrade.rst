@@ -10,13 +10,13 @@ If you activate the pipeline via miseqpipeline/setup
 If you installed using setup.py
 -------------------------------------------
 
-    1. First fetch any possible updates
+    #. First fetch any possible updates
 
         .. code-block:: bash
         
             cd ~/miseqpipeline; git fetch
 
-    2. Then check if you need to update
+    #. Then check if you need to update
 
         .. code-block:: bash
 
@@ -24,12 +24,12 @@ If you installed using setup.py
     
         If it returns You are up-to-date you are done
 
-    3. Update(pull new code)
+    #. Update(pull new code)
 
         .. code-block:: bash
 
             git pull
 
-    4. Reinstall
+    #. Reinstall
 
         Then follow :ref:`install <install-system-packages>`

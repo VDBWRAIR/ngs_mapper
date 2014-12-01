@@ -17,6 +17,8 @@ Contents:
     install
     upgrade
     analysis
+    scripts/index.rst
+    miseqpipeline/miseqpipeline.rst
 
 Indices and tables
 ==================
@@ -24,4 +26,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
