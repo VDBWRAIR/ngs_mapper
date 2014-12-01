@@ -141,8 +141,10 @@ def set_figure_size(perreference, figure):
         # Reset length to our 400 maximum
         length = 400
         bbox = figure.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
-        
-    figure.set_size_inches( 20.0, length )
+
+    if length < 1:
+        length = 2
+    figure.set_size_inches(20.0, length)
 
 def plot_all_references(projects, perreference, refax):
     # Samplenames
