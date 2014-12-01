@@ -16,6 +16,7 @@ Contents:
     
     install
     upgrade
+    analysis
 
 Indices and tables
 ==================
