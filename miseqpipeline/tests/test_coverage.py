@@ -142,6 +142,14 @@ class TestSetFigureSize(Base):
         self._C(self.perreference, fig)
         ok_(fig.set_size_inches.called, 'Did not call set_size_inches')
 
+    def test_numrefs_lt2_creates_graphic_correctly(self):
+        from mock import call
+        fig = Mock()
+        del self.perreference['Ref2']
+        self._C(self.perreference, fig)
+        cl = fig.set_size_inches.call_args_list
+        eq_([call(20.0,2)], cl)
+
 class PlotBase(Base):
     def setUp(self):
         super(PlotBase,self).setUp()

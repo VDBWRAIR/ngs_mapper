@@ -130,7 +130,7 @@ def set_figure_size(perreference, figure):
     # Max num samples per referece * num references/2 * 0.357
     # num references / 2 because 2 columns
     numrefs = len(perreference)
-    length = maxnumsamples * (numrefs / 2) * 0.375
+    length = maxnumsamples * (numrefs / 2.0) * 0.375
     if length > 400:
         # Scale dpi down
         scale = 400.0 / length
@@ -141,8 +141,10 @@ def set_figure_size(perreference, figure):
         # Reset length to our 400 maximum
         length = 400
         bbox = figure.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
-        
-    figure.set_size_inches( 20.0, length )
+
+    if length < 1:
+        length = 2
+    figure.set_size_inches(20.0, length)
 
 def plot_all_references(projects, perreference, refax):
     # Samplenames
