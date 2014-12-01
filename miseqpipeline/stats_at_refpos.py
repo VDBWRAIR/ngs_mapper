@@ -1,3 +1,52 @@
+"""
+Purpose
+-------
+
+This script is intended to aid in variant calling. It generates statistics about a given location in a BAM file.
+
+Usage
+-----
+
+    .. code-block:: bash
+
+        stats_at_refpos.py <bamfile> <regionstring>
+
+Notes
+-----
+
+**regionstring**
+
+The region string is a bit confusing if you are unsure what it is. The region string basically is how you tell samtools how to narrow down the results of what should be returned.
+The format is as follows:
+<reference identifier>:<start ref base position>-<end ref base position>
+
+**Note:** You need to put the whole region string inside of quotes when you run stats_at_refpos.py
+
+Examples:
+
+* If you wanted only base 1046 from Ref1
+
+    .. code-block:: bash
+
+        stats_at_refpos.py somebamfile.bam 'Ref1:1046-1046'
+
+About Quality Defaults: 
+-----------------------
+
+Currently we are now using 25 as the minimum quality threshold of q25, which is 10^(-25/10) or 0.00316 or 3.16 in 1000 chance of an error.
+
+Tips & Tricks
+-------------
+
+* How do you get reference names that are in the BAM file?
+
+    .. code-block:: bash
+
+        samtools idxstats somebamfile.bam
+
+    There is also a little blurp in the help of the script about how to use awk to get them as well
+"""
+
 import argparse
 import sys
 import itertools

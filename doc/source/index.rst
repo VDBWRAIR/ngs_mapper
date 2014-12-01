@@ -13,9 +13,10 @@ Contents:
 
 .. toctree::
     :maxdepth: 2
-    
+
     install
     upgrade
+    ngsdata
     analysis
     scripts/index.rst
     miseqpipeline/miseqpipeline.rst
