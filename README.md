@@ -1,10 +1,10 @@
 # Installation
 
-  [INSTALL.md](INSTALL.md)
+  [INSTALL.md](doc/source/install.rst)
 
 # Upgrading
   
-  [UPGRADE.md](UPGRADE.md)
+  [UPGRADE.md](doc/source/upgrade.rst)
 
 # Running the pipeline
 
