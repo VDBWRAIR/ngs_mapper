@@ -107,7 +107,7 @@ class PipelineInstallCommand(_install):
 
         # Install all dependencies outside fo pypi
         install_bwa(bwa_url, '0.7.6a', prefix)
-        install_samtools(samtools_url, '96b5f2294ac005423', prefix)
+        install_samtools(samtools_url, 'ccf1da91b29b75764402e20f46ec21fc293fe5f5', prefix)
         install_trimmomatic(trimmomatic_url, libdir)
 
 class bdist_egg(_bdist_egg):
@@ -137,6 +137,8 @@ setup(
         'tempdir'
     ],
     tests_require = [
+        'nosetests',
+        'mock',
     ],
     author = 'Tyghe Vallard',
     author_email = 'vallardt@gmail.com',
