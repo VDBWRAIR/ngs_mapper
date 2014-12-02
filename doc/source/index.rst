@@ -18,8 +18,10 @@ Contents:
     upgrade
     ngsdata
     analysis
-    scripts/index.rst
-    miseqpipeline/miseqpipeline.rst
+    pipeline
+    scripts/index
+    qualdepth
+    miseqpipeline/miseqpipeline
 
 Indices and tables
 ==================

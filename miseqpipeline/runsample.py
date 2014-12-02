@@ -46,6 +46,8 @@ Same example as above, but shortened a bit using bash variables
 
         runsample.py ${READSDIR}/${SAMPLE} ${REFDIR}/${REF} ${SAMPLE} -od ${SAMPLE}
 
+.. _runsample-output-directory:
+
 Output Analysis Directory
 -------------------------
 
