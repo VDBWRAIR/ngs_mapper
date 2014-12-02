@@ -5,6 +5,12 @@ config.yaml
 When you install the pipeline you are instructed to copy `miseqpipeline/config.yaml.default <../../../miseqpipeline/config.yaml.default>`_ to miseqpipeline/config.yaml
 This file contains all setting that the pipeline will use by default if you do not change them using any of the script options that are available.
 
+When you install the pipeline the config.yaml file gets installed with the pipeline into the installation directory(probably ~/.miseqpipeline)
+In order to change the defaults after that you have two options:
+
+#. Edit config.yaml inside of the source directory you cloned with git and reinstall
+#. Use the :py:mod:`make_example_config <miseqpipeline.config>` to extract the config.yaml into the current directory and use it
+
 Example changing single script defaults
 ---------------------------------------
 
@@ -90,7 +96,7 @@ Yaml syntax links for reference:
 * `Quick start <http://docs.ansible.com/YAMLSyntax.html>`_
 * `More in depth <http://en.wikipedia.org/wiki/YAML>`_
 
-For the miseqpipeline the most important thing is that the NGSDATA value is filled out and contains a correct path to the root of your :doc:`scripts/Data Structure`
+For the miseqpipeline the most important thing is that the NGSDATA value is filled out and contains a correct path to the root of your :doc:`ngsdata`
 The rest of the values are pre-filled with defaults that work for most general cases.
 
 Structure of the config.yaml file

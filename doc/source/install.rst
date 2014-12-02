@@ -70,7 +70,7 @@ Installation
 
             cp miseqpipeline/config.yaml.default miseqpipeline/config.yaml
 
-    2. Then edit the config file which is in yaml(http://docs.ansible.com/YAMLSyntax.html) format
+    2. Then edit the config file which is in `yaml <http://docs.ansible.com/YAMLSyntax.html>`_ format
 
         The most important thing is that you edit the NGSDATA value so that it contains the path to your NGSDATA directory
 

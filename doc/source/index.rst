@@ -6,7 +6,11 @@
 miseqpipeline
 =============
 
-The miseqpipeline is a configurable pipeline next generation sequence pipeline that aims to be easy for the bioinformatician to install as well as use. It focuses on documentation as well as easy configuration and running. The pipeline is also meant to get you from data to completed genome as easy as possible.
+The miseqpipeline is a configurable pipeline next generation sequence pipeline that aims to be easy for the bioinformatician to install as well as use.
+It focuses on documentation as well as easy configuration and running. The pipeline is also meant to get you from data to completed genome as easy as possible.
+
+The documentation is a work-in-progress as the aim is to keep it as much up-to-date as possible with the pipeline as it changes. If anything seems out of place or wrong
+please open a bug report on `github <https://github.com/VDBWRAIR/miseqpipeline/issues>`_
 
 Contents:
 ---------
@@ -16,12 +20,14 @@ Contents:
 
     install
     upgrade
+    Configure <config>
     ngsdata
-    analysis
+    Running the Pipeline <analysis>
+    help
     pipeline
     scripts/index
-    qualdepth
-    miseqpipeline/miseqpipeline
+    miseqpipeline api <miseqpipeline/miseqpipeline>
+    development
 
 Indices and tables
 ==================
