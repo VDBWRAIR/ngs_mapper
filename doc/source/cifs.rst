@@ -21,7 +21,9 @@ Create Share User
 	* Select User cannot change password
 	* Select Password never expires
 	* The form should look like this when filled out
+
         .. image:: _static/create_user.png
+
 	* Click Create
 
 Create Share

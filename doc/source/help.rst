@@ -17,12 +17,14 @@ Frequently Asked Questions
 #. Where should I run the analysis?
     This is for the most part up to you but eventually you will want the entire analysis folder to end up under /path/to/Analysis somewhere
     You will want to minimize how much the traffic has to travel across the network though. So if you simply create a folder under /path/to/Analysis/PipelineRuns and then you run the pipeline from there, you will essentially be doing the following:
-        Reading the reads across the network for each sample
-        Writing the bam files across the network for each sample
-        Reading the bam files across the network for each sample
-        Writing stats across the network
-        Reading the stats file across the network
-        Writing graphics files across the network
+
+        * Reading the reads across the network for each sample
+        * Writing the bam files across the network for each sample
+        * Reading the bam files across the network for each sample
+        * Writing stats across the network
+        * Reading the stats file across the network
+        * Writing graphics files across the network
+
     Suggestion Create the analysis folder somewhere on your computer and run the pipeline there and then transfer the entire folder to the storage server afterwards
 #. How many CPUs does my computer have?
     Try running the following command to get how many physical CPU's and how many cores/threads they have

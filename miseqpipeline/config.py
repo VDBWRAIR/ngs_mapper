@@ -29,7 +29,7 @@ def verify_config(config):
 def load_config(config_file):
     '''
     Loads a yaml config file from the given config_file path
-     or from a stream
+    or from a stream
     Returns a dictionary
     '''
     if hasattr(config_file, 'read'):

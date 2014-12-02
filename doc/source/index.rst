@@ -28,6 +28,7 @@ Contents:
     scripts/index
     miseqpipeline api <miseqpipeline/miseqpipeline>
     development
+    todo
 
 Indices and tables
 ==================

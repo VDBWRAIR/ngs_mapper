@@ -16,8 +16,7 @@ def main( args ):
 
 def sync( src, ngsdata ):
     '''
-        Sync all files/dirs in src to dst
-        
+    Sync all files/dirs in src to dst
     '''
     dst = join( ngsdata, 'RawData', 'Roche454', basename( src ) )
     if isdir( dst ):
@@ -28,7 +27,7 @@ def sync( src, ngsdata ):
 
 def demultiplex_run( rdir, midparse ):
     '''
-        Demultiplex run at rdir into outpath
+    Demultiplex run at rdir into outpath
     '''
     sigprocdir = get_sigprocdir( rdir )
     demuldir = join( sigprocdir, 'demultiplexed' )
@@ -83,7 +82,7 @@ def symlink_sigproc( rdir, ngsdata ):
 
 def get_rundate( rochedir ):
     '''
-        Get date from signalProcessing, imageProcessing or R_ directory
+    Get date from signalProcessing, imageProcessing or R\_ directory
     '''
     return re.search( 'R_(\d{4}_\d{2}_\d{2})', rochedir ).group(1)
 
@@ -94,7 +93,10 @@ def format_read_name( **kwargs ):
 
 def demultiplex_read( inputsff, outputsff, barcodename, midparse ):
     '''
-        Runs something like
+    Runs something like
+
+    .. code-block:: bash
+
         sfffile -o {outputsff} -mcf {midparse} {barcodename}@{inputsff}
     '''
     cmd = ['sfffile','-o',outputsff,'-mcf',midparse,'{}@{}'.format(barcodename,inputsff)]
@@ -103,7 +105,7 @@ def demultiplex_read( inputsff, outputsff, barcodename, midparse ):
 
 def sff_region_map( sffdir ):
     '''
-        Get a mapping of region: basename(sfffilename)
+    Get a mapping of region: basename(sfffilename)
     '''
     sffs = glob( join(sffdir, '*.sff') )
     map = {}
@@ -118,7 +120,7 @@ def sff_region_map( sffdir ):
 
 def get_sigprocdir( rdir ):
     '''
-        Quick way to get signalProcessing directory from inside of R_ dir
+    Quick way to get signalProcessing directory from inside of R\_ dir
     '''
     try:
         return glob( join(rdir, '*signalProcessing') )[0]
@@ -127,9 +129,9 @@ def get_sigprocdir( rdir ):
 
 def parse_samplesheet( sheetpath ):
     '''
-        Parse samplesheet
-        @param sheetpath - Path to samplesheet
-        @returns csv.DictReader iterator
+    Parse samplesheet
+    @param sheetpath - Path to samplesheet
+    @returns csv.DictReader iterator
     '''
     if not exists( sheetpath ):
         raise IOError( "{} does not exist".format(sheetpath) )

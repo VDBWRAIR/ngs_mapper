@@ -147,7 +147,7 @@ def get_perreference_from_projects(projects, allrefs, refax, gap, lowqual, lowco
     '''
     Get a dictionary keyed by each reference in allrefs
     Each item contains a list of generators that generate Line2D objects
-        for a sample's regions
+    for a sample's regions
 
     projects - list of project paths
     allrefs - sequence of reference names
