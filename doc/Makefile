@@ -48,6 +48,7 @@ help:
 
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm -rf source/miseqpipeline
 
 html:
 	sphinx-apidoc -o source/miseqpipeline ../miseqpipeline ../miseqpipeline/tests

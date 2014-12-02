@@ -1,13 +1,6 @@
 miseqpipeline package
 =====================
 
-Subpackages
------------
-
-.. toctree::
-
-    miseqpipeline.tests
-
 Submodules
 ----------
 

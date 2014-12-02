@@ -45,6 +45,10 @@ def view( infile, *args, **kwargs ):
     return p.stdout
 
 class Prop(object):
+    '''
+    Defines a property that auto converts the value
+    to the defined type
+    '''
     def __init__( self, name, type=int ):
         self.name = name
         self.type = type
@@ -57,11 +61,11 @@ class Prop(object):
 
 class SamRow(object):
     '''
-        Represents a single sam row
-        
-        Object is instantiated by supplying it with a valid sam row string
+    Represents a single sam row
+    
+    Object is instantiated by supplying it with a valid sam row string
 
-        @param samrow_str - Sam row string
+    @param samrow_str - Sam row string
     '''
     FLAG = Prop( 'FLAG', int )
     MAPQ = Prop( 'MAPQ', int )
@@ -82,6 +86,9 @@ class SamRow(object):
 
     @property
     def TAGS( self ):
+        '''
+        Returns python objects for each flag type
+        '''
         tags = re.findall( '([A-Za-z]{2}):([AifZHB]):(\S+)', self._tags )
         t = []
         for name,typ,val in tags:
@@ -106,6 +113,9 @@ class SamRow(object):
 
     @property
     def QUAL( self ):
+        '''
+        Returns the quality scores as a list of integers
+        '''
         return [char_to_qual(c) for c in self._qual]
 
     def __str__( self ):
@@ -117,17 +127,17 @@ class SamRow(object):
 
 def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
     '''
-        A simple  wrapper around the samtools mpileup command to ensure that
-        samtools mpileup is called the way we would expect for MPilupColumn to work
+    A simple  wrapper around the samtools mpileup command to ensure that
+    samtools mpileup is called the way we would expect for MPilupColumn to work
 
-        @param bamfile - path to a bam file
-        @param regionstr - Region string acceptable to the -r option for mpileup. If None is provided,
-            then the same output as not specifying the -r option to mpileup is expected
-        @param minmq - Minimum mapping qualty threshold. Same as -q option to mpileup
-        @param minbq - Minimum base quality or min BAQ. Same as -Q option to mpileup
-        @param maxd - Maximum depth to consider. Same as -d option to mpileup
+    @param bamfile - path to a bam file
+    @param regionstr - Region string acceptable to the -r option for mpileup. If None is provided,
+    then the same output as not specifying the -r option to mpileup is expected
+    @param minmq - Minimum mapping qualty threshold. Same as -q option to mpileup
+    @param minbq - Minimum base quality or min BAQ. Same as -Q option to mpileup
+    @param maxd - Maximum depth to consider. Same as -d option to mpileup
 
-        @returns file like object representing the output of mpileup
+    @returns file like object representing the output of mpileup
     '''
     # The command that will be executed
     cmd = ['samtools','mpileup','-s','-q',str(minmq),'-Q',str(minbq),'-d','{}'.format(maxd)]
@@ -144,26 +154,26 @@ def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
 
 def char_to_qual( qual_char ):
     '''
-        Converts a given quality character to the phred - 33 integer
-        
-        @param qual_char - Quality character to convert to a phred - 33 integer quality
+    Converts a given quality character to the phred - 33 integer
+    
+    @param qual_char - Quality character to convert to a phred - 33 integer quality
 
-        @return phred - 33 quality integer
+    @return phred - 33 quality integer
     '''
     return ord( qual_char ) - 33
 
 class MPileupColumn(object):
     '''
-        Represents a single Mpileup column
+    Represents a single Mpileup column
 
-        Object is easily initialized by supplying the constructor with an mpileup string.
-        Note that if older samtools is used that does not contain the fix with respect to mapping quality length != base quality length
-        then the bquals list will be None
+    Object is easily initialized by supplying the constructor with an mpileup string.
+    Note that if older samtools is used that does not contain the fix with respect to mapping quality length != base quality length
+    then the bquals list will be None
 
-        It is assumed that minimum base quality and mapping quality have already been applied to the mpileup string that is 
-        provided to the constructor.
+    It is assumed that minimum base quality and mapping quality have already been applied to the mpileup string that is 
+    provided to the constructor.
 
-        @param mpileup_str - Mpileup string
+    @param mpileup_str - Mpileup string
     '''
     _bases = ''
     _mquals = ''
@@ -287,16 +297,17 @@ class MPileupColumn(object):
 
     def base_stats( self ):
         '''
-            Returns a compiled statistics dictionary for all the different base values in this column
-            The dictionary must contain the following keys:
-                depth: Total depth of this column which should be self.depth
-                bqualsum: sum of the base qualities
-                mqualsum: sum of the mapping qualities
-                'A/C/T/G/N/*': dictionary of information about the mapping and base qualities for an individual base
-                    mapq: list of all the mapping qualities for this base(int(phred - 33))
-                    baseq: list of all the base qualities for this base(int(phred - 333))
+        Returns a compiled statistics dictionary for all the different base values in this column
+        The dictionary must contain the following keys:
 
-            @returns the stats dictionary
+            * depth: Total depth of this column which should be self.depth
+            * bqualsum: sum of the base qualities
+            * mqualsum: sum of the mapping qualities
+            * 'A/C/T/G/N/\*': dictionary of information about the mapping and base qualities for an individual base
+                * mapq: list of all the mapping qualities for this base(int(phred - 33))
+                * baseq: list of all the base qualities for this base(int(phred - 333))
+
+        @returns the stats dictionary
         '''
         bquals = self.bquals
         mquals = self.mquals

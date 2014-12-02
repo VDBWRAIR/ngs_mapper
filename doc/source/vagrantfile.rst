@@ -6,7 +6,7 @@ This is the configuration file for `Vagrant <http://www.vagrantup.com>`_
 It instructs vagrant on how to provision each of the virtual machines.
 
 Essentially it brings up whichever vagrant box you tell it in the vagrant up command.
-It ensures that any OS dependant things are handled prior to running :py:mod:`vagrant-provision`
+It ensures that any OS dependant things are handled prior to running :py:mod:`.vagrant-provision`
 When it is finished the Vagrant box you bring up should have the pipeline and all dependencies completely installed
 
 CentOS 6.5
