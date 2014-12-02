@@ -16,11 +16,11 @@ def provision_pipeline( config )
 
     # Ensure that setup.py and vagrant-provision.sh are up to date in case they are not committed
     config.vm.provision "shell", privileged: false,
-        inline: "cp -f /vagrant/setup.py ~/miseqpipeline; cp -f /vagrant/miseqpipeline/vagrant-provision.py ~/miseqpipeline;"
+        inline: "cp -f /vagrant/setup.py ~/miseqpipeline; cp -f /vagrant/vagrant-provision.py ~/miseqpipeline;"
 
     # Run the provisioning system-packages
     config.vm.provision "shell", privileged: false,
-        inline: "echo 'Installing system packages'; cd ~/miseqpipeline; sudo python miseqpipeline/vagrant-provision.py --install-system-packages"
+        inline: "echo 'Installing system packages'; cd ~/miseqpipeline; sudo python vagrant-provision.py --install-system-packages"
 
     # Run the provisioning pipeline install
     config.vm.provision "shell", privileged: false,
