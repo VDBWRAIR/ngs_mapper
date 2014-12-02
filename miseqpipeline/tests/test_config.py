@@ -1,5 +1,5 @@
 from imports import *
-from mock import mock_open
+from mock import mock_open, call
 import yaml
 
 class Base(common.BaseClass):
@@ -95,7 +95,7 @@ class TestMakeExampleConfig(Base):
         mock_yaml.load.return_value = self.config
         os.mkdir('configdir')
         savepath = join('configdir', 'config.yaml')
-        r = self._C('configdir')
+        r = self._C(savepath)
         config = load_config(r)
         eq_(self.tempdir,config['NGSDATA'])
         eq_(r, savepath)
@@ -135,3 +135,23 @@ class TestGetConfigArgparse(Base):
             parser, args, config, configfile = r
             mock_load_config.assert_called_once_with('/path/to/file.yaml')
             eq_('/path/to/file.yaml', configfile)
+
+@patch('__builtin__.open')
+@patch('miseqpipeline.config.yaml')
+@patch('argparse.ArgumentParser.parse_args')
+class TestMain(Base):
+    functionname = 'main'
+
+    def test_creates_config(self,mock_parse_args, mock_yaml, mock_open):
+        curconfigpath = join(self.tempdir, 'my.yaml')
+        mock_yaml.load.return_value = self.config
+        parse_args = Mock()
+        parse_args.save_to = curconfigpath
+        mock_parse_args.return_value = parse_args
+
+        import StringIO
+        stdout = StringIO.StringIO()
+        with patch('sys.stdout', stdout):
+            self._C()
+        # Make sure script outputs path to config created
+        eq_(curconfigpath, stdout.getvalue().rstrip())

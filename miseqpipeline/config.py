@@ -1,4 +1,4 @@
-from os.path import exists, isdir, join
+from os.path import exists, isdir, join, dirname
 import os
 import yaml
 import pkg_resources
@@ -52,7 +52,7 @@ def make_example_config(savepath=os.getcwd()):
     '''
     Load default config and dump to savepath
     '''
-    if not exists(savepath):
+    if not isdir(dirname(savepath)):
         raise ValueError('{0} is not a valid path to save to'.format(savepath))
     if isdir(savepath):
         savepath = join(savepath, 'config.yaml')
@@ -111,8 +111,10 @@ def main():
 
     parser.add_argument(
         '--save-to',
+        dest='save_to',
         default=os.getcwd(),
         help='Where to generate the default config[Default: %s(default)]'
     )
 
     args = parser.parse_args()
+    print make_example_config(args.save_to)

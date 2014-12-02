@@ -131,13 +131,14 @@ setup(
     entry_points = {
         'console_scripts': [
             'sample_coverage = miseqpipeline.coverage:main',
+            'make_example_config = miseqpipeline.config:main',
         ]
     },
     setup_requires = [
         'tempdir'
     ],
     tests_require = [
-        'nosetests',
+        'nose',
         'mock',
     ],
     author = 'Tyghe Vallard',

@@ -172,7 +172,8 @@ class TestFunctional(Base):
     def test_runs_with_specified_config(self):
         projdir = 'outdir'
         prefix = 'testsample'
-        retcode, configfile = self.run_script('make_example_config')
+        from miseqpipeline.config import make_example_config
+        configfile = make_example_config()
 
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, prefix, projdir, configfile )
         print out

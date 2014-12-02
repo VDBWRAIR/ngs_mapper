@@ -143,17 +143,29 @@ class TestRunPipeline(BaseFunctional):
         counts = json.loads( counts )
         return counts
 
+    @attr('current')
     def test_consensus_mutations( self ):
-        for reads,c in self.fixtures:
+        for reads,config in self.fixtures:
             sn = basename(reads)
             consensus_file = join( 'vcf_consensus', sn + '.fasta' )
             # Count all mutations in resulting project
             mutation_counts = self.count_mutations( consensus_file )
             # Retrieve the expected mutation count
-            expected_counts = self.get_fixture_mutation_counts( (reads,c) )
+            expected_counts = self.get_fixture_mutation_counts( (reads,config) )
 
             # Compare the two counts
+            diffs = []
             for ref, counts in expected_counts.iteritems():
                 result_counts = mutation_counts[ref]
                 for amb_base, count in counts.iteritems():
-                    eq_( count, result_counts[amb_base] )
+                    e = count
+                    r = result_counts[amb_base]
+                    if e != r:
+                        diffs.append(
+                            'Base {0} count for {1}: Expected {2}: Result {3}'.format(
+                                amb_base, ref, e, r
+                            )
+                        )
+            for line in diffs:
+                print line
+            eq_([], diffs)
