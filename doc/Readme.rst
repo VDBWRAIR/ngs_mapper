@@ -1,2 +1,1 @@
-.. include:: source/development.rst
-   start-after: Documentation
+`source/development.rst`_
