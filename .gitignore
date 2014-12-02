@@ -23,3 +23,5 @@ setuptools-*.zip
 .vagrant
 setuptools-*
 virtualenv-*
+miseqpipeline/config.yaml
+doc
