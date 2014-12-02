@@ -905,6 +905,37 @@ class BaseInty(Base):
             print open(f2).read()
             return False
 
+    def _iter_two_vcf(self, vcf1, vcf2):
+        '''
+        Skip the header and iterate same position in each file
+        Assume both vcf have same positions in them and same references
+        '''
+        from itertools import izip
+        for v1, v2 in izip(open(vcf1),open(vcf2)):
+            # Skip headers
+            if v1.startswith('#'):
+                continue
+            else:
+                yield (
+                    self._split_vcfrow(v1),
+                    self._split_vcfrow(v2)
+                )
+
+    def _split_vcfrow(self, row):
+        ref,pos,id,refbase,altbase,qual,filter,info = row.split('\t')
+        info = re.findall('(\w+)=([-0-9a-zA-z_,]+)', info)
+        info = dict(info)
+        return {
+            'CHROM':ref,
+            'POS':pos, 
+            'ID': id,
+            'REF': refbase,
+            'ALT': altbase,
+            'QUAL': qual,
+            'FILTER': filter,
+            'INFO': info
+        }
+
     def temp_bam( self, bam, bai ):
         ''' Copies given bam and bai to fixture temp dir '''
         import shutil
@@ -937,9 +968,10 @@ class TestUnitGenerateVCF(BaseInty):
         assert self.cmp_files( self.vcf, out_vcf )
         eq_( out_vcf, r )
 
+    @attr('current')
     @timed(90)
     @attr('slow')
-    def test_fullsample( self ):
+    def test_fullsample_correct_called_bases_hpoly( self ):
         # The base directory of the fixture files
         fullsampledir = fsd = join( fixtures.THIS, 'fixtures', 'base_caller', 'fullsample' )
         # Input files
@@ -956,9 +988,13 @@ class TestUnitGenerateVCF(BaseInty):
         # Set bias to 10. Will probably be what will be used as default eventually
         out_vcf = self._C( bam, ref, None, out_vcf, 25, 100000, 10, 0.8, 50, 10 )
         # Compare the expected and result vcf
-        assert self.cmp_files( vcf, out_vcf )
-
-
+        for evcf, rvcf in self._iter_two_vcf(vcf, out_vcf):
+            ecb = evcf['INFO']['CB']
+            rcb = rvcf['INFO']['CB']
+            eq_(evcf['REF'],rvcf['REF'])
+            eq_(evcf['POS'],rvcf['POS'])
+            eq_(ecb, rcb)
+        
 class TestUnitMain(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         from miseqpipeline.base_caller import main
