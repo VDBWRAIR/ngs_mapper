@@ -141,6 +141,9 @@ setup(
         'nose',
         'mock',
     ],
+    package_data = {
+        'miseqpipeline': ['config.yaml'],
+    },
     author = 'Tyghe Vallard',
     author_email = 'vallardt@gmail.com',
     description = 'Pipeline that combines sff and fastq files from multiple platforms',
