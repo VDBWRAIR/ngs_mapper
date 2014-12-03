@@ -30,7 +30,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 #sys.path.insert(0, os.path.abspath('.'))
 # Add project path to python path
 PROJPATH = dirname(dirname(dirname(abspath(__file__))))
-sys.path.append(PROJPATH)
+sys.path.insert(0, PROJPATH)
 
 
 # -- General configuration ------------------------------------------------
