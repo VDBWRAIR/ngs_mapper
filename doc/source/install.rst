@@ -122,7 +122,16 @@ Installation
 
     It should be safe to run this more than once in case some dependencies do not fully install.
 
-7. Verify install
+7. Build and view complete documentation
+
+    .. code-block:: bash
+
+        cd doc
+        make clean && make html
+        firefox build/html/install.html
+        cd ..
+
+8. Verify install
 
     You can pseudo test the installation of the pipeline by running the functional tests
 

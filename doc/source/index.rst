@@ -6,6 +6,8 @@
 miseqpipeline
 =============
 
+**Version**: |release|
+
 The miseqpipeline is a configurable pipeline next generation sequence pipeline that aims to be easy for the bioinformatician to install as well as use.
 It focuses on documentation as well as easy configuration and running. The pipeline is also meant to get you from data to completed genome as easy as possible.
 
