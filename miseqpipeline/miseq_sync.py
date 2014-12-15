@@ -1,3 +1,60 @@
+"""
+The intention of this script is to easily sync a given MiSeq run path from the sequencer into the :doc:`NGSData <ngsdata>` structure
+
+You need to ensure that the run directory for the run you want to sync is available and that you know the path to it.
+
+Accessing MiSeq Data
+====================
+
+The MiSeq stores runs on a separate drive on the MiSeq(Probably the D:\ drive). You will need to ensure that this directory is shared or at least the MiSeqOutput directory is shared. See :ref:`create-share-user`
+
+On the computer that you will be running miseq_sync.py from you will need to ensure that the MiSeq share is mounted somewhere on the system. A good practice is to create a folder somewhere called Instruments and then under there create folders for each of your sequencers.
+
+**Example**
+
+    .. code-block:: bash
+
+        mkdir -p /Instruments/MiSeq
+
+Then you can mount the MiSeq shared drive to that folder.
+See :ref:`mount-cifs-linux`
+
+Usage
+=====
+
+At this time there is very little output from the miseq_sync.py command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
+
+    .. code-block:: bash
+
+        miseq_sync.py /path/to/Illumina/MiSeqOutput/runname
+
+Verify Samples Synced
+---------------------
+
+coming soon...
+
+How it works
+============
+
+The miseq instrument reads the SampleSheet.csv and numbers each row listed under the comma separated values section. It assings each row a number starting with 0 which is the sample number.
+
+Under each MiSeq run's raw data directory inside of Data/Intensities/BaseCalls it creates the gzipped(compressed) fastq file for each paired read.
+
+You can read more about the naming structure `here <http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm>`_
+
+Sync Process
+------------
+
+#. First the script syncs the fastq.gz files to the destination specified when you run the script using the --ngsdata
+    Under the RawData/MiSeq directory
+#. The script then creates a directory with the same name as the MiSeq raw data directory under ReadData/MiSeq
+#. Then it unpacks each fastq.gz file into that directory so there are only .fastq files
+#. Once the files are unpacked it uses the <sample name> field in the each of the file names to determine the final samplename to use
+#. It then ensures there is a directory with each samplename under ReadsBySample
+#. It then creates a symlink with the same name as the file in the ReadData/MiSeq/<rundirectory> inside of the appropriate ReadsBySample/<samplename> that links back to the .fastq file
+#. Once all ReadsBySample directories and files are symlinked it finishes syncing the rest of the miseq run directory
+"""
+
 import argparse
 import os
 import sys
@@ -150,8 +207,13 @@ def link_reads( rundir, ngsdata ):
             logger.debug( '{} already exists.'.format( lnkdst ) )
 
 def parse_args( args=sys.argv[1:] ):
+    from miseqpipeline import config
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
+    defaults = config['miseq_sync']
+
     parser = argparse.ArgumentParser(
-        description='Sync MiSeq run into the NGSData structure'
+        description='Sync MiSeq run into the NGSData structure',
+        parents=[conf_parser]
     )
 
     parser.add_argument(
@@ -159,11 +221,10 @@ def parse_args( args=sys.argv[1:] ):
         help='Path to the run to be synced(/path/to/YYMMDD_)'
     )
 
-    ngsdata_default = '/home/EIDRUdata/NGSData'
     parser.add_argument(
         '--ngsdata',
-        default=ngsdata_default,
-        help='Path to the root of the NGSData data structure[Default: {}]'.format(ngsdata_default)
+        default=defaults['ngsdata']['default'],
+        help=defaults['ngsdata']['help']
     )
 
     return parser.parse_args( args )

@@ -22,15 +22,7 @@
     ```
     git pull
     ```
-    
-  4. Ensure your virtualenv is activated(same as before you run the pipeline)
 
-    ```
-    . ~/.miseqpipeline/bin/activate
-    ```
-    
-  5. Run setup.py install
+  4. Reinstall
 
-    ```
-    python setup.py install
-    ```
+    Then follow [INSTALL.md](INSTALL.md) starting with section #2

@@ -22,7 +22,10 @@ REGIONTYPES = [
 ]
 
 def mpileup( bamfile, regionstr=None ):
-    ''' TODO This needs to go as samtools.mpileup exists '''
+    '''
+    .. todo::
+       This needs to go as samtools.mpileup exists
+    '''
     cmd = ['samtools','mpileup', '-d', '100000']
     if regionstr:
         cmd += ['-r',regionstr]
@@ -32,20 +35,21 @@ def mpileup( bamfile, regionstr=None ):
 
 def parse_pileup( pileup ):
     '''
-        # TODO
+    .. todo::
         This needs to be replaced by samtools stuff        
 
-        Parses the raw pileup output from samtools mpileup and returns a dictionary
-        with stats for every reference in the pileup
-            maxd/mind - max/min depth found for that reference
-            maxq/minq - max/min quality found for that reference
-            depths - depth at each base position
-            avgquals - average quality at each base position
-            length - length of reference
+    Parses the raw pileup output from samtools mpileup and returns a dictionary
+    with stats for every reference in the pileup
 
-        @pileup - file like object that returns lines from samtools mpileup
+        - maxd/mind - max/min depth found for that reference
+        - maxq/minq - max/min quality found for that reference
+        - depths - depth at each base position
+        - avgquals - average quality at each base position
+        - length - length of reference
 
-        @returns dictionary {'ref1': {maxd:0,mind:0,maxq:0,minq:0,depths:[],avgquals:[],length:0}, 'ref2':...}
+    @pileup - file like object that returns lines from samtools mpileup
+
+    @returns dictionary {'ref1': {maxd:0,mind:0,maxq:0,minq:0,depths:[],avgquals:[],length:0}, 'ref2':...}
     '''
     refs = {}
     lastpos = {}
@@ -146,7 +150,7 @@ def regions_from_qualdepth(qualdepth, gap, lowqual, lowcov):
         mapped_reads(int)
         
     lowqual and lowcov define the minimum requirements to be called that
-     type of region. This is a non-inclusive operation(aka value < LowCoverage would be called LowCoverage)
+    type of region. This is a non-inclusive operation(aka value < LowCoverage would be called LowCoverage)
     Gap is very similar, except it is inclusive since it could be 0
     '''
     # The current region we are working on

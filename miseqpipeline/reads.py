@@ -10,12 +10,12 @@ VALID_READ_EXT = ('sff','fastq')
 
 def clip_seq_record( seqrecord ):
     '''
-        Correctly trims sff Bio.SeqRecord.SeqRecord
-        
-        @seqrecord - Bio.SeqRecord.SeqRecord object to trim phred_quality and sequence based on the
-            annotations
+    Correctly trims sff Bio.SeqRecord.SeqRecord
+    
+    @seqrecord - Bio.SeqRecord.SeqRecord object to trim phred_quality and sequence based on the
+        annotations
 
-        @returns a new trimmed seqrecord
+    @returns a new trimmed seqrecord
     '''
     from Bio.Seq import Seq
     from Bio.SeqRecord import SeqRecord
@@ -36,13 +36,13 @@ def clip_seq_record( seqrecord ):
 
 def sffs_to_fastq( sfflist, outfile, trim=True ):
     '''
-        Puts all reads from all sff files into converted fastq outfile
-        
-        @param sfflist - List of sff file locations
-        @param outfile - File path to put fastq output in
-        @param trim - Whether or not to trim using the clip annotations fields
-        
-        @returns - # reads written
+    Puts all reads from all sff files into converted fastq outfile
+    
+    @param sfflist - List of sff file locations
+    @param outfile - File path to put fastq output in
+    @param trim - Whether or not to trim using the clip annotations fields
+    
+    @returns - # reads written
     '''
     written_count = 0
     with open( outfile, 'w' ) as fh:
@@ -57,16 +57,17 @@ class InvalidReadFile(Exception): pass
 
 def compile_reads( readfilelist, outputdir ):
     '''
-        Compiles all read files inside of readfilelist into respective files.
-        Creates F.fq, R.fq and/or NP.fq depending on the reads found in readfilelist
-        Only compiles fastq files. If others are given an exception will be raised
+    Compiles all read files inside of readfilelist into respective files.
+    Creates F.fq, R.fq and/or NP.fq depending on the reads found in readfilelist
+    Only compiles fastq files. If others are given an exception will be raised
 
-        @param readfilelist - List of read file paths. If any of the items are a 2 item tuple, that item is treated as a
-            mate pair read set and the first item will be the Forward read file and the second the Reverse read file.
-        @param outputdir - Where to output the three files
+    @param readfilelist - List of read file paths. If any of the items are a 2 item tuple, that item is treated as a
+    mate pair read set and the first item will be the Forward read file and the second the Reverse read file.
 
-        @returns a dictionary {'F': join(outputdir,'F.fq'), 'R': join(outputdir,'R.fq'), 'NP': join(outputdir,'NP.fq')}
-            If there were no mated files given then F & R will be None. Same goes for NP
+    @param outputdir - Where to output the three files
+
+    @returns a dictionary {'F': join(outputdir,'F.fq'), 'R': join(outputdir,'R.fq'), 'NP': join(outputdir,'NP.fq')}
+    If there were no mated files given then F & R will be None. Same goes for NP
     '''
     from bwa.bwa import seqio
     if not os.path.exists(outputdir):
@@ -139,11 +140,11 @@ def compile_reads( readfilelist, outputdir ):
 
 def is_valid_read( readpath ):
     '''
-        Just checks to make sure file extension is in VALID_READ_EXT
+    Just checks to make sure file extension is in VALID_READ_EXT
 
-        @param readpath - Path to read file
+    @param readpath - Path to read file
 
-        @returns true if ext of readpath is in VALID_READ_EXT
+    @returns true if ext of readpath is in VALID_READ_EXT
     '''
     # File extension without the period in VALID_READ_EXT ?
     return splitext( readpath )[1][1:] in VALID_READ_EXT

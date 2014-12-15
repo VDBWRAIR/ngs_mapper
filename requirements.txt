@@ -8,3 +8,6 @@ nose
 mock
 git+https://github.com/VDBWRAIR/pyBWA
 tempdir
+pyyaml
+sphinx
+sphinx_rtd_theme

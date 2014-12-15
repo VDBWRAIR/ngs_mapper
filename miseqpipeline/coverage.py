@@ -1,3 +1,60 @@
+"""
+Generates a single image that has a sub-image for every reference found in all of the projects supplied.
+It uses the already generated :doc:`qualdepthjson` for each sample to create a single multi-colored line to easily show where Gaps, LowCoverage, LowQuality and LowCoverage+LowQuality regions are.
+
+Help usage
+==========
+
+    .. code-block:: bash
+
+        sample_coverage --help
+
+Examples
+--------
+
+Typically the pipeline is run such that there is a Projects directory that contains the analysis and all of the files for each sample that was run.
+You can easily manually run sample_coverage on any number of project directories as follows:
+
+Run specific projects
+---------------------
+
+    .. code-block:: bash
+
+        sample_coverage Projects/sample1 Projects/sample2 ...
+
+Run on all project directories
+------------------------------
+
+    .. code-block:: bash
+
+        sample_coverage Projects/*
+
+Run for specific references
+---------------------------
+
+Sometimes you may not want all references compiled into the resulting image(more than likely since the image will become very blury as the script will have to make it not as good quality)
+
+Exclude list
+------------
+
+You can specify an exclude list to exclude keywords that are in your references as follows
+
+Exclude, pH1N1 and H3N2 references:
+
+    .. code-block:: bash
+
+        sample_coverage Projects/* --exclude pH1N1 H3N2
+
+Include list
+------------
+
+You can alternatively specify a list of names only to include which has precedence over the exclude list
+Exclude pH1N1 H3N2, but show all references with /MP/ in them(even pH1N1 and H3N2)
+
+    .. code-block:: bash
+
+        sample_coverage Projects/* --exclude pH1N1 H3N2 --include '/MP/'
+"""
 from glob import glob
 import json
 from os.path import join, basename
@@ -90,7 +147,7 @@ def get_perreference_from_projects(projects, allrefs, refax, gap, lowqual, lowco
     '''
     Get a dictionary keyed by each reference in allrefs
     Each item contains a list of generators that generate Line2D objects
-        for a sample's regions
+    for a sample's regions
 
     projects - list of project paths
     allrefs - sequence of reference names

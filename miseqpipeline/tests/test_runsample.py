@@ -87,29 +87,6 @@ class TestUnitRunCMD(object):
     def test_missing_cmd_exception_caught( self ):
         self._C( 'missing.sh' )
 
-@patch('os.path.isdir')
-@patch('os.path.exists')
-class TestUnitTempProjdir(Base):
-    functionname = 'temp_projdir'
-
-    def test_has_tempfs( self, exists, isdir ):
-        exists.return_value = True
-        isdir.return_value = True
-        res = self._C( 'shmtest', 'test' )
-        d, bn = split( res )
-        eq_( '/dev/shm', d )
-        assert bn.startswith( 'shmtest' )
-        assert bn.endswith( 'test' )
-
-    def test_nothas_tempfs( self, exists, isdir ):
-        exists.return_value = False
-        isdir.return_value = False
-        res = self._C( 'shmtest', 'test' )
-        d, bn = split( res )
-        eq_( '/tmp', d )
-        assert bn.startswith( 'shmtest' )
-        assert bn.endswith( 'test' )
-
 @patch('miseqpipeline.runsample.logger',Mock())
 class TestMakeProjectRepo(Base):
     functionname = 'make_project_repo'
@@ -131,12 +108,14 @@ class TestMakeProjectRepo(Base):
         ok_( self.check_git_repo( path ) )
 
 class TestFunctional(Base):
-    def _run_runsample( self, readdir, reference, fileprefix, od=None ):
+    def _run_runsample( self, readdir, reference, fileprefix, od=None, configfile=None ):
         script_path = 'runsample.py'
-        cmd = script_path + ' {} {} {}'.format(readdir, reference, fileprefix)
+        cmd = script_path + ' {0} {1} {2}'.format(readdir, reference, fileprefix)
         if od is not None:
-            cmd += ' -od {}'.format(od)
-        print "Running: {}".format(cmd)
+            cmd += ' -od {0}'.format(od)
+        if configfile:
+            cmd += ' -c {0}'.format(configfile)
+        print "Running: {0}".format(cmd)
         cmd = shlex.split( cmd )
         try:
             sout = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
@@ -155,10 +134,10 @@ class TestFunctional(Base):
         eq_( ef, rf )
         for typ, ef in efiles:     
             if typ == 'file':
-                assert isfile( ef ), "{} was not created".format(ef)
-                assert os.stat( ef ).st_size > 0, "{} was not > 0 bytes".format(ef)
+                assert isfile( ef ), "{0} was not created".format(ef)
+                assert os.stat( ef ).st_size > 0, "{0} was not > 0 bytes".format(ef)
             else:
-                assert isdir( ef ), "{} was not created".format(ef)
+                assert isdir( ef ), "{0} was not created".format(ef)
 
     def _expected_files( self, outdir, prefix ):
         efiles = []
@@ -188,6 +167,18 @@ class TestFunctional(Base):
         efiles += indexes
 
         return efiles
+
+    @attr('current')
+    def test_runs_with_specified_config(self):
+        projdir = 'outdir'
+        prefix = 'testsample'
+        from miseqpipeline.config import make_example_config
+        configfile = make_example_config()
+
+        out,ret = self._run_runsample( self.reads_by_sample, self.ref, prefix, projdir, configfile )
+        print out
+        eq_(ret, 0)
+        self._ensure_expected_output_files( projdir, prefix )
 
     def test_runs_correctly( self ):
         projdir = 'outdir'
@@ -239,7 +230,7 @@ class TestFunctional(Base):
         os.chmod( join(self.tempdir,'samtools'), 0755 )
         import subprocess
         script = 'runsample.py'
-        cmd = 'export PATH={}:$PATH; {} {} {} {} -od {}'.format( self.tempdir, script, self.reads_by_sample, self.ref, 'tests', 'outdir' )
+        cmd = 'export PATH={0}:$PATH; {1} {2} {3} {4} -od {5}'.format( self.tempdir, script, self.reads_by_sample, self.ref, 'tests', 'outdir' )
         ret = subprocess.call( cmd, shell=True )
         assert ret != 0, "Return code was 0 even though some executables returned 1"
 
@@ -252,7 +243,7 @@ class TestFunctional(Base):
         print out
         loglines = None
         print os.listdir('outdir')
-        ok_( exists(logfile), 'Did not create proper log file {}'.format(logfile) )
+        ok_( exists(logfile), 'Did not create proper log file {0}'.format(logfile) )
         with open( logfile ) as fh:
             loglines = fh.read().splitlines()
         # 5 stages + start/finish

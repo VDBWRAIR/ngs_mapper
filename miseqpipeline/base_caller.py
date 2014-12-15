@@ -48,6 +48,10 @@ def main( args ):
     )
 
 def parse_args( args=sys.argv[1:] ):
+    from miseqpipeline import config
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
+    defaults = config['base_caller']
+
     parser = argparse.ArgumentParser(
         description = 'Generates a VCF that has called bases in it which follow ' \
             'the WRAIR VDB SOP for calling bases',
@@ -68,7 +72,8 @@ def parse_args( args=sys.argv[1:] ):
                  20%
                     - or -
                 The majority base is called
-        '''
+        ''',
+        parents=[conf_parser]
     )
 
     parser.add_argument(
@@ -82,9 +87,7 @@ def parse_args( args=sys.argv[1:] ):
     )
 
     parser.add_argument(
-        '-o',
         dest='vcf_output_file',
-        default=None,
         help='Where to save the vcf'
     )
 
@@ -92,61 +95,56 @@ def parse_args( args=sys.argv[1:] ):
         '-r',
         '--regionstr',
         dest='regionstr',
-        default=None,
-        help='See the samtools documentation for how to specify a region string.' \
-            'Essentially: \'refname\':START-STOP'
+        default=defaults['regionstr']['default'],
+        help=defaults['regionstr']['help']
     )
 
     parser.add_argument(
         '-minbq',
         dest='minbq',
-        default=25,
+        default=defaults['minbq']['default'],
         type=int,
-        help='The minimum base quality to be considered high quality[Default: 25]'
+        help=defaults['minbq']['help']
     )
 
     parser.add_argument(
         '-maxd',
         dest='maxd',
-        default=100000,
+        default=defaults['maxd']['default'],
         type=int,
-        help='Maximum depth to use for the pileup[Default: 100000]'
+        help=defaults['maxd']['help']
     )
 
     parser.add_argument(
         '-mind',
         dest='mind',
-        default=10,
+        default=defaults['mind']['default'],
         type=int,
-        help='Minimum depth for base trimming. Below this depth low quality bases' \
-            ' will be called N.[Default: 10]'
+        help=defaults['mind']['help']
     )
 
     parser.add_argument(
         '-minth',
         dest='minth',
-        default=0.8,
+        default=defaults['minth']['default'],
         type=float,
-        help='Minimum fraction of all remaining bases after trimming/N calling that ' \
-            'will trigger a base to be called.[Default: 0.8]'
+        help=defaults['minth']['help']
     )
 
     parser.add_argument(
         '-biasth',
         dest='biasth',
-        default=50,
+        default=defaults['biasth']['default'],
         type=float,
-        help='Minimum base quality threshold to bias towards. Will increase the amount of bases that have >= ' \
-            'this value by a factor of what bias is set to[Default: 50]'
+        help=defaults['biasth']['help']
     )
 
-    default=10
     parser.add_argument(
         '-bias',
         dest='bias',
-        default=default,
+        default=defaults['bias']['default'],
         type=int,
-        help='What factor to bias high quality bases by. Must be an integer >= 1[Default: {}]'.format(default)
+        help=defaults['bias']['help']
     )
 
     args = parser.parse_args( args )
@@ -157,21 +155,23 @@ def parse_args( args=sys.argv[1:] ):
 
 def mark_lq( stats, minbq, mind, refbase ):
     '''
-        Goes through all keys in the stats dictionary that are not in ('depth','mqualsum','bqualsum')
-        which should be keys that represent nucleotide bases. Those keys then point to a dictionary
-        that contain 'mapq': [] and 'baseq': []
-        Creating a new base called N or ? depending on the overall depth
-            - N for < mind & not refbase
-            - Base for < mind & refbase
-            - ? for > mind
-        If the base is the reference base and < mind then the base will be preserved to bias the reference in low coverage areas
+    Goes through all keys in the stats dictionary that are not in ('depth','mqualsum','bqualsum')
+    which should be keys that represent nucleotide bases. Those keys then point to a dictionary
+    that contain 'mapq': [] and 'baseq': []
+    Creating a new base called N or ? depending on the overall depth
 
-        @param stats - Stats dictionary returned from stats_at_refpos.stats
-        @param minbq - The mininum base quality to determine if a quality should belong to N
-        @param mind - The minimum depth threshold. If the depth is < this then lq will be labeled N otherwise
-            they will be labeled ? for trimming purposes
+        - N for < mind & not refbase
+        - Base for < mind & refbase
+        - ? for > mind
 
-        @returns stats dictionary with baseq subkey for each base in the dictionary.
+    If the base is the reference base and < mind then the base will be preserved to bias the reference in low coverage areas
+
+    @param stats - Stats dictionary returned from stats_at_refpos.stats
+    @param minbq - The mininum base quality to determine if a quality should belong to N
+    @param mind - The minimum depth threshold. If the depth is < this then lq will be labeled N otherwise
+    they will be labeled ? for trimming purposes
+
+    @returns stats dictionary with baseq subkey for each base in the dictionary.
     '''
     stats2 = {}
     stats2['depth'] = stats['depth']
@@ -230,19 +230,19 @@ def is_hpoly( hpolylist, seqid, curpos ):
 
 def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=10, vcf_template=VCF_HEAD ):
     '''
-        Generates a vcf file from a given vcf_template file
+    Generates a vcf file from a given vcf_template file
 
-        @param bamfile - Path to bamfile
-        @param reffile - Indexed reference path
-        @param regionstr - samtools region string or None for all
-        @param vcf_output_file - Where to write the output vcf
-        @param minbq - Minumum base quality to determine if it should be turned into an N
-        @param maxd - maximum depth to use
-        @param vcf_template - VCF Header template(string)
-        @param mind - Minimum depth to decide if low quality bases should be called N
-        @param minth - Minimum percentage for a base to be called
+    @param bamfile - Path to bamfile
+    @param reffile - Indexed reference path
+    @param regionstr - samtools region string or None for all
+    @param vcf_output_file - Where to write the output vcf
+    @param minbq - Minumum base quality to determine if it should be turned into an N
+    @param maxd - maximum depth to use
+    @param vcf_template - VCF Header template(string)
+    @param mind - Minimum depth to decide if low quality bases should be called N
+    @param minth - Minimum percentage for a base to be called
 
-        @returns path to vcf_output_file
+    @returns path to vcf_output_file
     '''
     # All the references indexed by the seq.id(first string after the > in the file until the first space)
     refseqs = SeqIO.index( reffile, 'fasta' )
@@ -322,18 +322,18 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
 
 def blank_vcf_rows( refname, refseq, curpos, lastpos, call='-' ):
     '''
-        Returns a list of blank vcf rows for all positions that are missing
-        between curpos and lastpos.
-        The blank rows should represent a gap in the alignment and be called whatever
-        call is set too
+    Returns a list of blank vcf rows for all positions that are missing
+    between curpos and lastpos.
+    The blank rows should represent a gap in the alignment and be called whatever
+    call is set too
 
-        @param refname - Reference name to set _Record.CHROM
-        @param refseq - Reference sequence to get reference base from
-        @param curpos - Current position in the alignment(1 based)
-        @param lastpos - Last position seen in the alignment(1 based)
-        @param call - What to set the CB info field to(Default to -)
+    @param refname - Reference name to set _Record.CHROM
+    @param refseq - Reference sequence to get reference base from
+    @param curpos - Current position in the alignment(1 based)
+    @param lastpos - Last position seen in the alignment(1 based)
+    @param call - What to set the CB info field to(Default to -)
 
-        @returns a list of vcf.model._Record objects filled out with the DP,RC,RAQ,PRC,CBD=0 and CB=call
+    @returns a list of vcf.model._Record objects filled out with the DP,RC,RAQ,PRC,CBD=0 and CB=call
     '''
     # Blank record list
     records = []
@@ -347,13 +347,13 @@ def blank_vcf_rows( refname, refseq, curpos, lastpos, call='-' ):
 
 def blank_vcf_row( refname, refseq, pos, call='-' ):
     '''
-        Generates a blank VCF row to insert for depths of 0
+    Generates a blank VCF row to insert for depths of 0
 
-        @param refseq - Bio.seq.seq object representing the reference sequence
-        @param pos - Reference position to get the reference base from
-        @param call - What to set the CB info field to
+    @param refseq - Bio.seq.seq object representing the reference sequence
+    @param pos - Reference position to get the reference base from
+    @param call - What to set the CB info field to
 
-        @returns a vcf.model._Record
+    @returns a vcf.model._Record
     '''
     info = dict(
         DP=0,
@@ -368,23 +368,25 @@ def blank_vcf_row( refname, refseq, pos, call='-' ):
 
 def bias_hq( stats, biasth=50, bias=10 ):
     '''
-        Biases high quality reads in stats so that they are more likely to be selected later on.
-        Essentially duplicates quality scores(baseq values) by a factor of bias.
-         Given the example:
-            stats = { 'A': {'baseq':[40,40,40]}, 'C': {'baseq':[50,50,50,50,50,50,50]} }
-         Without any biasing the called base would likely be called an M as there is no majority of C's
-          since A is 30% and C is 70%(Assuming 0.8 minth which requires 80% to be called)
-         With bias_hq( stats, 50, 2 ) you would end up with 3 A's and 14 C's or 18% A and 82% C so C
-            would be more correctly called for the consensus
+    Biases high quality reads in stats so that they are more likely to be selected later on.
+    Essentially duplicates quality scores(baseq values) by a factor of bias.
+    Given the example::
 
-        bias will round the length of the created list to the nearest integer so if the length of a
-        baseq is say 10 and the bias is 1.25 the resulting baseq list will be 13 in length(addition of 3 baseq)
+        stats = { 'A': {'baseq':[40,40,40]}, 'C': {'baseq':[50,50,50,50,50,50,50]} }
 
-        @param stats - Should most likely be a stats2 dictionary although stats would work as well
-        @param biasth - What quality value(>=) should be considered to be bias towards
-        @param bias - How much to bias aka, how much to multiply the # of quals >= biasth(has to be int >= 1)
+    Without any biasing the called base would likely be called an M as there is no majority of C's
+    since A is 30% and C is 70%(Assuming 0.8 minth which requires 80% to be called)
+    With bias_hq( stats, 50, 2 ) you would end up with 3 A's and 14 C's or 18% A and 82% C so C
+    would be more correctly called for the consensus
 
-        @returns stats2 formatted dictionary with all baseq lists appended to with the bias amount
+    bias will round the length of the created list to the nearest integer so if the length of a
+    baseq is say 10 and the bias is 1.25 the resulting baseq list will be 13 in length(addition of 3 baseq)
+
+    @param stats - Should most likely be a stats2 dictionary although stats would work as well
+    @param biasth - What quality value(>=) should be considered to be bias towards
+    @param bias - How much to bias aka, how much to multiply the # of quals >= biasth(has to be int >= 1)
+
+    @returns stats2 formatted dictionary with all baseq lists appended to with the bias amount
     '''
     if bias < 1 or int(bias) != bias:
         raise ValueError( "bias was set to {} which is less than 1. Cannot bias on a factor < 1".format(bias) )
@@ -411,11 +413,11 @@ def bias_hq( stats, biasth=50, bias=10 ):
 
 def pile_stats( mpileupcol, refbase, minbq, mind, biasth, bias ):
     '''
-        Returns the modified statistics from an mpileupcol that are suitable for base calling
+    Returns the modified statistics from an mpileupcol that are suitable for base calling
 
-        All parameters are identical to generate_vcf_row
+    All parameters are identical to generate_vcf_row
 
-        @returns a stats2 dictionary that is modified by biasing reference bases and high quality bases
+    @returns a stats2 dictionary that is modified by biasing reference bases and high quality bases
     '''
     # This call needs to be replaced after the mpileupcol parameter is put into place
     # then stats_for_col( mpileup
@@ -436,18 +438,18 @@ def pile_stats( mpileupcol, refbase, minbq, mind, biasth, bias ):
 
 def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=10 ):
     '''
-        Generates a vcf row and returns it as a string
+    Generates a vcf row and returns it as a string
 
-        @param mpileupcol - samtools.MpileupColumn
-        @param refseq - Bio.Seq.Seq object representing the reference sequence
-        @param minbq - minimum base quality to be considered or turned into an N
-        @param maxd - Maximum depth for pileup
-        @param mind - Minimum depth decides if low quality bases are N's or if they are removed
-        @param minth - Minimum percentage to call a base(unless no bases have > minth then the maximum pct base would be called
-        @param biasth - Any base with quality above this will be biased by a bias factor
-        @param bias - For every base >= biasth add bias more of those bases
+    @param mpileupcol - samtools.MpileupColumn
+    @param refseq - Bio.Seq.Seq object representing the reference sequence
+    @param minbq - minimum base quality to be considered or turned into an N
+    @param maxd - Maximum depth for pileup
+    @param mind - Minimum depth decides if low quality bases are N's or if they are removed
+    @param minth - Minimum percentage to call a base(unless no bases have > minth then the maximum pct base would be called
+    @param biasth - Any base with quality above this will be biased by a bias factor
+    @param bias - For every base >= biasth add bias more of those bases
 
-        @returns a vcf.model._Record
+    @returns a vcf.model._Record
     '''
     from collections import OrderedDict
     # The base position should be the same as the second item in the parsed region string
@@ -509,22 +511,22 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
 
 def caller( stats2, minbq, maxd, mind=10, minth=0.8 ):
     '''
-        Calls a given base at refstr inside of bamfile. At this time refstr has to be a single
-        base position('refname':N-N). The base is determined by first labeling all bases less than minbq as N and then
-        determining if the depth is < mind or >= mind.
-        
-        If < and the % of N is > minth then call it an N as it is the majority.
-        If >= 10 then remove all N
+    Calls a given base at refstr inside of bamfile. At this time refstr has to be a single
+    base position('refname':N-N). The base is determined by first labeling all bases less than minbq as N and then
+    determining if the depth is < mind or >= mind.
+    
+    If < and the % of N is > minth then call it an N as it is the majority.
+    If >= 10 then remove all N
 
-        The final stage is to call call_on_pct with the remaining statistics
+    The final stage is to call call_on_pct with the remaining statistics
 
-        @param stats - stats dictionary generated from stats_at_refpos.stats
-        @param minbq - Minimum base quality to determine if it is low quality or not to call it an N
-        @param maxd - Maximum depth in the pileup to allow
-        @param mind - Minimum depth threshold
-        @param minth - Minimum percentage for an base to be called non ambigious
+    @param stats - stats dictionary generated from stats_at_refpos.stats
+    @param minbq - Minimum base quality to determine if it is low quality or not to call it an N
+    @param maxd - Maximum depth in the pileup to allow
+    @param mind - Minimum depth threshold
+    @param minth - Minimum percentage for an base to be called non ambigious
 
-        @returns one of the items from the set( 'ATGCMRWSYKVHDBN' )
+    @returns one of the items from the set( 'ATGCMRWSYKVHDBN' )
     '''
     # Else we will determine if the N's are the majority now
     # defines if the base is an N
@@ -537,17 +539,17 @@ def caller( stats2, minbq, maxd, mind=10, minth=0.8 ):
 
 def call_on_pct( stats2, minth=0.8 ):
     '''
-        Calls a base from the given stats dictionary if it is the majority. A majority base is
-        any base where it is in %total >= minth.
+    Calls a base from the given stats dictionary if it is the majority. A majority base is
+    any base where it is in %total >= minth.
 
-        Base quality is not used to make the determination, but instead the number of quality scores
-        in the baseq list is used as it depicts the depth of that base. The quality scores are not used
-        as the stats dictionary should already be run through the label_n function.
+    Base quality is not used to make the determination, but instead the number of quality scores
+    in the baseq list is used as it depicts the depth of that base. The quality scores are not used
+    as the stats dictionary should already be run through the label_n function.
 
-        @param stats2 - Stats dictionary returned from mark_lq or stats_at_refpos.stats
-        @param minth - minimum percentage that a base needs to be present in order to be called non-ambiguous
+    @param stats2 - Stats dictionary returned from mark_lq or stats_at_refpos.stats
+    @param minth - minimum percentage that a base needs to be present in order to be called non-ambiguous
 
-        @returns the called base based on the percentages in the given stats and the depth for the called base
+    @returns the called base based on the percentages in the given stats and the depth for the called base
     '''
     # Empty stats indicates zero depth
     if not stats2:
@@ -578,20 +580,20 @@ def call_on_pct( stats2, minth=0.8 ):
 
 def info_stats( stats, rb):
     '''
-        Returns a dictionary that can be used to fill in the info field of a vcf record
-        The returned dictionary will contain the AC(Alternate Count), AAQ(Alternate Average Quality)
-            PAC(Percentage Average Count) and bases.
+    Returns a dictionary that can be used to fill in the info field of a vcf record
+    The returned dictionary will contain the AC(Alternate Count), AAQ(Alternate Average Quality)
+    PAC(Percentage Average Count) and bases.
 
-        AC should be a list of integers
-        AAQ should be a list of integers
-        PAC should be a list of integers rounded to the nearest integer
-        bases should be the ordered list of bases for each item in AC,AAQ, PAC such that
-        zip( bases, AC/AAQ/PAC ) would work as expected
-    
-        @param stats - stats dictionary(should accept either stats or stats2)
-        @param rb - Reference base to ignore in the outputted dictionary
+    AC should be a list of integers
+    AAQ should be a list of integers
+    PAC should be a list of integers rounded to the nearest integer
+    bases should be the ordered list of bases for each item in AC,AAQ, PAC such that
+    zip( bases, AC/AAQ/PAC ) would work as expected
 
-        @returns info dictionary with AC,AAQ, PAC and bases keys filled out
+    @param stats - stats dictionary(should accept either stats or stats2)
+    @param rb - Reference base to ignore in the outputted dictionary
+
+    @returns info dictionary with AC,AAQ, PAC and bases keys filled out
     '''
     info = {
         'AC' : [], 

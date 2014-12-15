@@ -109,11 +109,6 @@ class TestUnitParseArgs(Base):
         res = self._C( ['fake_read', 'fake_ref', '--keep-temp'] )
         eq_( res.keep_temp, True )
 
-    @patch('multiprocessing.cpu_count',Mock(return_value=8))
-    def test_threads_default( self ):
-        res = self._C( ['fake_read', 'fake_ref'] )
-        eq_( res.threads, 8 )
-
     def test_threads_set( self ):
         res = self._C( ['fake_read', 'fake_ref', '-t', '5'] )
         eq_( res.threads, 5 )

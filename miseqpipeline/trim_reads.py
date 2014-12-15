@@ -1,3 +1,7 @@
+"""
+Here be some documentation
+"""
+
 import subprocess
 import os
 import argparse
@@ -237,7 +241,12 @@ def run_cutadapt( *args, **kwargs ):
     return se
 
 def parse_args( args=sys.argv[1:] ):
+    from miseqpipeline import config
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
+    defaults = config['trim_reads']
+
     parser = argparse.ArgumentParser(
+        parents=[conf_parser],
         description='Trims reads'
     )
 
@@ -246,30 +255,25 @@ def parse_args( args=sys.argv[1:] ):
         help='Read or directory of read files'
     )
 
-    qual_default=20
     parser.add_argument(
         '-q',
         dest='q',
-        default=qual_default,
-        help='Quality threshold to trim[Default:{}]'.format(qual_default)
+        default=defaults['q']['default'],
+        help=defaults['q']['help']
     )
 
-    headcrop_default=0
     parser.add_argument(
         '--head-crop',
         dest='headcrop',
-        default=headcrop_default,
-        help='How many bases to crop off the beginning of the reads after quality' \
-            ' trimming[Default: {}]'.format(headcrop_default)
+        default=defaults['headcrop']['default'],
+        help=defaults['headcrop']['help']
     )
 
-    outputdir_default='trimmed_reads'
     parser.add_argument(
         '-o',
         dest='outputdir',
-        default=outputdir_default,
-        help='Where to output the resulting files[Default:{}]'.format(outputdir_default)
+        default=defaults['outputdir']['default'],
+        help=defaults['outputdir']['help']
     )
 
     return parser.parse_args( args )
-

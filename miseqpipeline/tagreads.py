@@ -152,9 +152,14 @@ def get_bam_header( bam ):
     return hdr.rstrip()
 
 def parse_args( args=sys.argv[1:] ):
+    from miseqpipeline import config
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
+    defaults = config['tagreads']
+
     parser = argparse.ArgumentParser(
         description='''Adds Sanger, MiSeq, 454 and IonTorrent read groups to a bam file.
-        Will tag all reads in the alignment for each of the platforms based on the read name'''
+        Will tag all reads in the alignment for each of the platforms based on the read name''',
+        parents=[conf_parser]
     )
 
     parser.add_argument(
@@ -166,18 +171,15 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '-SM',
         dest='SM',
-        default=None,
-        help='Sets the SM tag value inside of each read ' \
-            'group to the value specified. Default is to use the portion of the filename ' \
-            'that precedes the .bam'
+        default=defaults['SM']['default'],
+        help=defaults['SM']['help']
     )
 
     parser.add_argument(
         '-CN',
         dest='CN',
-        default=None,
-        help='Sets the CN tag value inside of each read ' \
-            'group to the value specified. Default is to not include the CN tag'
+        default=defaults['CN']['default'],
+        help=defaults['CN']['help']
     )
 
     return parser.parse_args( args )
