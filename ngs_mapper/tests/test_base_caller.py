@@ -1,4 +1,5 @@
 from imports import *
+from miseqpipeline.samtools import InvalidRegionString
 
 # How long you expect each base position on the reference to take to process
 EXPECTED_TIME_PER_BASE = 0.0015
@@ -905,21 +906,38 @@ class BaseInty(Base):
             print open(f2).read()
             return False
 
-    def _iter_two_vcf(self, vcf1, vcf2):
+    def _iter_two_vcf(self, vcf1, vcf2, startpos=1, endpos=None):
         '''
         Skip the header and iterate same position in each file
         Assume both vcf have same positions in them and same references
+
+        Can specify startpos and endpos to compare
         '''
-        from itertools import izip
-        for v1, v2 in izip(open(vcf1),open(vcf2)):
-            # Skip headers
-            if v1.startswith('#'):
+        if isinstance(vcf1,str):
+            fh1 = open(vcf1)
+        else:
+            fh1 = vcf1
+        if isinstance(vcf2,str):
+            fh2 = open(vcf2)
+        else:
+            fh2 = vcf2
+
+        # Burn off headers
+        for line in fh1:
+            if line.startswith('#'):
                 continue
-            else:
-                yield (
-                    self._split_vcfrow(v1),
-                    self._split_vcfrow(v2)
-                )
+            break
+        for line in fh2:
+            if line.startswith('#'):
+                continue
+            break
+
+        from itertools import izip
+        for v1, v2 in izip(fh1, fh2):
+            yield (
+                self._split_vcfrow(v1),
+                self._split_vcfrow(v2)
+            )
 
     def _split_vcfrow(self, row):
         ref,pos,id,refbase,altbase,qual,filter,info = row.split('\t')
@@ -955,6 +973,73 @@ class TestUnitGenerateVCF(BaseInty):
         return generate_vcf( bamfile, reffile, regionstr, vcf_output_file, 
                 minbq, maxd, mind, minth, biasth, bias, vcf_template=template ) 
 
+    def test_regionstr_does_not_contain_beginning_end(self):
+        from miseqpipeline.base_caller import VCF_HEAD
+        from miseqpipeline.samtools import MPileupColumn
+        # Input files
+        fullsampledir = fsd = join( fixtures.THIS, 'fixtures', 'base_caller', 'fullsample' )
+        ref = join( fsd, 'Den1__WestPac__1997.fasta' )
+        bam = join( fsd, 'fullsample.bam' )
+        bai = bam + '.bai'
+        # Expected vcf
+        vcf = join(fsd, 'fullsample.bam.vcf')
+        out_vcf = join(self.tempdir, 'out.vcf')
+        
+        start = 5
+        end = 1027
+        regionstr = 'Den1/U88535_1/WestPac/1997/Den1_1:{0}-{1}'.format(start,end)
+
+        r = self._C(bam, ref, regionstr, out_vcf, 25, 100, 10, 0.8)
+        eq_( out_vcf, r )
+
+        # Get only the lines we want from expected vcf to compare
+        from StringIO import StringIO
+        exvcf = StringIO()
+        fh1 = open(vcf)
+        num = 1
+        for line in fh1:
+            # Burn off header
+            if line.startswith('#'):
+                fh1.readline
+            elif num >= start and num <= end:
+                exvcf.write(line)
+                num += 1
+            elif num > 10:
+                break
+            else:
+                num += 1
+        exvcf.seek(0)
+
+        for evcf, rvcf in self._iter_two_vcf(exvcf, out_vcf):
+            print evcf
+            print rvcf
+            print '----'
+            einfo = evcf['INFO']
+            rinfo = evcf['INFO']
+            
+            assert_almost_equal(einfo['DP'], rinfo['DP'], delta=5)
+            eq_(einfo['CB'], rinfo['CB'])
+
+    def test_regionstr_entire_genome_works(self):
+        from miseqpipeline.base_caller import VCF_HEAD
+        from miseqpipeline.samtools import MPileupColumn
+        out_vcf = join( self.tempdir, 'out.vcf' )
+        r = self._C(self.bam, self.ref, 'Ref1:1-8', out_vcf, 25, 100, 10, 0.8)
+        eq_( out_vcf, r )
+        fh = open(r)
+        # This will burn off the header
+        for line in VCF_HEAD.splitlines():
+            fh.readline()
+        # Now get the rest of the file
+        expectedpositions = [1,2,3,4,5,6,7,8]
+        foundpositions = []
+        for line in fh:
+            parts = line.split('\t')
+            pos = int(parts[1])
+            foundpositions.append(pos)
+        fh.close()
+        eq_(expectedpositions, foundpositions)
+
     def test_correct_vcf( self ):
         out_vcf = join( self.tempdir, 'out.vcf' )
         r = self._C( self.bam, self.ref, None, out_vcf, 25, 100, 10, 0.8 )
@@ -968,7 +1053,6 @@ class TestUnitGenerateVCF(BaseInty):
         assert self.cmp_files( self.vcf, out_vcf )
         eq_( out_vcf, r )
 
-    @attr('current')
     @timed(90)
     @attr('slow')
     def test_fullsample_correct_called_bases_hpoly( self ):
@@ -995,9 +1079,101 @@ class TestUnitGenerateVCF(BaseInty):
             eq_(evcf['POS'],rvcf['POS'])
             print evcf['POS']
             eq_(ecb, rcb)
-        
+
+class TestGenerateVcfMultithreaded(BaseInty):
+    functionname = 'generate_vcf_multithreaded'
+
+    @patch('miseqpipeline.base_caller.os')
+    @patch('miseqpipeline.base_caller.SeqIO')
+    @patch('miseqpipeline.base_caller.mpileup')
+    def test_correct_amount_lines(self, mmpileup, mseqio, mos):
+        reflen = 100000
+        numrefs = 3
+        refdepth = 100
+        threads = 4
+        # Each reference is 1 million bases long
+        ref1 = Mock(seq='A'*reflen,id='Ref1')
+        ref2 = Mock(seq='T'*reflen,id='Ref2')
+        ref3 = Mock(seq='G'*reflen,id='Ref3')
+        mseqio.index.return_value = {'Ref1':ref1, 'Ref2': ref2, 'Ref3': ref3}
+        mseqio.parse.return_value = iter([ref1, ref2, ref3])
+
+        # Each reference is 100 reads deep
+        ref1_pile = [self._mock_pileup_str('Ref1', i, 'A', refdepth, 'G'*refdepth, 'I'*refdepth, 'I'*refdepth) for i in range(1,reflen+1)]
+        ref2_pile = [self._mock_pileup_str('Ref2', i, 'T', refdepth, 'T'*refdepth, 'I'*refdepth, 'I'*refdepth) for i in range(1,reflen+1)]
+        ref3_pile = [self._mock_pileup_str('Ref3', i, 'G', refdepth, 'A'*refdepth, 'I'*refdepth, 'I'*refdepth) for i in range(1,reflen+1)]
+        mmpileup.side_effect = [ref1_pile, ref2_pile, ref3_pile]
+
+        out_vcf = self._C('in.bam', 'in.ref', 'out.vcf', 25, 100000, 10, 0.8, 50, 10, threads)
+
+        fh = open(out_vcf)
+        linecount = len(fh.readlines())
+        fh.close()
+
+        eq_(numrefs*reflen, linecount)
+
+    @timed(50.0/3.0)
+    @patch('miseqpipeline.base_caller.multiprocessing')
+    @patch('__builtin__.open')
+    @patch('miseqpipeline.base_caller.os')
+    @patch('miseqpipeline.base_caller.SeqIO')
+    @patch('miseqpipeline.base_caller.mpileup')
+    def test_breaks_up_refs_into_chunks(self, mmpileup, mseqio, mos, mopen, mmultiprocessing):
+        reflen = 100000
+        numrefs = 3
+        refdepth = 100
+        threads = 4
+        # Each reference is 1 million bases long
+        ref1 = Mock(seq='A'*reflen,id='Ref1')
+        ref2 = Mock(seq='T'*reflen,id='Ref2')
+        ref3 = Mock(seq='G'*reflen,id='Ref3')
+        mseqio.index.return_value = {'Ref1':ref1, 'Ref2': ref2, 'Ref3': ref3}
+        mseqio.parse.return_value = iter([ref1, ref2, ref3])
+
+        # Each reference is 100 reads deep
+        ref1_pile = [self._mock_pileup_str('Ref1', i, 'A', refdepth, 'G'*refdepth, 'I'*refdepth, 'I'*refdepth) for i in range(1,reflen+1)]
+        ref2_pile = [self._mock_pileup_str('Ref2', i, 'T', refdepth, 'T'*refdepth, 'I'*refdepth, 'I'*refdepth) for i in range(1,reflen+1)]
+        ref3_pile = [self._mock_pileup_str('Ref3', i, 'G', refdepth, 'A'*refdepth, 'I'*refdepth, 'I'*refdepth) for i in range(1,reflen+1)]
+        mmpileup.side_effect = [ref1_pile, ref2_pile, ref3_pile]
+
+        with patch('miseqpipeline.base_caller.time') as time:
+            out_vcf = self._C('in.bam', 'in.ref', 'out.vcf', 25, 100000, 10, 0.8, 50, 10, threads)
+
+        expected_regionstr = [
+            ('Ref1:1-25000'),
+            ('Ref1:25001-50000'),
+            ('Ref1:50001-75000'),
+            ('Ref1:75001-100000'),
+            ('Ref2:1-25000'),
+            ('Ref2:25001-50000'),
+            ('Ref2:50001-75000'),
+            ('Ref2:75001-100000'),
+            ('Ref3:1-25000'),
+            ('Ref3:25001-50000'),
+            ('Ref3:50001-75000'),
+            ('Ref3:75001-100000'),
+        ]
+
+
+        i = 0
+        for eregion, rcall in zip(expected_regionstr, mmultiprocessing.Process.call_args_list):
+            # Call from multiprocessing.Process
+            callargs = rcall[1]['args']
+
+            # Parse out call info
+            regionstr = callargs[2]
+            tmpfile = callargs[3]
+            
+            # Every process call gets a new tempfile
+            eq_('out.vcf.{0}'.format(i), tmpfile)
+            eq_(eregion, regionstr)
+
+            # Increment file count
+            i += 1
+
+#@attr('current')
 class TestUnitMain(BaseInty):
-    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
+    def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2, threads=1 ):
         from ngs_mapper.base_caller import main
         args = Mock(
             bamfile=bamfile,
@@ -1009,22 +1185,74 @@ class TestUnitMain(BaseInty):
             mind=mind,
             minth=minth,
             biasth=biasth,
-            bias=bias
+            bias=bias,
+            threads=threads
         )        
-        return main( args )
+        with patch('miseqpipeline.base_caller.argparse') as margparse:
+            margparse.ArgumentParser.return_value.parse_args.return_value = args
+            return main()
 
     def test_noregion_emptypileup( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
-        r = self._C( self.bam, self.ref, out_vcf, 'doesnotexist', 25, 100, 10, 0.8, 50, 2 )
-        assert not self.cmp_files( self.vcf, out_vcf )
+        assert_raises(InvalidRegionString, self._C, self.bam, self.ref, out_vcf, 'doesnotexist', 25, 100, 10, 0.8, 50, 2 )
+        #assert not self.cmp_files( self.vcf, out_vcf )
 
-    def test_runs( self ):
+    @attr('current')
+    def test_runs_single_noregionstring( self ):
         tbam, tbai = self.temp_bam( self.bam, self.bai )
         out_vcf = join( self.tempdir, tbam + '.vcf' )
-        r = self._C( self.bam, self.ref, out_vcf, '', 25, 100, 10, 0.8, 50, 2 )
+        r = self._C(self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8, 50, 2)
         assert self.cmp_files( self.vcf, out_vcf )
 
+    def test_runs_single_regionstring( self ):
+        tbam, tbai = self.temp_bam( self.bam, self.bai )
+        out_vcf = join( self.tempdir, tbam + '.vcf' )
+
+        r = self._C(self.bam, self.ref, out_vcf+'.0', 'Ref1:2-8', 25, 100, 10, 0.8, 50, 2)
+        r = self._C(self.bam, self.ref, out_vcf+'.1', 'Ref2:1-7', 25, 100, 10, 0.8, 50, 2)
+        r = self._C(self.bam, self.ref, out_vcf+'.2', 'Ref3:1-8', 25, 100, 10, 0.8, 50, 2)
+
+        # Write expected vcf by skipping some positions
+        evcf = 'expected.vcf'
+        with open(evcf, 'w') as fho:
+            with open(self.vcf) as fhi:
+                for line in fhi:
+                    # Write header
+                    if line.startswith('#'):
+                        fho.write(line)
+                        continue
+                    parts = line.split('\t')
+                    ref = parts[0]
+                    pos = int(parts[1])
+
+                    # Include only our test regionstr
+                    if ref == 'Ref1':
+                        if pos >= 2 and pos <= 8:
+                            fho.write(line)
+                    elif ref == 'Ref2':
+                        if pos >= 1 and pos <= 7:
+                            fho.write(line)
+                    elif ref == 'Ref3':
+                        if pos >= 1 and pos <= 8:
+                            fho.write(line)
+
+        # Concat all generated vcf to compare with
+        with open(out_vcf,'w') as fh:
+            # Write all of first file
+            with open(out_vcf+'.0') as fh1:
+                fh.write(fh1.read())
+            with open(out_vcf+'.1') as fh1:
+                for line in fh1:
+                    if not line.startswith('#'):
+                        fh.write(line)
+            with open(out_vcf+'.2') as fh1:
+                for line in fh1:
+                    if not line.startswith('#'):
+                        fh.write(line)
+        assert self.cmp_files(evcf, out_vcf)
+
+#@attr('current')
 class TestIntegrate(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         import subprocess

@@ -1,5 +1,5 @@
 #from stats_at_refpos import stats
-from ngs_mapper.samtools import MPileupColumn, mpileup
+from ngs_mapper.samtools import MPileupColumn, mpileup, parse_regionstring
 from ngs_mapper.alphabet import iupac_amb
 
 import sys
@@ -9,6 +9,9 @@ from Bio import SeqIO
 from StringIO import StringIO
 import vcf
 from os.path import basename
+import os
+import multiprocessing
+import time
 
 # The header for the vcf
 VCF_HEAD = '''##fileformat=VCFv4.2
@@ -32,20 +35,98 @@ def timeit( func ):
         return result
     return wrapper
 
-def main( args ):
-    generate_vcf(
-        args.bamfile,
-        args.reffile,
-        args.regionstr,
-        args.vcf_output_file,
-        args.minbq,
-        args.maxd,
-        args.mind,
-        args.minth,
-        args.biasth,
-        args.bias,
-        VCF_HEAD.format(basename(args.bamfile)),
-    )
+def main():
+    args = parse_args()
+    if args.regionstr is not None:
+        generate_vcf(
+            args.bamfile,
+            args.reffile,
+            args.regionstr,
+            args.vcf_output_file,
+            args.minbq,
+            args.maxd,
+            args.mind,
+            args.minth,
+            args.biasth,
+            args.bias,
+            VCF_HEAD.format(basename(args.bamfile)),
+            True
+        )
+    else:
+        generate_vcf_multithreaded(
+                args.bamfile,
+                args.reffile,
+                args.vcf_output_file,
+                args.minbq,
+                args.maxd,
+                args.mind,
+                args.minth,
+                args.biasth,
+                args.bias,
+                args.threads,
+                VCF_HEAD.format(basename(args.bamfile)),
+        )
+
+def generate_vcf_multithreaded(bamfile, reffile, vcf_output_file, minbq, maxd, mind, minth, biasth, bias, threads, vcfhead=VCF_HEAD):
+    '''
+    Generate vcf for each ref and split each ref into pieces
+    '''
+    # Generate name if not given
+    if vcf_output_file is None:
+        vcf_output_file = bamfile + '.vcf'
+    # Store the temp file names to concat together later
+    map_args = []
+    # Temporary name suffix because tmpfile is too good of an idea
+    i = 0
+
+    def test_target(*args):
+        bamfile, reffile, regionstr = args[:3]
+        piles = mpileup( bamfile, regionstr, 0, 0, 100000 )
+        print regionstr
+        print piles.next()
+
+    procs = []
+    for refrecord in SeqIO.parse(reffile,'fasta'):
+        reflen = len(refrecord.seq)+1
+
+        # Will break reference into chunks depending on how many threads
+        chunksize = reflen/threads
+        
+        # Make regionstr to match chunks
+        for start in range(1, reflen, chunksize):
+            vcf_tmp_filename = "{0}.{1}".format(vcf_output_file,i)
+            end = start + chunksize - 1
+            regionstr = '{0}:{1}-{2}'.format(refrecord.id,start,end)
+            
+            args = (bamfile, reffile, regionstr, vcf_tmp_filename, minbq, maxd, mind, minth, biasth, bias, vcfhead)
+            map_args.append(args)
+            # Create and start a new process
+            p = multiprocessing.Process(target=generate_vcf, args=args)
+            #p = multiprocessing.Process(target=test_target, args=args)
+            p.start()
+            procs.append(p)
+            #generate_vcf(*args)
+            i += 1
+
+        # Wait for all processes to finish
+        for p in procs:
+            p.join(timeout=10)
+
+    with open(vcf_output_file, 'w') as fho:
+        # Write the head
+        fho.write(VCF_HEAD + '\n')
+        # Cat all tmpfiles and remove them
+        for args in map_args:
+            f = args[3]
+            # Write tmp file contents to master file
+            with open(f) as fhr:
+                # Burn off header
+                for line in VCF_HEAD.splitlines():
+                    fhr.readline()
+                fho.write(fhr.read())
+                # Remove temp file
+                #os.unlink(f)
+    return vcf_output_file
 
 def parse_args( args=sys.argv[1:] ):
     from ngs_mapper import config
@@ -147,6 +228,13 @@ def parse_args( args=sys.argv[1:] ):
         help=defaults['bias']['help']
     )
 
+    parser.add_argument(
+        '--threads',
+        default=defaults['threads']['default'],
+        type=int,
+        help=defaults['threads']['help']
+    )
+
     args = parser.parse_args( args )
     if args.vcf_output_file is None:
         args.vcf_output_file = args.bamfile + '.vcf'
@@ -166,9 +254,9 @@ def mark_lq( stats, minbq, mind, refbase ):
 
     If the base is the reference base and < mind then the base will be preserved to bias the reference in low coverage areas
 
-    @param stats - Stats dictionary returned from stats_at_refpos.stats
-    @param minbq - The mininum base quality to determine if a quality should belong to N
-    @param mind - The minimum depth threshold. If the depth is < this then lq will be labeled N otherwise
+    :param str stats: Stats dictionary returned from stats_at_refpos.stats
+    :param str minbq: The mininum base quality to determine if a quality should belong to N
+    :param str mind: The minimum depth threshold. If the depth is < this then lq will be labeled N otherwise
     they will be labeled ? for trimming purposes
 
     @returns stats dictionary with baseq subkey for each base in the dictionary.
@@ -209,7 +297,7 @@ def hpoly_list( refseqs, minlength=3 ):
     '''
     Identify all homopolymer regions inside of each sequence in refseqs
 
-    @param refseqs - Bio.SeqIO.index'd fasta
+    :param str refseqs: Bio.SeqIO.index'd fasta
     '''
     hpolys = {}
     p = r'([ATGC])\1{'+str(minlength-1)+',}'
@@ -228,19 +316,27 @@ def is_hpoly( hpolylist, seqid, curpos ):
             return True
     return False
 
-def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=10, vcf_template=VCF_HEAD ):
+def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=0.8, biasth=50, bias=10, vcf_template=VCF_HEAD, complete_ref=False ):
     '''
     Generates a vcf file from a given vcf_template file
 
-    @param bamfile - Path to bamfile
-    @param reffile - Indexed reference path
-    @param regionstr - samtools region string or None for all
-    @param vcf_output_file - Where to write the output vcf
-    @param minbq - Minumum base quality to determine if it should be turned into an N
-    @param maxd - maximum depth to use
-    @param vcf_template - VCF Header template(string)
-    @param mind - Minimum depth to decide if low quality bases should be called N
-    @param minth - Minimum percentage for a base to be called
+    30000 bases ~= .05 seconds
+    300000 bases ~= .5 seconds
+    3000000 bases ~= 5 seconds
+    30000000 bases ~= 50 seconds
+
+    :param str bamfile: Path to bamfile
+    :param str reffile: Indexed reference path
+    :param str regionstr: samtools region string or None for all
+    :param str vcf_output_file: Where to write the output vcf
+    :param int minbq: Minumum base quality to determine if it should be turned into an N
+    :param int maxd: maximum depth to use
+    :param int mind: Minimum depth to decide if low quality bases should be called N
+    :param float minth: Minimum percentage for a base to be called
+    :param int biasth: What quality value(>=) should be considered to be bias towards
+    :param str bias: For every base >= biasth add bias more of those bases
+    :param str vcf_template: VCF Header template(string)
+    :param bool complete_ref: If True, then complete all the way to the end position in regionstr
 
     @returns path to vcf_output_file
     '''
@@ -257,9 +353,15 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
     else:
         output_path = vcf_output_file
     # The vcf writer object
-    out_vcf = vcf.Writer( open( output_path, 'w' ), 
-                            template = vcf.Reader( vcf_head )
+    fh = open(output_path, 'w')
+    out_vcf = vcf.Writer(
+        fh,
+        template=vcf.Reader( vcf_head )
     )
+
+    parsed_regionstr = None
+    if regionstr is not None:
+        parsed_regionstr = parse_regionstring(regionstr)
 
     # Get the iterator for an mpileupcal
     # Do not exclude any bases by setting minmq and minbq to 0 and maxdepth to 100000
@@ -269,6 +371,17 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
     # Starts at 0 to show gap at beginning if needed
     lastpos = 0
     lastref = ''
+    # The end of the ref may be restricted via regionstr
+    refend = None
+    if parsed_regionstr is not None:
+        refstart = parsed_regionstr[1]
+        # Set refstart to 0 if regionstring start is 1
+        # so that the first base gets inserted with blank_vcf_rows
+        if refstart == 1:
+            refstart = 0
+        refend = parsed_regionstr[2]
+        lastpos = refstart
+
     for pilestr in piles:
         # Generate the handy pileup column object
         col = MPileupColumn( pilestr )
@@ -276,6 +389,8 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         curpos = col.pos
         # The reference we are iterating on
         refseq = refseqs[col.ref].seq
+        if refend is None:
+            refend = len(refseq)+1
         # Homopolymer regions for sequence
         # Set lastref if we are on first iteration
         if lastref == '':
@@ -285,7 +400,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         elif lastref != col.ref:
             # Insert from lastposition of lastref to end of reference
             # len+1 so that it inserts single bases at the end
-            for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
+            for rec in blank_vcf_rows( lastref, refseq, refend, lastpos, '-' ):
                 if is_hpoly( hpolys, col.ref, rec.POS ):
                     rec.INFO['HPOLY'] = True
                 out_vcf.write_record( rec )
@@ -307,10 +422,8 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         # Set last position seen
         lastpos = row.POS
 
-    if lastref != '':
-        # Insert from lastposition of lastref to end of reference
-        # len+1 so that it inserts single bases at the end
-        for rec in blank_vcf_rows( lastref, refseq, len(refseq)+1, lastpos, '-' ):
+    if complete_ref:
+        for rec in blank_vcf_rows( col.ref, refseq, refend+1, col.pos, '-' ):
             if is_hpoly( hpolys, col.ref, rec.POS ):
                 rec.INFO['HPOLY'] = True
             out_vcf.write_record( rec )
@@ -320,25 +433,25 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
 
     return output_path
 
-def blank_vcf_rows( refname, refseq, curpos, lastpos, call='-' ):
+def blank_vcf_rows( refname, refseq, topos, frompos, call='-' ):
     '''
     Returns a list of blank vcf rows for all positions that are missing
-    between curpos and lastpos.
+    between frompos and topos.
     The blank rows should represent a gap in the alignment and be called whatever
     call is set too
 
-    @param refname - Reference name to set _Record.CHROM
-    @param refseq - Reference sequence to get reference base from
-    @param curpos - Current position in the alignment(1 based)
-    @param lastpos - Last position seen in the alignment(1 based)
-    @param call - What to set the CB info field to(Default to -)
+    :param str refname: Reference name to set _Record.CHROM
+    :param str refseq: Reference sequence to get reference base from
+    :param str topos: Current position in the alignment(1 based)
+    :param str frompos: Last position seen in the alignment(1 based)
+    :param str call - What to set the CB info field to(Default to:)
 
     @returns a list of vcf.model._Record objects filled out with the DP,RC,RAQ,PRC,CBD=0 and CB=call
     '''
     # Blank record list
     records = []
-    # Only do records between curpos and lastpos
-    for i in range( lastpos + 1, curpos ):
+    # Only do records between frompos and topos
+    for i in range( frompos + 1, topos ):
         # Reference base at current position
         rec = blank_vcf_row( refname, refseq, i, call )
         records.append( rec )
@@ -349,9 +462,9 @@ def blank_vcf_row( refname, refseq, pos, call='-' ):
     '''
     Generates a blank VCF row to insert for depths of 0
 
-    @param refseq - Bio.seq.seq object representing the reference sequence
-    @param pos - Reference position to get the reference base from
-    @param call - What to set the CB info field to
+    :param str refseq: Bio.seq.seq object representing the reference sequence
+    :param str pos: Reference position to get the reference base from
+    :param str call: What to set the CB info field to
 
     @returns a vcf.model._Record
     '''
@@ -382,11 +495,12 @@ def bias_hq( stats, biasth=50, bias=10 ):
     bias will round the length of the created list to the nearest integer so if the length of a
     baseq is say 10 and the bias is 1.25 the resulting baseq list will be 13 in length(addition of 3 baseq)
 
-    @param stats - Should most likely be a stats2 dictionary although stats would work as well
-    @param biasth - What quality value(>=) should be considered to be bias towards
-    @param bias - How much to bias aka, how much to multiply the # of quals >= biasth(has to be int >= 1)
+    :param dict stats: Should most likely be a stats2 dictionary although stats would work as well
+    :param int biasth: What quality value(>=) should be considered to be bias towards
+    :param int bias: How much to bias aka, how much to multiply the # of quals >= biasth(has to be int >= 1)
 
-    @returns stats2 formatted dictionary with all baseq lists appended to with the bias amount
+    :rtype: dict
+    :return: stats2 formatted dictionary with all baseq lists appended to with the bias amount
     '''
     if bias < 1 or int(bias) != bias:
         raise ValueError( "bias was set to {} which is less than 1. Cannot bias on a factor < 1".format(bias) )
@@ -440,14 +554,14 @@ def generate_vcf_row( mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biast
     '''
     Generates a vcf row and returns it as a string
 
-    @param mpileupcol - samtools.MpileupColumn
-    @param refseq - Bio.Seq.Seq object representing the reference sequence
-    @param minbq - minimum base quality to be considered or turned into an N
-    @param maxd - Maximum depth for pileup
-    @param mind - Minimum depth decides if low quality bases are N's or if they are removed
-    @param minth - Minimum percentage to call a base(unless no bases have > minth then the maximum pct base would be called
-    @param biasth - Any base with quality above this will be biased by a bias factor
-    @param bias - For every base >= biasth add bias more of those bases
+    :param str mpileupcol: samtools.MpileupColumn
+    :param str refseq: Bio.Seq.Seq object representing the reference sequence
+    :param str minbq: minimum base quality to be considered or turned into an N
+    :param str maxd: Maximum depth for pileup
+    :param str mind: Minimum depth decides if low quality bases are N's or if they are removed
+    :param str minth: Minimum percentage to call a base(unless no bases have > minth then the maximum pct base would be called
+    :param int biasth: What quality value(>=) should be considered to be bias towards
+    :param int bias: How much to bias aka, how much to multiply the # of quals >= biasth(has to be int >= 1)
 
     @returns a vcf.model._Record
     '''
@@ -520,11 +634,11 @@ def caller( stats2, minbq, maxd, mind=10, minth=0.8 ):
 
     The final stage is to call call_on_pct with the remaining statistics
 
-    @param stats - stats dictionary generated from stats_at_refpos.stats
-    @param minbq - Minimum base quality to determine if it is low quality or not to call it an N
-    @param maxd - Maximum depth in the pileup to allow
-    @param mind - Minimum depth threshold
-    @param minth - Minimum percentage for an base to be called non ambigious
+    :param str stats: stats dictionary generated from stats_at_refpos.stats
+    :param str minbq: Minimum base quality to determine if it is low quality or not to call it an N
+    :param str maxd: Maximum depth in the pileup to allow
+    :param str mind: Minimum depth threshold
+    :param str minth: Minimum percentage for an base to be called non ambigious
 
     @returns one of the items from the set( 'ATGCMRWSYKVHDBN' )
     '''
@@ -546,8 +660,8 @@ def call_on_pct( stats2, minth=0.8 ):
     in the baseq list is used as it depicts the depth of that base. The quality scores are not used
     as the stats dictionary should already be run through the label_n function.
 
-    @param stats2 - Stats dictionary returned from mark_lq or stats_at_refpos.stats
-    @param minth - minimum percentage that a base needs to be present in order to be called non-ambiguous
+    :param str stats2: Stats dictionary returned from mark_lq or stats_at_refpos.stats
+    :param str minth: minimum percentage that a base needs to be present in order to be called non-ambiguous
 
     @returns the called base based on the percentages in the given stats and the depth for the called base
     '''
@@ -590,8 +704,8 @@ def info_stats( stats, rb):
     bases should be the ordered list of bases for each item in AC,AAQ, PAC such that
     zip( bases, AC/AAQ/PAC ) would work as expected
 
-    @param stats - stats dictionary(should accept either stats or stats2)
-    @param rb - Reference base to ignore in the outputted dictionary
+    :param str stats: stats dictionary(should accept either stats or stats2)
+    :param str rb: Reference base to ignore in the outputted dictionary
 
     @returns info dictionary with AC,AAQ, PAC and bases keys filled out
     '''
