@@ -963,15 +963,16 @@ class BaseInty(Base):
         shutil.copy( self.bai, tbai )
         return tbam, tbai
 
+@attr('current')
 class TestUnitGenerateVCF(BaseInty):
-    def _C( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, biasth=50, bias=2, vcf_template=None ):
+    def _C( self, bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, mind=10, minth=10, biasth=50, bias=2, vcf_template=None, complete_ref=True ):
         from ngs_mapper.base_caller import generate_vcf, VCF_HEAD
         if vcf_template is None:
             template = VCF_HEAD.format(basename(bamfile))
         else:
             template = vcf_template
         return generate_vcf( bamfile, reffile, regionstr, vcf_output_file, 
-                minbq, maxd, mind, minth, biasth, bias, vcf_template=template ) 
+                minbq, maxd, mind, minth, biasth, bias, vcf_template=template, complete_ref=complete_ref ) 
 
     def test_regionstr_does_not_contain_beginning_end(self):
         from miseqpipeline.base_caller import VCF_HEAD
@@ -1171,7 +1172,6 @@ class TestGenerateVcfMultithreaded(BaseInty):
             # Increment file count
             i += 1
 
-#@attr('current')
 class TestUnitMain(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2, threads=1 ):
         from ngs_mapper.base_caller import main
@@ -1198,9 +1198,8 @@ class TestUnitMain(BaseInty):
         assert_raises(InvalidRegionString, self._C, self.bam, self.ref, out_vcf, 'doesnotexist', 25, 100, 10, 0.8, 50, 2 )
         #assert not self.cmp_files( self.vcf, out_vcf )
 
-    @attr('current')
-    def test_runs_single_noregionstring( self ):
-        tbam, tbai = self.temp_bam( self.bam, self.bai )
+    def test_runs_multithread_noregionstring( self ):
+        tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join( self.tempdir, tbam + '.vcf' )
         r = self._C(self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8, 50, 2)
         assert self.cmp_files( self.vcf, out_vcf )
@@ -1234,8 +1233,7 @@ class TestUnitMain(BaseInty):
                         if pos >= 1 and pos <= 7:
                             fho.write(line)
                     elif ref == 'Ref3':
-                        if pos >= 1 and pos <= 8:
-                            fho.write(line)
+                        fho.write(line)
 
         # Concat all generated vcf to compare with
         with open(out_vcf,'w') as fh:
@@ -1252,7 +1250,6 @@ class TestUnitMain(BaseInty):
                         fh.write(line)
         assert self.cmp_files(evcf, out_vcf)
 
-#@attr('current')
 class TestIntegrate(BaseInty):
     def _C( self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2 ):
         import subprocess

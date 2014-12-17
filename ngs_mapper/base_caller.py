@@ -79,12 +79,6 @@ def generate_vcf_multithreaded(bamfile, reffile, vcf_output_file, minbq, maxd, m
     # Temporary name suffix because tmpfile is too good of an idea
     i = 0
 
-    def test_target(*args):
-        bamfile, reffile, regionstr = args[:3]
-        piles = mpileup( bamfile, regionstr, 0, 0, 100000 )
-        print regionstr
-        print piles.next()
-
     procs = []
     for refrecord in SeqIO.parse(reffile,'fasta'):
         reflen = len(refrecord.seq)+1
@@ -98,14 +92,16 @@ def generate_vcf_multithreaded(bamfile, reffile, vcf_output_file, minbq, maxd, m
             end = start + chunksize - 1
             regionstr = '{0}:{1}-{2}'.format(refrecord.id,start,end)
             
-            args = (bamfile, reffile, regionstr, vcf_tmp_filename, minbq, maxd, mind, minth, biasth, bias, vcfhead)
+            complete_ref = False
+            if end == reflen:
+                complete_ref = True
+
+            args = (bamfile, reffile, regionstr, vcf_tmp_filename, minbq, maxd, mind, minth, biasth, bias, vcfhead, complete_ref)
             map_args.append(args)
             # Create and start a new process
             p = multiprocessing.Process(target=generate_vcf, args=args)
-            #p = multiprocessing.Process(target=test_target, args=args)
             p.start()
             procs.append(p)
-            #generate_vcf(*args)
             i += 1
 
         # Wait for all processes to finish
@@ -114,7 +110,7 @@ def generate_vcf_multithreaded(bamfile, reffile, vcf_output_file, minbq, maxd, m
 
     with open(vcf_output_file, 'w') as fho:
         # Write the head
-        fho.write(VCF_HEAD + '\n')
+        fho.write(vcfhead + '\n')
         # Cat all tmpfiles and remove them
         for args in map_args:
             f = args[3]
@@ -125,7 +121,7 @@ def generate_vcf_multithreaded(bamfile, reffile, vcf_output_file, minbq, maxd, m
                     fhr.readline()
                 fho.write(fhr.read())
                 # Remove temp file
-                #os.unlink(f)
+                os.unlink(f)
     return vcf_output_file
 
 def parse_args( args=sys.argv[1:] ):
@@ -423,7 +419,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
         lastpos = row.POS
 
     if complete_ref:
-        for rec in blank_vcf_rows( col.ref, refseq, refend+1, col.pos, '-' ):
+        for rec in blank_vcf_rows(col.ref, refseq, refend, lastpos, '-', includeend=True):
             if is_hpoly( hpolys, col.ref, rec.POS ):
                 rec.INFO['HPOLY'] = True
             out_vcf.write_record( rec )
@@ -433,28 +429,40 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
 
     return output_path
 
-def blank_vcf_rows( refname, refseq, topos, frompos, call='-' ):
+def blank_vcf_rows(refname, refseq, topos, frompos, call='-', includeend=False):
     '''
     Returns a list of blank vcf rows for all positions that are missing
     between frompos and topos.
+
+    Not inclusive of topos or frompos
+
     The blank rows should represent a gap in the alignment and be called whatever
     call is set too
 
     :param str refname: Reference name to set _Record.CHROM
     :param str refseq: Reference sequence to get reference base from
-    :param str topos: Current position in the alignment(1 based)
-    :param str frompos: Last position seen in the alignment(1 based)
+    :param int topos: Current position in the alignment(1 based)
+    :param int frompos: Last position seen in the alignment(1 based)
     :param str call - What to set the CB info field to(Default to:)
+    :param bool includeend: Include end base position
 
     @returns a list of vcf.model._Record objects filled out with the DP,RC,RAQ,PRC,CBD=0 and CB=call
     '''
+    #print refname
+    #print 'Topos: {0}'.format(topos)
+    #print 'formpos: {0}'.format(frompos)
     # Blank record list
     records = []
-    # Only do records between frompos and topos
+    # Only do records between frompos and topos(not inclusive of either)
     for i in range( frompos + 1, topos ):
         # Reference base at current position
         rec = blank_vcf_row( refname, refseq, i, call )
         records.append( rec )
+
+    if topos == len(refseq) and topos - frompos != 0 and includeend:
+        records.append(
+            blank_vcf_row(refname, refseq, topos, call)
+        )
 
     return records
 
@@ -463,7 +471,7 @@ def blank_vcf_row( refname, refseq, pos, call='-' ):
     Generates a blank VCF row to insert for depths of 0
 
     :param str refseq: Bio.seq.seq object representing the reference sequence
-    :param str pos: Reference position to get the reference base from
+    :param str pos: Reference position to get the reference base from(1 indexed)
     :param str call: What to set the CB info field to
 
     @returns a vcf.model._Record
