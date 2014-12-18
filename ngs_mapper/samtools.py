@@ -374,6 +374,8 @@ def parse_regionstring( regionstr ):
         @raises InvalidRegionString
     '''
     import re
+    if not regionstr:
+        raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )
     m = re.match( '(\S+):(\d+)-(\d+)', regionstr )
     if not m:
         raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )

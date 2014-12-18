@@ -510,6 +510,17 @@ class TestUnitPileupColumnInit(MpileupBase):
 class TestUnitParseRegionString(Base):
     functionname = 'parse_regionstring'
 
+    def test_invalid_regionstring(self):
+        from miseqpipeline.samtools import InvalidRegionString
+        bad_strings = ('', None, 'ref1:2-1')
+
+        @raises(InvalidRegionString)
+        def _test(string):
+            self._C(string)
+
+        for rstr in bad_strings:
+            yield _test, rstr
+
     def test_start_gt_stop( self ):
         from ngs_mapper.samtools import InvalidRegionString
         try:
