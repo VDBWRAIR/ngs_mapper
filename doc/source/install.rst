@@ -128,9 +128,9 @@ Installation
 
       3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
 
-            .. code-block:: bash
+         .. code-block:: bash
 
-                . $HOME/.ngs_mapper/bin/activate
+            . ${venvpath}/bin/activate
 
 6. Install the pipeline into virtualenv
 
