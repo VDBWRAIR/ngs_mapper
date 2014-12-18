@@ -126,7 +126,7 @@ Installation
             wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
             $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
 
-      3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
+    3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
 
          .. code-block:: bash
 
