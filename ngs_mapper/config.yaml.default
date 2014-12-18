@@ -1,4 +1,5 @@
 # Make sure to set this to the absolute path of your NGS Data structure
+# Does not need the trailing /
 NGSDATA: &NGSDATA /path/to/NGSDATA
 
 # All scripts by name should be top level items
