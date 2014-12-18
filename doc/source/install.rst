@@ -13,7 +13,11 @@ Hardware
         * More cores = faster run time when running multiple samples
         * Faster GHz = faster each sample runs
 * RAM
-    * At least 1GB per CPU core for small genomes(Dengue, Flu,...)
+    * This really depends on your data size
+    
+      If you are analyzing a 96 sample run then you should be fine with 1GB per CPU core
+      
+      If you are analyzing a 24 sample run then you will probably need about 4GB per CPU core since there will be more data
 
 Python Packages
 ---------------
