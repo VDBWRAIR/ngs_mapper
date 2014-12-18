@@ -68,7 +68,7 @@ base_caller:
         help: 'What factor to bias high quality bases by. Must be an integer >= 1[Default: %(default)s]'
     threads:
         default: 1
-        help: 'How many threads to use to split up the bamfile'
+        help: 'How many threads to use to split up the bamfile[Default: %(default)s]'
 miseq_sync:
     ngsdata:
         default: *NGSDATA

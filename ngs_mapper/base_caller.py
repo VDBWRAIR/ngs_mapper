@@ -107,7 +107,7 @@ def generate_vcf_multithreaded(bamfile, reffile, vcf_output_file, minbq, maxd, m
 
         # Wait for all processes to finish
         for p in procs:
-            p.join(timeout=10)
+            p.join()
 
     with open(vcf_output_file, 'w') as fho:
         # Write the head
@@ -122,7 +122,7 @@ def generate_vcf_multithreaded(bamfile, reffile, vcf_output_file, minbq, maxd, m
                     fhr.readline()
                 fho.write(fhr.read())
                 # Remove temp file
-                os.unlink(f)
+                #os.unlink(f)
     return vcf_output_file
 
 def parse_args(args=sys.argv[1:]):

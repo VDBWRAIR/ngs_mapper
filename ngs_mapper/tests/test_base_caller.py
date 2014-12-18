@@ -454,7 +454,6 @@ def eqs_(v1, v2, msg=None):
     else:
         eq_(str(v1), str(v2))
 
-@attr('current')
 class TestUnitBlankVcfRows(Base):
     functionname = 'blank_vcf_rows'
 
@@ -997,7 +996,6 @@ class BaseInty(Base):
         shutil.copy(self.bai, tbai)
         return tbam, tbai
 
-@attr('current')
 class TestGenerateVCF(BaseInty):
     functionname = 'generate_vcf'
 
@@ -1301,15 +1299,41 @@ class TestIntegrate(BaseInty):
         p = self._C(self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8)
         eq_(0, p.wait())
 
-    #@attr('current')
-    def test_outputs_correct_vcf_1(self):
+    @attr('current')
+    def test_outputs_correct_vcf_noregionstr(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
         p = self._C(self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8)
         o,e = p.communicate()
         print o
         assert self.cmp_files(self.vcf, out_vcf)
-        eq_(open(out_vcf).read(), open(self.vcf).read())
+
+    @attr('current')
+    def test_outputs_correct_vcf_regionstr(self):
+        tbam, tbai = self.temp_bam(self.bam, self.bai)
+        out_vcf = join(self.tempdir, tbam + '.vcf')
+        p = self._C(self.bam, self.ref, out_vcf, 'Ref3:1-8', 25, 100, 10, 0.8)
+        o,e = p.communicate()
+        print o
+        fh = open('evcf.vcf','w')
+        for line in open(self.vcf):
+            if line.startswith('#'):
+                fh.write(line)
+            else:
+                _line = line.split('\t')
+                if _line[0] == 'Ref3':
+                    fh.write(line)
+        fh.close()
+        assert self.cmp_files('evcf.vcf', out_vcf)
+
+    @attr('current')
+    def test_outputs_correct_vcf_nothreads(self):
+        tbam, tbai = self.temp_bam(self.bam, self.bai)
+        out_vcf = join(self.tempdir, tbam + '.vcf')
+        p = self._C(self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8, threads=1)
+        o,e = p.communicate()
+        print o
+        assert self.cmp_files(self.vcf, out_vcf)
 
     def test_stdouterr_ok_and_filesmatch(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
