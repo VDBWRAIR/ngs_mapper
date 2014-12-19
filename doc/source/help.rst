@@ -14,6 +14,9 @@ Frequently Asked Questions
 
 #. There is an error. What do I do?
     There are a few log files that you can check. The output on your screen should give you the location of the log file to check for errors. As well you can look under the directory of any project and look in files that end in .log
+    For instance, if a run fails for any reason it will spit many lines to the screen when you read through the lines you will see one that mentions "Check the log file" followed by a path to a bwa.log. Navigate to the bwa.log to 
+    view a detailed log of what happened. There are two other log files which are in the same directory as bwa.log [samplename].std.log and [samplename].log. You can check any of these log files to determine what happend during the run.
+    Finally, you can also check the pipeline.log file that is generated when the pipeline is done or if it err'd out.
 #. Where should I run the analysis?
     This is for the most part up to you but eventually you will want the entire analysis folder to end up under /path/to/Analysis somewhere
     You will want to minimize how much the traffic has to travel across the network though. So if you simply create a folder under /path/to/Analysis/PipelineRuns and then you run the pipeline from there, you will essentially be doing the following:
