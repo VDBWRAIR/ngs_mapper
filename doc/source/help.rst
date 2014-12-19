@@ -37,7 +37,7 @@ Frequently Asked Questions
         for pid in $(awk '/physical id/ {print $4}' /proc/cpuinfo |sort|uniq)
         do
             echo "--- Processor $pid ---"
-            egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo"
+            egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo
         done
 
 #. How many CPUs should I use?
