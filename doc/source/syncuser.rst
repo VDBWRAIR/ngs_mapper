@@ -25,7 +25,7 @@ Assuming that the sync user was created with the name "ngssync" you can check fo
 
         uid=500(ngssync) gid=500(ngssync) groups=500(ngssync)
 
-    Which tells you that the user exists and the user id is 500, primary group id is 500, and a full list of all the groups that user is in. In this case ngssync is only in the one group wich is also the same as the primary group(ngssync)
+    Which tells you that the user exists and the user id is 500, primary group id is 500, and a full list of all the groups that user is in. In this case ngssync is only in the one group which is also the same as the primary group(ngssync)
 
 Create the Sync User
 ====================

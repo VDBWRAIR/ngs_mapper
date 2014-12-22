@@ -3,13 +3,17 @@ config.yaml
 ===========
 
 When you install the pipeline you are instructed to copy `miseqpipeline/config.yaml.default <../../../miseqpipeline/config.yaml.default>`_ to miseqpipeline/config.yaml
-This file contains all setting that the pipeline will use by default if you do not change them using any of the script options that are available.
+This file contains all settings that the pipeline will use by default if you do not change them using any of the script options that are available.
 
 When you install the pipeline the config.yaml file gets installed with the pipeline into the installation directory(probably ~/.miseqpipeline)
 In order to change the defaults after that you have two options:
 
-#. Edit config.yaml inside of the source directory you cloned with git and reinstall
-#. Use the :py:mod:`make_example_config <miseqpipeline.config>` to extract the config.yaml into the current directory and use it
+* Edit config.yaml inside of the source directory you cloned with git, then go into your miseqpipeline directory and rerun the setup.py command
+ 
+ .. code-block:: bash
+
+        python setup.py install
+* Use the :py:mod:`make_example_config <miseqpipeline.config>` to extract the config.yaml into the current directory and use it
 
 Example changing single script defaults
 ---------------------------------------
@@ -102,7 +106,7 @@ The rest of the values are pre-filled with defaults that work for most general c
 Structure of the config.yaml file
 ---------------------------------
 
-The config.yaml basically is divided into sections that represent defaults for each stage/script that the pipeline has
+The config.yaml basically is divided into sections that represent defaults for each stage/script that the pipeline has.
 It also contains some global variables such as the NGSDATA variable.
 
 Each script/stage requires at a minimum of the default and help defined.
