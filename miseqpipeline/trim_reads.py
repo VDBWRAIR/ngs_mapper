@@ -49,6 +49,7 @@ def trim_reads_in_dir( *args, **kwargs ):
     unpaired = []
     for plat, reads in platreads.iteritems():
         for r in reads:
+            inreads = None
             if isinstance(r,str):
                 # Only accept .sff and .fastq
                 if r.endswith('.sff') or r.endswith('.fastq'):
@@ -57,6 +58,9 @@ def trim_reads_in_dir( *args, **kwargs ):
             else:
                 inreads = r
                 outreads = [join(out_path, basename(pr)) for pr in r]
+            # Sometimes inreads not set because .ab1 files
+            if inreads is None:
+                continue
             try:
                 r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
                 unpaired += r[1::2]
