@@ -2,10 +2,14 @@
 Help
 ====
 
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+
+    Bug Reports <createissue>
+
 Eventually you will run across some errors. No application/software is without bugs.
 Here we will compile all of the most common errors and what to look for to find out what is going on
-
-If you really get stuck, just make a `new issue <https://github.com/VDBWRAIR/miseqpipeline/issues/new>`_
 
 .. _faq:
 
@@ -13,10 +17,18 @@ Frequently Asked Questions
 --------------------------
 
 #. There is an error. What do I do?
-    There are a few log files that you can check. The output on your screen should give you the location of the log file to check for errors. As well you can look under the directory of any project and look in files that end in .log
-    For instance, if a run fails for any reason it will spit many lines to the screen when you read through the lines you will see one that mentions "Check the log file" followed by a path to a bwa.log. Navigate to the bwa.log to 
-    view a detailed log of what happened. There are two other log files which are in the same directory as bwa.log [samplename].std.log and [samplename].log. You can check any of these log files to determine what happend during the run.
+    There are a few log files that you can check. The output on your screen should give you the location of the log file to check for errors.
+
+    As well you can look under the directory of any project and look in files that end in .log
+
+    For instance, if a run fails for any reason it will spit many lines to the screen. When you read through the lines you will see one that mentions "Check the log file" followed by a path to a bwa.log. Navigate to the bwa.log to 
+    view a detailed log of what happened.
+
+    There are two other log files which are in the same directory as bwa.log [samplename].std.log and [samplename].log. You can check any of these log files to determine what happend during the run.
+
     Finally, you can also check the pipeline.log file that is generated when the pipeline is done or if it err'd out.
+
+    If you are still not sure, you can search through previous issues on the `GitHub Issue Tracker <https://github.com/VDBWRAIR/miseqpipeline/issues>`_ and/or submit a new :doc:`bug/feature <createissue>`
 #. Where should I run the analysis?
     This is for the most part up to you but eventually you will want the entire analysis folder to end up under /path/to/Analysis somewhere
     You will want to minimize how much the traffic has to travel across the network though. So if you simply create a folder under /path/to/Analysis/PipelineRuns and then you run the pipeline from there, you will essentially be doing the following:
@@ -74,7 +86,7 @@ Frequently Asked Questions
         free -m | awk '/Mem:/ {print $2}'
 
 #. The pipeline fails on samples and the bwa.log says something about failing on the reference index
-    Make sure to check that you have permissions to read the reference file. Also make sure you have permissions to write in the folder that the reference is located as it needs to place the index files into that directory as well. The last thing to check is that the reference is formatted correctly in fasta format.
+    Make sure to check that you have permissions to read the reference file. The last thing to check is that the reference is formatted correctly in fasta format.
 #. There is an error running vcf_consensus.py that has to do with string index out of bounds
     This has to do with an outdated version of base_caller.py generating the vcf file you are trying to run vcf_consensus.py on. See Issue #143 for more information on how to fix that.
 #. The pipeline fails on a sample and the log says Somehow no reads were compiled
