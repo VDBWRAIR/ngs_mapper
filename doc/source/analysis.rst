@@ -72,13 +72,33 @@ Rerunning Samples
 Rerunning samples is very similar to just running samples.
 
 #. Copy and edit the existing :doc:`samplesheet` and comment out or delete the samples you do not want to rerun.
-#. Run the :doc:`scripts/runsamplesheet.sh` script on the modified samplesheet
+#. Run the :doc:`scripts/runsamplesheet` script on the modified samplesheet
     * **Note**: As of right now, you will have to manually remove the existing project directories that you want to rerun.
 #. Regenerate graphics for all samples
-    * The -norecreate tells it not to recreate the qualdepth.json for each sample which is very time consuming. The reran samples should already have recreated their qualdepth.json files when :doc:`scripts/runsample.py` was run on them.
+    * The -norecreate tells it not to recreate the qualdepth.json for each sample which is very time consuming. The reran samples should already have recreated their qualdepth.json files when :py:mod:`runsample.py <miseqpipeline.runsample>` was run on them.
 
         .. code-block:: bash
 
             graphs.sh -norecreate
 
 #. You should not have to rerun :doc:`scripts/consensuses.sh` as it just symlinks the files
+
+Temporary Directories/Files
+===========================
+
+The pipeline initially creates a temporary analysis directory for each sample that you run with :py:mod:`runsample.py <miseqpipeline.runsample>`.
+By default this directory will be created in your system's configured temporary directory(most likely /tmp). This is especially useful if your /tmp partition is not very large or if you
+have a custom temporary partition that is on a very fast hard drive such as a Solid State Drive that you want to use.
+
+It is important that you first create the temporary directory as it will not be created for you(/tmp is already available from when Linux was installed though, FYI).
+
+You can control what directory this is by utilizing the TMPDIR environmental variable as follows:
+
+.. code-block:: bash
+
+    mkdir -p /path/to/custom/tmpdir
+    export TMPDIR=/path/to/custom/tmpdir
+    SAMPLE=samplename
+    runsample.py /path/to/NGSData/ReadsBySample/${SAMPLE} /path/to/reference ${SAMPLE} -od Projects/${SAMPLE}
+
+

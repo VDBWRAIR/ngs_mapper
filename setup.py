@@ -135,6 +135,7 @@ setup(
         ]
     },
     setup_requires = [
+        'nose',
         'tempdir'
     ],
     tests_require = [
