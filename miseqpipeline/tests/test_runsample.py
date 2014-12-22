@@ -50,7 +50,6 @@ class TestUnitArgs(Base):
         eq_( 'Sample1', res.prefix )
         eq_( 'outdir', res.outdir )
 
-@attr('current')
 @patch('miseqpipeline.runsample.logger',Mock())
 class TestUnitRunCMD(object):
     from miseqpipeline import runsample
@@ -168,7 +167,6 @@ class TestFunctional(Base):
 
         return efiles
 
-    @attr('current')
     def test_runs_with_specified_config(self):
         projdir = 'outdir'
         prefix = 'testsample'
