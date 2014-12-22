@@ -30,6 +30,9 @@ If you installed using setup.py
 
             git pull
 
-    #. Reinstall
+    #. Go into your miseqpipeline directory and rerun the setup script
 
-        Then follow :ref:`install <install-system-packages>`
+        .. code-block:: bash
+
+          python setup.py install
+
