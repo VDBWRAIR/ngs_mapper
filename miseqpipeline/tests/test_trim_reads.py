@@ -21,24 +21,52 @@ class TrimBase(common.BaseClass):
         # All reads
         self.reads = self.se + self.pe
 
+@attr('current')
 class TestTrimReadsInDir(TrimBase):
     functionname = 'trim_reads_in_dir'
 
     def setUp( self ):
         super( TestTrimReadsInDir, self ).setUp()
 
-    def test_skips_ab1( self ):
-        outdir = 'filtered_reads'
-        readsdir = 'reads'
-        os.mkdir( readsdir )
-        for r in self.se:
-            shutil.copy( r, readsdir )
-        for f,r in self.pe:
-            shutil.copy( f, readsdir )
-            shutil.copy( r, readsdir )
-        with open( join(readsdir,basename(self.se[0]).replace('.fastq','.ab1')), 'w' ) as fh:
-            fh.write( 'abi garbage here\n' )
-        self._C( readsdir, 20, outdir )
+    @patch('miseqpipeline.trim_reads.os', MagicMock())
+    @patch('__builtin__.open')
+    @patch('miseqpipeline.trim_reads.data')
+    def test_skips_ab1_first_read(self, mdata, mopen):
+        reads = mdata.reads_by_plat.return_value = {
+            'Sanger': [
+                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.ab1',
+                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.fastq'
+            ]
+        }
+    
+        with patch('miseqpipeline.trim_reads.trim_read') as mtrim_read:
+            self._C('/path/to/reads', 20, '/path/to/outdir')
+            _call = call(reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0)
+            eq_([_call], mtrim_read.call_args_list)
+
+    @patch('miseqpipeline.trim_reads.os', MagicMock())
+    @patch('__builtin__.open')
+    @patch('miseqpipeline.trim_reads.data')
+    def test_skips_ab1_not_first_read(self, mdata, mopen):
+        reads = mdata.reads_by_plat.return_value = {
+            'Roche454': [self.se[0]],
+            'Sanger': [
+                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.ab1',
+                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.fastq'
+            ]
+        }
+    
+        calls = sorted([
+            call(
+                reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0
+            ),
+            call(
+                reads['Roche454'][0], 20, '/path/to/outdir/{0}'.format(basename(reads['Roche454'][0])), head_crop=0
+            )
+        ])
+        with patch('miseqpipeline.trim_reads.trim_read') as mtrim_read:
+            self._C('/path/to/reads', 20, '/path/to/outdir')
+            eq_(calls, sorted(mtrim_read.call_args_list))
 
     def test_does_not_create_empty_unpaired( self ):
         outdir = 'filtered_reads'
