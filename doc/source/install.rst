@@ -62,7 +62,7 @@ Installation
 
 3. Configure the defaults
 
-    You need to configure the miseqpipeline/config.yaml file.
+    You need to configure the miseqpipeline/:doc:`config` file.
 
     1. Copy the default config to config.yaml
 
@@ -72,7 +72,13 @@ Installation
 
     2. Then edit the config file which is in `yaml <http://docs.ansible.com/YAMLSyntax.html>`_ format
 
-        The most important thing is that you edit the NGSDATA value so that it contains the path to your NGSDATA directory
+        The most important thing is that you edit the NGSDATA value so that it contains the path to your NGSDATA directory.
+
+        **The path you use for NGSDATA must already exist**
+
+        .. code-block:: bash
+
+            mkdir -p /path/to/NGSDATA
 
 4. Python
 
