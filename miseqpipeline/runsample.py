@@ -52,22 +52,40 @@ Output Analysis Directory
 -------------------------
 
 * samplename.bam (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
+    * Contains all the mapping assembly information
+    * Use `igv <http://www.broadinstitute.org/igv/>`_ to view it graphically
+    * Use `samtools <https://github.com/samtools/samtools>`(included in pipeline) to view in command line
 * samplename.bam.bai (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
+    * Index for the .bam file
 * samplename.bam.consensus.fasta (:py:mod:`miseqpipeline.vcf_consensus`)
+    * Consensus sequence built for your mapping
 * samplename.bam.qualdepth.json (:py:mod:`miseqpipeline.graphs`)
+    * Contains statistics about your bam alignment such as depth and coverage.
+      Not really meant for humans to read
 * samplename.bam.qualdepth.png (:py:mod:`miseqpipeline.graphs`)
+    * Graphic showing quality vs depth across your references
 * samplename.bam.vcf (:py:mod:`miseqpipeline.base_caller`)
+    * VCF formatted file that has all information about each base position across
+      each reference.
+    * You can open this with your spreadsheet program by using tab as the delimiter
 * samplename.log (:py:mod:`miseqpipeline.runsample`)
+    * Log file showing what stages were run
 * samplename.reads.png (:py:mod:`miseqpipeline.fqstats`)
+    * Graphic showing quality information about each read file
+    * You can view this with any image application. I like to use eog from the command line to open it quickly
 * samplename.std.log (:py:mod:`miseqpipeline.runsample`)
+    * Log file that contains any output from scripts that was not captured in other logs
 * bwa.log (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
+    * Log file that is specific to when bwa ran and contains all bwa output
 * reference.fasta (:py:mod:`miseqpipeline.runsample`)
+    * Copied reference fasta file that was specified
 * reference.fasta.amb (:py:mod:`miseqpipeline.runsample`)
 * reference.fasta.ann (:py:mod:`miseqpipeline.runsample`)
 * reference.fasta.bwt (:py:mod:`miseqpipeline.runsample`)
 * reference.fasta.pac (:py:mod:`miseqpipeline.runsample`)
 * reference.fasta.sa( :py:mod:`miseqpipeline.runsample`)
 * flagstats.txt (:py:mod:`miseqpipeline.gen_flagstats`)
+    * Just the dump from samtools flagstats
 * qualdepth (:py:mod:`miseqpipeline.graphs`)
     * sample.bam.qualdepth.referencename.png
     * ...

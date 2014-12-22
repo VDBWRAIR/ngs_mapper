@@ -2,69 +2,230 @@
 Analysis
 ========
 
-Running the Pipeline
-====================
+Complete Examples
+=================
 
-New Run Setup
--------------
+Here we will show you a complete example of running the pipeline using some test data that is included with the source code.
 
-#. Ensure the run you want to work with has been synced to the storage server
-#. Create a :doc:`samplesheet`
-    For standardization purposes, the samplesheet name should probably be samplesheet.tsv
+**Note**: Any time you see
 
-Single Sample
--------------
+.. code-block:: bash
 
-If you need to run a single sample you can now use the :py:mod:`runsample.py <miseqpipeline.runsample>` script to do so easily.
-Things you need to provide :py:mod:`runsample.py <miseqpipeline.runsample>`:
+    $> command
 
-* Path to the ReadsBySample directory for the samplename
-    * Example: /path/to/NGSData/ReadsBySample/1090-01
-* Path to the reference file
-    * Example: /path/to/Analysis/References/Den1__WestPac__1997.fasta
+It means you should be able to type that into your terminal
 
-Run the sample
---------------
+All examples will assume your current working directory is inside of the git cloned miseqpipeline directory, aka the following command
+ends with miseqipeline:
 
-#. Setup the environment
+.. code-block:: bash
+
+    $> pwd
+
+For both examples below, as always when running the pipeline, you need to ensure your installation is activated:
+
+.. code-block:: bash
+
+    $> . ~/.miseqpipeline/bin/activate
+
+The location of our data sets are under miseqpipeline/tests/fixtures/functional
+
+.. code-block:: bash
+
+    $> ls miseqpipeline/tests/fixtures/functional
+    780  780.conf  780.ref.fasta  947  947.conf  947.ref.fasta
+
+Here you can see we have 2 data sets to play with.
+
+* 780 is an H3N2 data set
+* 947 is a Dengue 4 data set
+
+You will notice that there is a 780/947 directory and a 780/947.ref.fasta file. The 780/947 directory contains all the read files for the 780/947 sample while the 780/947.ref.fasta is the reference to map to.
+You can ignore the .conf files, they are used by the automated tests.
+
+Using runsample.py to run a single sample
+-----------------------------------------
+
+Some times you just need to run a single sample. Here we will use runsample.py to run the 947 example data set and have the analysis be put into a directory called 947 in the current directory
+
+First, let's see what options there are available for the :py:mod:`runsample.py <miseqpipeline.runsample>` script to use
+
+.. code-block:: bash
+
+    $> runsample.py 
+    usage: runsample.py [-h] [--config CONFIG] [-trim_qual TRIM_QUAL]
+                        [-head_crop HEAD_CROP] [-minth MINTH] [--CN CN]
+                        [-od OUTDIR]
+                        readsdir reference prefix
+    runsample.py: error: too few arguments
+
+What you can take from this is:
+
+* Anything inside of a [] block means that argument to the script is optional and has a default value that will be used if you do not specify it.
+* readsdir, reference and prefix are all required arguments that you **MUST** specify
+
+So to run the project with the fewest amount of arguments would be as follows(don't run this, just an example):
+
+.. code-block:: bash
+
+    $> runsample.py miseqpipeline/tests/fixtures/functional/947 miseqpipeline/tests/fixtures/functional/947.ref.fasta 947
+
+This will run the 947 data and use the 947.ref.fasta file to map to. All files will be prefixed with 947.
+Since we did not specify the -od argument, all the files from the pipeline get dumped into your current directory.
+
+Most likely you will want to specify a separate directory to put all the 947 specific analysis files into. But how?
+
+We can get extended help information which should print the defualts as well from any script by using the ``--help`` option
+
+.. code-block:: bash
+
+    $> runsample.py --help
+    runsample.py --help
+    usage: runsample.py [-h] [--config CONFIG] [-trim_qual TRIM_QUAL]
+                        [-head_crop HEAD_CROP] [-minth MINTH] [--CN CN]
+                        [-od OUTDIR]
+                        readsdir reference prefix
+
+    Runs a single sample through the pipeline
+
+    positional arguments:
+      readsdir              Directory that contains reads to be mapped
+      reference             The path to the reference to map to
+      prefix                The prefix to put before every output file generated.
+                            Probably the samplename
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --config CONFIG, -c CONFIG
+                            Path to config.yaml file
+      -trim_qual TRIM_QUAL  Quality threshold to trim[Default: 20]
+      -head_crop HEAD_CROP  How many bases to crop off the beginning of the reads
+                            after quality trimming[Default: 0]
+      -minth MINTH          Minimum fraction of all remaining bases after
+                            trimming/N calling that will trigger a base to be
+                            called[Default: 0.8]
+      --CN CN               Sets the CN tag inside of each read group to the value
+                            specified.[Default: None]
+      -od OUTDIR, --outdir OUTDIR
+                            The output directory for all files to be put[Default:
+                            /home/myusername/miseqpipeline]
+
+You can see that ``--help`` gives us the same initial output as just running runsample.py without any arguments, but also contains extended help for all the arguments. The ``--help`` argument is available for all miseqpipeline scripts
+that end in .py(If you find one that doesn't, head over to :doc:`createissue` and file a new Bug Report.
+
+So you can see the -od option's default is our current directory. So if we want our analysis files to go into a specific directory for each sample we run we can specify a different directory. While we are at it, lets try specifying some of the other optional arguments too.
+
+Let's tell runsample.py to put our analysis into a directory called 947 and also tell it to crop off 20 bases from the beginning of each read.
+
+.. code-block:: bash
+
+    $> runsample.py -od 947 -head_crop 20 miseqpipeline/tests/fixtures/functional/947 miseqpipeline/tests/fixtures/functional/947.ref.fasta 947
+    2014-12-22 10:17:52,465 -- INFO -- runsample       --- Starting 947 --- 
+    2014-12-22 10:21:28,526 -- INFO -- runsample       --- Finished 947 ---
+
+You can see from the output that the sample started and finished. If there were errors, they would show up in between those two lines and you would have to view the :doc:`help` documentation.
+
+So what analysis files were created? You can see them by listing the output directory:
+
+.. code-block:: bash
+
+    $> ls 947
+    -rw-r--r--. 1 myusername users 36758279 Dec 22 10:19 947.bam
+    -rw-r--r--. 1 myusername users       96 Dec 22 10:19 947.bam.bai
+    -rw-r--r--. 1 myusername users    10869 Dec 22 10:21 947.bam.consensus.fasta
+    -rw-r--r--. 1 myusername users   269058 Dec 22 10:21 947.bam.qualdepth.json
+    -rw-r--r--. 1 myusername users   204502 Dec 22 10:21 947.bam.qualdepth.png
+    -rw-r--r--. 1 myusername users  1291367 Dec 22 10:20 947.bam.vcf
+    -rw-r--r--. 1 myusername users     2414 Dec 22 10:21 947.log
+    -rw-r--r--. 1 myusername users   307180 Dec 22 10:21 947.reads.png
+    -rw-r--r--. 1 myusername users    10840 Dec 22 10:17 947.ref.fasta
+    -rw-r--r--. 1 myusername users       10 Dec 22 10:18 947.ref.fasta.amb
+    -rw-r--r--. 1 myusername users       67 Dec 22 10:18 947.ref.fasta.ann
+    -rw-r--r--. 1 myusername users    10744 Dec 22 10:18 947.ref.fasta.bwt
+    -rw-r--r--. 1 myusername users     2664 Dec 22 10:18 947.ref.fasta.pac
+    -rw-r--r--. 1 myusername users     5376 Dec 22 10:18 947.ref.fasta.sa
+    -rw-r--r--. 1 myusername users     2770 Dec 22 10:21 947.std.log
+    -rw-r--r--. 1 myusername users    17219 Dec 22 10:18 bwa.log
+    -rw-r--r--. 1 myusername users      380 Dec 22 10:20 flagstats.txt
+    -rw-r--r--. 1 myusername users      249 Dec 22 10:21 graphsample.log
+    -rw-r--r--. 1 myusername users   137212 Dec 22 10:19 pipeline.log
+    drwxr-xr-x. 2 myusername users     4096 Dec 22 10:21 qualdepth
+    drwxr-xr-x. 2 myusername users     4096 Dec 22 10:18 trimmed_reads
+    drwxr-xr-x. 2 myusername users     4096 Dec 22 10:17 trim_stats
+
+You can view information about each of the output files via the :ref:`runsample-output-directory`
+
+An easy way to view your bam file quickly from the command line if you have `igv <http://www.broadinstitute.org/igv/>`_  installed is like this:
+
+.. code-block:: bash
+
+    igv.sh -g 947/947.ref.fasta 947/947.bam
+
+Using runsamplesheet.sh to run multiple samples in parallel
+-----------------------------------------------------------
+
+:doc:`scripts/runsamplesheet` is just a wrapper script that makes running :py:mod:`runsample.py <miseqpipeline.runsample>` on a bunch of samples easier.
+
+You just have to first create a :doc:`samplesheet` then you just have to run it as follows:
+
+.. code-block:: bash
+
+    $> runsamplesheet.sh /path/to/NGSData/ReadsBySample samplesheet.tsv
+
+So let's run the 947 and 780 samples as our example.
+
+#. Make a directory for all of our analysis to go into
 
     .. code-block:: bash
 
-        . $HOME/.miseqpipeline/bin/activate
+        $> mkdir -p tutorial
+        $> cd tutorial
 
-#. Run the sample(this will put the project in the current directory you are in, you may want to look at the -od argument of :py:mod:`runsample.py <miseqpipeline.runsample>`)
+#. Create a new file called samplesheet.tsv and put the following in it(you can use ``gedit samplesheet.tsv`` to edit/save the file)::
+
+    947 ../miseqpipeline/tests/fixtures/functional/947.ref.fasta
+    780 ../miseqpipeline/tests/fixtures/functional/780.ref.fasta
+
+#. Run your samplesheet with runsamplesheet.sh
 
     .. code-block:: bash
 
-        SAMPLE=samplename
-        runsample.py /path/to/NGSData/ReadsBySample/${SAMPLE} /path/to/reference ${SAMPLE} -od Projects/${SAMPLE}
+        $> runsamplesheet.sh ../miseqpipeline/tests/fixtures/functional samplesheet.tsv
+        2014-12-22 12:30:25,381 -- INFO -- runsample       --- Starting 780 --- 
+        2014-12-22 12:30:25,381 -- INFO -- runsample       --- Starting 947 --- 
+        2014-12-22 12:30:50,834 -- INFO -- runsample       --- Finished 780 ---
+        2014-12-22 12:34:08,523 -- INFO -- runsample       --- Finished 947 ---
+        1.82user 0.05system 0:01.01elapsed 185%CPU (0avgtext+0avgdata 242912maxresident)k
+        0inputs+728outputs (1major+26371minor)pagefaults 0swaps
+        5.02user 0.11system 0:04.03elapsed 127%CPU (0avgtext+0avgdata 981104maxresident)k
+        0inputs+3160outputs (1major+77772minor)pagefaults 0swaps
+        2014-12-22 12:34:19,843 -- WARNING -- graph_times     Projects/780 ran in only 25 seconds
+        2014-12-22 12:34:19,843 -- INFO -- graph_times     Plotting all projects inside of Projects
 
-    You need to replace samplename with the name of your sample and also replace /path/to/reference with the actual path to the reference you want to use
+You can see that the pipeline ran both of our samples at the same time in parallel. The pipeline tries to determine how many CPU cores your system has and will run that many samples in parallel.
+
+You can then view all of the resulting output files/directories created
+
+.. code-block:: bash
+
+    $> ls -l
+    total 1184
+    -rw-r--r--. 1 myusername users   2101 Dec 22 12:34 graphsample.log
+    -rw-r--r--. 1 myusername users  50794 Dec 22 12:34 MapUnmapReads.png
+    -rw-r--r--. 1 myusername users 756139 Dec 22 12:34 pipeline.log
+    -rw-r--r--. 1 myusername users  34857 Dec 22 12:34 PipelineTimes.png
+    drwxr-xr-x. 4 myusername users   4096 Dec 22 12:34 Projects
+    -rw-r--r--. 1 myusername users 292764 Dec 22 12:34 QualDepth.pdf
+    -rw-r--r--. 1 myusername users  52064 Dec 22 12:34 SampleCoverage.png
+    -rw-r--r--. 1 myusername users    122 Dec 22 12:28 samplesheet.tsv
+    drwxr-xr-x. 2 myusername users   4096 Dec 22 12:34 vcf_consensus
+
+You can view what each of these files means by heading over to the :doc:`scripts/runsamplesheet`
 
 Changing defaults for pipeline stages
 =====================================
 
-If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config` and supply it to :py:mod:`runsample.py <miseqpipeline.runsample>` using the -c option. You can read more about how to create the config and edit it via the :doc:`make_example_config` script's page
-
-Multiple Samples
-================
-
-Typically you will want to run many samples in parallel by utilizing a :doc:`samplesheet`. These instructions show how to do so.
-
-#. Setup the environment
-
-    .. code-block:: bash
-
-        . $HOME/.miseqpipeline/bin/activate
-
-#. Run the samples
-
-    .. code-block:: bash
-
-        runsamplesheet.sh /path/to/NGSData/ReadsBySample samplesheet.tsv
-
-    * **Note** If you did not name the samplesheet samplesheet.tsv you will need to put the path to it instead of ../samplesheet.tsv in the above command
-    * Basically just calls :py:mod:`runsample.py <miseqpipeline.runsample>` over and over for each sample/reference pair in the :doc:`samplesheet` that you created
+If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config` and supply it to :py:mod:`runsample.py <miseqpipeline.runsample>` using the -c option. You can read more about how to create the config and edit it via the :doc:`scripts/make_example_config` script's page
 
 Rerunning Samples
 =================
@@ -100,5 +261,3 @@ You can control what directory this is by utilizing the TMPDIR environmental var
     export TMPDIR=/path/to/custom/tmpdir
     SAMPLE=samplename
     runsample.py /path/to/NGSData/ReadsBySample/${SAMPLE} /path/to/reference ${SAMPLE} -od Projects/${SAMPLE}
-
-

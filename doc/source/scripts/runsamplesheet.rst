@@ -28,8 +28,16 @@ This would run each sample and pass "-minth 0.95" to :py:mod:`runsample <miseqpi
 Creates
 =======
 
-* Directory named Projects
-* All output from :py:mod:`runsample <miseqpipeline.runsample>` placed under Projects
-* Pipeline Graphics
-    * :py:mod:`sample_coverage <miseqpipeline.coverage>`
-    * :doc:`graphs`
+* graphsample.log
+    * Logfile from running :py:mod:`graphsample.py <miseqpipeline.graphsample>` on all samples in samplesheet
+* MapUnmapReads.png
+    * Graphic that shows each sample's mapped vs unmapped read counts
+* pipeline.log
+    * Logfile that contains essentially the same information on the console you get when you run runsample.py except it also includes debug lines
+* PipelineTimes.png(See :doc:`graphs`)
+* Projects
+    * All output from :py:mod:`runsample <miseqpipeline.runsample>` placed under Projects named after each sample
+* QualDepth.pdf(See :doc:`graphs`)
+* SampleCoverage.png(See :doc:`graphs`)
+* vcf_consensus
+    * Contains symbolic links(shortcuts) to each sample's consensus.fasta file 
