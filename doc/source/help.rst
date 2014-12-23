@@ -93,4 +93,5 @@ Frequently Asked Questions
     This usually indicates that it could not find any reads inside of the location you specified that should contain sample reads. Make sure that the directory you specified when you ran :doc:`scripts/runsamplesheet` or :py:mod:`miseqpipeline.runsample` actually contains a directory with reads for every sample you are running.
     Also check for errors near the top of the log file that say anything about why any reads might have been skipped
 #. The pipeline keeps failing on all of my samples or the logs say something about No Space Left On Device
-    Please check your /dev/shm to see if it is full as the pipeline uses this special memory filesystem to operate in. You can clear out all of the left-over junk from the pipeline by issuing <pre>rm -rf /dev/shm/runsample* /dev/shm/mapbwa*</pre>
+    Please check your /dev/shm and /tmp to see if either is full(``df -h``). You can clear out all of the left-over junk from the pipeline by issuing ``rm -rf /tmp/runsample* /dev/shm/mapbwa*``
+    Also, you may need to tell the pipeline to use a different temporary directory. See :ref:`tempdirfiles` for more information.
