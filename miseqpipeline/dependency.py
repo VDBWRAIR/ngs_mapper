@@ -14,6 +14,7 @@ from glob import glob
 import platform
 import json
 import fileinput
+import sys
 
 import tempdir
 
@@ -67,9 +68,10 @@ def install_samtools( source, gitsha, dstprefix ):
         # Patch the file removing the 8000 max depth limit
         for line in fileinput.input(files=['bam_plcmd.c'], inplace=True):
             if 'sm->n' in line and '8000' in line:
-                line = line.replace('8000', '1')
+                patch = line.replace('8000', '1')
+                sys.stdout.write(patch)
             else:
-                print line
+                sys.stdout.write(line)
         # Now we can make
         subprocess.call(['make'])
         
