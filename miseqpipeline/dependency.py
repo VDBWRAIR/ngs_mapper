@@ -13,6 +13,8 @@ import tarfile
 from glob import glob
 import platform
 import json
+import fileinput
+import sys
 
 import tempdir
 
@@ -62,11 +64,22 @@ def install_samtools( source, gitsha, dstprefix ):
     Installs samtools and bcftools into dstprefix/bin
     Uses tdir as temp directory for installation
     '''
+    def patch_then_make():
+        # Patch the file removing the 8000 max depth limit
+        for line in fileinput.input(files=['bam_plcmd.c'], inplace=True):
+            if 'sm->n' in line and '8000' in line:
+                patch = line.replace('8000', '1')
+                sys.stdout.write(patch)
+            else:
+                sys.stdout.write(line)
+        # Now we can make
+        subprocess.call(['make'])
+        
     copypaths = [
         'samtools',
         'bcftools/bcftools'
     ]
-    clone_checkout_make_copy(source, gitsha, dstprefix, copypaths=copypaths)
+    clone_checkout_make_copy(source, gitsha, dstprefix, copypaths=copypaths, makefunc=patch_then_make)
 
 def verify_samtools_install( dstprefix ):
     '''
@@ -78,7 +91,7 @@ def verify_samtools_install( dstprefix ):
     ]
     return [] == prefix_has_files(dstprefix, exepaths)
 
-def clone_checkout_make_copy( source, gitsha, dstprefix, copypaths=[], tdir=None ):
+def clone_checkout_make_copy(source, gitsha, dstprefix, copypaths=[], tdir=None, makefunc=None):
     '''
     Does not redownload/compile if all bin files already exist
     Enters temporary directory
@@ -123,9 +136,12 @@ def clone_checkout_make_copy( source, gitsha, dstprefix, copypaths=[], tdir=None
             # Checkout version
             cmd = ['git','checkout',gitsha]
             subprocess.call(cmd)
-            # Compile
-            cmd = ['make']
-            subprocess.call(cmd)
+            if makefunc is None:
+                # Compile
+                cmd = ['make']
+                subprocess.call(cmd)
+            else:
+                makefunc()
             for copypath in copypaths:
                 # Copy bwa executable into dstprefix/bin
                 shutil.copy2(copypath, dstprefixbin)

@@ -157,6 +157,7 @@ class TestVerifyBwaInstall(Base):
         r = self._C(self.prefix)
         eq_( True, r )
 
+@patch('miseqpipeline.dependency.fileinput', MagicMock())
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestVerifySamtoolsInstall(Base):
     functionname = 'verify_samtools_install'
@@ -189,7 +190,7 @@ class TestVerifySamtoolsInstall(Base):
         r = self._C(self.prefix)
         eq_( True, r )
 
-
+@patch('miseqpipeline.dependency.fileinput', MagicMock())
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestInstallSamtools(Base):
     functionname = 'install_samtools'
@@ -213,6 +214,39 @@ class TestInstallSamtools(Base):
         self._C(self.samtools_github_url, 'HEAD', self.prefix)
 
 @attr('current')
+class TestInstallSamtoolsPatch(Base):
+    functionname = 'install_samtools'
+
+    @attr('current')
+    @patch('miseqpipeline.dependency.shutil',Mock())
+    @patch('miseqpipeline.dependency.sys')
+    @patch('miseqpipeline.dependency.fileinput')
+    @patch('miseqpipeline.dependency.os')
+    @patch('miseqpipeline.dependency.tempdir')
+    @patch('miseqpipeline.dependency.subprocess')
+    def test_patches_samtools_fixes_49(self, msubprocess, mtempdir, mos, mfileinput, msys):
+        mos.access.return_value = False
+        mfileinput.input.return_value = iter([
+            'line1\n',
+            'sm->n\n',
+            'sm->n 8000\n',
+            '8000 sm->n\n'
+        ])
+        self._C(self.samtools_github_url, 'HEAD', self.prefix)
+        msys.stdout.write.assert_has_calls([
+            call('line1\n'),
+            call('sm->n\n'),
+            call('sm->n 1\n'),
+            call('1 sm->n\n')
+        ])
+        mfileinput.input.assert_called_with(files=['bam_plcmd.c'], inplace=True)
+        eargs = [
+            call(['git', 'clone', self.samtools_github_url]),
+            call(['git', 'checkout', 'HEAD']),
+            call(['make'])
+        ]
+        eq_(eargs, msubprocess.call.call_args_list)
+
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestCloneCheckoutMakeCopy(Base):
     functionname = 'clone_checkout_make_copy'
@@ -226,6 +260,15 @@ class TestCloneCheckoutMakeCopy(Base):
         for path in kwargs['copypaths']:
             execpath = join(self.bindir,basename(path))
             self._exist_executable(execpath)
+
+    def test_runs_specific_make_cmd(self):
+        def mockfunc():
+            open('called.txt','w').close()
+            os.chmod('called.txt',0755)
+            mock_bwasamtools_subprocess_call(['make'])
+
+        self.copypaths.append('called.txt')
+        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths, makefunc=mockfunc)
 
     def test_ensures_prefix_bin_exists(self):
         self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths)
@@ -726,7 +769,11 @@ class TestInstallPython(Base):
         pythonstat = os.stat(join(prefix,'bin','python'))
         self._C( prefix, '2.7.8' )
         pythonstat2 = os.stat(join(prefix,'bin','python'))
-        eq_( pythonstat, pythonstat2 )
+
+        for attr in ('st_mode', 'st_ino', 'st_dev', 'st_uid', 'st_gid', 'st_size', 'st_mtime', 'st_ctime'):
+            estat = getattr(pythonstat, attr)
+            rstat = getattr(pythonstat2, attr)
+            eq_(estat, rstat)
 
     def test_replaces_older_python(self):
         prefix = abspath('dstprefix')

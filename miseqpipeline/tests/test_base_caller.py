@@ -993,6 +993,7 @@ class TestUnitGenerateVCF(BaseInty):
             rcb = rvcf['INFO']['CB']
             eq_(evcf['REF'],rvcf['REF'])
             eq_(evcf['POS'],rvcf['POS'])
+            print evcf['POS']
             eq_(ecb, rcb)
         
 class TestUnitMain(BaseInty):
