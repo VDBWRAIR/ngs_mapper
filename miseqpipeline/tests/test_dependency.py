@@ -213,6 +213,28 @@ class TestInstallSamtools(Base):
         self._C(self.samtools_github_url, 'HEAD', self.prefix)
 
 @attr('current')
+class TestInstallSamtoolsPatch(Base):
+    functionname = 'install_samtools'
+
+    @attr('current')
+    @patch('miseqpipeline.dependency.shutil',Mock())
+    @patch('miseqpipeline.dependency.fileinput')
+    @patch('miseqpipeline.dependency.os')
+    @patch('miseqpipeline.dependency.tempdir')
+    @patch('miseqpipeline.dependency.subprocess')
+    def test_patches_samtools_fixes_49(self, msubprocess, mtempdir, mos, mfileinput):
+        mos.access.return_value = False
+        #mtempdir.in_tempdir.__enter__ = Mock(return_value='tdir')
+        self._C(self.samtools_github_url, 'HEAD', self.prefix)
+        print mfileinput.input.call_args_list
+        mfileinput.input.assert_called_with(files=['bam_plcmd.c'], inplace=True)
+        eargs = [
+            call(['git', 'clone', self.samtools_github_url]),
+            call(['git', 'checkout', 'HEAD']),
+            call(['make'])
+        ]
+        eq_(eargs, msubprocess.call.call_args_list)
+
 @patch('miseqpipeline.dependency.subprocess',Mock(call=mock_bwasamtools_subprocess_call))
 class TestCloneCheckoutMakeCopy(Base):
     functionname = 'clone_checkout_make_copy'
@@ -226,6 +248,15 @@ class TestCloneCheckoutMakeCopy(Base):
         for path in kwargs['copypaths']:
             execpath = join(self.bindir,basename(path))
             self._exist_executable(execpath)
+
+    def test_runs_specific_make_cmd(self):
+        def mockfunc():
+            open('called.txt','w').close()
+            os.chmod('called.txt',0755)
+            mock_bwasamtools_subprocess_call(['make'])
+
+        self.copypaths.append('called.txt')
+        self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths, makefunc=mockfunc)
 
     def test_ensures_prefix_bin_exists(self):
         self._C('/path/to/myapp', 'HEAD', self.prefix, copypaths=self.copypaths)

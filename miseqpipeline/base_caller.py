@@ -263,7 +263,7 @@ def generate_vcf( bamfile, reffile, regionstr, vcf_output_file, minbq, maxd, min
 
     # Get the iterator for an mpileupcal
     # Do not exclude any bases by setting minmq and minbq to 0 and maxdepth to 100000
-    piles = mpileup( bamfile, regionstr, 0, 0, 100000 )
+    piles = mpileup( bamfile, regionstr, 0, 0, maxd )
     # Loop through each pileup row
     # Last position stores the last position seen
     # Starts at 0 to show gap at beginning if needed
