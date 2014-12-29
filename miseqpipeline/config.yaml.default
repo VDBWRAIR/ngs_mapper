@@ -77,3 +77,7 @@ roche_sync:
         # Leave this blank to use the installed version
         default:
         help: 'Path to your MidParse.conf file [Default: %(default)s]'
+sanger_sync:
+    ngsdata:
+        default: *NGSDATA
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'

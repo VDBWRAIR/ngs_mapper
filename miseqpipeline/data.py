@@ -8,14 +8,48 @@ from Bio import SeqIO
 
 logger = logging.getLogger(__name__)
 
-# Exception when no platform can be found for a read
-class NoPlatformFound(Exception): pass
+ROCHE = '\S+?(?:__[0-9]){0,1}__(?:TI|RL)\d+__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)'
+'''
+Matches roche sff or fastq files
+
+sample__region__barcode__year_month_day__type.filetype
+'''
+IONTORRENT = '\S+?__[0-9]__IX\d{3}__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)'
+'''
+Matches IonTorrent file names(essentially same as roche)
+
+sample__region__barcode__year__month__day__type.filetype
+'''
+SANGER = '\S+?_[FR]\d+_\d{4}_\d{2}_\d{2}_\w+_\w+_\d{4}_[A-Z]\d{2}.(fastq|ab1)'
+'''
+Matches Sanger file names
+
+sample_<F or R>number_year_month_day_virus_gene_runnumber_well.filetype
+'''
+MISEQ = '\S+?_S\d+_L\d{3}_R\d_\d{3}_\d{4}_\d{2}_\d{2}.fastq'
+'''
+Matches MiSeq file names
+
+sample_sampleno_lane_<R1 or R2>_set_year_month_day.fastq
+'''
+
+MAPPING = {
+    ROCHE: 'Roche454',
+    IONTORRENT: 'IonTorrent',
+    SANGER: 'Sanger',
+    MISEQ: 'MiSeq'
+}
+''' Mapping of regular expression for a filename to the platform that it belongs to '''
+
+class NoPlatformFound(Exception):
+    '''Exception when no platform can be found for a read'''
+    pass
 
 def filter_reads_by_platform( path, platform ):
     '''
-        Filters all reads in path down to the ones that are for platform
+    Filters all reads in path down to the ones that are for platform
 
-        @returns list of reads inside of path(basename)
+    @returns list of reads inside of path(basename)
     '''
     # All files in path
     files = []
@@ -31,17 +65,11 @@ def filter_reads_by_platform( path, platform ):
 
 def platform_for_read( filepath ):
     '''
-        Returns the platform the given read is for
+    Returns the platform the given read is for based on a series of regular expressions
 
-        @param filepath - Path to filename
-        @returns name of platform that filepath is for
+    @param filepath - Path to filename
+    @returns name of platform that filepath is for
     '''
-    MAPPING = {
-        '\S+?(?:__[0-9]){0,1}__(?:TI|RL)\d+__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)': 'Roche454',
-        '\S+?__[0-9]__IX\d{3}__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)': 'IonTorrent',
-        '\S+?_[FR]\d+_\d{4}_\d{2}_\d{2}_\w+_\w+_\d{4}_[A-Z]\d{2}.(fastq|ab1)': 'Sanger',
-        '\S+?_S\d+_L\d{3}_R\d_\d{3}_\d{4}_\d{2}_\d{2}.fastq': 'MiSeq'
-    }
     for p, plat in MAPPING.items():
         if re.match( p, basename(filepath) ):
             return plat
