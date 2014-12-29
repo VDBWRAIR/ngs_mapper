@@ -116,10 +116,6 @@ and your miseq run name is::
         
 #. Once all ReadsBySample directories and files are symlinked it finishes syncing the rest of the miseq run directory
 
-File Naming Scheme
-==================
-
-
 """
 
 import argparse
