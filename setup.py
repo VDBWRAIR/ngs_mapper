@@ -132,6 +132,7 @@ setup(
         'console_scripts': [
             'sample_coverage = miseqpipeline.coverage:main',
             'make_example_config = miseqpipeline.config:main',
+            'roche_sync = miseqpipeline.roche_sync:main',
         ]
     },
     setup_requires = [
@@ -143,7 +144,7 @@ setup(
         'mock',
     ],
     package_data = {
-        'miseqpipeline': ['config.yaml'],
+        'miseqpipeline': ['config.yaml','MidParse.conf'],
     },
     author = 'Tyghe Vallard',
     author_email = 'vallardt@gmail.com',

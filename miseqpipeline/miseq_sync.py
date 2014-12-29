@@ -45,14 +45,77 @@ You can read more about the naming structure `here <http://support.illumina.com/
 Sync Process
 ------------
 
-#. First the script syncs the fastq.gz files to the destination specified when you run the script using the --ngsdata
-    Under the RawData/MiSeq directory
+For the examples, we will assume that your NGS Data directory is::
+
+    /home/NGSData
+
+and your miseq run name is::
+
+    140101_M00001_0001_000000000-AAAAA
+
+#. First the script syncs the fastq.gz files from inside of <run name>/Data/Intensities/BaseCalls/ to the destination specified when you run the script using the --ngsdata
+
+    This will create::
+
+        /home/NGSData/RawData/MiSeq/140101_M00001_0001_000000000-AAAAA/Data/Intensities/BaseCalls
+
+    and then copies all .fastq.gz from your run into there
+
+    You can view the `FASTQ Files <http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm>`_ site to see how the MiSeq names it's .fastq.gz files
+
+    An example paired .fastq.gz would be::
+
+        SAMPLENAME1_S1_L001_R1_001.fastq.gz
+        SAMPLENAME1_S1_L001_R2_001.fastq.gz
+
+    This name can then be parsed as follows:
+
+        * SAMPLENAME1 is the name of the sample
+        * S1 indicates it is sample #1(aka first sample in the samplesheet)
+        * L001 means it was lane 1
+            * Most likely all sample files will have L001
+        * R1 means Read 1(forward), R2 means Read 2(reverse)
+        * 001 then indicates it was set 1
+            * Most likely all sample files will have 001 unless you changed some setting related to ``--fastq-cluster-count``
+    
 #. The script then creates a directory with the same name as the MiSeq raw data directory under ReadData/MiSeq
-#. Then it unpacks each fastq.gz file into that directory so there are only .fastq files
+
+    Creates::
+
+        /home/NGSData/ReadData/140101_M00001_0001_000000000-AAAAA
+
+#. Then it unpacks each fastq.gz file into that directory so there are only .fastq files and appends the run date to them before the .fastq
+
+    So in the previous example the two file names would become::
+
+        SAMPLENAME1_S1_L001_R1_001_2014_01_01.fastq
+        SAMPLENAME1_S1_L001_R2_001_2014_01_01.fastq
+
+    and be placed inside of::
+
+        /home/NGSData/ReadData/140101_M00001_0001_000000000-AAAAA
+
 #. Once the files are unpacked it uses the <sample name> field in the each of the file names to determine the final samplename to use
+
+        Aka::
+
+            SAMPLENAME1
+
 #. It then ensures there is a directory with each samplename under ReadsBySample
+
+        Per our example, the following directory would be created::
+            
+            /home/NGSData/ReadsBySample/SAMPLENAME1
+
 #. It then creates a symlink with the same name as the file in the ReadData/MiSeq/<rundirectory> inside of the appropriate ReadsBySample/<samplename> that links back to the .fastq file
+
+    The symlinks would come out as follows::
+
+        SAMPLENAME1_S1_L001_R1_001_2014_01_01.fastq -> ../../ReadData/MiSeq/140101_M00001_0001_000000000-AAAAA/SAMPLE1_S01_L001_R1_001_2014_01_01.fastq
+        SAMPLENAME1_S1_L001_R2_001_2014_01_01.fastq -> ../../ReadData/MiSeq/140101_M00001_0001_000000000-AAAAA/SAMPLE1_S01_L001_R2_001_2014_01_01.fastq
+        
 #. Once all ReadsBySample directories and files are symlinked it finishes syncing the rest of the miseq run directory
+
 """
 
 import argparse

@@ -1,3 +1,51 @@
+"""
+The intention of this script is to easily sync a given Sanger run path from the sequencer into the :doc:`NGSData <ngsdata>` structure
+
+You need to ensure that the run directory for the run you want to sync is available and that you know the path to it.
+
+Accessing Sanger Data
+=====================
+
+You will need to configure the Sanger instrument to save your files in a specific format.
+
+You will also have to ensure that the location that your Sanger instrument saves its data to is :ref:`shared <create-share-user>`
+
+On the computer that you will be running sanger_sync.py from you will need to ensure that the Sanger share is mounted somewhere on the system. A good practice is to create a folder somewhere called Instruments and then under there create folders for each of your sequencers.
+
+**Example**
+
+    .. code-block:: bash
+
+        mkdir -p /Instruments/Sanger
+
+Then you can mount the Sanger shared drive to that folder.
+See :ref:`mount-cifs-linux`
+
+Usage
+=====
+
+At this time there is very little output from the miseq_sync.py command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
+
+    .. code-block:: bash
+
+        sanger_sync.py /path/to/Sanger/Run_3130xl...
+
+Verify Samples Synced
+---------------------
+
+coming soon...
+
+How it works
+============
+
+#. Copy Run_3130xl directory(only including .ab1 files) to RawData/Sanger/
+#. Create Run_3130xl directory under ReadData/Sanger/ with same name as original Run_3130xl directory
+    #. Symlink all original .ab1 files into this directory
+    #. Convert all .ab1 to .fastq 
+#. Parse the sanger filename and create ReadsBySample/samplename directory
+#. Symlink all .fastq and .ab1 files for that samplename from ReadData into Samplename directory
+
+"""
 import shutil
 from os.path import *
 import os
@@ -115,16 +163,22 @@ def main( args ):
 
 def parse_args( args=sys.argv[1:] ):
     import argparse
+
+    from miseqpipeline import config
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
+    defaults = config['sanger_sync']
+
     parser = argparse.ArgumentParser(
-        description='Syncs Sanger Run_ directories into the NGSData structure'
+        description='Syncs Sanger Run_ directories into the NGSData structure',
+        parents=[conf_parser]
     )
 
-    ngsdata = '/home/EIDRUdata/NGSData'
+    
     parser.add_argument(
         '--ngsdata',
         dest='ngsdata',
-        default=ngsdata,
-        help='NGSData root path'
+        default=defaults['ngsdata']['default'],
+        help=defaults['ngsdata']['help']
     )
 
     parser.add_argument(

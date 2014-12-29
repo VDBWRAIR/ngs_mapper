@@ -1,3 +1,92 @@
+"""
+The intention of this script is to easily sync a given Roche 454 run path from the sequencer into the :doc:`NGSData <ngsdata>` structure
+
+You need to ensure that the run directory for the run you want to sync is available and that you know the path to it.
+
+You need to have the Data Analysis
+
+Accessing Roche 454 Data
+========================
+
+There are quite a few different setups for this instrument, so no specific instructions can be created.
+
+Essentially you will want to mount the /data directory on the Roche analysis workstation to your /Instruments/Roche454 directory.
+
+The goal is to be able to browse to the R\_ directory from the workstation that you will be running roche_sync.py from
+
+Usage
+=====
+
+At this time there is very little output from the roche_sync.py command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
+
+    .. code-block:: bash
+
+        roche_sync.py $(pwd) --ngsdata /path/to/NGSData --midparse ~/miseqpipeline/MidParse.conf
+
+Verify Samples Synced
+---------------------
+
+coming soon...
+
+How it works
+============
+
+Since the Roche instrument does not automatically create a sample to barcode/region mapping file such as the MiSeq's SampleSheet.csv, you will have to manually create one and place it into the top level R_ directory.
+
+.. _roche-sample-sheet:
+
+Roche Sample Sheet
+------------------
+
+The roche sample sheet is simply a mapping of sample name to the region, barcode and primer fasta file used.
+The file must be saved as SampleSheet.csv and placed in the R\_ directory of the run
+
+The format is as follows::
+
+    SampleName,Region,Barcode,PrimerFileLocation
+    Sample1,1,RL1,/path/to/primer.fasta
+    Sample2,2,TI1,/path/to/primer2.fasta
+
+Sync Process
+------------
+
+For the examples, we will assume that your NGS Data directory is::
+
+    /home/NGSData
+
+and your roche run name is::
+
+    R_2014_01_01_01_01_01_FLX00000001_Administrator_SOMEPROJECT
+
+and contains the following signalProcessing directory
+
+    D_2014_01_01_02_02_02_FLX00000001_signalProcessing
+
+#. First the script copies the entire R\_ directory to the NGSData structure's RawData
+
+    This will create::
+
+        /home/NGSData/RawData/Roche454/R_2014_01_01_01_01_01_FLX00000001_Administrator_SOMEPROJECT
+
+#. The script then symlinks the D_*signalProcessing directory into your NGSData/ReadData
+#. The script then demultiplexes the signalProcessing sff files
+    #. Ensure demultiplexed directory exists inside of signalProcessing
+    #. For each sample/barcode listed in the created SampleSheet.csv it will demultiplex that sample out of the main .sff files
+        into the demultiplexed directory
+    
+        For example::
+
+            Sample1__1__RL1__2001_01_01__Unk.sff
+            Sample2__2__TI1__2001_01_01__Unk.sff
+
+#. The script then symlinks all demultiplexed reads that are in the RawData/R_/D\_ directory into the ReadsBySample under the Sample Name directory
+
+    .. code-block:: bash
+
+        Sample1/
+            Sample1__1__RL1__2014_01_01__Unk.sff -> ../../RawData/Roche454/R_2014_01_01_01_01_01_FLX00000001_Administrator_SOMEPROJECT/D_2014_01_01_02_02_02_FLX00000001_signalProcessing/demultiplexed/Sample1__1__RL1__2014_01_01__Unk.sff
+
+"""
 import os
 from os.path import *
 import sys
@@ -7,7 +96,8 @@ import re
 import csv
 import shutil
 
-def main( args ):
+def main():
+    args = parse_args()
     dst = join( args.ngsdata, 'RawData', 'Roche454', basename(args.runpath) )
     sync( args.runpath, args.ngsdata )
     symlink_sigproc( dst, args.ngsdata )
@@ -141,8 +231,13 @@ def parse_samplesheet( sheetpath ):
 
 def parse_args( args=sys.argv[1:] ):
     import argparse
+    from miseqpipeline import config
+    conf_parser, args, config, configfile = config.get_config_argparse(args)
+    defaults = config['roche_sync']
+
     parser = argparse.ArgumentParser(
-        description='Sync roche run directories into the NGSData data structure'
+        description='Sync roche run directories into the NGSData data structure',
+        parents=[conf_parser]
     )
 
     parser.add_argument(
@@ -150,18 +245,20 @@ def parse_args( args=sys.argv[1:] ):
         help='Path to the Roche run directory(/path/to/R_something)'
     )
 
-    ngsdata_default = '/home/EIDRUdata/NGSData'
     parser.add_argument(
         '--ngsdata',
-        default=ngsdata_default,
-        help='Path to the root of the NGSData data structure[Default: {}]'.format(ngsdata_default)
+        default=defaults['ngsdata']['default'],
+        help=defaults['ngsdata']['help']
     )
 
-    midparse_default = 'MidParse.conf'
+    import pkg_resources
+    default = defaults['midparse']['default']
+    if default is None:
+        default = pkg_resources.resource_filename(__name__, 'MidParse.conf')
     parser.add_argument(
         '--midparse',
-        default=midparse_default,
-        help='Path to MidParse.conf file[Default: {}]'.format(midparse_default)
+        default=default,
+        help=defaults['midparse']['help']
     )
 
     return parser.parse_args( args )

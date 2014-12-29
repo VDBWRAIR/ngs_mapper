@@ -26,9 +26,9 @@ Some instruments may create ReadData as well or very close to ReadData, but it i
 
 Some examples of RawData would be:
 
-* Run_3130xl\_ directories containing \*.ab1 files
-* Directories under the MiSeqOutput directory
-* R\_\* directories containing signalProcessing or fullProcessing directories
+* Run_3130xl\_ directories containing \*.ab1 files(Sanger)
+* Directories under the MiSeqOutput directory(MiSeq)
+* R\_\* directories containing signalProcessing or fullProcessing directories(Roche)
 
 ReadData
 ========
@@ -39,10 +39,21 @@ At this time these file formats typically end with the following extensions:
     .ab1
     .sff
     .fastq
-    .fasta
-    .fna
 
 ReadsBySample
 =============
 
 This directory contains only directories that are named after each of the samplenames that have been sequenced. The concept of this folder is to make it very easy to look up all data related to a given samplename.
+
+The files that live in these directories must adhere strictly to a specific naming scheme so the pipeline can determine what reads come from which platforms as they need to be handled slightly different.
+
+See the following naming regular expressions defined in :py:mod:`miseqpipeline.data` for more information about how these filenames have to be named:
+
+* :py:mod:`sanger <miseqpipeline.data.SANGER>`
+* :py:mod:`miseq <miseqpipeline.data.MISEQ>`
+* :py:mod:`roche <miseqpipeline.data.ROCHE>`
+* :py:mod:`iontorrent <miseqpipeline.data.IONTORRENT>`
+
+If you have files that do not match these naming standards the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample.py <miseqpipeline.runsample>`. Inspecting the logs you will see errors about Somehow no reads being compiled which is a good indication that your files are named incorrectly.
+
+To ensure your files are named correctly you can use the various sync scripts listed in :doc:`ngsdatasync`
