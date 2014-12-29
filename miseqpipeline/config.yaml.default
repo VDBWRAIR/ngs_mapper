@@ -69,3 +69,11 @@ miseq_sync:
     ngsdata:
         default: *NGSDATA
         help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+roche_sync:
+    ngsdata:
+        default: *NGSDATA
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+    midparse:
+        # Leave this blank to use the installed version
+        default:
+        help: 'Path to your MidParse.conf file [Default: %(default)s]'

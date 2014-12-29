@@ -30,6 +30,18 @@ The pipeline requires some system level packages(software installed via your Lin
 The installer looks for the `system_packages.lst <../../../system_packages.lst>`_ and installs the correct packages using that file.
 This file is a simple json formatted file that defines packages for each package manager
 
+Roche Utilities
+^^^^^^^^^^^^^^^
+
+If you intend on using the :py:mod:`roche_sync <miseqpipeline.roche_sync>` you will need to ensure that the ``sfffile`` command is in your PATH. That is, if you execute ``$> sfffile`` it returns the help message for the command.
+
+This command should automatically be installed and put in your path if you install the Data Analysis CD #3 that was given to you with your Roche instrument.
+
+MidParse.conf
+^^^^^^^^^^^^^
+
+If you inted on using the :py:mod:`roche_sync <miseqpipeline.roche_sync>` you may need to edit the included miseqpipeline/MidParse.conf file before installing. This file is formatted to be used by the Roche utilities and more information about how it is used can be found in the Roche documentation.
+
 Installation
 ============
 
