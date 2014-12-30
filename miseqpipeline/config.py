@@ -1,11 +1,36 @@
 from os.path import exists, isdir, join, dirname
 import os
-import yaml
 import pkg_resources
 import argparse
+import sys
+
+import yaml
+
+import miseqpipeline
 
 # Raised when invalid config is loaded
 class InvalidConfigError(Exception): pass
+
+class Config(object):
+    '''
+    Wrapper around config yaml that raises better exception messages
+    '''
+    def __init__(self, yaml):
+        '''
+        :param yaml yaml: yaml input
+        '''
+        self.yaml = yaml
+
+    def __getitem__(self, key):
+        try:
+            return self.yaml[key]
+        except KeyError as e:
+            raise InvalidConfigError(
+                'Config.yaml file is missing the key {0}'.format(key)
+            )
+
+    def __getattr__(self, attr):
+        return self[attr]
 
 def verify_config(config):
     '''
@@ -36,7 +61,7 @@ def load_config(config_file):
         config_stream = config_file
     else:
         config_stream = open(config_file)
-    config = yaml.load(config_stream)
+    config = Config(yaml.load(config_stream))
     verify_config(config)
     return config
 
@@ -91,7 +116,23 @@ def get_config_argparse(argv):
         help='Path to config.yaml file'
     )
 
+    conf_parser.add_argument(
+        '--version',
+        '-version',
+        '-v',
+        dest='version',
+        default=False,
+        action='store_true',
+        help='Output version of pipeline'
+    )
+
     args, rest = conf_parser.parse_known_args(argv)
+
+    if args.version:
+        sys.stdout.write('Version {0}\n'.format(
+                miseqpipeline.__version__
+            )
+        )
 
     configfile = None
     if args.config:

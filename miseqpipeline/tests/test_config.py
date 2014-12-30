@@ -1,6 +1,9 @@
 from imports import *
 from mock import mock_open, call
 import yaml
+from StringIO import StringIO
+
+from miseqpipeline import config
 
 class Base(common.BaseClass):
     modulepath = 'miseqpipeline.config'
@@ -45,6 +48,37 @@ class TestLoadConfigFile(Base):
         mock_yaml.load.return_value = self.config
         from miseqpipeline.config import InvalidConfigError
         assert_raises(InvalidConfigError, self._C, '/path/to/file.yaml')
+
+    @attr('current')
+    @patch('__builtin__.open', Mock())
+    def test_returns_config_class_instance(self, mock_yaml):
+        from miseqpipeline.config import Config
+        mock_yaml.load.return_value = self.config
+        r = self._C('/path/to/my.yaml')
+        assert_is_instance(r, Config)
+
+@attr('current')
+class TestConfigClass(Base):
+    def setUp(self):
+        super(TestConfigClass,self).setUp()
+        self.config = {
+            'foo': 'bar'
+        }
+        self.inst = config.Config(self.config)
+
+    def test_returns_values_from_getitem(self):
+        eq_('bar', self.inst['foo'])
+
+    def test_returns_values_from_attributes(self):
+        eq_('bar', self.inst.foo)
+
+    def test_raises_exception_missing_value_attribute(self):
+        self.inst.yaml = {}
+        assert_raises(config.InvalidConfigError, self.inst.__getattr__, 'foo')
+
+    def test_raises_exception_missing_value_getitem(self):
+        self.inst.yaml = {}
+        assert_raises(config.InvalidConfigError, self.inst.__getitem__, 'foo')
 
 class TestVerifyConfig(Base):
     functionname = 'verify_config'
@@ -104,6 +138,15 @@ class TestMakeExampleConfig(Base):
 @patch('__builtin__.open', MagicMock())
 class TestGetConfigArgparse(Base):
     functionname = 'get_config_argparse'
+
+    def test_outputs_version(self, mock_yaml):
+        mock_yaml.load.return_value = self.config
+        with patch('miseqpipeline.config.sys') as msys:
+            with patch('miseqpipeline.config.miseqpipeline') as mmiseqpipeline:
+                mmiseqpipeline.__version__ = '1.1.1'
+                msys.stdout = StringIO()
+                r = self._C(['--version'])
+                eq_('Version 1.1.1\n', msys.stdout.getvalue())
 
     def test_does_not_parse_help(self, mock_yaml):
         mock_yaml.load.return_value = self.config
