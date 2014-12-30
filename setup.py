@@ -13,7 +13,6 @@ from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
 import miseqpipeline
-from version import __version__
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''
@@ -126,7 +125,7 @@ class develop(_develop):
 # Run setuptools setup
 setup(
     name = miseqpipeline.__projectname__,
-    version = __version__,
+    version = miseqpipeline.__version__,
     packages = find_packages(),
     scripts = glob('bin/*'),
     entry_points = {
