@@ -1,8 +1,10 @@
+:orphan:
+
 =================
 runsamplesheet.sh
 =================
 
-Runs :py:mod:`runsample <miseqpipeline.runsample>` on every sample/reference pair inside of a :doc:`samplesheet`
+Runs :py:mod:`runsample <miseqpipeline.runsample>` on every sample/reference pair inside of a :doc:`../samplesheet`
 
 Usage
 =====
