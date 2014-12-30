@@ -11,6 +11,30 @@ Help
 Eventually you will run across some errors. No application/software is without bugs.
 Here we will compile all of the most common errors and what to look for to find out what is going on
 
+Traceback Errors
+================
+
+You will likely encounter a Traceback error at some point due to either a bug or maybe you are running one of the commands incorrectly.
+
+The traceback errors will look like this::
+
+    Traceback (most recent call last):
+      File "/home/username/.miseqpipeline/bin/roche_sync", line 9, in <module>
+        load_entry_point('miseqpipeline==1.0.0', 'console_scripts', 'roche_sync')()
+      File "/home/username/.miseqpipeline/lib/python2.7/site-packages/miseqpipeline/roche_sync.py", line 100, in main
+        args = parse_args()
+      File "/home/username/.miseqpipeline/lib/python2.7/site-packages/miseqpipeline/roche_sync.py", line 236, in parse_args
+        defaults = config['roche_sync']
+      File "/home/username/.miseqpipeline/lib/python2.7/site-packages/miseqpipeline/config.py", line 29, in __getitem__
+        'Config is missing the key {0}'.format(key)
+    miseqpipeline.config.InvalidConfigError: Config is missing the key roche_sync
+
+The easiest way to get good information from the traceback is by working your way backwards(from the bottom to the top).
+
+From this Traceback you should notice that the last line is telling you that the :doc:`config.yaml <config>` file is missing the key roche_sync. You would then edit your config.yaml file and ensure that key exists and then rerun the ``python setup.py install`` portion of the :doc:`install`.
+
+The traceback is simply Python's way of displaying how it got to the error that was encountered. Typically, but not always, the last line of the output contains the most relevant error. If you submit a :doc:`bug report <createissue>`, make sure to include the entire Traceback though.
+
 .. _faq:
 
 Frequently Asked Questions
@@ -95,3 +119,7 @@ Frequently Asked Questions
 #. The pipeline keeps failing on all of my samples or the logs say something about No Space Left On Device
     Please check your /dev/shm and /tmp to see if either is full(``df -h``). You can clear out all of the left-over junk from the pipeline by issuing ``rm -rf /tmp/runsample* /dev/shm/mapbwa*``
     Also, you may need to tell the pipeline to use a different temporary directory. See :ref:`tempdirfiles` for more information.
+#. You get a Traceback error that contains miseqpipeline.config.InvalidConfigError: Config is missing the key missingkey
+    This indicates that the initial config.yaml file that you created during the :doc:`install` is missing a required key: value pair called missingkey. This most likely happened because you updated the pipeline which introduced new keys in config.yaml.base that you need to add to your config.yaml.
+    
+    Once you add those new keys, you will need to rerun the ``python setup.py install`` portion of the :doc:`install`.
