@@ -12,7 +12,7 @@ Current Pipeline Stages
 * :py:mod:`miseqpipeline.run_bwa_on_samplename <miseqpipeline.run_bwa>`
 * :py:mod:`miseqpipeline.tagreads`
 * :py:mod:`miseqpipeline.base_caller`
-* :doc:`gen_flagstats`
+* :doc:`../scripts/gen_flagstats`
 * :py:mod:`miseqpipeline.graphsample`
 * :py:mod:`miseqpipeline.fqstats`
 * :py:mod:`miseqpipeline.vcf_consensus`
@@ -54,7 +54,7 @@ Output Analysis Directory
 * samplename.bam (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
     * Contains all the mapping assembly information
     * Use `igv <http://www.broadinstitute.org/igv/>`_ to view it graphically
-    * Use `samtools <https://github.com/samtools/samtools>`(included in pipeline) to view in command line
+    * Use `samtools <https://github.com/samtools/samtools>`_ (included in pipeline) to view in command line
 * samplename.bam.bai (:py:mod:`miseqpipeline.run_bwa_on_samplename`)
     * Index for the .bam file
 * samplename.bam.consensus.fasta (:py:mod:`miseqpipeline.vcf_consensus`)

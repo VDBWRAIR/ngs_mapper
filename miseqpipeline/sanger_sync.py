@@ -1,5 +1,5 @@
 """
-The intention of this script is to easily sync a given Sanger run path from the sequencer into the :doc:`NGSData <ngsdata>` structure
+The intention of this script is to easily sync a given Sanger run path from the sequencer into the :doc:`NGSData <../ngsdata>` structure
 
 You need to ensure that the run directory for the run you want to sync is available and that you know the path to it.
 

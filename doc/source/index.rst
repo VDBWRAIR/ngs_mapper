@@ -28,7 +28,7 @@ Contents:
     help
     pipeline
     scripts/index
-    miseqpipeline api <miseqpipeline/miseqpipeline>
+    miseqpipeline api <miseqpipeline/modules>
     development
     todo
 

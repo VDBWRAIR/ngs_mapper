@@ -11,8 +11,10 @@ Help
 Eventually you will run across some errors. No application/software is without bugs.
 Here we will compile all of the most common errors and what to look for to find out what is going on
 
-Traceback Errors
-================
+.. _tracebackerror:
+
+Traceback Error
+---------------
 
 You will likely encounter a Traceback error at some point due to either a bug or maybe you are running one of the commands incorrectly.
 

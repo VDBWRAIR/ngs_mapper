@@ -1,6 +1,6 @@
 """
 Generates a single image that has a sub-image for every reference found in all of the projects supplied.
-It uses the already generated :doc:`qualdepthjson` for each sample to create a single multi-colored line to easily show where Gaps, LowCoverage, LowQuality and LowCoverage+LowQuality regions are.
+It uses the already generated :doc:`../qualdepth` for each sample to create a single multi-colored line to easily show where Gaps, LowCoverage, LowQuality and LowCoverage+LowQuality regions are.
 
 Help usage
 ==========
