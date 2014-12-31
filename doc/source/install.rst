@@ -140,19 +140,22 @@ Installation
 
     It should be safe to run this more than once in case some dependencies do not fully install.
 
-7. Build and view complete documentation
 
-    .. code-block:: bash
+Build and view complete documentation
+-------------------------------------
 
-        cd doc
-        make clean && make html
-        firefox build/html/install.html
-        cd ..
+.. code-block:: bash
 
-8. Verify install
+    cd doc
+    make clean && make html
+    firefox build/html/install.html#build-and-view-complete-documentation
+    cd ..
 
-    You can pseudo test the installation of the pipeline by running the functional tests
+Verify install
+--------------
 
-    .. code-block:: bash
+You can pseudo test the installation of the pipeline by running the functional tests
 
-        nosetests ngs_mapper/tests/test_functional.py
+.. code-block:: bash
+
+    nosetests ngs_mapper/tests/test_functional.py
