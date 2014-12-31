@@ -10,9 +10,9 @@ discuss all aspects of the pipeline as well as give a nice resource to help find
 Submitting a Bug
 ----------------
 
-First, please make sure you read through the :ref:`faq` and also do a search for `existing similar issues <https://github.com/VDBWRAIR/miseqpipeline/issues?q=is%3Aissue>`_
+First, please make sure you read through the :ref:`faq` and also do a search for `existing similar issues <https://github.com/VDBWRAIR/ngs_mapper/issues?q=is%3Aissue>`_
 
-If you can't find anything in either of those sources that address your issue, then go ahead and create a `New Issue <https://github.com/VDBWRAIR/miseqpipeline/issues/new>`_
+If you can't find anything in either of those sources that address your issue, then go ahead and create a `New Issue <https://github.com/VDBWRAIR/ngs_mapper/issues/new>`_
 
 Make sure to include the following information:
 

@@ -36,9 +36,9 @@ class TestAlignmentInfo(common.Base):
         from BamCoverage.bam import alignment_info
         return alignment_info( bam, rs )
 
-    @patch('miseqpipeline.bam.get_refstats')
-    @patch('miseqpipeline.bqd.mpileup')
-    @patch('miseqpipeline.bqd.parse_pileup')
+    @patch('ngs_mapper.bam.get_refstats')
+    @patch('ngs_mapper.bqd.mpileup')
+    @patch('ngs_mapper.bqd.parse_pileup')
     def test_all(self,parse_pileup,mpileup,get_refstats):
         pp = {
             'ref1': dict(

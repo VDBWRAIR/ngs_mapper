@@ -2,24 +2,24 @@
 config.yaml
 ===========
 
-When you install the pipeline you are instructed to copy `miseqpipeline/config.yaml.default <../../../miseqpipeline/config.yaml.default>`_ to miseqpipeline/config.yaml
+When you install the pipeline you are instructed to copy `ngs_mapper/config.yaml.default <../../../ngs_mapper/config.yaml.default>`_ to ngs_mapper/config.yaml
 This file contains all settings that the pipeline will use by default if you do not change them using any of the script options that are available.
 
-When you install the pipeline the config.yaml file gets installed with the pipeline into the installation directory(probably ~/.miseqpipeline)
+When you install the pipeline the config.yaml file gets installed with the pipeline into the installation directory(probably ~/.ngs_mapper)
 In order to change the defaults after that you have two options:
 
-* Edit config.yaml inside of the source directory you cloned with git, then go into your miseqpipeline directory and rerun the setup.py command
+* Edit config.yaml inside of the source directory you cloned with git, then go into your ngs_mapper directory and rerun the setup.py command
  
  .. code-block:: bash
 
         python setup.py install
 
-* Use the :py:mod:`make_example_config <miseqpipeline.config>` to extract the config.yaml into the current directory and use it
+* Use the :py:mod:`make_example_config <ngs_mapper.config>` to extract the config.yaml into the current directory and use it
 
 Example changing single script defaults
 ---------------------------------------
 
-If you want to change the quality threshold to use to trim reads when you run :py:mod:`trim_reads.py <miseqpipeline.trim_reads>` you would probably do something as follows:
+If you want to change the quality threshold to use to trim reads when you run :py:mod:`trim_reads.py <ngs_mapper.trim_reads>` you would probably do something as follows:
 
 #. First what options are available for the command?
 
@@ -52,10 +52,10 @@ If you want to change the quality threshold to use to trim reads when you run :p
 
         #> trim_reads.py -q 5 /path/to/my/input.fastq
 
-This process works pretty slick until you notice that there is no way to easily tell :py:mod:`runsample.py <miseqpipeline.runsample>` to specify that same value.
+This process works pretty slick until you notice that there is no way to easily tell :py:mod:`runsample.py <ngs_mapper.runsample>` to specify that same value.
 With the version 1.0 release of the pipeline there is now a config file that you can edit and change the Default value any script will use.
 
-Example running :py:mod:`runsample.py <miseqpipeline.runsample>` using config.yaml
+Example running :py:mod:`runsample.py <ngs_mapper.runsample>` using config.yaml
 ----------------------------------------------------------------------------------
 
 #. First we need to get a config file to work with
@@ -66,7 +66,7 @@ Example running :py:mod:`runsample.py <miseqpipeline.runsample>` using config.ya
         /current/working/directory/config.yaml
 
 #. We just need to edit that config.yaml file which should be in the current directory and change the trim_reads's q option default value to 5 then save the file
-#. Now just run :py:mod:`runsample.py <miseqpipeline.runsample>` as follows
+#. Now just run :py:mod:`runsample.py <ngs_mapper.runsample>` as follows
 
     .. code-block:: bash
 
@@ -78,7 +78,7 @@ Example running :py:mod:`runsample.py <miseqpipeline.runsample>` using config.ya
 Example running runsamplesheet.sh using a custom config.yaml
 ------------------------------------------------------------
 
-You will probably want to be able to run an entire samplesheet with a custom config file as well. If you check out the :doc:`scripts/runsamplesheet` page you will notice that you can specify options to pass on to :py:mod:`runsample.py <miseqpipeline.runsample>` by using the RUNSAMPLEOPTIONS variable
+You will probably want to be able to run an entire samplesheet with a custom config file as well. If you check out the :doc:`scripts/runsamplesheet` page you will notice that you can specify options to pass on to :py:mod:`runsample.py <ngs_mapper.runsample>` by using the RUNSAMPLEOPTIONS variable
 
 #. Generate your config.yaml template
 
@@ -101,7 +101,7 @@ Yaml syntax links for reference:
 * `Quick start <http://docs.ansible.com/YAMLSyntax.html>`_
 * `More in depth <http://en.wikipedia.org/wiki/YAML>`_
 
-For the miseqpipeline the most important thing is that the NGSDATA value is filled out and contains a correct path to the root of your :doc:`ngsdata`
+For the ngs_mapper the most important thing is that the NGSDATA value is filled out and contains a correct path to the root of your :doc:`ngsdata`
 The rest of the values are pre-filled with defaults that work for most general cases.
 
 Structure of the config.yaml file

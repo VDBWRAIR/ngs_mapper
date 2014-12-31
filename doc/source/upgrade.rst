@@ -1,10 +1,10 @@
 Upgrade
 =======
 
-If you activate the pipeline via miseqpipeline/setup
+If you activate the pipeline via ngs_mapper/setup
 ----------------------------------------------------
 
-  - Completely remove the existing miseqpipeline directory. 
+  - Completely remove the existing ngs_mapper directory. 
   - Then follow :doc:`install`
 
 If you installed using setup.py
@@ -14,7 +14,7 @@ If you installed using setup.py
 
         .. code-block:: bash
         
-            cd ~/miseqpipeline; git fetch
+            cd ~/ngs_mapper; git fetch
 
     #. Then check if you need to update
 
@@ -30,7 +30,7 @@ If you installed using setup.py
 
             git pull
 
-    #. Go into your miseqpipeline directory and rerun the setup script
+    #. Go into your ngs_mapper directory and rerun the setup script
 
         .. code-block:: bash
 

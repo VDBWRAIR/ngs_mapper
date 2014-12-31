@@ -12,7 +12,7 @@ from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
-import miseqpipeline
+import ngs_mapper
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''
@@ -28,7 +28,7 @@ class InstallSystemPackagesCommand(setuptools.Command):
         pass
 
     def run(self):
-        from miseqpipeline.dependency import (
+        from ngs_mapper.dependency import (
             install_system_packages,
             get_distribution_package_list,
             UserNotRootError
@@ -57,7 +57,7 @@ class InstallPythonCommand(setuptools.Command):
         pass
 
     def run(self):
-        from miseqpipeline.dependency import install_python
+        from ngs_mapper.dependency import install_python
         install_python( self.prefix, self.version )
 
 class PipelineInstallCommand(_install):
@@ -94,7 +94,7 @@ class PipelineInstallCommand(_install):
         trimmomatic_url = 'http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip'
 
         # Install samtools and bwa
-        from miseqpipeline.dependency import (
+        from ngs_mapper.dependency import (
                 install_samtools,
                 install_bwa,
                 install_trimmomatic
@@ -124,15 +124,15 @@ class develop(_develop):
 
 # Run setuptools setup
 setup(
-    name = miseqpipeline.__projectname__,
-    version = miseqpipeline.__version__,
+    name = ngs_mapper.__projectname__,
+    version = ngs_mapper.__version__,
     packages = find_packages(),
     scripts = glob('bin/*'),
     entry_points = {
         'console_scripts': [
-            'sample_coverage = miseqpipeline.coverage:main',
-            'make_example_config = miseqpipeline.config:main',
-            'roche_sync = miseqpipeline.roche_sync:main',
+            'sample_coverage = ngs_mapper.coverage:main',
+            'make_example_config = ngs_mapper.config:main',
+            'roche_sync = ngs_mapper.roche_sync:main',
         ]
     },
     setup_requires = [
@@ -144,14 +144,14 @@ setup(
         'mock',
     ],
     package_data = {
-        'miseqpipeline': ['config.yaml','MidParse.conf'],
+        'ngs_mapper': ['config.yaml','MidParse.conf'],
     },
-    author = miseqpipeline.__authors__,
-    author_email = miseqpipeline.__authoremails__,
-    description = miseqpipeline.__description__,
-    license = miseqpipeline.__license__,
+    author = ngs_mapper.__authors__,
+    author_email = ngs_mapper.__authoremails__,
+    description = ngs_mapper.__description__,
+    license = ngs_mapper.__license__,
     keywords = 'miseq iontorrent roche 454 fastq vcf',
-    url = miseqpipeline.__url__,
+    url = ngs_mapper.__url__,
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,

@@ -15,7 +15,7 @@ Here we will show you a complete example of running the pipeline using some test
 
 It means you should be able to type that into your terminal
 
-All examples will assume your current working directory is inside of the git cloned miseqpipeline directory, aka the following command
+All examples will assume your current working directory is inside of the git cloned ngs_mapper directory, aka the following command
 ends with miseqipeline:
 
 .. code-block:: bash
@@ -26,13 +26,13 @@ For both examples below, as always when running the pipeline, you need to ensure
 
 .. code-block:: bash
 
-    $> . ~/.miseqpipeline/bin/activate
+    $> . ~/.ngs_mapper/bin/activate
 
-The location of our data sets are under miseqpipeline/tests/fixtures/functional
+The location of our data sets are under ngs_mapper/tests/fixtures/functional
 
 .. code-block:: bash
 
-    $> ls miseqpipeline/tests/fixtures/functional
+    $> ls ngs_mapper/tests/fixtures/functional
     780  780.conf  780.ref.fasta  947  947.conf  947.ref.fasta
 
 Here you can see we have 2 data sets to play with.
@@ -48,7 +48,7 @@ Using runsample.py to run a single sample
 
 Some times you just need to run a single sample. Here we will use runsample.py to run the 947 example data set and have the analysis be put into a directory called 947 in the current directory
 
-First, let's see what options there are available for the :py:mod:`runsample.py <miseqpipeline.runsample>` script to use
+First, let's see what options there are available for the :py:mod:`runsample.py <ngs_mapper.runsample>` script to use
 
 .. code-block:: bash
 
@@ -68,7 +68,7 @@ So to run the project with the fewest amount of arguments would be as follows(do
 
 .. code-block:: bash
 
-    $> runsample.py miseqpipeline/tests/fixtures/functional/947 miseqpipeline/tests/fixtures/functional/947.ref.fasta 947
+    $> runsample.py ngs_mapper/tests/fixtures/functional/947 ngs_mapper/tests/fixtures/functional/947.ref.fasta 947
 
 This will run the 947 data and use the 947.ref.fasta file to map to. All files will be prefixed with 947.
 Since we did not specify the -od argument, all the files from the pipeline get dumped into your current directory.
@@ -108,9 +108,9 @@ We can get extended help information which should print the defualts as well fro
                             specified.[Default: None]
       -od OUTDIR, --outdir OUTDIR
                             The output directory for all files to be put[Default:
-                            /home/myusername/miseqpipeline]
+                            /home/myusername/ngs_mapper]
 
-You can see that ``--help`` gives us the same initial output as just running runsample.py without any arguments, but also contains extended help for all the arguments. The ``--help`` argument is available for all miseqpipeline scripts
+You can see that ``--help`` gives us the same initial output as just running runsample.py without any arguments, but also contains extended help for all the arguments. The ``--help`` argument is available for all ngs_mapper scripts
 that end in .py(If you find one that doesn't, head over to :doc:`createissue` and file a new Bug Report.
 
 So you can see the -od option's default is our current directory. So if we want our analysis files to go into a specific directory for each sample we run we can specify a different directory. While we are at it, lets try specifying some of the other optional arguments too.
@@ -119,7 +119,7 @@ Let's tell runsample.py to put our analysis into a directory called 947 and also
 
 .. code-block:: bash
 
-    $> runsample.py -od 947 -head_crop 20 miseqpipeline/tests/fixtures/functional/947 miseqpipeline/tests/fixtures/functional/947.ref.fasta 947
+    $> runsample.py -od 947 -head_crop 20 ngs_mapper/tests/fixtures/functional/947 ngs_mapper/tests/fixtures/functional/947.ref.fasta 947
     2014-12-22 10:17:52,465 -- INFO -- runsample       --- Starting 947 --- 
     2014-12-22 10:21:28,526 -- INFO -- runsample       --- Finished 947 ---
 
@@ -164,7 +164,7 @@ An easy way to view your bam file quickly from the command line if you have `igv
 Using runsamplesheet.sh to run multiple samples in parallel
 -----------------------------------------------------------
 
-:doc:`scripts/runsamplesheet` is just a wrapper script that makes running :py:mod:`runsample.py <miseqpipeline.runsample>` on a bunch of samples easier.
+:doc:`scripts/runsamplesheet` is just a wrapper script that makes running :py:mod:`runsample.py <ngs_mapper.runsample>` on a bunch of samples easier.
 
 You just have to first create a :doc:`samplesheet` then you just have to run it as follows:
 
@@ -183,14 +183,14 @@ So let's run the 947 and 780 samples as our example.
 
 #. Create a new file called samplesheet.tsv and put the following in it(you can use ``gedit samplesheet.tsv`` to edit/save the file)::
 
-    947 ../miseqpipeline/tests/fixtures/functional/947.ref.fasta
-    780 ../miseqpipeline/tests/fixtures/functional/780.ref.fasta
+    947 ../ngs_mapper/tests/fixtures/functional/947.ref.fasta
+    780 ../ngs_mapper/tests/fixtures/functional/780.ref.fasta
 
 #. Run your samplesheet with runsamplesheet.sh
 
     .. code-block:: bash
 
-        $> runsamplesheet.sh ../miseqpipeline/tests/fixtures/functional samplesheet.tsv
+        $> runsamplesheet.sh ../ngs_mapper/tests/fixtures/functional samplesheet.tsv
         2014-12-22 12:30:25,381 -- INFO -- runsample       --- Starting 780 --- 
         2014-12-22 12:30:25,381 -- INFO -- runsample       --- Starting 947 --- 
         2014-12-22 12:30:50,834 -- INFO -- runsample       --- Finished 780 ---
@@ -225,7 +225,7 @@ You can view what each of these files means by heading over to the :doc:`scripts
 Changing defaults for pipeline stages
 =====================================
 
-If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config` and supply it to :py:mod:`runsample.py <miseqpipeline.runsample>` using the -c option. You can read more about how to create the config and edit it via the :doc:`config` script's page
+If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config` and supply it to :py:mod:`runsample.py <ngs_mapper.runsample>` using the -c option. You can read more about how to create the config and edit it via the :doc:`config` script's page
 
 Rerunning Samples
 =================
@@ -236,7 +236,7 @@ Rerunning samples is very similar to just running samples.
 #. Run the :doc:`scripts/runsamplesheet` script on the modified samplesheet
     * **Note**: As of right now, you will have to manually remove the existing project directories that you want to rerun.
 #. Regenerate graphics for all samples
-    * The -norecreate tells it not to recreate the qualdepth.json for each sample which is very time consuming. The reran samples should already have recreated their qualdepth.json files when :py:mod:`runsample.py <miseqpipeline.runsample>` was run on them.
+    * The -norecreate tells it not to recreate the qualdepth.json for each sample which is very time consuming. The reran samples should already have recreated their qualdepth.json files when :py:mod:`runsample.py <ngs_mapper.runsample>` was run on them.
 
         .. code-block:: bash
 
@@ -249,7 +249,7 @@ Rerunning samples is very similar to just running samples.
 Temporary Directories/Files
 ===========================
 
-The pipeline initially creates a temporary analysis directory for each sample that you run with :py:mod:`runsample.py <miseqpipeline.runsample>`.
+The pipeline initially creates a temporary analysis directory for each sample that you run with :py:mod:`runsample.py <ngs_mapper.runsample>`.
 By default this directory will be created in your system's configured temporary directory(most likely /tmp). This is especially useful if your /tmp partition is not very large or if you
 have a custom temporary partition that is on a very fast hard drive such as a Solid State Drive that you want to use.
 

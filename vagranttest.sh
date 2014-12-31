@@ -15,4 +15,4 @@ fi
 
 # Bring up box. Provision and run tests
 vagrant up $1
-vagrant ssh $1 -c ". ~/.miseqpipeline/bin/activate; cd miseqpipeline; nosetests miseqpipeline"
+vagrant ssh $1 -c ". ~/.ngs_mapper/bin/activate; cd ngs_mapper; nosetests ngs_mapper"

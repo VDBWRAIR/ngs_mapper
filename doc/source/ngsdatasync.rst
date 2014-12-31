@@ -24,7 +24,7 @@ This could mean that you use the su, sudo or just ssh as that user. This will de
 
 The following scripts exist to sync data from an instrument into the data structure:
 
-* :py:mod:`roche_sync <miseqpipeline.roche_sync>`
-* :py:mod:`miseq_sync <miseqpipeline.miseq_sync>`
-* :py:mod:`sanger_sync <miseqpipeline.sanger_sync>`
+* :py:mod:`roche_sync <ngs_mapper.roche_sync>`
+* :py:mod:`miseq_sync <ngs_mapper.miseq_sync>`
+* :py:mod:`sanger_sync <ngs_mapper.sanger_sync>`
 * iontorrent_sync.py coming soon

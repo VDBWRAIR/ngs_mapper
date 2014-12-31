@@ -18,8 +18,8 @@ def alignment_info( bam, regionstr=None ):
 
         @yields (get_refstat output for current ref, [parse_pileup() dictionary for each reference])
     '''
-    from miseqpipeline.bam import get_refstats
-    from miseqpipeline.bqd import mpileup, parse_pileup
+    from ngs_mapper.bam import get_refstats
+    from ngs_mapper.bqd import mpileup, parse_pileup
     refstats = get_refstats( bam )
     pileup = parse_pileup( mpileup( bam, regionstr ) )
     for ref, stats in pileup.iteritems():

@@ -11,7 +11,7 @@ import tempfile
 
 # Provisions pipeline into Ubuntu, CentOS or RedHat VM
 # Will essentially do everything in the README.md for installation
-# Then runs nosetests -v miseqpipeline at the end
+# Then runs nosetests -v ngs_mapper at the end
 
 class NotSuperUserError(Exception): pass
 
@@ -61,7 +61,7 @@ def install_python( version='2.7.8', installprefix='$HOME' ):
     # Path to python executable
     return pythonexe
 
-def create_virtualenv( venvpath='$HOME/.miseqpipeline', pythonprefix='$HOME' ):
+def create_virtualenv( venvpath='$HOME/.ngs_mapper', pythonprefix='$HOME' ):
     '''
     Unpack and install a virtualenv to venvpath
     '''
@@ -81,7 +81,7 @@ def create_virtualenv( venvpath='$HOME/.miseqpipeline', pythonprefix='$HOME' ):
     pythonpath = expandvars('{0}/bin/python'.format(pythonprefix))
     shell_cmd(
         '{0} virtualenv-1.11.6/virtualenv.py' \
-        ' --prompt="(miseqpipeline) " {1}'.format(pythonpath,venvpath)
+        ' --prompt="(ngs_mapper) " {1}'.format(pythonpath,venvpath)
     )
 
     # Activate virtualenv
@@ -98,7 +98,7 @@ def run_setup( venvpath ):
     )
 
 def install_pipeline():
-    clone_pipeline('/vagrant', '~/miseqpipeline')
+    clone_pipeline('/vagrant', '~/ngs_mapper')
     install_python()
     venvpath = create_virtualenv()
     run_setup( venvpath )

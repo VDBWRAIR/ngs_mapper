@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from miseqpipeline import run_bwa
+from ngs_mapper import run_bwa
 import logging
 
 logging.basicConfig(level=logging.DEBUG)

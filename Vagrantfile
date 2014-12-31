@@ -8,23 +8,23 @@ VAGRANTFILE_API_VERSION = "2"
 def provision_pipeline( config )
     # Clone the repo
     config.vm.provision "shell", privileged: false,
-        inline: "echo 'Cloning'; [ -e ~/miseqpipeline ] && (cd ~/miseqpipeline && git pull && cd ..) || git clone /vagrant ~/miseqpipeline"
+        inline: "echo 'Cloning'; [ -e ~/ngs_mapper ] && (cd ~/ngs_mapper && git pull && cd ..) || git clone /vagrant ~/ngs_mapper"
 
     # Setup config.yaml
     config.vm.provision "shell", privileged: false,
-        inline: "echo 'Creating config.yaml'; mkdir -p ~/NGSDATA; sed 's|/path/to/NGSDATA|/home/vagrant/NGSDATA|' ~/miseqpipeline/miseqpipeline/config.yaml.default > ~/miseqpipeline/miseqpipeline/config.yaml"
+        inline: "echo 'Creating config.yaml'; mkdir -p ~/NGSDATA; sed 's|/path/to/NGSDATA|/home/vagrant/NGSDATA|' ~/ngs_mapper/ngs_mapper/config.yaml.default > ~/ngs_mapper/ngs_mapper/config.yaml"
 
     # Ensure that setup.py and vagrant-provision.sh are up to date in case they are not committed
     config.vm.provision "shell", privileged: false,
-        inline: "cp -f /vagrant/setup.py ~/miseqpipeline; cp -f /vagrant/vagrant-provision.py ~/miseqpipeline;"
+        inline: "cp -f /vagrant/setup.py ~/ngs_mapper; cp -f /vagrant/vagrant-provision.py ~/ngs_mapper;"
 
     # Run the provisioning system-packages
     config.vm.provision "shell", privileged: false,
-        inline: "echo 'Installing system packages'; cd ~/miseqpipeline; sudo python vagrant-provision.py --install-system-packages"
+        inline: "echo 'Installing system packages'; cd ~/ngs_mapper; sudo python vagrant-provision.py --install-system-packages"
 
     # Run the provisioning pipeline install
     config.vm.provision "shell", privileged: false,
-        inline: "echo 'Installing pipeline'; cd ~/miseqpipeline; python vagrant-provision.py --install-pipeline"
+        inline: "echo 'Installing pipeline'; cd ~/ngs_mapper; python vagrant-provision.py --install-pipeline"
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|

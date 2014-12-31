@@ -4,7 +4,7 @@
 runsamplesheet.sh
 =================
 
-Runs :py:mod:`runsample <miseqpipeline.runsample>` on every sample/reference pair inside of a :doc:`../samplesheet`
+Runs :py:mod:`runsample <ngs_mapper.runsample>` on every sample/reference pair inside of a :doc:`../samplesheet`
 
 Usage
 =====
@@ -21,7 +21,7 @@ You can run runsamplesheet.sh and pass arguments to runsample.py by prepending R
 Example: adding -minth option
 -----------------------------
 
-This would run each sample and pass "-minth 0.95" to :py:mod:`runsample <miseqpipeline.runsample>`
+This would run each sample and pass "-minth 0.95" to :py:mod:`runsample <ngs_mapper.runsample>`
 
 .. code-block:: bash
 
@@ -31,14 +31,14 @@ Creates
 =======
 
 * graphsample.log
-    * Logfile from running :py:mod:`graphsample.py <miseqpipeline.graphsample>` on all samples in samplesheet
+    * Logfile from running :py:mod:`graphsample.py <ngs_mapper.graphsample>` on all samples in samplesheet
 * MapUnmapReads.png
     * Graphic that shows each sample's mapped vs unmapped read counts
 * pipeline.log
     * Logfile that contains essentially the same information on the console you get when you run runsample.py except it also includes debug lines
 * PipelineTimes.png(See :doc:`graphs`)
 * Projects
-    * All output from :py:mod:`runsample <miseqpipeline.runsample>` placed under Projects named after each sample
+    * All output from :py:mod:`runsample <ngs_mapper.runsample>` placed under Projects named after each sample
 * QualDepth.pdf(See :doc:`graphs`)
 * SampleCoverage.png(See :doc:`graphs`)
 * vcf_consensus
