@@ -31,7 +31,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # Add project path to python path
 PROJPATH = dirname(dirname(dirname(abspath(__file__))))
 sys.path.insert(0, PROJPATH)
-
+import miseqpipeline
 
 # -- General configuration ------------------------------------------------
 
@@ -65,15 +65,15 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'miseqpipeline'
-copyright = u'2014, Tyghe Vallard'
+project = miseqpipeline.__projectname__
+copyright = u'2014, ' + miseqpipeline.__authors__
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-from version import __version__
+__version__ = miseqpipeline.__version__
 version = __version__[:-2]
 # The full version, including alpha/beta/rc tags.
 release = __version__
@@ -219,8 +219,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'miseqpipeline.tex', u'miseqpipeline Documentation',
-   u'Tyghe Vallard', 'manual'),
+  ('index', miseqpipeline.__projectname__ + '.tex', miseqpipeline.__projectname__ + ' Documentation',
+   miseqpipeline.__authors__, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -249,8 +249,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'miseqpipeline', u'miseqpipeline Documentation',
-     [u'Tyghe Vallard'], 1)
+    ('index', miseqpipeline.__projectname__, miseqpipeline.__projectname__ + ' Documentation',
+     [miseqpipeline.__authors__], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -263,9 +263,12 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'miseqpipeline', u'miseqpipeline Documentation',
-   u'Tyghe Vallard', 'miseqpipeline', 'One line description of project.',
-   'Miscellaneous'),
+  (
+    'index', miseqpipeline.__projectname__,
+    miseqpipeline.__projectname__ + ' Documentation',
+    miseqpipeline.__authors__, miseqpipeline.__projectname__,
+    miseqpipeline.__description__, 'Miscellaneous'
+  ),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -283,6 +286,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
+    #'miseqpipeline': ('../build/html', None),
     'http://docs.python.org/': None,
     'http://sphinx-doc.org/': None,
 }

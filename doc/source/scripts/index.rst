@@ -11,7 +11,7 @@ These are scripts that you run directly that will run the Supplemental scripts
 * :doc:`runsamplesheet`
 * :py:mod:`runsample <miseqpipeline.runsample>`
 * :doc:`graphs`
-* :doc:`consensuses.sh`
+* :doc:`consensuses`
 * :py:mod:`miseq_sync <miseqpipeline.miseq_sync>`
 * :py:mod:`roche_sync <miseqpipeline.roche_sync>`
 * :py:mod:`sanger_sync <miseqpipeline.sanger_sync>`

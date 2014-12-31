@@ -13,12 +13,13 @@ In order to change the defaults after that you have two options:
  .. code-block:: bash
 
         python setup.py install
+
 * Use the :py:mod:`make_example_config <miseqpipeline.config>` to extract the config.yaml into the current directory and use it
 
 Example changing single script defaults
 ---------------------------------------
 
-If you want to change the quality threshold to use to trim reads when you run :doc:`scripts/trim_reads` you would probably do something as follows:
+If you want to change the quality threshold to use to trim reads when you run :py:mod:`trim_reads.py <miseqpipeline.trim_reads>` you would probably do something as follows:
 
 #. First what options are available for the command?
 
@@ -51,11 +52,11 @@ If you want to change the quality threshold to use to trim reads when you run :d
 
         #> trim_reads.py -q 5 /path/to/my/input.fastq
 
-This process works pretty slick until you notice that there is no way to easily tell :doc:`scripts/runsample` to specify that same value.
+This process works pretty slick until you notice that there is no way to easily tell :py:mod:`runsample.py <miseqpipeline.runsample>` to specify that same value.
 With the version 1.0 release of the pipeline there is now a config file that you can edit and change the Default value any script will use.
 
-Example running :doc:`scripts/runsample` using config.yaml
-----------------------------------------------------------
+Example running :py:mod:`runsample.py <miseqpipeline.runsample>` using config.yaml
+----------------------------------------------------------------------------------
 
 #. First we need to get a config file to work with
 
@@ -65,7 +66,7 @@ Example running :doc:`scripts/runsample` using config.yaml
         /current/working/directory/config.yaml
 
 #. We just need to edit that config.yaml file which should be in the current directory and change the trim_reads's q option default value to 5 then save the file
-#. Now just run :doc:`scripts/runsample` as follows
+#. Now just run :py:mod:`runsample.py <miseqpipeline.runsample>` as follows
 
     .. code-block:: bash
 
@@ -77,7 +78,7 @@ Example running :doc:`scripts/runsample` using config.yaml
 Example running runsamplesheet.sh using a custom config.yaml
 ------------------------------------------------------------
 
-You will probably want to be able to run an entire samplesheet with a custom config file as well. If you check out the :doc:`scripts/runsamplesheet` page you will notice that you can specify options to pass on to :doc:`scripts/runsample` by using the RUNSAMPLEOPTIONS variable
+You will probably want to be able to run an entire samplesheet with a custom config file as well. If you check out the :doc:`scripts/runsamplesheet` page you will notice that you can specify options to pass on to :py:mod:`runsample.py <miseqpipeline.runsample>` by using the RUNSAMPLEOPTIONS variable
 
 #. Generate your config.yaml template
 

@@ -172,14 +172,6 @@ miseqpipeline.runsample module
     :undoc-members:
     :show-inheritance:
 
-miseqpipeline.samtools module
------------------------------
-
-.. automodule:: miseqpipeline.samtools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 miseqpipeline.sanger_sync module
 --------------------------------
 

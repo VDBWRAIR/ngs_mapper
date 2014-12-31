@@ -1,5 +1,5 @@
 """
-The intention of this script is to easily sync a given Roche 454 run path from the sequencer into the :doc:`NGSData <ngsdata>` structure
+The intention of this script is to easily sync a given Roche 454 run path from the sequencer into the :doc:`NGSData <../ngsdata>` structure
 
 You need to ensure that the run directory for the run you want to sync is available and that you know the path to it.
 
@@ -31,7 +31,7 @@ coming soon...
 How it works
 ============
 
-Since the Roche instrument does not automatically create a sample to barcode/region mapping file such as the MiSeq's SampleSheet.csv, you will have to manually create one and place it into the top level R_ directory.
+Since the Roche instrument does not automatically create a sample to barcode/region mapping file such as the MiSeq's SampleSheet.csv, you will have to manually create one and place it into the top level R\_ directory.
 
 .. _roche-sample-sheet:
 
@@ -79,7 +79,7 @@ and contains the following signalProcessing directory
             Sample1__1__RL1__2001_01_01__Unk.sff
             Sample2__2__TI1__2001_01_01__Unk.sff
 
-#. The script then symlinks all demultiplexed reads that are in the RawData/R_/D\_ directory into the ReadsBySample under the Sample Name directory
+#. The script then symlinks all demultiplexed reads that are in the RawData/R\_/D\_ directory into the ReadsBySample under the Sample Name directory
 
     .. code-block:: bash
 

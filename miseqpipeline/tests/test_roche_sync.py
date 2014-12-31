@@ -366,7 +366,7 @@ class TestFunctional( BaseClass ):
         return 'sfffile'
         
     def _C( self, *args, **kwargs ):
-        script = 'roche_sync.py'
+        script = 'roche_sync'
         cmd = 'PATH={}:$PATH {} --ngsdata {} --midparse {} {}'.format(os.getcwd(), script, args[1], args[2], args[0])
         p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True )
         eo = p.communicate()

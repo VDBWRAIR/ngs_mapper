@@ -51,7 +51,7 @@ clean:
 	rm -rf source/miseqpipeline
 
 html:
-	sphinx-apidoc -o source/miseqpipeline ../miseqpipeline ../miseqpipeline/tests
+	sphinx-apidoc -o source/miseqpipeline ../miseqpipeline ../miseqpipeline/tests ../miseqpipeline/samtools.py
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

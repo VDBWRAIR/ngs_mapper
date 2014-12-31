@@ -225,7 +225,7 @@ You can view what each of these files means by heading over to the :doc:`scripts
 Changing defaults for pipeline stages
 =====================================
 
-If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config` and supply it to :py:mod:`runsample.py <miseqpipeline.runsample>` using the -c option. You can read more about how to create the config and edit it via the :doc:`scripts/make_example_config` script's page
+If you want to change any of the settings of any of the pipeline stages you will need to create a :doc:`config` and supply it to :py:mod:`runsample.py <miseqpipeline.runsample>` using the -c option. You can read more about how to create the config and edit it via the :doc:`config` script's page
 
 Rerunning Samples
 =================
@@ -242,7 +242,7 @@ Rerunning samples is very similar to just running samples.
 
             graphs.sh -norecreate
 
-#. You should not have to rerun :doc:`scripts/consensuses.sh` as it just symlinks the files
+#. You should not have to rerun :doc:`scripts/consensuses` as it just symlinks the files
 
 .. _tempdirfiles:
 

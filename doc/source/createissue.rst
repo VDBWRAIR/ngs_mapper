@@ -10,7 +10,7 @@ discuss all aspects of the pipeline as well as give a nice resource to help find
 Submitting a Bug
 ----------------
 
-First, please make sure you read through the :doc:`FAQ <help>` and also do a search for `existing similar issues <https://github.com/VDBWRAIR/miseqpipeline/issues?q=is%3Aissue>`_
+First, please make sure you read through the :ref:`faq` and also do a search for `existing similar issues <https://github.com/VDBWRAIR/miseqpipeline/issues?q=is%3Aissue>`_
 
 If you can't find anything in either of those sources that address your issue, then go ahead and create a `New Issue <https://github.com/VDBWRAIR/miseqpipeline/issues/new>`_
 
@@ -18,6 +18,7 @@ Make sure to include the following information:
 
 * Description of the error that you are encountering
 * The command you ran that generated the error
+* The entire :ref:`tracebackerror` if there is one
 * Any pertinant information about the issue
 
 You may be asked later to attach files from your project so don't delete any of the files yet.

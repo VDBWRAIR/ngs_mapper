@@ -12,7 +12,7 @@ from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
-from version import __version__
+import miseqpipeline
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''
@@ -124,8 +124,8 @@ class develop(_develop):
 
 # Run setuptools setup
 setup(
-    name = "miseqpipeline",
-    version = __version__,
+    name = miseqpipeline.__projectname__,
+    version = miseqpipeline.__version__,
     packages = find_packages(),
     scripts = glob('bin/*'),
     entry_points = {
@@ -146,12 +146,12 @@ setup(
     package_data = {
         'miseqpipeline': ['config.yaml','MidParse.conf'],
     },
-    author = 'Tyghe Vallard',
-    author_email = 'vallardt@gmail.com',
-    description = 'Pipeline that combines sff and fastq files from multiple platforms',
-    license = '',
+    author = miseqpipeline.__authors__,
+    author_email = miseqpipeline.__authoremails__,
+    description = miseqpipeline.__description__,
+    license = miseqpipeline.__license__,
     keywords = 'miseq iontorrent roche 454 fastq vcf',
-    url = 'https://github.com/VDBWRAIR/miseqpipeline',
+    url = miseqpipeline.__url__,
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,
