@@ -5,8 +5,8 @@
   Assumes you already have git installed. If not you will need to get it installed by your system administrator.
 
   ```
-  git clone https://githubusername@github.com/VDBWRAIR/miseqpipeline.git
-  cd miseqpipeline
+  git clone https://githubusername@github.com/VDBWRAIR/ngs_mapper.git
+  cd ngs_mapper
   ```
 
 2. Install System Packages
@@ -27,12 +27,12 @@
 
 3. Configure the defaults
 
-  You need to configure the miseqpipeline/config.yaml file.
+  You need to configure the ngs_mapper/config.yaml file.
 
   1. Copy the default config to config.yaml
 
     ```
-    cp miseqpipeline/config.yaml.default miseqpipeline/config.yaml
+    cp ngs_mapper/config.yaml.default ngs_mapper/config.yaml
     ```
 
   2. Then edit the config file which is in yaml(http://docs.ansible.com/YAMLSyntax.html) format
@@ -41,7 +41,7 @@
 
 4. Python
 
-  The miseqpipeline requires python 2.7.3+ but < 3.0
+  The ngs_mapper requires python 2.7.3+ but < 3.0
 
   ```
   python setup.py install_python
@@ -61,20 +61,20 @@
   1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
 
     ```
-    venvpath=$HOME/.miseqpipeline
+    venvpath=$HOME/.ngs_mapper
     ```
 
   2. Install the virtualenv to the path you specified
 
     ```
     wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
-    $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(miseqpipeline) " $venvpath 
+    $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
     ```
 
   3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
 
     ```
-    . $HOME/.miseqpipeline/bin/activate
+    . $HOME/.ngs_mapper/bin/activate
     ```
 
 6. Install the pipeline into virtualenv
@@ -90,7 +90,7 @@
   You can pseudo test the installation of the pipeline by running the functional tests
 
   ```
-  nosetests miseqpipeline/tests/test_functional.py
+  nosetests ngs_mapper/tests/test_functional.py
   ```
 
 Back to the [README.md](README.md)

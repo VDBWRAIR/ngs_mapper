@@ -10,9 +10,9 @@ import json
 import itertools
 from StringIO import StringIO
 
-import miseqpipeline.bam
+import ngs_mapper.bam
 #from bam import parse_pileup, alignment_info, get_refstats
-from miseqpipeline.bam import get_refstats
+from ngs_mapper.bam import get_refstats
 from bam import alignment_info
 
 class RegionTypes(object):

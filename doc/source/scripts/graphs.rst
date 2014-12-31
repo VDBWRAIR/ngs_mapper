@@ -28,7 +28,7 @@ Creates
     * This graphic is to show quickly any samples that may have a lot of unmapped reads which could indicate an incorrect reference or some other issues.
 * SampleCoverage.png
     * Shows an easy to digest coverage graphic for each sample to know where 'issue' areas are on the genome
-    * :py:mod:`sample_coverage <miseqpipeline.coverage>` has more info
+    * :py:mod:`sample_coverage <ngs_mapper.coverage>` has more info
 * PipelineTimes.png
     * Graphic that shows how many seconds each sample took to run
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# miseqpipeline dir
+# ngs_mapper dir
 THIS=$(cd $(dirname $0) && pwd)
 
 if [ ! -d Projects ]

@@ -2,7 +2,7 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
+SPHINXOPTS    = -W
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
@@ -48,10 +48,10 @@ help:
 
 clean:
 	rm -rf $(BUILDDIR)/*
-	rm -rf source/miseqpipeline
+	rm -rf source/ngs_mapper
 
 html:
-	sphinx-apidoc -o source/miseqpipeline ../miseqpipeline ../miseqpipeline/tests ../miseqpipeline/samtools.py
+	sphinx-apidoc -o source/ngs_mapper ../ngs_mapper ../ngs_mapper/tests ../ngs_mapper/samtools.py
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -87,17 +87,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/miseqpipeline.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/ngs_mapper.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/miseqpipeline.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/ngs_mapper.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/miseqpipeline"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/miseqpipeline"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/ngs_mapper"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/ngs_mapper"
 	@echo "# devhelp"
 
 epub:

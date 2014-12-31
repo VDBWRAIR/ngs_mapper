@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# miseqpipeline documentation build configuration file, created by
+# ngs_mapper documentation build configuration file, created by
 # sphinx-quickstart on Mon Dec  1 09:31:06 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -31,7 +31,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # Add project path to python path
 PROJPATH = dirname(dirname(dirname(abspath(__file__))))
 sys.path.insert(0, PROJPATH)
-import miseqpipeline
+import ngs_mapper
 
 # -- General configuration ------------------------------------------------
 
@@ -65,15 +65,15 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = miseqpipeline.__projectname__
-copyright = u'2014, ' + miseqpipeline.__authors__
+project = ngs_mapper.__projectname__
+copyright = u'2014, ' + ngs_mapper.__authors__
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-__version__ = miseqpipeline.__version__
+__version__ = ngs_mapper.__version__
 version = __version__[:-2]
 # The full version, including alpha/beta/rc tags.
 release = __version__
@@ -199,7 +199,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'miseqpipelinedoc'
+htmlhelp_basename = 'ngs_mapperdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -219,8 +219,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', miseqpipeline.__projectname__ + '.tex', miseqpipeline.__projectname__ + ' Documentation',
-   miseqpipeline.__authors__, 'manual'),
+  ('index', ngs_mapper.__projectname__ + '.tex', ngs_mapper.__projectname__ + ' Documentation',
+   ngs_mapper.__authors__, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -249,8 +249,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', miseqpipeline.__projectname__, miseqpipeline.__projectname__ + ' Documentation',
-     [miseqpipeline.__authors__], 1)
+    ('index', ngs_mapper.__projectname__, ngs_mapper.__projectname__ + ' Documentation',
+     [ngs_mapper.__authors__], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -264,10 +264,10 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   (
-    'index', miseqpipeline.__projectname__,
-    miseqpipeline.__projectname__ + ' Documentation',
-    miseqpipeline.__authors__, miseqpipeline.__projectname__,
-    miseqpipeline.__description__, 'Miscellaneous'
+    'index', ngs_mapper.__projectname__,
+    ngs_mapper.__projectname__ + ' Documentation',
+    ngs_mapper.__authors__, ngs_mapper.__projectname__,
+    ngs_mapper.__description__, 'Miscellaneous'
   ),
 ]
 
@@ -286,7 +286,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    #'miseqpipeline': ('../build/html', None),
+    #'ngs_mapper': ('../build/html', None),
     'http://docs.python.org/': None,
     'http://sphinx-doc.org/': None,
 }

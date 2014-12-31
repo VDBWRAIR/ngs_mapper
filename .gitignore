@@ -1,7 +1,7 @@
 *.pyc
 *.swp
 perms.sh
-.miseqpipeline
+.ngs_mapper
 *build
 *dist
 *egg*
@@ -24,3 +24,4 @@ setuptools-*.zip
 setuptools-*
 virtualenv-*
 config.yaml
+doc/source/ngs_mapper

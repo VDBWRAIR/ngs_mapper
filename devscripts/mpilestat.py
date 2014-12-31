@@ -4,7 +4,7 @@ import sys
 import os
 import pprint
 
-# miseqpipeline should be first in the PATH
+# ngs_mapper should be first in the PATH
 sys.path.insert( 0, os.environ['PATH'].split( ':' )[0] )
 import samtools
 

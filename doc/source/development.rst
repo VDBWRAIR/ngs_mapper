@@ -4,12 +4,12 @@ Development
 
 Contributing to the pipeline is fairly straight forward. The process is as follows:
 
-#. Fork the VDBWRAIR `Miseqpipeline project <https://github.com/VDBWRAIR/miseqpipeline>`_ on GitHub
+#. Fork the VDBWRAIR `ngs_mapper project <https://github.com/VDBWRAIR/ngs_mapper>`_ on GitHub
 #. git clone your forked version to your local computer
 #. Make changes to the code and ensure everything is tested
     * [[Make Tests]]
 #. Once you have tested all your changes you should commit them and push them up to your github fork of the project
-#. After you have pushed your changes to your fork on github you can create a pull request which essentially notifies the miseqpipeline maintainers that you have changes that you would like to apply and they can try them out.
+#. After you have pushed your changes to your fork on github you can create a pull request which essentially notifies the ngs_mapper maintainers that you have changes that you would like to apply and they can try them out.
 
 Test Environment
 ================

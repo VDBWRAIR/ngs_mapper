@@ -27,8 +27,8 @@ Install Pipeline
 
 Essentially runs all the steps after the system package installation for you
 
-* git clone to ~/miseqpipeline
+* git clone to ~/ngs_mapper
 * python setup.py install_python
-* setup virtualenv into ~/.miseqpipeline
-* activate ~/.miseqpipeline
+* setup virtualenv into ~/.ngs_mapper
+* activate ~/.ngs_mapper
 * python setup.py install

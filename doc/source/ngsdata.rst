@@ -47,13 +47,13 @@ This directory contains only directories that are named after each of the sample
 
 The files that live in these directories must adhere strictly to a specific naming scheme so the pipeline can determine what reads come from which platforms as they need to be handled slightly different.
 
-See the following naming regular expressions defined in :py:mod:`miseqpipeline.data` for more information about how these filenames have to be named:
+See the following naming regular expressions defined in :py:mod:`ngs_mapper.data` for more information about how these filenames have to be named:
 
-* :py:mod:`sanger <miseqpipeline.data.SANGER>`
-* :py:mod:`miseq <miseqpipeline.data.MISEQ>`
-* :py:mod:`roche <miseqpipeline.data.ROCHE>`
-* :py:mod:`iontorrent <miseqpipeline.data.IONTORRENT>`
+* :py:mod:`sanger <ngs_mapper.data.SANGER>`
+* :py:mod:`miseq <ngs_mapper.data.MISEQ>`
+* :py:mod:`roche <ngs_mapper.data.ROCHE>`
+* :py:mod:`iontorrent <ngs_mapper.data.IONTORRENT>`
 
-If you have files that do not match these naming standards the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample.py <miseqpipeline.runsample>`. Inspecting the logs you will see errors about Somehow no reads being compiled which is a good indication that your files are named incorrectly.
+If you have files that do not match these naming standards the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample.py <ngs_mapper.runsample>`. Inspecting the logs you will see errors about Somehow no reads being compiled which is a good indication that your files are named incorrectly.
 
 To ensure your files are named correctly you can use the various sync scripts listed in :doc:`ngsdatasync`

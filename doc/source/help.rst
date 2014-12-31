@@ -21,15 +21,15 @@ You will likely encounter a Traceback error at some point due to either a bug or
 The traceback errors will look like this::
 
     Traceback (most recent call last):
-      File "/home/username/.miseqpipeline/bin/roche_sync", line 9, in <module>
-        load_entry_point('miseqpipeline==1.0.0', 'console_scripts', 'roche_sync')()
-      File "/home/username/.miseqpipeline/lib/python2.7/site-packages/miseqpipeline/roche_sync.py", line 100, in main
+      File "/home/username/.ngs_mapper/bin/roche_sync", line 9, in <module>
+        load_entry_point('ngs_mapper==1.0.0', 'console_scripts', 'roche_sync')()
+      File "/home/username/.ngs_mapper/lib/python2.7/site-packages/ngs_mapper/roche_sync.py", line 100, in main
         args = parse_args()
-      File "/home/username/.miseqpipeline/lib/python2.7/site-packages/miseqpipeline/roche_sync.py", line 236, in parse_args
+      File "/home/username/.ngs_mapper/lib/python2.7/site-packages/ngs_mapper/roche_sync.py", line 236, in parse_args
         defaults = config['roche_sync']
-      File "/home/username/.miseqpipeline/lib/python2.7/site-packages/miseqpipeline/config.py", line 29, in __getitem__
+      File "/home/username/.ngs_mapper/lib/python2.7/site-packages/ngs_mapper/config.py", line 29, in __getitem__
         'Config is missing the key {0}'.format(key)
-    miseqpipeline.config.InvalidConfigError: Config is missing the key roche_sync
+    ngs_mapper.config.InvalidConfigError: Config is missing the key roche_sync
 
 The easiest way to get good information from the traceback is by working your way backwards(from the bottom to the top).
 
@@ -54,7 +54,7 @@ Frequently Asked Questions
 
     Finally, you can also check the pipeline.log file that is generated when the pipeline is done or if it err'd out.
 
-    If you are still not sure, you can search through previous issues on the `GitHub Issue Tracker <https://github.com/VDBWRAIR/miseqpipeline/issues>`_ and/or submit a new :doc:`bug/feature <createissue>`
+    If you are still not sure, you can search through previous issues on the `GitHub Issue Tracker <https://github.com/VDBWRAIR/ngs_mapper/issues>`_ and/or submit a new :doc:`bug/feature <createissue>`
 #. Where should I run the analysis?
     This is for the most part up to you but eventually you will want the entire analysis folder to end up under /path/to/Analysis somewhere
     You will want to minimize how much the traffic has to travel across the network though. So if you simply create a folder under /path/to/Analysis/PipelineRuns and then you run the pipeline from there, you will essentially be doing the following:
@@ -116,12 +116,12 @@ Frequently Asked Questions
 #. There is an error running vcf_consensus.py that has to do with string index out of bounds
     This has to do with an outdated version of base_caller.py generating the vcf file you are trying to run vcf_consensus.py on. See Issue #143 for more information on how to fix that.
 #. The pipeline fails on a sample and the log says Somehow no reads were compiled
-    This usually indicates that it could not find any reads inside of the location you specified that should contain sample reads. Make sure that the directory you specified when you ran :doc:`scripts/runsamplesheet` or :py:mod:`miseqpipeline.runsample` actually contains a directory with reads for every sample you are running.
+    This usually indicates that it could not find any reads inside of the location you specified that should contain sample reads. Make sure that the directory you specified when you ran :doc:`scripts/runsamplesheet` or :py:mod:`ngs_mapper.runsample` actually contains a directory with reads for every sample you are running.
     Also check for errors near the top of the log file that say anything about why any reads might have been skipped
 #. The pipeline keeps failing on all of my samples or the logs say something about No Space Left On Device
     Please check your /dev/shm and /tmp to see if either is full(``df -h``). You can clear out all of the left-over junk from the pipeline by issuing ``rm -rf /tmp/runsample* /dev/shm/mapbwa*``
     Also, you may need to tell the pipeline to use a different temporary directory. See :ref:`tempdirfiles` for more information.
-#. You get a Traceback error that contains miseqpipeline.config.InvalidConfigError: Config is missing the key missingkey
+#. You get a Traceback error that contains ngs_mapper.config.InvalidConfigError: Config is missing the key missingkey
     This indicates that the initial config.yaml file that you created during the :doc:`install` is missing a required key: value pair called missingkey. This most likely happened because you updated the pipeline which introduced new keys in config.yaml.base that you need to add to your config.yaml.
     
     Once you add those new keys, you will need to rerun the ``python setup.py install`` portion of the :doc:`install`.
