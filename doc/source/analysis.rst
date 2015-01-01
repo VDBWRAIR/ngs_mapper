@@ -16,7 +16,7 @@ Here we will show you a complete example of running the pipeline using some test
 It means you should be able to type that into your terminal
 
 All examples will assume your current working directory is inside of the git cloned ngs_mapper directory, aka the following command
-ends with miseqipeline:
+ends with ngs_mapper:
 
 .. code-block:: bash
 
