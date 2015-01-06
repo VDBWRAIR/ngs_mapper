@@ -64,13 +64,13 @@ Installation
   
         .. code-block:: bash
 
-            su -c 'python setup.py install_system_packages && chmod 666 setuptools*'
+            su -c 'python setup.py install_system_packages && chmod 666 -R setuptools*'
   
     - Ubuntu
   
         .. code-block:: bash
 
-            sudo python setup.py install_system_packages && sudo chmod 666 setuptools*
+            sudo python setup.py install_system_packages && sudo chmod 666 -R setuptools*
 
 3. Configure the defaults
 
