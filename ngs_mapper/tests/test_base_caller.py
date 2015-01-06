@@ -1,7 +1,7 @@
 from imports import *
-from miseqpipeline.samtools import InvalidRegionString
+from ngs_mapper.samtools import InvalidRegionString
 
-from miseqpipeline.base_caller import VCF_HEAD
+from ngs_mapper.base_caller import VCF_HEAD
 
 # How long you expect each base position on the reference to take to process
 EXPECTED_TIME_PER_BASE = 0.0015
@@ -19,7 +19,7 @@ class Base( common.BaseBaseCaller ):
 
     def mock_mpileup_factory(self, **kwargs):
         '''
-        Returns a function that can mock out miseqpipeline.samtools.mpileup
+        Returns a function that can mock out ngs_mapper.samtools.mpileup
         
         pileupstart - start of the pileup that will be generated
         pileupend - end of the pileup that will be generated
@@ -31,9 +31,9 @@ class Base( common.BaseBaseCaller ):
         refdepth = kwargs['refdepth']
         def get_mpileup_region(bamfile, regionstr, mind, minq, maxd):
             '''
-            Mock miseqpipeline.samtools.mpileup region
+            Mock ngs_mapper.samtools.mpileup region
             '''
-            from miseqpipeline.samtools import parse_regionstring
+            from ngs_mapper.samtools import parse_regionstring
             ref, rstart, rend = parse_regionstring(regionstr)
             # Have to pick min/max of these to restrict correctly
             pilestart = max(rstart, kwargs['pileupstart'])
@@ -1002,17 +1002,17 @@ class TestGenerateVCF(BaseInty):
     def setUp(self):
         super(TestGenerateVCF,self).setUp()
 
-        from miseqpipeline.base_caller import VCF_HEAD
+        from ngs_mapper.base_caller import VCF_HEAD
         self.vcf_head = VCF_HEAD.format(basename('test.bam'))
 
     @raises(InvalidRegionString)
-    @patch('miseqpipeline.base_caller.SeqIO')
-    @patch('miseqpipeline.base_caller.mpileup')
+    @patch('ngs_mapper.base_caller.SeqIO')
+    @patch('ngs_mapper.base_caller.mpileup')
     def test_raises_exception_regionstring_invalid(self, *args):
         self._C('test.bam', 'test.ref', None, 'out.vcf', 0, 0, 10, 0.8, 50, 10, VCF_HEAD, False)
 
-    @patch('miseqpipeline.base_caller.SeqIO')
-    @patch('miseqpipeline.base_caller.mpileup')
+    @patch('ngs_mapper.base_caller.SeqIO')
+    @patch('ngs_mapper.base_caller.mpileup')
     def test_regionstr_lt0_and_gt_reflen(self, mmpileup, mseqio):
         mseqio.index.return_value = {'Ref1':MagicMock(seq='A'*10,id='Ref1')}
         mmpileup.side_effect = self.mock_mpileup_factory(
@@ -1025,8 +1025,8 @@ class TestGenerateVCF(BaseInty):
         )
         r = self._C('test.bam', 'test.ref', 'Ref1:0-30', 'out.vcf', 0, 0, 10, 0.8, 50, 10, VCF_HEAD, False)
 
-    @patch('miseqpipeline.base_caller.SeqIO')
-    @patch('miseqpipeline.base_caller.mpileup')
+    @patch('ngs_mapper.base_caller.SeqIO')
+    @patch('ngs_mapper.base_caller.mpileup')
     def test_ref_in_bam_only_contains_some_bases(self, mmpileup, mseqio):
         reflen = 8
         refdepth = 10
@@ -1100,9 +1100,9 @@ class TestGenerateVCF(BaseInty):
 class TestGenerateVcfMultithreaded(BaseInty):
     functionname = 'generate_vcf_multithreaded'
 
-    @patch('miseqpipeline.base_caller.os')
-    @patch('miseqpipeline.base_caller.SeqIO')
-    @patch('miseqpipeline.base_caller.mpileup')
+    @patch('ngs_mapper.base_caller.os')
+    @patch('ngs_mapper.base_caller.SeqIO')
+    @patch('ngs_mapper.base_caller.mpileup')
     def test_correct_amount_lines(self, mmpileup, mseqio, mos):
         reflen = 10
         numrefs = 3
@@ -1142,11 +1142,11 @@ class TestGenerateVcfMultithreaded(BaseInty):
         eq_(numrefs*reflen, linecount)
 
     @timed(50.0/3.0)
-    @patch('miseqpipeline.base_caller.multiprocessing')
+    @patch('ngs_mapper.base_caller.multiprocessing')
     @patch('__builtin__.open')
-    @patch('miseqpipeline.base_caller.os')
-    @patch('miseqpipeline.base_caller.SeqIO')
-    @patch('miseqpipeline.base_caller.mpileup')
+    @patch('ngs_mapper.base_caller.os')
+    @patch('ngs_mapper.base_caller.SeqIO')
+    @patch('ngs_mapper.base_caller.mpileup')
     def test_breaks_up_refs_into_chunks(self, mmpileup, mseqio, mos, mopen, mmultiprocessing):
         reflen = 100000
         numrefs = 3
@@ -1165,7 +1165,7 @@ class TestGenerateVcfMultithreaded(BaseInty):
         ref3_pile = [self._mock_pileup_str('Ref3', i, 'G', refdepth, 'A'*refdepth, 'I'*refdepth, 'I'*refdepth) for i in range(1,reflen+1)]
         mmpileup.side_effect = [ref1_pile, ref2_pile, ref3_pile]
 
-        with patch('miseqpipeline.base_caller.time') as time:
+        with patch('ngs_mapper.base_caller.time') as time:
             out_vcf = self._C('in.bam', 'in.ref', 'out.vcf', 25, 100000, 10, 0.8, 50, 10, threads)
 
         expected_regionstr = [
@@ -1216,7 +1216,7 @@ class TestUnitMain(BaseInty):
             bias=bias,
             threads=threads
        )        
-        with patch('miseqpipeline.base_caller.argparse') as margparse:
+        with patch('ngs_mapper.base_caller.argparse') as margparse:
             margparse.ArgumentParser.return_value.parse_args.return_value = args
             return main()
 

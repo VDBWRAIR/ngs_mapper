@@ -131,9 +131,9 @@ setup(
     entry_points = {
         'console_scripts': [
             'roche_sync = ngs_mapper.roche_sync:main',
-            'sample_coverage = miseqpipeline.coverage:main',
-            'make_example_config = miseqpipeline.config:main',
-            'base_caller.py = miseqpipeline.base_caller:main',
+            'sample_coverage = ngs_mapper.coverage:main',
+            'make_example_config = ngs_mapper.config:main',
+            'base_caller.py = ngs_mapper.base_caller:main',
         ]
     },
     setup_requires = [

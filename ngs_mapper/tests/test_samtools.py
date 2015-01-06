@@ -194,7 +194,7 @@ class TestMpileup(MpileupBase):
         popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1, stderr='null')
 
     @attr('current')
-    @patch('miseqpipeline.samtools.Popen')
+    @patch('ngs_mapper.samtools.Popen')
     def test_called_with_individual_refs(self, mock_popen):
         mock_popen.side_effect = [Mock(stdout=self.mpileups[ref]) for ref in sorted(self.mpileups)]
         # Refname, reflen
@@ -207,7 +207,7 @@ class TestMpileup(MpileupBase):
             eq_(self.mpileups[ref], r)
 
     @attr('current')
-    @patch('miseqpipeline.samtools.Popen')
+    @patch('ngs_mapper.samtools.Popen')
     def test_testbam_all_refs(self, mock_popen):
         _all = []
         for ref, piles in self.mpileups.iteritems():
@@ -222,15 +222,15 @@ class TestNoGapMpileup(MpileupBase):
     functionname = 'nogap_mpileup'
 
     @attr('current')
-    @patch('miseqpipeline.samtools.Popen')
+    @patch('ngs_mapper.samtools.Popen')
     def test_mpileup_can_parse(self, mock_popen):
         mock_popen.return_value.stdout = self.mpileups['Ref5']
-        from miseqpipeline.samtools import MPileupColumn
+        from ngs_mapper.samtools import MPileupColumn
         for row in self._C(self.bam, 'Ref5:2-4', 0, 0, 100):
             MPileupColumn(row)
 
     @attr('current')
-    @patch('miseqpipeline.samtools.Popen')
+    @patch('ngs_mapper.samtools.Popen')
     def test_called_with_individual_refs(self, mock_popen):
         _all = [
             self._mock_pileup_str('R1',1,'A',1,'A','!','!'),
@@ -254,7 +254,7 @@ class TestNoGapMpileup(MpileupBase):
             eq_(_e, _r)
 
     @attr('current')
-    @patch('miseqpipeline.samtools.Popen')
+    @patch('ngs_mapper.samtools.Popen')
     def test_fills_missing_positions(self, mock_popen):
         _all = [
             self._mock_pileup_str('R1', i, 'A', 1, 'A', '!', '!')
@@ -511,7 +511,7 @@ class TestUnitParseRegionString(Base):
     functionname = 'parse_regionstring'
 
     def test_invalid_regionstring(self):
-        from miseqpipeline.samtools import InvalidRegionString
+        from ngs_mapper.samtools import InvalidRegionString
         bad_strings = ('', None, 'ref1:2-1')
 
         @raises(InvalidRegionString)

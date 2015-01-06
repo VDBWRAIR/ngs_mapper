@@ -253,8 +253,7 @@ def mark_lq(stats, minbq, mind, refbase):
 
     :param str stats: Stats dictionary returned from stats_at_refpos.stats
     :param str minbq: The mininum base quality to determine if a quality should belong to N
-    :param str mind: The minimum depth threshold. If the depth is < this then lq will be labeled N otherwise
-    they will be labeled ? for trimming purposes
+    :param str mind: The minimum depth threshold. If the depth is < this then lq will be labeled N otherwise they will be labeled ? for trimming purposes
 
     @returns stats dictionary with baseq subkey for each base in the dictionary.
     '''
@@ -426,7 +425,7 @@ def blank_vcf_rows(refname, refseq, frompos, topos, call='-'):
     :param str refseq: Reference sequence to get reference base from
     :param int topos: Current position in the alignment(1 based)
     :param int frompos: Last position seen in the alignment(1 based)
-    :param str call - What to set the CB info field to(Default to:)
+    :param str call: - What to set the CB info field to(Default to:)
     :param bool includeend: Include end base position
 
     @returns a list of vcf.model._Record objects filled out with the DP,RC,RAQ,PRC,CBD=0 and CB=call
