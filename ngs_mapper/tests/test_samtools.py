@@ -175,7 +175,10 @@ class TestUnitTagsToList(SamRowBase):
         eq_( ('NM',0), r.TAGS[0] )
         eq_( ('AS',250), r.TAGS[1] )
 
-class TestMpileup(Base):
+class MpileupBase(Base):
+    pass
+
+class TestMpileup(MpileupBase):
     functionname = 'mpileup'
 
     @patch('__builtin__.open')
@@ -183,33 +186,92 @@ class TestMpileup(Base):
     def test_unit_popencall( self, popen, open ):
         open.return_value = 'null'
         popen.return_value.stdout = 'tested'
-        res = self._C( self.bam, '', 20, 25, 100000 )
+        res = self._C(self.bam, '', 20, 25, 100000 )
         eq_( 'tested', res )
         popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000',self.bam],stdout=-1, stderr='null')
         self._C( self.bam, 'den1:1-5', 20, 25, 100000 )
         eq_( 'tested', res )
         popen.assert_called_with(['samtools','mpileup','-s','-q','20','-Q','25','-d','100000','-r','den1:1-5',self.bam],stdout=-1, stderr='null')
 
-    def test_testbam_individual_refs( self ):
+    @attr('current')
+    @patch('ngs_mapper.samtools.Popen')
+    def test_called_with_individual_refs(self, mock_popen):
+        mock_popen.side_effect = [Mock(stdout=self.mpileups[ref]) for ref in sorted(self.mpileups)]
         # Refname, reflen
-        reflist = (
-            ('Ref1',8),
-            ('Ref2',8),
-            ('Ref3',3)
-        )
-        for ref, d in reflist:
-            r = self._C( self.bam, ref, 0, 0, 100 )
-            r = [row for row in r]
-            rl = len( r )
-            eq_( d, rl, 'Depth for {} should be {} but got {}'.format(
-                ref, d, rl
-            ))
+        rets = []
+        for ref in sorted(self.mpileups):
+            rets.append(self._C(self.bam, ref, 0, 0, 100))
+        for call, r in zip(mock_popen.call_args_list, rets):
+            # This should be the reference name from the built cmd
+            ref = call[0][0][10]
+            eq_(self.mpileups[ref], r)
 
-    def test_testbam_all_refs( self ):
+    @attr('current')
+    @patch('ngs_mapper.samtools.Popen')
+    def test_testbam_all_refs(self, mock_popen):
+        _all = []
+        for ref, piles in self.mpileups.iteritems():
+            for pile in piles:
+                _all.append(pile)
+        mock_popen.return_value.stdout = _all
+
         r = self._C( self.bam, None, 0, 0, 100 )
-        r = [row for row in r]
-        rl = len( r )
-        eq_( 19, rl, 'Should be depth of 19 for all refs but got {}'.format(rl) )
+        eq_(r, _all)
+
+class TestNoGapMpileup(MpileupBase):
+    functionname = 'nogap_mpileup'
+
+    @attr('current')
+    @patch('ngs_mapper.samtools.Popen')
+    def test_mpileup_can_parse(self, mock_popen):
+        mock_popen.return_value.stdout = self.mpileups['Ref5']
+        from ngs_mapper.samtools import MPileupColumn
+        for row in self._C(self.bam, 'Ref5:2-4', 0, 0, 100):
+            MPileupColumn(row)
+
+    @attr('current')
+    @patch('ngs_mapper.samtools.Popen')
+    def test_called_with_individual_refs(self, mock_popen):
+        _all = [
+            self._mock_pileup_str('R1',1,'A',1,'A','!','!'),
+            self._mock_pileup_str('R1',3,'A',1,'A','!','!'),
+            self._mock_pileup_str('R2',3,'A',1,'A','!','!'),
+            self._mock_pileup_str('R2',5,'A',1,'A','!','!'),
+        ]
+        mock_popen.return_value.stdout = _all
+        _ex = [
+            self._mock_pileup_str('R1',1,'A',1,'A','!','!'),
+            self._mock_pileup_str('R1',2,'',0,'','',''),
+            self._mock_pileup_str('R1',3,'A',1,'A','!','!'),
+            self._mock_pileup_str('R2',1,'',0,'','',''),
+            self._mock_pileup_str('R2',2,'',0,'','',''),
+            self._mock_pileup_str('R2',3,'A',1,'A','!','!'),
+            self._mock_pileup_str('R2',4,'',0,'','',''),
+            self._mock_pileup_str('R2',5,'A',1,'A','!','!'),
+        ]
+        r = self._C(self.bam, None, 0, 0, 100)
+        for _e, _r in zip(_ex, list(r)):
+            eq_(_e, _r)
+
+    @attr('current')
+    @patch('ngs_mapper.samtools.Popen')
+    def test_fills_missing_positions(self, mock_popen):
+        _all = [
+            self._mock_pileup_str('R1', i, 'A', 1, 'A', '!', '!')
+            for i in range(2, 11, 2)
+        ]
+        mock_popen.return_value.stdout = _all
+        r = self._C(self.bam, None, 0, 0, 100)
+        # Each ref should not have gaps
+        expected = []
+        for i in range(1, 11):
+            if i % 2 == 0:
+                expected.append(self._mock_pileup_str('R1', i, 'A', 1, 'A', '!', '!'))
+            else:
+                expected.append(self._mock_pileup_str('R1', i, '', 0, '', '', ''))
+
+        for ex, re in zip(expected,list(r)):
+            eq_(ex.split(), re.split())
 
 class TestUnitCharToQual(Base):
     functionname = 'char_to_qual'
@@ -447,6 +509,17 @@ class TestUnitPileupColumnInit(MpileupBase):
 
 class TestUnitParseRegionString(Base):
     functionname = 'parse_regionstring'
+
+    def test_invalid_regionstring(self):
+        from ngs_mapper.samtools import InvalidRegionString
+        bad_strings = ('', None, 'ref1:2-1')
+
+        @raises(InvalidRegionString)
+        def _test(string):
+            self._C(string)
+
+        for rstr in bad_strings:
+            yield _test, rstr
 
     def test_start_gt_stop( self ):
         from ngs_mapper.samtools import InvalidRegionString

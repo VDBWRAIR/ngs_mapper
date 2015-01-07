@@ -152,6 +152,37 @@ def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
     # Return the stdout file descriptor handle so it can be easily iterated
     return p.stdout
 
+def nogap_mpileup(*args, **kwargs):
+    '''
+    Wrapper around mpileup that fills in missing positions with 0 depth
+    Arguments are the same as mplileup
+
+    Returns a generator of mpileup rows
+    '''
+    lastref = None
+    lastpos = 0
+    for pile in mpileup(*args, **kwargs):
+        col = pile.split('\t')
+        refname = col[0]
+        pos = int(col[1])
+        # First iteration
+        if lastref is None:
+            lastref = refname
+        elif lastref != refname:
+            # New reference
+            lastref = refname
+            lastpos = 0
+
+        # yield all blank rows needed
+        for i in range(lastpos+1, pos):
+            row = '{0}\t{1}\t\t0\t\t\t'.format(
+                refname, i
+            )
+            yield row
+
+        yield pile
+        lastpos = pos
+
 def char_to_qual( qual_char ):
     '''
     Converts a given quality character to the phred - 33 integer
@@ -179,7 +210,7 @@ class MPileupColumn(object):
     _mquals = ''
     _bquals = ''
     def __init__( self, mpileup_str ):
-        parts = mpileup_str.rstrip().split('\t')
+        parts = mpileup_str.rstrip('\n').split('\t')
         if len(parts) == 7:
             self.ref,self.pos,self.refbase,self.depth,self._bases,self._bquals,self._mquals = parts
         else:
@@ -343,6 +374,8 @@ def parse_regionstring( regionstr ):
         @raises InvalidRegionString
     '''
     import re
+    if not regionstr:
+        raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )
     m = re.match( '(\S+):(\d+)-(\d+)', regionstr )
     if not m:
         raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )

@@ -129,85 +129,85 @@ class TestUnitParseArgs(Base):
 class TestUnitMain(Base):
     functionname = 'main'
 
-    def test_paired_readfiles(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
-        merge.side_effect = AssertionError("Should not merge single files")
-        tmp_mock.return_value = 'tdir'
+    def _setUp(self, tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
+        self.tmp_mock = tmp_mock
+        self.ref_mock = ref_mock
+        self.reads_mock = reads_mock
+        self.compile_reads_mock = compile_reads_mock
+        self.bwa_mem_mock = bwa_mem_mock
+        self.sort = sort
+        self.convert = convert
+        self.index = index
+        self.merge = merge
+        self.parse_args = parse_args
+        self.shrmtree = shrmtree
+        self.shmove = shmove
+        tmp_mock.side_effect = Exception("Don't call mkdtemp")
         os.mkdir('tdir')
         ref_mock.return_value = 'reference.fa'
         reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')]}
         compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':None}
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
-        bwa_mem_mock.return_value = 'bwa_mem.bam'
-        res = self._C()
-        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai',t=1)], bwa_mem_mock.call_args_list )
-        eq_( [call([('r1.fq','r2.fq')],'tdir/reads')], compile_reads_mock.call_args_list )
-        eq_( [call('/reads')], reads_mock.call_args_list )
-        eq_( sort.call_count, 1 )
-        eq_( convert.call_count, 1 )
-        eq_( index.call_count, 1 )
-        eq_( 1, shrmtree.call_count )
+        parse_args.return_value = Mock(
+            reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'],
+            keep_temp=False, threads=1, output='tdir/out.bam'
+        )
+        bwa_mem_mock.return_value = 'tdir/out.bam'
 
-    def test_nonpaired_readfiles(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
-        merge.side_effect = AssertionError("Should not merge single files")
-        tmp_mock.return_value = 'tdir'
-        os.mkdir('tdir')
-        ref_mock.return_value = 'reference.fa'
-        reads_mock.return_value = {'Sanger':['r1.fq']}
-        compile_reads_mock.return_value = {'F':None,'R':None,'NP':'NP.fq'}
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
-        bwa_mem_mock.return_value = 'bwa_mem.bam'
+    def test_paired_readfiles(self, *mocks):
+        self._setUp(*mocks)
         res = self._C()
-        eq_( [call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai',t=1)], bwa_mem_mock.call_args_list )
-        eq_( [call(['r1.fq'],'tdir/reads')], compile_reads_mock.call_args_list )
-        eq_( [call('/reads')], reads_mock.call_args_list )
-        eq_( sort.call_count, 1 )
-        eq_( convert.call_count, 1 )
-        eq_( index.call_count, 1 )
-        eq_( 1, shrmtree.call_count )
+        eq_( [call('F.fq','R.fq','/reference.fa','tdir/bwa/paired.sai',t=1)], self.bwa_mem_mock.call_args_list )
+        eq_( [call([('r1.fq','r2.fq')],'tdir/bwa/reads')], self.compile_reads_mock.call_args_list )
+        eq_( [call('/reads')], self.reads_mock.call_args_list )
+        eq_( self.sort.call_count, 1 )
+        eq_( self.convert.call_count, 1 )
+        eq_( self.index.call_count, 1 )
+        self.shrmtree.assert_called_with('tdir/bwa')
+
+    def test_nonpaired_readfiles(self, *mocks):
+        self._setUp(*mocks)
+        self.merge.side_effect = AssertionError("Should not merge single files")
+        self.reads_mock.return_value = {'Sanger':['r1.fq']}
+        self.compile_reads_mock.return_value = {'F':None,'R':None,'NP':'NP.fq'}
+
+        res = self._C()
+        eq_( [call('NP.fq',ref='/reference.fa',output='tdir/bwa/nonpaired.sai',t=1)], self.bwa_mem_mock.call_args_list )
+        eq_( [call(['r1.fq'],'tdir/bwa/reads')], self.compile_reads_mock.call_args_list )
+        eq_( [call('/reads')], self.reads_mock.call_args_list )
+        eq_( self.sort.call_count, 1 )
+        eq_( self.convert.call_count, 1 )
+        eq_( self.index.call_count, 1 )
+        self.shrmtree.assert_called_with('tdir/bwa')
     
-    def test_paired_and_nonpaired_readfiles(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
-        tmp_mock.return_value = 'tdir'
-        os.mkdir('tdir')
-        ref_mock.return_value = 'reference.fa'
-        reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')],'Sanger':['r3.fq']}
-        compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':'NP.fq'}
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
-        bwa_mem_mock.return_value = 'bwa_mem.bam'
+    def test_paired_and_nonpaired_readfiles(self, *mocks):
+        self._setUp(*mocks)
+        self.reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')],'Sanger':['r3.fq']}
+        self.compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':'NP.fq'}
         res = self._C()
-        eq_( [call('F.fq','R.fq','/reference.fa','tdir/paired.sai',t=1),call('NP.fq',ref='/reference.fa',output='tdir/nonpaired.sai',t=1)], bwa_mem_mock.call_args_list )
-        eq_( [call([('r1.fq','r2.fq'),'r3.fq'],'tdir/reads')], compile_reads_mock.call_args_list )
-        eq_( [call('/reads')], reads_mock.call_args_list )
-        eq_( 2, sort.call_count )
-        eq_( 2, convert.call_count )
-        eq_( 1, index.call_count )
-        eq_( 1, merge.call_count )
-        eq_( 1, shrmtree.call_count )
 
-    def test_keeptemp(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
-        tmp_mock.return_value = 'tdir'
-        os.mkdir('tdir')
-        shrmtree.side_effect = AssertionError("Should not remove files with keeptemp option")
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=True, threads=1)
-        res = self._C()
-        eq_( 0, shrmtree.call_count )
+        eq_( [call('F.fq','R.fq','/reference.fa','tdir/bwa/paired.sai',t=1),call('NP.fq',ref='/reference.fa',output='tdir/bwa/nonpaired.sai',t=1)], self.bwa_mem_mock.call_args_list )
+        eq_( [call([('r1.fq','r2.fq'),'r3.fq'],'tdir/bwa/reads')], self.compile_reads_mock.call_args_list )
+        eq_( [call('/reads')], self.reads_mock.call_args_list )
+        eq_( 2, self.sort.call_count )
+        eq_( 2, self.convert.call_count )
+        eq_( 1, self.index.call_count )
+        eq_( 1, self.merge.call_count )
+        self.shrmtree.assert_called_with('tdir/bwa')
 
-    def test_keeptemp_false(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
-        tmp_mock.return_value = 'tdir'
-        os.mkdir('tdir')
-        parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=1)
+    def test_keeptemp(self, *mocks):
+        self._setUp(*mocks)
+        self.shrmtree.side_effect = AssertionError("Should not remove files with keeptemp option")
+        self.parse_args.return_value = Mock(reads='/reads', reference='/reference.fa', platforms=['MiSeq','Sanger'], keep_temp=True, threads=1, output='tdir/out.bam')
         res = self._C()
-        eq_( [call('tdir')], shrmtree.call_args_list )
+        eq_( 0, self.shrmtree.call_count )
 
-    def test_utilizes_thread_arg(self,tmp_mock,ref_mock,reads_mock,compile_reads_mock, bwa_mem_mock, sort, convert, index, merge, parse_args, shrmtree, shmove):
-        tmp_mock.return_value = 'tdir'
-        os.mkdir('tdir')
-        ref_mock.return_value = 'reference.fa'
-        reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')],'Sanger':['r3.fq']}
-        compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':'NP.fq'}
-        bwa_mem_mock.return_value = 'bwa_mem.bam'
-        parse_args.return_value = Mock(reads='reads', reference='reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=8)
+    def test_utilizes_thread_arg(self, *mocks):
+        self._setUp(*mocks)
+        self.reads_mock.return_value = {'MiSeq':[('r1.fq','r2.fq')],'Sanger':['r3.fq']}
+        self.compile_reads_mock.return_value = {'F':'F.fq','R':'R.fq','NP':'NP.fq'}
+        self.parse_args.return_value = Mock(reads='reads', reference='reference.fa', platforms=['MiSeq','Sanger'], keep_temp=False, threads=8, output='tdir/out.bam')
         res = self._C()
-        bwa_mem_mock.assert_called_with('NP.fq', ref='reference.fa', output='tdir/nonpaired.sai', t=8)
+        self.bwa_mem_mock.assert_called_with('NP.fq', ref='reference.fa', output='tdir/bwa/nonpaired.sai', t=8)
 
     @attr('current')
     def test_bwa_error_should_raise_exception(self,*args):
@@ -244,8 +244,6 @@ class TestIntegrateMainArgs(Base):
         # Just ensure a static path for mkdtemp so we can ensure it exists or doesn't exist
         with patch( 'tempfile.mkdtemp' ) as mkdtemp:
             with patch( 'ngs_mapper.run_bwa.parse_args' ) as parse_args:
-                mkdtemp.return_value = join(self.tempdir, 'tmpdir1')
-                os.mkdir( join(self.tempdir,'tmpdir1') )
                 parse_args.return_value = ns
                 from ngs_mapper.run_bwa import main
                 return main()
@@ -280,31 +278,31 @@ class TestIntegrateMainArgs(Base):
 
     def test_paired_and_nonpaired_get_merged(self):
         ff = self.fixture_files
-        argv = ['expected/reads', ff['REF'], '--keep-temp']
+        argv = ['expected/reads', ff['REF'], '--keep-temp', '--output', 'sampledir/out.bam']
         res = self._CM( argv )
-        eq_( 'bwa_mem.bam', res )
+        eq_( 'sampledir/out.bam', res )
         self._eqsize( ff['merged.bam'], res )
         self._eqsize( ff['merged.bam.bai'], res+'.bai' )
-        assert os.path.exists( 'tmpdir1' ), "Did not keep temp directory"
+        assert os.path.exists( 'sampledir/bwa' ), "Did not keep temp directory"
 
     def test_paired_only(self):
         ff = self.fixture_files
-        argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'MiSeq']
+        argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'MiSeq', '--output', 'sampledir/out.bam']
         res = self._CM( argv )
-        eq_( 'bwa_mem.bam', res )
+        eq_( 'sampledir/out.bam', res )
         self._eqsize( ff['paired.bam'], res )
-        assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
-        assert os.path.exists( 'bwa_mem.bam.bai' )
+        assert not os.path.exists( 'sampledir/bwa' ), "Temp directory still exists"
+        assert os.path.exists( 'sampledir/out.bam.bai' )
 
     def test_nonpaired_only(self):
         ff = self.fixture_files
         print ff
-        argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'Sanger']
+        argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'Sanger', '--output', 'sampledir/out.bam']
         res = self._CM( argv )
-        eq_( 'bwa_mem.bam', res )
+        eq_( 'sampledir/out.bam', res )
         self._eqsize( ff['nonpaired.bam'], res )
-        assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
-        assert os.path.exists( 'bwa_mem.bam.bai' )
+        assert not os.path.exists( 'sampledir/bwa' ), "Temp directory still exists"
+        assert os.path.exists( 'sampledir/out.bam.bai' )
 
     def test_output_path(self):
         ff = self.fixture_files
@@ -312,7 +310,7 @@ class TestIntegrateMainArgs(Base):
         res = self._CM( argv )
         eq_( 'merged.bam', res )
         self._eqsize( ff['merged.bam'], res )
-        assert not os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+        assert not os.path.exists( 'bwa' ), "Temp directory still exists"
         assert os.path.exists( 'merged.bam.bai' )
 
     def test_keepfiles(self):
@@ -321,7 +319,7 @@ class TestIntegrateMainArgs(Base):
         res = self._CM( argv )
         eq_( 'merged.bam', res )
         self._eqsize( ff['merged.bam'], res )
-        assert os.path.exists( 'tmpdir1' ), "Temp directory still exists"
+        assert os.path.exists( 'bwa' ), "Temp directory missing"
         assert os.path.exists( 'merged.bam.bai' )
 
 class TestFunctionalRunBWA(Base):

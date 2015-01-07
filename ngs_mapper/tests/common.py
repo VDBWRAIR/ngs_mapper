@@ -27,6 +27,28 @@ class BaseClass( BaseTester ):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp(prefix='unit',suffix='test',dir=tdir)
         os.chdir(self.tempdir)
+        self.mpileups = {
+            'Ref1': [
+                self._mock_pileup_str('Ref1', 1, 'A', 1, 'A', '!!', '!!'),
+            ],
+            'Ref2': [
+                self._mock_pileup_str('Ref2', 1, 'A', 2, 'CC', '!!', '!!'),
+                self._mock_pileup_str('Ref2', 2, 'A', 2, 'CC', '!!', '!!'),
+            ],
+            'Ref3': [
+                self._mock_pileup_str('Ref3', 1, 'A', 3, 'TTT', '!!!', '!!!'),
+                self._mock_pileup_str('Ref3', 2, 'A', 3, 'TTT', '!!!', '!!!'),
+                self._mock_pileup_str('Ref3', 3, 'A', 3, 'TTT', '!!!', '!!!'),
+            ],
+            'Ref4': [
+            ],
+            'Ref5': [
+                self._mock_pileup_str('Ref5', 1, 'A', 1, 'G', '!', '!'),
+                self._mock_pileup_str('Ref5', 3, 'A', 1, 'G', '!', '!'),
+                self._mock_pileup_str('Ref5', 4, 'A', 1, 'G', '!', '!'),
+                self._mock_pileup_str('Ref5', 5, 'A', 1, 'G', '!', '!'),
+            ]
+        }
 
     def tearDown(self):
         os.chdir(tdir)
@@ -50,6 +72,9 @@ class BaseClass( BaseTester ):
             return (0,subprocess.check_output( script, stderr=subprocess.STDOUT, shell=True ))
         except subprocess.CalledProcessError as e:
             return (e.returncode, e.output)
+
+    def _mock_pileup_str(self, *args):
+        return '\t'.join([str(x) for x in args])
 
 import fixtures
 from ngs_mapper.bam import indexbam

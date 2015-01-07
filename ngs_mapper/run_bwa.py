@@ -23,13 +23,7 @@ def main():
         @returns path to the final bam file which will be dictated by the --ouput arg value
     '''
     args = parse_args( sys.argv[1:] )
-    # Lets try shared memory
-    # This is an untested code path right now
-    # Probably scary stuff happens if /dev/shm fills up, but whatev
-    if os.path.exists( '/dev/shm' ):
-        tdir = tempfile.mkdtemp(prefix='mapbwa',dir='/dev/shm')
-    else:
-        tdir = tempfile.mkdtemp(prefix='mapbwa')
+    tdir = join(dirname(args.output), 'bwa')
     
     # Compile together all the reads into a list
     preads = reads_by_plat( args.reads )
@@ -40,7 +34,7 @@ def main():
             reads += preads[plat]
     # Creates reads/F.fq, reads/R.fq, reads/NP.fq
     readdir = join(tdir,'reads')
-    os.mkdir( readdir )
+    os.makedirs( readdir )
     reads = compile_reads( reads, readdir )
     if not reads:
         raise Exception( "Somehow no reads were compiled" )

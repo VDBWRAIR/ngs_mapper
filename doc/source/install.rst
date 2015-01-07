@@ -13,7 +13,11 @@ Hardware
         * More cores = faster run time when running multiple samples
         * Faster GHz = faster each sample runs
 * RAM
-    * At least 1GB per CPU core for small genomes(Dengue, Flu,...)
+    * This really depends on your data size
+    
+      If you are analyzing a 96 sample run then you should be fine with 1GB per CPU core
+      
+      If you are analyzing a 24 sample run then you will probably need about 4GB per CPU core since there will be more data
 
 Python Packages
 ---------------
@@ -146,11 +150,11 @@ Installation
             wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
             $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
 
-      3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
+    3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
 
-            .. code-block:: bash
+         .. code-block:: bash
 
-                . $HOME/.ngs_mapper/bin/activate
+            . ${venvpath}/bin/activate
 
 6. Install the pipeline into virtualenv
 
