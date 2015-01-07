@@ -45,14 +45,34 @@ If you inted on using the :py:mod:`roche_sync <ngs_mapper.roche_sync>` you may n
 Installation
 ============
 
-1. Clone
+1. Clone/Download the version you want
 
     Assumes you already have git installed. If not you will need to get it installed by your system administrator.
 
-    .. code-block:: bash
+   #. Set your github username
+   
+      .. code-block:: bash
+      
+          githubuser='mygithubusername'
 
-        git clone https://githubusername@github.com/VDBWRAIR/ngs_mapper.git
+   #. Clone the code
+
+      .. code-block:: bash
+
+        git clone https://${githubuser}@github.com/VDBWRAIR/ngs_mapper.git
         cd ngs_mapper
+        
+   #. Check which versions are available
+   
+      .. code-block:: bash
+      
+         git tag
+   
+   #. Checkout the version you want
+   
+      .. code-block:: bash
+      
+         git checkout -b v1.0.0 v1.0.0
 
 .. _install-system-packages:
 
