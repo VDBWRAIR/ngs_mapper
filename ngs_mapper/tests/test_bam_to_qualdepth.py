@@ -73,6 +73,14 @@ class TestSetUMReads(Base):
         from ..bam_to_qualdepth import set_unmapped_mapped_reads as sumr
         return sumr( bamfile, pileup )
 
+
+    @patch('ngs_mapper.bam.get_refstats')
+    def test_bamfile_missing_unampped_reads(self, get_refstats):
+        del self.idxstats['*']
+        get_refstats.return_value = self.idxstats
+        res = self._call( self.bamfile, self.pileup )
+        eq_(0, self.pileup['unmapped_reads'])
+
     @patch('ngs_mapper.bam.get_refstats')
     def test_sets_unmapped( self, get_refstats ):
         get_refstats.return_value = self.idxstats
