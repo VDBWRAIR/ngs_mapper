@@ -22,7 +22,10 @@ def print_json( args ):
 def set_unmapped_mapped_reads( bamfile, pileup ):
     ''' add mapped/unmapped reads to json for each reference '''
     idxstats = bam.get_refstats( bamfile )
-    pileup['unmapped_reads'] = int(idxstats['*'][3])
+    if '*' not in idxstats:
+        pileup['unmapped_reads'] = 0
+    else:
+        pileup['unmapped_reads'] = int(idxstats['*'][3])
     for ref, stats in idxstats.iteritems():
         if ref != '*':
             try:
