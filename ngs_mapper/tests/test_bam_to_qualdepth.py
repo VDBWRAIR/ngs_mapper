@@ -80,6 +80,7 @@ class TestSetUMReads(Base):
         get_refstats.return_value = self.idxstats
         res = self._call( self.bamfile, self.pileup )
         eq_(0, self.pileup['unmapped_reads'])
+        eq_(1000, self.pileup['chr1']['mapped_reads'])
 
     @patch('ngs_mapper.bam.get_refstats')
     def test_sets_unmapped( self, get_refstats ):
@@ -88,13 +89,13 @@ class TestSetUMReads(Base):
         eq_( 100, self.pileup['unmapped_reads'] )
 
     @patch('ngs_mapper.bam.get_refstats')
-    def test_sets_mapped( self, get_refstats ):
+    def test_sets_mapped_1( self, get_refstats ):
         get_refstats.return_value = self.idxstats
         res = self._call( self.bamfile, self.pileup )
         eq_( 1000, self.pileup['chr1']['mapped_reads'] )
 
     @patch('ngs_mapper.bam.get_refstats')
-    def test_sets_mapped( self, get_refstats ):
+    def test_sets_mapped_2( self, get_refstats ):
         get_refstats.return_value = self.idxstats
         res = self._call( self.bamfile, self.pileup )
         eq_( 1000, self.pileup['chr1']['mapped_reads'] )
