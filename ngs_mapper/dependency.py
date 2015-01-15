@@ -217,13 +217,15 @@ def get_distribution_package_manager( ):
     Debian - apt-get
     CentOS - yum
     Red Hat - yum
+    Fedora - yum
 
     All others will raise UnknownDistributionError
     '''
     dist, version, name = platform.linux_distribution()
-    if dist in ('Ubuntu', 'debian'):
+    dist = dist.lower()
+    if dist in ('ubuntu', 'debian'):
         return 'apt-get'
-    elif dist.startswith('Red Hat Enterprise') or dist == 'CentOS':
+    elif dist.startswith('red hat enterprise') or dist in ('centos','fedora'):
         return 'yum'
     else:
         raise UnknownDistributionError(
