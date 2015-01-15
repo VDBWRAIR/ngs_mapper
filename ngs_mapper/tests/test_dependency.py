@@ -75,6 +75,7 @@ class Base(common.BaseClass):
         ('CentOS', '6.5', 'Final'),
         ('Ubuntu', '14.04', 'Precise'),
         ('debian', 'wheezy/sid', ''),
+        ('Fedora', '19', ''),
     ]
 
     def setUp( self ):
@@ -496,9 +497,18 @@ class TestGetDistributionPackageManager(Base):
             'yum',
             'apt-get',
             'apt-get',
+            'yum',
         ]
         for dist, pkgmanager in zip(self.distros,pkgmanagers):
             with patch('ngs_mapper.dependency.platform') as platform:
+                dist_upper = (dist[0].upper(),dist[1],dist[2])
+                dist_lower = (dist[0].lower(),dist[1],dist[2])
+                platform.linux_distribution.return_value = dist_upper
+                r = self._C()
+                eq_( pkgmanager, r )
+                platform.linux_distribution.return_value = dist_lower
+                r = self._C()
+                eq_( pkgmanager, r )
                 platform.linux_distribution.return_value = dist
                 r = self._C()
                 eq_( pkgmanager, r )
@@ -511,6 +521,7 @@ class TestGetDistributionPackageManager(Base):
             )
             try:
                 r = self._C()
+                print "Returned {0}".format(r)
                 ok_( False, "Did not raise UnknownDistributionError" )
             except UnknownDistributionError as e:
                 ok_( True )
