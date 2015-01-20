@@ -85,3 +85,7 @@ sanger_sync:
     ngsdata:
         default: *NGSDATA
         help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+ion_sync:
+    ngsdata:
+        default: *NGSDATA
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'

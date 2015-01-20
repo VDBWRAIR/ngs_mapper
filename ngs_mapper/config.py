@@ -103,7 +103,7 @@ def get_config_argparse(argv):
     ...
     args = myparser.parse_args(args)
 
-    Returns (config_parser, [rest of command line args], config)
+    Returns (config_parser, [rest of command line args], config, configfile)
     '''
     conf_parser = argparse.ArgumentParser(
         add_help=False

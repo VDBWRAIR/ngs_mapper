@@ -134,6 +134,7 @@ setup(
             'sample_coverage = ngs_mapper.coverage:main',
             'make_example_config = ngs_mapper.config:main',
             'base_caller.py = ngs_mapper.base_caller:main',
+            'ion_sync = ngs_mapper.ion_sync:main',
         ]
     },
     setup_requires = [
