@@ -41,14 +41,14 @@ class Base(TestCase):
 
         self.samplefilemap = {
             'plugin_out/downloads/IonXpress_001.R_run_name.fastq':
-                'sample1.R_run_name.fastq',
-            'plugin_out/downloads/IonXpress_002.R_run_name.fastq':                 'sample2.R_run_name.fastq',
+                'sample1.IonXpress_001.R_run_name.fastq',
+            'plugin_out/downloads/IonXpress_002.R_run_name.fastq':                 'sample2.IonXpress_002.R_run_name.fastq',
             'plugin_out/downloads/IonXpress_003.R_run_name.fastq':
-                'sample2.R_run_name.fastq',
+                'sample2.IonXpress_003.R_run_name.fastq',
             'plugin_out/downloads/IonXpress_004.R_run_name.fastq':
-                'IonXpress_004.R_run_name.fastq',
+                'IonXpress_004.IonXpress_004.R_run_name.fastq',
             'plugin_out/downloads/nomatch.R_run_name.fastq':
-                'nomatch.R_run_name.fastq',
+                'nomatch.nomatch.R_run_name.fastq',
         }
 
 class TestGetSamplemapping(Base):

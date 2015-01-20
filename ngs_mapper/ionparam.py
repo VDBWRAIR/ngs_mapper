@@ -55,7 +55,7 @@ def get_samplefile_mapping(barcodemapping, fastqs):
             newname = barcodemapping[barcode]
         except KeyError as e:
             newname = barcode
-        rename_map[fq] = '{0}.{1}.{2}'.format(newname,run,ext)
+        rename_map[fq] = '{0}.{1}.{2}.{3}'.format(newname,barcode,run,ext)
     return rename_map
 
 def ion_mapping(fastqpath, ionparampath):
