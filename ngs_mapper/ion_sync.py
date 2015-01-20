@@ -107,7 +107,11 @@ def sync_run(runpath, ngsdata):
             'sync\n'.format(rawdata)
         )
     else:
-        shutil.copytree(runpath, rawdata)
+        try:
+            shutil.copytree(runpath, rawdata)
+        except shutil.Error as e:
+            # Probably doesn't matter because broken symlink
+            pass
     sync_readdata(samplefilemap, readdata)
     sync_readsbysample(readdata, rbs)
 
@@ -163,7 +167,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        'runpath',
+        'rundir',
         help='Path to IonTorrent or IonProton run which contains' \
             ' an ion_params_00.json file and a ' \
             ' plugin_out/downloads directory with fastq files'

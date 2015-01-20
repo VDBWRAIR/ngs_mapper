@@ -167,6 +167,12 @@ class TestFunctional(BaseSync):
         super(TestFunctional,self).setUp()
         self.rundir, self.downloads, self.ion_params = \
             self._create_rundir(self.fastqs, self.ionparam)
+        # Make a broken symlink to make sure
+        # it is handled with shutil.copytree
+        os.symlink(
+            '/missing/path/IonXpress_001.bam',
+            join(self.downloads,'IonXpress_001.bam')
+        )
         self.runname = basename(self.rundir)
         self.readdata = join(self.readdata,'IonTorrent',self.runname)
         self.rawdata = join(self.rawdata,'IonTorrent',self.runname)
