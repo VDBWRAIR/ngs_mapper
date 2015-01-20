@@ -11,3 +11,4 @@ tempdir
 pyyaml
 sphinx
 sphinx_rtd_theme
+unittest2
