@@ -15,6 +15,7 @@ These are scripts that you run directly that will run the Supplemental scripts
 * :py:mod:`miseq_sync <ngs_mapper.miseq_sync>`
 * :py:mod:`roche_sync <ngs_mapper.roche_sync>`
 * :py:mod:`sanger_sync <ngs_mapper.sanger_sync>`
+* :py:mod:`ion_sync <ngs_mapper.ion_sync>`
 * :py:mod:`rename_sample <ngs_mapper.rename_sample>`
 * :py:mod:`make_example_config <ngs_mapper.config>`
 

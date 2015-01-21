@@ -287,6 +287,6 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     #'ngs_mapper': ('../build/html', None),
-    'http://docs.python.org/': None,
-    'http://sphinx-doc.org/': None,
+    #'http://docs.python.org/': None,
+    #'http://sphinx-doc.org/': None,
 }
