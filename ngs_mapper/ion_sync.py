@@ -50,6 +50,13 @@ change. As with any issue, if you encounter an error while using this script, :d
 
 Additionally, the naming format of the fastq files as well as the placement of them may change with the different versions of the software.
 If you notice that your fastq files are not located inside of ``plugin_out/downloads`` inside of your runs, please :doc:`submit an issue <../createissue>` and provide the relative path to your run that your fastq files are located.
+
+If you only have .bam files you should be able to convert them to fastq with the following command
+
+.. code-block:: bash
+
+    samtools view /path/to/IonXpress_XXX.bam | awk '{printf("@%s\\n%s\\n+\\n%s\\n",$1,$10,$11)}' > /path/to/IonXpress_XXX.fastq
+
 """
 
 import json
