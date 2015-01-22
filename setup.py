@@ -5,6 +5,7 @@ use_setuptools()
 from glob import glob
 import sys
 from os.path import join, expanduser
+import os
 
 from setuptools import setup, find_packages
 import setuptools
@@ -13,6 +14,7 @@ from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
 import ngs_mapper
+
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''
@@ -31,8 +33,15 @@ class InstallSystemPackagesCommand(setuptools.Command):
         from ngs_mapper.dependency import (
             install_system_packages,
             get_distribution_package_list,
-            UserNotRootError
+            UserNotRootError,
+            make_directory_readable
         )
+        # Ensure setuptools is readable for everybody since it is likely installed
+        # first by root
+        setuptoolspath = glob('setuptools*')
+        if setuptoolspath:
+            for p in setuptoolspath:
+                os.chmod(p, 0666)
         try:
             system_packages = get_distribution_package_list('system_packages.lst')
             install_system_packages(system_packages)
@@ -113,6 +122,7 @@ class PipelineInstallCommand(_install):
 class bdist_egg(_bdist_egg):
     def run(self):
         self.run_command('install_pipeline')
+        self.run_command('build_sphinx')
         _bdist_egg.run(self)
 
 class develop(_develop):
@@ -121,6 +131,13 @@ class develop(_develop):
         install_pipeline.develop = True
         self.run_command('install_pipeline')
         _develop.run(self)
+
+def docfiles():
+    manifest = []
+    for root, dirs, files in os.walk('doc/build/html'):
+        for f in files:
+            manifest.append(join(root,f))
+    return manifest
 
 # Run setuptools setup
 setup(
@@ -139,7 +156,9 @@ setup(
     },
     setup_requires = [
         'nose',
-        'tempdir'
+        'tempdir',
+        'sphinx',
+        'sphinx_rtd_theme'
     ],
     tests_require = [
         'nose',
@@ -154,6 +173,9 @@ setup(
     license = ngs_mapper.__license__,
     keywords = 'miseq iontorrent roche 454 fastq vcf',
     url = ngs_mapper.__url__,
+    data_files = [
+        (join(sys.prefix,'docs/ngs_mapper'), docfiles()),
+    ],
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,
