@@ -78,9 +78,29 @@ Installation
       
          git checkout -b v1.1.0 v1.1.0
 
+.. _install:
+
+2. Build the initial documentation
+
+    You can build the intial documentation that will be missing some features until after you install
+    and rebuild the documentation
+
+    .. raw:: html
+
+        <a name="install-docs"></a>
+
+    The following command will only build the bare-minimum documenation and will not
+    include the documentation inside of the code(you will build that after the install)
+    It will generate some errors that you will most likely ignore
+
+    .. code-block:: bash
+
+        python setup.py build_sphinx
+        firefox doc/build/html/install.html#install-docs
+
 .. _install-system-packages:
 
-2. Install System Packages
+3. Install System Packages
 
     This is the only part of the installation process that you should need to become the super user
 
@@ -96,7 +116,7 @@ Installation
 
             sudo python setup.py install_system_packages
 
-3. Configure the defaults
+4. Configure the defaults
 
     You need to configure the ngs_mapper/:doc:`config` file.
 
@@ -116,7 +136,7 @@ Installation
 
             mkdir -p /path/to/NGSDATA
 
-4. Python
+5. Python
 
     The ngs_mapper requires python 2.7.3+ but < 3.0
 
@@ -134,7 +154,7 @@ Installation
 
             $HOME/bin/python --version
 
-5. Setup virtualenv
+6. Setup virtualenv
   
   
     1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
@@ -156,7 +176,7 @@ Installation
 
             . ${venvpath}/bin/activate
 
-6. Install the pipeline into virtualenv
+7. Install the pipeline into virtualenv
 
     .. code-block:: bash
 
