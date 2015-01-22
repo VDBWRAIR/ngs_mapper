@@ -14,6 +14,7 @@ from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
 import ngs_mapper
+from ngs_mapper import util
 
 
 class InstallSystemPackagesCommand(setuptools.Command):
@@ -130,14 +131,8 @@ class develop(_develop):
         install_pipeline = self.distribution.get_command_obj('install_pipeline')
         install_pipeline.develop = True
         self.run_command('install_pipeline')
+        self.run_command('build_sphinx')
         _develop.run(self)
-
-def docfiles():
-    manifest = []
-    for root, dirs, files in os.walk('doc/build/html'):
-        for f in files:
-            manifest.append(join(root,f))
-    return manifest
 
 # Run setuptools setup
 setup(
@@ -174,8 +169,7 @@ setup(
     keywords = 'miseq iontorrent roche 454 fastq vcf',
     url = ngs_mapper.__url__,
     data_files = [
-        (join(sys.prefix,'docs/ngs_mapper'), docfiles()),
-    ],
+    ] + util.build_datafiles(join(sys.prefix,'docs/ngs_mapper'), 'doc/build/html'),
     cmdclass = {
         'install_system_packages': InstallSystemPackagesCommand,
         'install_pipeline': PipelineInstallCommand,
