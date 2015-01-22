@@ -125,3 +125,5 @@ Frequently Asked Questions
     This indicates that the initial config.yaml file that you created during the :doc:`install` is missing a required key: value pair called missingkey. This most likely happened because you updated the pipeline which introduced new keys in config.yaml.base that you need to add to your config.yaml.
     
     Once you add those new keys, you will need to rerun the ``python setup.py install`` portion of the :doc:`install`.
+#. You get errors related to ``no display name and no $DISPLAY environemt variable`` when createing graphics
+    See `Issue 75 <https://github.com/VDBWRAIR/ngs_mapper/issues/75>`_
