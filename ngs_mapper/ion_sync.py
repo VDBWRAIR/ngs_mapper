@@ -1,3 +1,64 @@
+"""
+The intention of this script is to easily sync a given IonTorrent or IonProton run path into the :doc:`NGSData <../ngsdata>` structure
+
+You need to ensure that the run directory for the run you want to sync is available and that you know the path to it.
+
+The run directores for IonTorrent and IonProton are located under /data/analysis/Home on the instrument.
+These run directories should contain a ion_params_00.json as well as plugin_out/downloads that contains the fastq files for each barcode.
+
+Usage
+=====
+
+.. code-block:: bash
+
+    ion_sync /path/to/run_directory
+
+Optionally you can specify the NGSdata path as follows
+
+.. code-block:: bash
+
+    ion_sync /path/to/run_directory --ngsdata /path/to/NGSData
+
+How it works
+============
+
+#. The run_directory is copied into the RawData directory located under the specified ``--ngsdata``
+#. Then a sample mapping is created based on the ``ion_params_00.json`` file that is located inside of the run directory.
+
+    * The ion_params_00.json is automatically created by the instrument based 
+      on the information provided in the web interface for the run.
+    * The ``ion_params_00.json`` file is loaded and the samplenames are taken from
+      experimentAnalysisSettings->barcodedSamples inside of the loaded file.
+
+#. All of the fastq files inside of plugin_out/downloads are compiled and all 
+   IonXpress_XXX are symlinked into the ReadData under the path specified with
+   ``--ngsdata`` and renamed using the mapping that was created from 
+   the ``ion_params_00.json`` 
+#. All of the fastq files under ReadData are then symlinked under their 
+   cooresponding samplename directory inside of ReadsBySample under the path
+   specified by ``--ngsdata``
+
+    * samplenames are determined by splitting the fastq file name by each 
+      occurance of a dot and taking the first item from that.
+
+Notes
+=====
+
+As the IonTorrent's and IonProton's software versions change sometimes so does the way the ``ion_params_00.json`` is created by the instrument.
+This means that you may encounter an error as the location of the samplename -> barcode mapping inside of the ``ion_params_00.json`` may
+change. As with any issue, if you encounter an error while using this script, :doc:`submit an issue <../createissue>` and make sure to copy-paste the contents of your ion_params_00.json file in the issue.
+
+Additionally, the naming format of the fastq files as well as the placement of them may change with the different versions of the software.
+If you notice that your fastq files are not located inside of ``plugin_out/downloads`` inside of your runs, please :doc:`submit an issue <../createissue>` and provide the relative path to your run that your fastq files are located.
+
+If you only have .bam files you should be able to convert them to fastq with the following command
+
+.. code-block:: bash
+
+    samtools view /path/to/IonXpress_XXX.bam | awk '{printf("@%s\\n%s\\n+\\n%s\\n",$1,$10,$11)}' > /path/to/IonXpress_XXX.fastq
+
+"""
+
 import json
 from os.path import dirname, basename, join, exists, isdir, relpath
 import argparse
