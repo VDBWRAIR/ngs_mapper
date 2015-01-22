@@ -76,7 +76,7 @@ Installation
    
       .. code-block:: bash
       
-         git checkout -b v1.0.0 v1.0.0
+         git checkout -b v1.1.0 v1.1.0
 
 .. _install-system-packages:
 
@@ -88,13 +88,13 @@ Installation
   
         .. code-block:: bash
 
-            su -c 'python setup.py install_system_packages && chmod 666 -R setuptools*'
+            su -c 'python setup.py install_system_packages'
   
     - Ubuntu
   
         .. code-block:: bash
 
-            sudo python setup.py install_system_packages && sudo chmod 666 -R setuptools*
+            sudo python setup.py install_system_packages
 
 3. Configure the defaults
 

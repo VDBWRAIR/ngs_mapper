@@ -793,7 +793,6 @@ class TestInstallPython(Base):
         self._C( prefix, '2.7.8' )
         self._check_python_prefix(prefix, '2.7.8')
 
-@attr('current')
 class TestWhichNewerVersion(Base):
     functionname = 'which_newer_version'
 
@@ -810,3 +809,77 @@ class TestWhichNewerVersion(Base):
     def test_returns_correct_version(self):
         r = self._C( '3.0.0', '2.0.0' )
         eq_( '3.0.0', r )
+
+from unittest2 import TestCase
+import mock
+
+import os
+import stat
+
+from .. import dependency
+
+@mock.patch.object(dependency, 'os')
+class TestMakeDirectoryReadable(TestCase):
+    def setUp(self):
+        self.uid = os.getuid()
+        self.gid = os.getgid()
+        # file
+        self.file_rwx = stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+        self.file_rw = stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR
+        # dir -rwx------
+        self.dir_rwx = stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+        self.stats = {
+            '/path/to/directory':
+                Mock(st_mode=self.dir_rwx,st_uid=self.uid), # Top level dir
+            '/path/to/directory/file.txt':
+                Mock(st_mode=self.file_rwx,st_uid=self.uid), # Some file
+            '/path/to/directory/dir1':
+                Mock(st_mode=self.dir_rwx,st_uid=self.uid), # Some directory
+            '/path/to/directory/dir1/file1.txt':
+                Mock(st_mode=self.file_rw,st_uid=self.uid), # Some file
+        }
+
+        self.rdf = [
+            ('/path/to/directory', ['dir1'], ['file.txt']),
+            ('/path/to/directory/dir1', [], ['file1.txt'])
+        ]
+
+    def _stat(self, path):
+        ''' Mocked out path '''
+        try:
+            return self.stats[path]
+        except KeyError as e:
+            raise OSError('{0} not found'.format(path))
+
+    def test_dirpath_is_a_file(self, mos):
+        mos.stat = self._stat
+        mos.walk.return_value = []
+        self.assertRaises(
+            ValueError,
+            dependency.make_directory_readable, '/path/to/directory/file.txt'
+        )
+
+    def test_dirpath_is_nonexistant(self, mos):
+        mos.stat = self._stat
+        mos.walk.return_value = []
+        self.assertRaises(
+            OSError,
+            dependency.make_directory_readable, '/path/to/missing'
+        )
+
+    def test_correctly_modifies_permissions(self, mos):
+        r = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+        w = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
+        x = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+        rw = r | w
+        mos.walk.return_value = self.rdf
+        mos.stat = self._stat
+        dependency.make_directory_readable('/path/to/directory')
+        chmod_calls = [
+            call('/path/to/directory',self.dir_rwx|rw|x),
+            call('/path/to/directory/file.txt',self.file_rwx|rw),
+            call('/path/to/directory/dir1',self.dir_rwx|rw|x),
+            call('/path/to/directory/dir1/file1.txt',self.file_rw|rw)
+        ]
+        print mos.chmod.call_args_list
+        mos.chmod.assert_has_calls(chmod_calls, any_order=True)

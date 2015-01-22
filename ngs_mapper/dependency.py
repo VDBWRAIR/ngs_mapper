@@ -15,6 +15,7 @@ import platform
 import json
 import fileinput
 import sys
+import stat
 
 import tempdir
 
@@ -326,3 +327,32 @@ def install_python( prefix, version='2.7.8' ):
     subprocess.check_call(['make','install'])
 
     os.chdir(cwd)
+
+def make_directory_readable(dirpath):
+    '''
+    Ensure a directory is recursivly readable
+    Dirs get 755, files get 644 or 755 if already executable
+
+    :param str dirpath: Path to directory to operate on
+    '''
+    uid = os.getuid()
+    r = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+    w = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
+    x = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+    rw = r | w
+    # Change root perms
+    mode = os.stat(dirpath).st_mode
+    if mode & stat.S_IFREG:
+        raise ValueError('{0} is not a directory'.format(dirpath))
+    os.chmod(dirpath, mode | rw | x)
+    for root, dirs, files in os.walk(dirpath):
+        for f in files:
+            p = join(root,f)
+            s = os.stat(p)
+            mode = s.st_mode
+            os.chmod(p, mode | rw)
+        for d in dirs:
+            p = join(root,d)
+            s = os.stat(p)
+            mode = s.st_mode
+            os.chmod(p, mode | rw | x)

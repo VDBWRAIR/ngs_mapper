@@ -5,6 +5,7 @@ use_setuptools()
 from glob import glob
 import sys
 from os.path import join, expanduser
+import os
 
 from setuptools import setup, find_packages
 import setuptools
@@ -13,6 +14,7 @@ from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 
 import ngs_mapper
+
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''
@@ -31,8 +33,15 @@ class InstallSystemPackagesCommand(setuptools.Command):
         from ngs_mapper.dependency import (
             install_system_packages,
             get_distribution_package_list,
-            UserNotRootError
+            UserNotRootError,
+            make_directory_readable
         )
+        # Ensure setuptools is readable for everybody since it is likely installed
+        # first by root
+        setuptoolspath = glob('setuptools*')
+        if setuptoolspath:
+            for p in setuptoolspath:
+                os.chmod(p, 0660)
         try:
             system_packages = get_distribution_package_list('system_packages.lst')
             install_system_packages(system_packages)
