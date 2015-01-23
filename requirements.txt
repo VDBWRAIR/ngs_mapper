@@ -6,7 +6,7 @@ biopython==1.63
 cutadapt==1.2.1
 nose
 mock
-git+https://github.com/VDBWRAIR/pyBWA
+#git+https://github.com/VDBWRAIR/pyBWA
 tempdir
 pyyaml
 sphinx

@@ -212,15 +212,26 @@ and then install all those requirements from the predownloaded location.
 The installation will be quite similar to the regular installation process but differs
 as follows.
 
+Online Workstation
+------------------
+
 #. Download the python packages listed in requirements.txt
-    You can do this manually via http://pypi.python.org or you can use pip as follows
+    You can do this manually by downloading all packages listed in ``requirements.txt`` via http://pypi.python.org
+     or you can use pip as follows
     
     #. Comment out the pyBWA requirements line in requirements.txt
+
+        .. code-block:: bash
+
+            sed -i 's/^git/#git/' requirements.txt
+
     #. Run the following commands to download all software needed
+
+        This requires that you have pip installed on some online workstation
     
         .. code-block:: bash
 
-            mkdir -p python_packages
+            mkdir -p software
             pip install --no-use-wheel -d software -r requirements.txt
             pip install --no-use-wheel -d software virtualenv setuptools
             git clone https://github.com/VDBWRAIR/pyBWA.git software/pyBWA
@@ -228,6 +239,19 @@ as follows.
             git clone https://github.com/samtools/samtools software/samtools
             wget https://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz -O software/Python-2.7.8.tgz
             wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip -O software/Trimmomatic-0.32.zip
+
+Offline Workstation
+-------------------
+
+    #. Copy the ngs_mapper directory over to your offline workstation
+    #. Enter ngs_mapper directory
+
+        .. code-block:: bash
+
+            cd ngs_mapper
+
+    #. Edit the ``ngs_mapper/config.yaml`` file as described above in the normal installation
+
     #. Setup setuptools
 
         .. code-block:: bash
@@ -280,6 +304,8 @@ as follows.
             sed -i 's/git/#git/' requirements.txt
             pip install --no-index -f software numpy six argparse
             pip install --no-index -f software -r requirements.txt
+            cd software/pyBWA
             python software/pyBWA/setup.py install
+            cd ../..
             unzip software/Trimmomatic* && mv Trimmomatic* $venvpath/lib/
             python setup.py install
