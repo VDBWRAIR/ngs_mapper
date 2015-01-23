@@ -68,7 +68,7 @@ So to run the project with the fewest amount of arguments would be as follows(do
 
 .. code-block:: bash
 
-    $> runsample.py ngs_mapper/tests/fixtures/functional/947 ngs_mapper/tests/fixtures/functional/947.ref.fasta 947
+    $> runsample.py ngs_mapper/tests/fixtures/functional/947 ngs_mapper/tests/fixtures/functional/947.ref.fasta -od 947 947
 
 This will run the 947 data and use the 947.ref.fasta file to map to. All files will be prefixed with 947.
 Since we did not specify the -od argument, all the files from the pipeline get dumped into your current directory.
