@@ -426,20 +426,30 @@ class TestDownloadUnpack(Base):
         okfiles = [self.unpackdir]
         eq_( sorted(okfiles), sorted(os.listdir('.')) )
 
-@patch('ngs_mapper.dependency.urllib',Mock(urlretrieve=urllib_urlretrieve_mock))
+@patch('ngs_mapper.dependency.urllib')
 class TestInstallTrimmomatic(Base):
     functionname = 'install_trimmomatic'
 
-    def test_creates_intermediate_directories(self):
+    def test_does_not_redownload_if_installed(self, murllib):
+        murllib.url_retrieve.side_effect = Exception
+        d = join(self.libdir, 'Trimmomatic-0.32')
+        os.makedirs(d)
+        open(join(d,'trimmomatic-0.32.jar'),'w').close()
+        self._C(self.trimmomatic_download_url, self.libdir)
+
+    def test_creates_intermediate_directories(self, murllib):
+        murllib.urlretrieve = urllib_urlretrieve_mock
         self._C( self.trimmomatic_download_url, self.libdir )
         self._exist( self.trimmopath )
 
-    def test_intermediate_directories_exist(self):
+    def test_intermediate_directories_exist(self, murllib):
+        murllib.urlretrieve = urllib_urlretrieve_mock
         os.makedirs(self.libdir)
         self._C( self.trimmomatic_download_url, self.libdir )
         self._exist( self.trimmopath )
 
-    def test_absolute_path_to_prefix(self):
+    def test_absolute_path_to_prefix(self, murllib):
+        murllib.urlretrieve = urllib_urlretrieve_mock
         self.libdir = abspath(self.libdir)
         self._C( self.trimmomatic_download_url, self.libdir )
         self._exist( self.trimmopath )

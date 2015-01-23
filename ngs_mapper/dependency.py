@@ -191,10 +191,13 @@ def download_unpack( source, dest ):
         print "Extracting all into {0}".format(dest)
         fh.extractall(dest)
 
-def install_trimmomatic( source, dst ):
+def install_trimmomatic(source, dst):
     '''
     Download and unpack trimmomatic into dstprefix/lib
     '''
+    if len(glob(join(dst,'Trimmomatic-*','trimmomatic-*.jar'))):
+        print "{0} already installed".format(dst)
+        return
     print "Unpacking trimmomatic into {0}".format(dst)
     download_unpack( source, dst )
 
