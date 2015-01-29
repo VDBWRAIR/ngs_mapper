@@ -219,6 +219,7 @@ def get_distribution_package_manager( ):
     CentOS - yum
     Red Hat - yum
     Fedora - yum
+    ArchLinux - pacman
 
     All others will raise UnknownDistributionError
     '''
@@ -228,6 +229,8 @@ def get_distribution_package_manager( ):
         return 'apt-get'
     elif dist.startswith('red hat enterprise') or dist in ('centos','fedora'):
         return 'yum'
+    elif dist == '' and exists('/etc/arch-release'):
+        return 'pacman'
     else:
         raise UnknownDistributionError(
             "{0} is an unknown distribution".format(dist)
@@ -252,8 +255,11 @@ def install_system_packages( packagelist ):
             )
         )
 
-    # Run the package manager install without prompt(-y)
-    cmd = [pkgmanager, 'install', '-y'] + packagelist
+    # Run the package manager install without prompt
+    if pkgmanager == 'pacman':
+        cmd = [pkgmanager, '-S', '--noconfirm'] + packagelist
+    else:
+        cmd = [pkgmanager, 'install', '-y'] + packagelist
     subprocess.check_call( cmd )
 
 ''' Class for when package manager entry is missing from pkglistfile '''

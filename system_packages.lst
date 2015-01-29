@@ -65,5 +65,20 @@
 	"libpng12-dev",
 	"default-jre",
 	"libbz2-dev"
+],
+"pacman": [
+    "base-devel",
+    "ncurses",
+    "zlib",
+    "pango",
+    "readline",
+    "openssl",
+    "unzip",
+    "imagemagick",
+    "libpng",
+    "jre7-openjdk",
+    "bzip2",
+    "bc",
+    "time"
 ]
 }
