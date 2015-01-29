@@ -45,15 +45,13 @@ ReadsBySample
 
 This directory contains only directories that are named after each of the samplenames that have been sequenced. The concept of this folder is to make it very easy to look up all data related to a given samplename.
 
-The files that live in these directories must adhere strictly to a specific naming scheme so the pipeline can determine what reads come from which platforms as they need to be handled slightly different.
-
-See the following naming regular expressions defined in :py:mod:`ngs_mapper.data` for more information about how these filenames have to be named:
+See the following naming regular expressions defined in :py:mod:`ngs_mapper.data` for more information about how platforms are identified via the read identifiers inside the files
 
 * :py:mod:`sanger <ngs_mapper.data.SANGER>`
 * :py:mod:`miseq <ngs_mapper.data.MISEQ>`
 * :py:mod:`roche <ngs_mapper.data.ROCHE>`
 * :py:mod:`iontorrent <ngs_mapper.data.IONTORRENT>`
 
-If you have files that do not match these naming standards the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample.py <ngs_mapper.runsample>`. Inspecting the logs you will see errors about Somehow no reads being compiled which is a good indication that your files are named incorrectly.
+If you have files that do not match any platform the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample.py <ngs_mapper.runsample>`.
 
-To ensure your files are named correctly you can use the various sync scripts listed in :doc:`ngsdatasync`
+Inspecting the logs you will see errors about 'Somehow no reads being compiled' which is a good indication that somehow the reads in your files are incorrectly labeled.

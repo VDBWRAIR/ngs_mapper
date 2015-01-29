@@ -164,4 +164,7 @@ class TestFunctional(Base):
         es = os.stat( join('outdir','res'+self.outfiles[1]) )
         self._rungraphsample( self.bam, od='outdir', op='res', qualdepth=join('outdir','res'+self.outfiles[1]) )
         rs = os.stat( join('outdir','res'+self.outfiles[1]) )
-        eq_( es, rs )
+        eq_( es.st_ino, rs.st_ino )
+        eq_( es.st_size, rs.st_size )
+        eq_( es.st_mtime, rs.st_mtime )
+        eq_( es.st_ctime, rs.st_ctime )

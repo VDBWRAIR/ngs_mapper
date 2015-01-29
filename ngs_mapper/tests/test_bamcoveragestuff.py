@@ -77,10 +77,9 @@ class TestIntegrate(Base):
         if exp != res and exp[:-1] != res:
             eq_( exp, res )
 
-    @timed(30)
     @patch('ngs_mapper.bam.get_refstats')
     @attr('slow')
-    def test_ouput_json(self,refstats):
+    def test_output_json(self,refstats):
         refstats.return_value = self.refstats
         from BamCoverage.bam import alignment_info
         from BamCoverage.bam_to_json import output_json
