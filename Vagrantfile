@@ -18,13 +18,13 @@ def provision_pipeline( config )
     config.vm.provision "shell", privileged: false,
         inline: "cp -f /vagrant/setup.py ~/ngs_mapper; cp -f /vagrant/vagrant-provision.py ~/ngs_mapper;"
 
-    # Ensure pipeline.log is owned by vagrant and 644
-    config.vm.provision "shell", privileged: false,
-        inline: "chown vagrant:vagrant /home/vagrant/ngs_mapper/pipeline.log"
-
     # Run the provisioning system-packages
     config.vm.provision "shell", privileged: false,
         inline: "echo 'Installing system packages'; cd ~/ngs_mapper; sudo python vagrant-provision.py --install-system-packages"
+
+    # Ensure pipeline.log is owned by vagrant and 644
+    config.vm.provision "shell", privileged: false,
+        inline: "sudo chown vagrant:vagrant /home/vagrant/ngs_mapper/pipeline.log"
 
     # Run the provisioning pipeline install
     config.vm.provision "shell", privileged: false,
