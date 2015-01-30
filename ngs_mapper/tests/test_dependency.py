@@ -492,7 +492,7 @@ class TestVerifyTrimmomatic(Base):
 class TestGetDistributionPackageManager(Base):
     functionname = 'get_distribution_package_manager'
 
-    def test_returns_correct_distribution_with_version(self):
+    def test_returns_correct_package_manager(self):
         pkgmanagers = [
             'yum',
             'yum',
@@ -501,19 +501,21 @@ class TestGetDistributionPackageManager(Base):
             'yum',
             'pacman',
         ]
-        for dist, pkgmanager in zip(self.distros,pkgmanagers):
+        for dist, pkgmanager in zip(self.distros, pkgmanagers):
             with patch('ngs_mapper.dependency.platform') as platform:
-                dist_upper = (dist[0].upper(),dist[1],dist[2])
-                dist_lower = (dist[0].lower(),dist[1],dist[2])
-                platform.linux_distribution.return_value = dist_upper
-                r = self._C()
-                eq_( pkgmanager, r )
-                platform.linux_distribution.return_value = dist_lower
-                r = self._C()
-                eq_( pkgmanager, r )
-                platform.linux_distribution.return_value = dist
-                r = self._C()
-                eq_( pkgmanager, r )
+                with patch('ngs_mapper.dependency.exists') as mos:
+                    mos.return_value = True
+                    dist_upper = (dist[0].upper(),dist[1],dist[2])
+                    dist_lower = (dist[0].lower(),dist[1],dist[2])
+                    platform.linux_distribution.return_value = dist_upper
+                    r = self._C()
+                    eq_( pkgmanager, r )
+                    platform.linux_distribution.return_value = dist_lower
+                    r = self._C()
+                    eq_( pkgmanager, r )
+                    platform.linux_distribution.return_value = dist
+                    r = self._C()
+                    eq_( pkgmanager, r )
 
     def test_raises_exception_with_unknown_distrubution_platform_exists(self):
         from ngs_mapper.dependency import UnknownDistributionError

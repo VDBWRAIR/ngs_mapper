@@ -17,6 +17,9 @@ import fileinput
 import sys
 import stat
 
+import log
+logger = log.setup_logger(__name__, log.get_config())
+
 import tempdir
 
 def install_bwa( source, gitsha, dstprefix ):
@@ -224,6 +227,7 @@ def get_distribution_package_manager( ):
     All others will raise UnknownDistributionError
     '''
     dist, version, name = platform.linux_distribution()
+    logger.debug('Distribution info found {0} {1} {2}'.format(dist,version,name))
     dist = dist.lower()
     if dist in ('ubuntu', 'debian'):
         return 'apt-get'
