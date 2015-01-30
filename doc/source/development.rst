@@ -18,20 +18,20 @@ The easiest way to ensure that the installer and everything works is to bring up
 
 The project is configured with a `Vagrant <https://www.vagrantup.com/>`_ file to make this easier
 
-The Vagrant file that comes with the pipeline is configured to automatically :doc:`provision <vagrantfile>` either a CentOS 6.5 or Ubuntu 14.04 virtual machine.
+The Vagrant file that comes with the pipeline is configured to automatically :doc:`provision <vagrantfile>` either a CentOS 6.5 or Ubuntu 12.04 virtual machine.
 You can bring either or both up with one of the following commands:
 
 * CentOS 6.5
 
     .. code-block:: bash
 
-        vagrant up centos65
+        vagrant up centos
 
 * Ubuntu 14.04
 
     .. code-block:: bash
 
-        vagrant up ubuntu1404
+        vagrant up ubuntu
 * Both
 
     .. code-block:: bash
