@@ -1,4 +1,5 @@
 from imports import *
+import gzip
 
 from ngs_mapper.data import NoPlatformFound
 
@@ -21,6 +22,12 @@ class Base(common.BaseClass):
             'MiSeq': [
                 '1090-01_S22_L001_R1_001_2013_12_10.fastq',
                 '1090-01_S22_L001_R2_001_2013_12_10.fastq',
+                '1090-01_S22_L001_R1_001_2013_12_10.fastq.gz',
+                '1090-01_S22_L001_R2_001_2013_12_10.fastq.gz',
+                '1090-01_S22_L001_R1_001.fastq',
+                '1090-01_S22_L001_R2_001.fastq',
+                '1090-01_S22_L001_R1_001.fastq.gz',
+                '1090-01_S22_L001_R2_001.fastq.gz',
             ]
         }
 
@@ -43,7 +50,10 @@ class Base(common.BaseClass):
             listing[plat] = sorted([join(path,r) for r in readfiles])
             # Create the files
             for readfile in listing[plat]:
-                fh = open(readfile,'w')
+                if readfile.endswith('.gz'):
+                    fh = gzip.open(readfile, 'wb')
+                else:
+                    fh = open(readfile,'w')
                 fh.write('@{0}\nATGC\n+\n!!!!\n'.format(
                     self.read_ids[plat]
                 ))
@@ -60,17 +70,17 @@ class Base(common.BaseClass):
 class TestPairReads(Base):
     functionname = 'pair_reads'
 
+    @attr('current')
     def test_pairs_reads(self):
-        readlist = sorted(self.reads['MiSeq'],reverse=True)
+        readlist = self.reads['MiSeq']
         r = self._C( readlist )
-        e = [tuple(sorted(readlist))]
+        e = [(readlist[i], readlist[i+1]) for i in range(0, len(readlist), 2)]
         eq_( e, r )
 
     def test_pairs_reads_abs_paths(self):
-        reads = [join('/dev/shm/tdir',read) for read in self.reads['MiSeq']]
-        readlist = sorted(reads,reverse=True)
+        readlist = [join('/dev/shm/tdir',read) for read in self.reads['MiSeq']]
         r = self._C( readlist )
-        e = [tuple(sorted(reads))]
+        e = [(readlist[i], readlist[i+1]) for i in range(0, len(readlist),2)]
         eq_( e, r )
 
 class TestFindMate(Base):
@@ -78,13 +88,20 @@ class TestFindMate(Base):
 
     def test_finds_mate_sorted(self):
         readlist = self.reads['MiSeq']
-        r = self._C( readlist[0], readlist )
-        eq_( 1, r )
-        r = self._C( readlist[1], readlist )
-        eq_( 0, r )
+        print readlist
+
+        for i, read in enumerate(readlist):
+            r = self._C(read, readlist)
+            # Odd index should be the one after
+            if i % 2 == 0:
+                expectindex = i + 1
+            else:
+                expectindex = i - 1
+
+            eq_(expectindex, r)
 
     def test_finds_mate_reverse_sorted(self):
-        readlist = sorted(self.reads['MiSeq'],reverse=True)
+        readlist = self.reads['MiSeq'][::-1]
         r = self._C( readlist[0], readlist )
         eq_( 1, r )
         r = self._C( readlist[1], readlist )
@@ -103,6 +120,18 @@ class TestFindMate(Base):
         readlist = [self.reads['MiSeq'][0]]
         r = self._C( readlist[0], readlist )
         eq_( -1, r )
+
+    def test_finds_mate_for_not_readsbysample_standard(self):
+        read_filenames = [
+            '1090-01_S22_L001_R1_001.fastq',
+            '1090-01_S22_L001_R2_001.fastq',
+        ]
+
+    def test_finds_mate_for_gzip_extension(self):
+        read_filenames = [
+            '1090-01_S22_L001_R1_001.fastq.gz',
+            '1090-01_S22_L001_R2_001.fastq.gz',
+        ]
 
 class TestIsSangerReadFile(Base):
     functionname = 'is_sanger_readfile'
@@ -125,14 +154,14 @@ class TestFunctional(Base):
         # no files so empty dict returned
         eq_( {}, rbp( self.tempdir ) )
 
-
+    @attr('current')
     def test_reads_by_plat(self):
         with patch('ngs_mapper.data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]) as a:
             with patch('ngs_mapper.data.filter_reads_by_platform', lambda path,plat: self.reads[plat]) as b:
                 from ngs_mapper import data
                 for plat, readfiles in self.reads.items():
                     if plat == 'MiSeq':
-                        readfiles = [tuple(readfiles),]
+                        readfiles = [(readfiles[i], readfiles[i+1]) for i in range(0, len(readfiles), 2)]
                     eq_( sorted(readfiles), sorted(data.reads_by_plat( '' )[plat]) )
 
     @attr('current')
@@ -178,7 +207,6 @@ class TestFunctional(Base):
         eq_( -1, find_mate(self.reads['Sanger'][0], self.reads['Sanger']) )
 
 class TestIntegration(Base):
-    @attr('current')
     def test_reads_by_plat_individual(self):
         from ngs_mapper.data import reads_by_plat as rdp
         # Test each platform's file format
@@ -217,9 +245,12 @@ class TestIntegration(Base):
                 eq_( sorted(reads), sorted(result[plat])  )
         eq_( expected.keys(), result.keys() )
 
+    @attr('current')
     def test_platform_has_paired_reads(self):
         from ngs_mapper.data import pair_reads
-        eq_( [tuple(self.reads['MiSeq']),], pair_reads( self.reads['MiSeq'] ) )
+        readlist = self.reads['MiSeq']
+        e = [(readlist[i], readlist[i+1]) for i in range(0, len(readlist), 2)]
+        eq_( e, pair_reads( self.reads['MiSeq'] ) )
 
     def test_platform_does_not_have_paired_reads(self):
         from ngs_mapper.data import pair_reads

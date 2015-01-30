@@ -212,39 +212,38 @@ def pair_reads( readlist ):
 def find_mate( filepath, readlist ):
     '''
         Finds the index of the mate file for filepath given a readlist
+        Just looks for _R[12]_ and looks for identical filename but with the opposite of whatever R? is found
     
         @param filepath - Path to a read file
         @param readlist - List of paths to reads
 
         @returns the index in readlist for the mate for filepath or -1 if none are found
     '''
-    cp = re.compile( '(?P<samplename>\S+?)_S\d+_L\d{3}_(?P<fr>R\d)_\d{3}_\d{4}_\d{2}_\d{2}.fastq' )
-    m = cp.match( basename(filepath) )
+    #cp = re.compile( '(?P<samplename>\S+?)_S\d+_L\d{3}_(?P<fr>R\d)_\d{3}_\d{4}_\d{2}_\d{2}.fastq' )
+    cp = re.compile('_R([12])_')
+    m = cp.search( basename(filepath) )
     if not m:
-        logger.debug( "{0} is not a miseq formatted read".format(
+        logger.debug( "Cannot find _R1_ or _R2_ in {0}".format(
             filepath
         ))
         return -1
     else:
-        i = m.groupdict()
-        # Samplename
-        sn = i['samplename']
-        # Forward/Referse aka R1 or R2
-        fr = i['fr']
-        # The number portion of R1 or R2
-        fri = fr[1]
-        # Swap the number so we look for the other mate name
-        # So if R1 look for R2 or if R2 look for R1
-        if fri == '1':
-            fri = '2'
-        elif fri == '2':
-            fri = '1'
+        found_r = m.group(1)
+        
+        # Look for opposite index
+        if found_r == '1':
+            mate_r = '2'
+        elif found_r == '2':
+            mate_r = '1'
         else:
-            logger.debug("R1 or R2 not found in {0}".format(
-                filepath
-            ))
+            logger.warning('Found {0} instead of 1 or 2 in {1}'.format(found_r, filepath))
             return -1
-        matefn = filepath.replace(fr, 'R'+fri)
+
+        matefn = filepath.replace(
+            '_R{0}_'.format(found_r),
+            '_R{0}_'.format(mate_r)
+        )
+        logger.debug('{0} found in {1} and will search for {2}'.format(found_r, filepath, matefn))
         try:
             return readlist.index(matefn)
         except ValueError as e:
