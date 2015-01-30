@@ -16,18 +16,18 @@ class Base(common.BaseClass):
                 'Denv1_45AZ5_Virus_Lot1_82__1__IX031__2013_09_23__Den1.fastq',
             ],
             'Sanger': [
-                '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.fastq',
                 '1517010460_F1425_2011_08_24_H3N2_HA_0151_D09.fastq',
+                '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.fastq',
             ],
             'MiSeq': [
-                '1090-01_S22_L001_R1_001_2013_12_10.fastq',
-                '1090-01_S22_L001_R2_001_2013_12_10.fastq',
-                '1090-01_S22_L001_R1_001_2013_12_10.fastq.gz',
-                '1090-01_S22_L001_R2_001_2013_12_10.fastq.gz',
                 '1090-01_S22_L001_R1_001.fastq',
                 '1090-01_S22_L001_R2_001.fastq',
                 '1090-01_S22_L001_R1_001.fastq.gz',
                 '1090-01_S22_L001_R2_001.fastq.gz',
+                '1090-01_S22_L001_R1_001_2013_12_10.fastq',
+                '1090-01_S22_L001_R2_001_2013_12_10.fastq',
+                '1090-01_S22_L001_R1_001_2013_12_10.fastq.gz',
+                '1090-01_S22_L001_R2_001_2013_12_10.fastq.gz',
             ]
         }
 
@@ -47,7 +47,7 @@ class Base(common.BaseClass):
         readsdir = self.tempdir
         listing = {}
         for plat,readfiles in self.reads.items():
-            listing[plat] = sorted([join(path,r) for r in readfiles])
+            listing[plat] = [join(path,r) for r in readfiles]
             # Create the files
             for readfile in listing[plat]:
                 if readfile.endswith('.gz'):
@@ -172,8 +172,9 @@ class TestFunctional(Base):
             result = frbp(self.tempdir, plat)
             print plat
             print result
-            eq_( readfiles, sorted(result) )
+            eq_( sorted(readfiles), sorted(result) )
 
+    @attr('current')
     def test_filter_reads_by_platform_bad_read_skipped(self):
         from ngs_mapper.data import filter_reads_by_platform as frbp
         fn = 'Sample_F1_1979_01_01_Den1_Den1_0001_A01.junk' 
@@ -184,7 +185,7 @@ class TestFunctional(Base):
             if plat == 'Sanger':
                 # Remove the read as it should not exist
                 del readfiles[readfiles.index( join(self.tempdir,fn) )]
-            eq_( readfiles, sorted(result) )
+            eq_( sorted(readfiles), sorted(result) )
 
     def test_platform_has_paired_reads(self):
         reads = ['read1_r1','read1_r2','read2_r1','read3_r1','read3_r2']
@@ -207,6 +208,7 @@ class TestFunctional(Base):
         eq_( -1, find_mate(self.reads['Sanger'][0], self.reads['Sanger']) )
 
 class TestIntegration(Base):
+    @attr('current')
     def test_reads_by_plat_individual(self):
         from ngs_mapper.data import reads_by_plat as rdp
         # Test each platform's file format
@@ -216,11 +218,12 @@ class TestIntegration(Base):
         for plat,readfiles in expected.items():
             assert plat in result, "platform {} not in result".format(plat)
             if plat == 'MiSeq':
-                readfiles = [tuple(sorted(readfiles)),]
-                eq_( readfiles, [tuple(sorted(x)) for x in result[plat]] )
+                reads = [(readfiles[i], readfiles[i+1]) for i in range(0, len(readfiles), 2)]
+                eq_( reads, sorted([tuple(sorted(x)) for x in result[plat]]) )
             else:
                 eq_( readfiles, sorted(result[plat]) )
 
+    @attr('current')
     def test_reads_by_all_unkownformats_are_skipped(self):
         self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.junk' )
         expected = self.mock_reads_dir(self.tempdir)
@@ -240,7 +243,8 @@ class TestIntegration(Base):
         ex = {}
         for plat, reads in expected.items():
             if plat == 'MiSeq':
-                eq_( sorted(reads), sorted(result[plat][0]) )
+                e = [(reads[i], reads[i+1]) for i in range(0, len(reads), 2)]
+                eq_( sorted(e), sorted(result[plat]) )
             else:
                 eq_( sorted(reads), sorted(result[plat])  )
         eq_( expected.keys(), result.keys() )
