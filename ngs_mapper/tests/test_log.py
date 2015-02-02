@@ -68,3 +68,24 @@ class TestUnitSetupLogger(LogBase):
         with open(self.filename) as fh:
             logs = fh.read()
             ok_( logs.endswith( "Test\n" ) )
+
+
+import mock
+import unittest2 as unittest
+
+from os.path import *
+
+from .. import log
+
+class TestSetupLogger(unittest.TestCase):
+    def setUp(self):
+        self.filename = join('Projects','project','project.log')
+        if not exists(dirname(self.filename)):
+            os.makedirs(dirname(self.filename))
+        self.format = '%(asctime)-15s %(message)s'
+        self.config = log.get_config(self.filename, self.format)
+
+    def test_python26_missing_dictconfig(self):
+        with mock.patch.object(log.logging, 'config') as mlogconfig:
+            mlogconfig.dictConfig.side_effect = ImportError
+            log.setup_logger('foo', self.config)

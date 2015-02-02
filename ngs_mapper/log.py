@@ -1,3 +1,4 @@
+import logconfig
 import logging
 import logging.config
 
@@ -15,7 +16,8 @@ def setup_logger( name, config ):
         'level': 'DEBUG',
         'handlers': config['handlers'].keys()
     }
-    logging.config.dictConfig( config )
+    #logging.config.dictConfig( config )
+    logconfig.from_dict(config)
     log = logging.getLogger( name )
     return log
 
