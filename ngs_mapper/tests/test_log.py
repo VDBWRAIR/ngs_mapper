@@ -73,12 +73,15 @@ class TestUnitSetupLogger(LogBase):
 import mock
 import unittest2 as unittest
 
+from os.path import *
+
 from .. import log
 
 class TestSetupLogger(unittest.TestCase):
     def setUp(self):
         self.filename = join('Projects','project','project.log')
-        os.makedirs(dirname(self.filename))
+        if not exists(dirname(self.filename)):
+            os.makedirs(dirname(self.filename))
         self.format = '%(asctime)-15s %(message)s'
         self.config = log.get_config(self.filename, self.format)
 
