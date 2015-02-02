@@ -43,15 +43,20 @@ At this time these file formats typically end with the following extensions:
 ReadsBySample
 =============
 
-This directory contains only directories that are named after each of the samplenames that have been sequenced. The concept of this folder is to make it very easy to look up all data related to a given samplename.
+This directory contains only directories that are named after each of the samplenames that have been sequenced. The concept of this folder is to make it very easy to look up all data related to a given samplename.o
+
+.. _platformidentification:
+
+Platform Identification
+=======================
 
 See the following naming regular expressions defined in :py:mod:`ngs_mapper.data` for more information about how platforms are identified via the read identifiers inside the files
 
-* :py:mod:`sanger <ngs_mapper.data.SANGER>`
-* :py:mod:`miseq <ngs_mapper.data.MISEQ>`
-* :py:mod:`roche <ngs_mapper.data.ROCHE>`
-* :py:mod:`iontorrent <ngs_mapper.data.IONTORRENT>`
+* :py:mod:`sanger <ngs_mapper.data.SANGER_ID>`
+* :py:mod:`miseq <ngs_mapper.data.MISEQ_ID>`
+* :py:mod:`roche <ngs_mapper.data.ROCHE_ID>`
+* :py:mod:`iontorrent <ngs_mapper.data.IONTORRENT_ID>`
 
 If you have files that do not match any platform the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample.py <ngs_mapper.runsample>`.
 
-Inspecting the logs you will see errors about 'Somehow no reads being compiled' which is a good indication that somehow the reads in your files are incorrectly labeled.
+This should only be an issue if you somehow rename the identifiers.

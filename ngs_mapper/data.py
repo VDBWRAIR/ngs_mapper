@@ -18,6 +18,8 @@ sample__region__barcode__year_month_day__type.filetype
 ROCHE_ID = '[A-Z0-9]{14}'
 '''
 Matches Roche accessions which are just 14 Alpha Numeric uppercase characters
+
+@AAAAAAAAAAAAAA
 '''
 IONTORRENT_FILE = '\S+?__[0-9]__IX\d{3}__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)'
 '''
@@ -29,6 +31,8 @@ IONTORRENT_ID = '[A-Z]{5}:[0-9]+:[0-9]+'
 '''
 Matches IonTorrent(and hopefully ionproton) accessions which should be
 5 ALPHA-NUMERIC characters:Digits:Digits
+
+@IIIII:0:0
 '''
 SANGER_FILE = '\S+?_[FR]\d+_\d{4}_\d{2}_\d{2}_\w+_\w+_\d{4}_[A-Z]\d{2}.(fastq|ab1)'
 '''
@@ -40,6 +44,8 @@ SANGER_ID = '[_a-zA-Z0-9-]+'
 '''
 Matches sanger ids which are in no specific format other than can contain
 uppercase, lowercase, digits, underscore and dash
+
+@anything-really_can-be-used
 '''
 MISEQ_FILE = '\S+?_S\d+_L\d{3}_R\d_\d{3}_\d{4}_\d{2}_\d{2}.fastq'
 '''
@@ -52,6 +58,8 @@ MISEQ_ID = '[a-zA-Z0-9_]+:[0-9]+:[a-zA-Z0-9-]+:[0-9]+:[0-9]+:[0-9]+:[0-9]+'
 Matches MiSeq identifiers
 
 http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm
+
+@EAS139:136:FC706VJ:2:5:1000:12850 1:Y:18:ATCACG
 '''
 
 FILENAME_MAPPING = {
