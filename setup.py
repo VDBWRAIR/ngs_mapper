@@ -154,7 +154,8 @@ setup(
         'mock',
         'tempdir',
         'sphinx',
-        'sphinx_rtd_theme'
+        'sphinx_rtd_theme',
+        'logconfig'
     ],
     tests_require = [
         'nose',

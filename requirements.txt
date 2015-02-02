@@ -12,3 +12,4 @@ pyyaml
 sphinx
 sphinx_rtd_theme
 unittest2
+logconfig
