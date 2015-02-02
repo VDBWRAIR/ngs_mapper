@@ -203,3 +203,109 @@ You can pseudo test the installation of the pipeline by running the functional t
 .. code-block:: bash
 
     nosetests ngs_mapper/tests/test_functional.py
+
+Offline Installation
+====================
+
+You may want to do an offline installation where you pre-download all requirements 
+and then install all those requirements from the predownloaded location.
+The installation will be quite similar to the regular installation process but differs
+as follows.
+
+Online Workstation
+------------------
+
+#. Download the python packages listed in requirements.txt
+    You can do this manually by downloading all packages listed in ``requirements.txt`` via http://pypi.python.org
+     or you can use pip as follows
+    
+    #. Comment out the pyBWA requirements line in requirements.txt
+
+        .. code-block:: bash
+
+            sed -i 's/^git/#git/' requirements.txt
+
+    #. Run the following commands to download all software needed
+
+        This requires that you have pip installed on some online workstation
+    
+        .. code-block:: bash
+
+            mkdir -p software
+            pip install --no-use-wheel -d software -r requirements.txt
+            pip install --no-use-wheel -d software virtualenv setuptools
+            git clone https://github.com/VDBWRAIR/pyBWA.git software/pyBWA
+            git clone https://github.com/lh3/bwa software/bwa
+            git clone https://github.com/samtools/samtools software/samtools
+            wget https://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz -O software/Python-2.7.8.tgz
+            wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip -O software/Trimmomatic-0.32.zip
+
+Offline Workstation
+-------------------
+
+    #. Copy the ngs_mapper directory over to your offline workstation
+    #. Enter ngs_mapper directory
+
+        .. code-block:: bash
+
+            cd ngs_mapper
+
+    #. Edit the ``ngs_mapper/config.yaml`` file as described above in the normal installation
+
+    #. Setup setuptools
+
+        .. code-block:: bash
+
+            tar xzf software/setuptools*
+            cp -f setuptools*/ez_setup.py ./
+            
+    #. Install System Packages
+
+        Pick one of these depending if you have Ubuntu or Fedora/RedHat/CentOS
+
+        Ubuntu
+
+        .. code-block:: bash
+
+            pkgs=$(python -c "import json; print ' '.join(json.load(open('system_packages.lst'))['apt-get'])")
+            sudo apt-get install $pkgs
+
+        Fedora/RedHat/CentOS
+
+        .. code-block:: bash
+
+            pkgs=$(python -c "import json; print ' '.join(json.load(open('system_packages.lst'))['yum'])")
+            su -c "yum install $pkgs"
+
+    #. Manuall install all software
+        
+        .. code-block:: bash
+
+            tar xzf software/Python*.tgz
+            cd Python*
+            ./configure --prefix $HOME
+            make
+            make install
+            cd ..
+            tar xzf software/virtualenv*
+            venvpath=~/.ngs_mapper
+            $HOME/bin/python virtualenv*/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
+            . ${venvpath}/bin/activate
+            python setuptools*/setup.py install
+            cd software/bwa
+            make
+            cp bwa ${venvpath}/bin/
+            cd ..
+            cd samtools
+            git checkout standalone
+            make
+            cp samtools bcftools/bcftools ${venvpath}/bin/
+            cd ../../
+            sed -i 's/git/#git/' requirements.txt
+            pip install --no-index -f software numpy six argparse
+            pip install --no-index -f software -r requirements.txt
+            cd software/pyBWA
+            python software/pyBWA/setup.py install
+            cd ../..
+            unzip software/Trimmomatic* && mv Trimmomatic* $venvpath/lib/
+            python setup.py install
