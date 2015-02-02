@@ -76,6 +76,7 @@ class Base(common.BaseClass):
         ('Ubuntu', '14.04', 'Precise'),
         ('debian', 'wheezy/sid', ''),
         ('Fedora', '19', ''),
+        ('', '', '')
     ]
 
     def setUp( self ):
@@ -491,40 +492,46 @@ class TestVerifyTrimmomatic(Base):
 class TestGetDistributionPackageManager(Base):
     functionname = 'get_distribution_package_manager'
 
-    def test_returns_correct_distribution_with_version(self):
+    def test_returns_correct_package_manager(self):
         pkgmanagers = [
             'yum',
             'yum',
             'apt-get',
             'apt-get',
             'yum',
+            'pacman',
         ]
-        for dist, pkgmanager in zip(self.distros,pkgmanagers):
+        for dist, pkgmanager in zip(self.distros, pkgmanagers):
             with patch('ngs_mapper.dependency.platform') as platform:
-                dist_upper = (dist[0].upper(),dist[1],dist[2])
-                dist_lower = (dist[0].lower(),dist[1],dist[2])
-                platform.linux_distribution.return_value = dist_upper
-                r = self._C()
-                eq_( pkgmanager, r )
-                platform.linux_distribution.return_value = dist_lower
-                r = self._C()
-                eq_( pkgmanager, r )
-                platform.linux_distribution.return_value = dist
-                r = self._C()
-                eq_( pkgmanager, r )
+                with patch('ngs_mapper.dependency.exists') as mos:
+                    mos.return_value = True
+                    dist_upper = (dist[0].upper(),dist[1],dist[2])
+                    dist_lower = (dist[0].lower(),dist[1],dist[2])
+                    platform.linux_distribution.return_value = dist_upper
+                    r = self._C()
+                    eq_( pkgmanager, r )
+                    platform.linux_distribution.return_value = dist_lower
+                    r = self._C()
+                    eq_( pkgmanager, r )
+                    platform.linux_distribution.return_value = dist
+                    r = self._C()
+                    eq_( pkgmanager, r )
 
-    def test_raises_exception_with_unknown_distrubution(self):
+    def test_raises_exception_with_unknown_distrubution_platform_exists(self):
         from ngs_mapper.dependency import UnknownDistributionError
         with patch('ngs_mapper.dependency.platform') as platform:
             platform.linux_distribution.return_value = (
                 'Unknown Distribution', '1.0', 'Final'
             )
-            try:
-                r = self._C()
-                print "Returned {0}".format(r)
-                ok_( False, "Did not raise UnknownDistributionError" )
-            except UnknownDistributionError as e:
-                ok_( True )
+            assert_raises(UnknownDistributionError, self._C)
+
+    def test_raises_exception_with_unknown_distrubution_dist_empty(self):
+        from ngs_mapper.dependency import UnknownDistributionError
+        with patch('ngs_mapper.dependency.platform') as platform:
+            with patch('ngs_mapper.dependency.exists') as mexists:
+                platform.linux_distribution.return_value = ('','','')
+                mexists.return_value = False
+                assert_raises(UnknownDistributionError, self._C)
 
 @patch('ngs_mapper.dependency.os')
 @patch('ngs_mapper.dependency.subprocess')
@@ -548,6 +555,17 @@ class TestInstallSystemPackages(Base):
         r = self._C( ['pkg1', 'pkg2'] )
         subprocess.check_call.assert_has_calls(
             call(['apt-get','install','-y','pkg1','pkg2'])
+        )
+
+    def test_installs_pacman_packages(self, platform, subprocess, os):
+        os.getuid.return_value = 0
+        platform.linux_distribution.return_value = self.distros[5]
+        subprocess.check_call.return_value = 0
+        with patch('ngs_mapper.dependency.exists') as mexists:
+            mexists.return_value = True
+            r = self._C(['pkg1', 'pkg2'])
+        subprocess.check_call.assert_has_calls(
+            call(['pacman', '-S', '--noconfirm', 'pkg1', 'pkg2'])
         )
 
     def test_unknown_distribution_raises_unknowndistribution(self, platform, subprocess, os):

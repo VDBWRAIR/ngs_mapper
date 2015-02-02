@@ -1,6 +1,7 @@
 from imports import *
 import common
 from ngs_mapper.rename_sample import RenameException
+import gzip
 
 class Base( common.BaseClass ):
     modulepath = 'ngs_mapper.rename_sample'
@@ -77,8 +78,12 @@ class Base( common.BaseClass ):
         fqread = join( rd, sample+'.fastq' )
         ab1rbs = join( rbs, sample+'.ab1' )
         fqrbs = join( rbs, sample+'.fastq' )
-        touch(rawfile)
-        touch(fqread)
+        contents = '@sanger-_read\nATGC\n+\n!!!!\n'
+        ab1 = join(dirname(__file__),'fixtures','sample.ab1')
+        shutil.copyfile(ab1, rawfile)
+        fh = open(fqread,'w')
+        fh.write(contents)
+        fh.close()
         os.symlink( relpath(rawfile,rd), ab1read )
         os.symlink( relpath(ab1read,rbs), ab1rbs )
         os.symlink( relpath(fqread,rbs), fqrbs )
@@ -87,14 +92,16 @@ class Base( common.BaseClass ):
 
     def mock_iontorrent( self, runname, samplename ):
         rw, rd, rbs = self.make_dirs('IonTorrent', runname, samplename)
-        rawfile = join( rw, 'somedirs', 'IonXpress_001_R_2001_01_01_01_01_01_user_XXX-01_Auto_user_XXX-01_02.sff' )
-        rawsample = '{}__1__RL1__2001_01_01__Den1.sff'.format(samplename)
-        samplefile = samplename + '__1__IX001__2001_01_01__vir.sff' 
+        rawfile = join( rw, 'somedirs', 'IonXpress_001_R_2001_01_01_01_01_01_user_XXX-01_Auto_user_XXX-01_02.fastq' )
+        rawsample = '{}__1__RL1__2001_01_01__Den1.fastq'.format(samplename)
+        samplefile = samplename + '__1__IX001__2001_01_01__vir.fastq' 
         rdfile = join( rd, samplefile )
         rbsfile = join( rbs, samplefile )
 
         os.makedirs( dirname(rawfile) )
-        touch( rawfile )
+        fh = open(rawfile,'w')
+        fh.write('@IIIII:0:0\nATGC\n+\n!!!!\n')
+        fh.close()
 
         rawfile_rel = relpath( rawfile, dirname(rdfile) )
         rdfile_rel = relpath( rdfile, dirname(rbsfile) )
@@ -118,7 +125,7 @@ class Base( common.BaseClass ):
         # rd is just the sigproc dir not the R_ dir so we fix it here
         rd = join( self.ReadData, 'Roche454', ddir )
 
-        rawsample = '{}__1__RL1__2001_01_01__Den1.sff'.format(samplename)
+        rawsample = '{}__1__RL1__2001_01_01__Den1.fastq'.format(samplename)
 
         if byregion:
             rwdemul = join( rw, ddir, 'demultiplexed', '1' )
@@ -138,7 +145,9 @@ class Base( common.BaseClass ):
         ok_( exists(rddemul), '{} does not exist'.format(rddemul) )
 
         rawfile = join( rwdemul, rawsample )
-        touch(rawfile)
+        fh = open(rawfile,'w')
+        fh.write('@AAAAAAAAAAAAAA\nATGC\n+\n!!!!\n')
+        fh.close()
 
         readfile = join( rddemul, rawsample )
         ok_( exists(dirname(readfile)),  )
@@ -166,8 +175,13 @@ class Base( common.BaseClass ):
         rawfile = join( bcdir, rawsample )
         fqread = join( rd, readsample )
         fqrbs = join( rbs, readsample )
-        touch(rawfile)
-        touch(fqread)
+        contents = '@09aZ_:1000:000000000-A1B11:1000:0001:0001:0001\nATGC\n+\n!!!!\n'
+        fh = gzip.open(rawfile,'wb')
+        fh.write(contents)
+        fh.close()
+        fh = open(fqread,'w')
+        fh.write(contents)
+        fh.close()
         os.symlink( relpath(fqread,rbs), fqrbs )
 
         return rawfile, fqread, fqrbs
@@ -472,5 +486,5 @@ class TestRenameSample( Base ):
 
         oldrbs = join( 'NGSData', 'ReadsBySample', 'sample_1' )
         newrbs = oldrbs.replace('sample_1', '00001')
-        ok_( not exists(oldrbs), 'Did not remove empty directory sample_1' )
-        ok_( exists(newrbs) and os.listdir(newrbs), 'Did not rename correctly to {}'.format(newrbs) )
+        ok_( not exists(oldrbs), 'Did not remove empty directory {0}'.format(oldrbs) )
+        ok_( exists(newrbs) and os.listdir(newrbs), 'Did not rename correctly to {0}'.format(newrbs) )

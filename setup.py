@@ -151,6 +151,7 @@ setup(
     },
     setup_requires = [
         'nose',
+        'mock',
         'tempdir',
         'sphinx',
         'sphinx_rtd_theme'

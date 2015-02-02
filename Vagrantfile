@@ -22,32 +22,36 @@ def provision_pipeline( config )
     config.vm.provision "shell", privileged: false,
         inline: "echo 'Installing system packages'; cd ~/ngs_mapper; sudo python vagrant-provision.py --install-system-packages"
 
+    # Ensure pipeline.log is owned by vagrant and 644
+    config.vm.provision "shell", privileged: false,
+        inline: "sudo chown vagrant:vagrant /home/vagrant/ngs_mapper/pipeline.log"
+
     # Run the provisioning pipeline install
     config.vm.provision "shell", privileged: false,
         inline: "echo 'Installing pipeline'; cd ~/ngs_mapper; python vagrant-provision.py --install-pipeline"
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-    config.vm.define "ubuntu1404" do |ubuntu1404|
-        ubuntu1404.vm.box = "hashicorp/precise64"
+    config.vm.define "ubuntu" do |ubuntu|
+        ubuntu.vm.box = "hashicorp/precise64"
         # Use a different mirror in case the ubuntu one is blocked...
-        ubuntu1404.vm.provision "shell", privileged: true,
+        ubuntu.vm.provision "shell", privileged: true,
             inline: "sed -i -e 's/us.archive.ubuntu.com/ubuntu.osuosl.org/' -e 's|security.ubuntu.com|ubuntu.osuosl.org|' /etc/apt/sources.list"
 
         # Update
-        ubuntu1404.vm.provision "shell", privileged: true,
+        ubuntu.vm.provision "shell", privileged: true,
             inline: "apt-get update"
 
         # Ensure git installed
-        ubuntu1404.vm.provision "shell", privileged: true,
+        ubuntu.vm.provision "shell", privileged: true,
             inline: "apt-get install -y git"
 
         # Install and test pipeline
-        provision_pipeline(ubuntu1404)
+        provision_pipeline(ubuntu)
     end
 
-    config.vm.define "centos65" do |centos65|
-        centos65.vm.box = "chef/centos-6.5"
+    config.vm.define "centos" do |centos|
+        centos.vm.box = "chef/centos-6.5"
         # Ensure git installed
         config.vm.provision "shell", privileged: true,
             inline: "yum install -y git"
@@ -57,7 +61,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             inline: "yum install -y python-setuptools; easy_install argparse"
 
         # Install and test pipeline
-        provision_pipeline(centos65)
+        provision_pipeline(centos)
     end
 
 

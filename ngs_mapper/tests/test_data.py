@@ -1,4 +1,5 @@
 from imports import *
+import gzip
 
 from ngs_mapper.data import NoPlatformFound
 
@@ -9,20 +10,32 @@ class Base(common.BaseClass):
         super(Base,self).setUp()
         self.reads = {
             'Roche454': [
-                '1514A00101984N_CP2__1__TI5__2010_03_19__pH1N1.sff',
                 'Vero_WHO_S16803__RL45__2012_05_01__Den2.fastq'
             ],
             'IonTorrent': [
-                'Denv1_45AZ5_Virus_Lot1_82__1__IX031__2013_09_23__Den1.sff',
+                'Denv1_45AZ5_Virus_Lot1_82__1__IX031__2013_09_23__Den1.fastq',
             ],
             'Sanger': [
-                '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.fastq',
                 '1517010460_F1425_2011_08_24_H3N2_HA_0151_D09.fastq',
+                '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.fastq',
             ],
             'MiSeq': [
+                '1090-01_S22_L001_R1_001.fastq',
+                '1090-01_S22_L001_R2_001.fastq',
+                '1090-01_S22_L001_R1_001.fastq.gz',
+                '1090-01_S22_L001_R2_001.fastq.gz',
                 '1090-01_S22_L001_R1_001_2013_12_10.fastq',
                 '1090-01_S22_L001_R2_001_2013_12_10.fastq',
+                '1090-01_S22_L001_R1_001_2013_12_10.fastq.gz',
+                '1090-01_S22_L001_R2_001_2013_12_10.fastq.gz',
             ]
+        }
+
+        self.read_ids = {
+            'Roche454': 'AAAAAAAAAAAAAA',
+            'IonTorrent': 'IIIII:1:1',
+            'Sanger': 'foo-BAR',
+            'MiSeq': '09aZ_:1000:000000000-A1B11:1000:0001:0001:0001'
         }
 
     def tearDown(self):
@@ -34,10 +47,17 @@ class Base(common.BaseClass):
         readsdir = self.tempdir
         listing = {}
         for plat,readfiles in self.reads.items():
-            listing[plat] = sorted([join(path,r) for r in readfiles])
+            listing[plat] = [join(path,r) for r in readfiles]
             # Create the files
             for readfile in listing[plat]:
-                open(readfile,'w').close()
+                if readfile.endswith('.gz'):
+                    fh = gzip.open(readfile, 'wb')
+                else:
+                    fh = open(readfile,'w')
+                fh.write('@{0}\nATGC\n+\n!!!!\n'.format(
+                    self.read_ids[plat]
+                ))
+                fh.close()
         return listing
 
     def reads_for_platforms(self):
@@ -50,17 +70,17 @@ class Base(common.BaseClass):
 class TestPairReads(Base):
     functionname = 'pair_reads'
 
+    @attr('current')
     def test_pairs_reads(self):
-        readlist = sorted(self.reads['MiSeq'],reverse=True)
+        readlist = self.reads['MiSeq']
         r = self._C( readlist )
-        e = [tuple(sorted(readlist))]
+        e = [(readlist[i], readlist[i+1]) for i in range(0, len(readlist), 2)]
         eq_( e, r )
 
     def test_pairs_reads_abs_paths(self):
-        reads = [join('/dev/shm/tdir',read) for read in self.reads['MiSeq']]
-        readlist = sorted(reads,reverse=True)
+        readlist = [join('/dev/shm/tdir',read) for read in self.reads['MiSeq']]
         r = self._C( readlist )
-        e = [tuple(sorted(reads))]
+        e = [(readlist[i], readlist[i+1]) for i in range(0, len(readlist),2)]
         eq_( e, r )
 
 class TestFindMate(Base):
@@ -68,13 +88,20 @@ class TestFindMate(Base):
 
     def test_finds_mate_sorted(self):
         readlist = self.reads['MiSeq']
-        r = self._C( readlist[0], readlist )
-        eq_( 1, r )
-        r = self._C( readlist[1], readlist )
-        eq_( 0, r )
+        print readlist
+
+        for i, read in enumerate(readlist):
+            r = self._C(read, readlist)
+            # Odd index should be the one after
+            if i % 2 == 0:
+                expectindex = i + 1
+            else:
+                expectindex = i - 1
+
+            eq_(expectindex, r)
 
     def test_finds_mate_reverse_sorted(self):
-        readlist = sorted(self.reads['MiSeq'],reverse=True)
+        readlist = self.reads['MiSeq'][::-1]
         r = self._C( readlist[0], readlist )
         eq_( 1, r )
         r = self._C( readlist[1], readlist )
@@ -94,6 +121,18 @@ class TestFindMate(Base):
         r = self._C( readlist[0], readlist )
         eq_( -1, r )
 
+    def test_finds_mate_for_not_readsbysample_standard(self):
+        read_filenames = [
+            '1090-01_S22_L001_R1_001.fastq',
+            '1090-01_S22_L001_R2_001.fastq',
+        ]
+
+    def test_finds_mate_for_gzip_extension(self):
+        read_filenames = [
+            '1090-01_S22_L001_R1_001.fastq.gz',
+            '1090-01_S22_L001_R2_001.fastq.gz',
+        ]
+
 class TestIsSangerReadFile(Base):
     functionname = 'is_sanger_readfile'
 
@@ -109,56 +148,33 @@ class TestIsSangerReadFile(Base):
         r = self._C( f )
         ok_( not r, 'Incorrectly detected another platform as Sanger' )
 
-class TestUnitPlatformForRead(Base):
-    functionname = 'platform_for_read'
-
-    def test_idents_platform( self ):
-        for readfile, plat in self.reads_for_platforms().items():
-            eq_( plat, self._C( readfile ) )
-
-    def test_no_platform_for_read( self ):
-        try:
-            self._C( 'im_lonely' )
-            assert False, "Did not raise NoPlatformFound"
-        except NoPlatformFound as e:
-            pass
-
-    @raises(NoPlatformFound)
-    def test_reads_by_plat_unkownfiles(self):
-        self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.junk' )
-        self.test_idents_platform()
-
-    def test_sff_now_fastq( self ):
-        # Ensure that names that work with .sff exension also work with .fastq extension
-        for plat, reads in self.reads.items():
-            if plat in ('Roche454','IonTorrent'):
-                for read in reads:
-                    eq_( plat, self._C( read ) )
-                    eq_( plat, self._C( read.replace('.sff','.fastq') ) )
-
 class TestFunctional(Base):
     def test_reads_by_plat_emptydir(self):
         from ngs_mapper.data import reads_by_plat as rbp
         # no files so empty dict returned
         eq_( {}, rbp( self.tempdir ) )
 
-
+    @attr('current')
     def test_reads_by_plat(self):
         with patch('ngs_mapper.data.platform_for_read', lambda filepath: self.reads_for_platforms()[filepath]) as a:
             with patch('ngs_mapper.data.filter_reads_by_platform', lambda path,plat: self.reads[plat]) as b:
                 from ngs_mapper import data
                 for plat, readfiles in self.reads.items():
                     if plat == 'MiSeq':
-                        readfiles = [tuple(readfiles),]
+                        readfiles = [(readfiles[i], readfiles[i+1]) for i in range(0, len(readfiles), 2)]
                     eq_( sorted(readfiles), sorted(data.reads_by_plat( '' )[plat]) )
 
+    @attr('current')
     def test_filter_reads_by_platform_all(self):
         from ngs_mapper.data import filter_reads_by_platform as frbp
         expected = self.mock_reads_dir(self.tempdir)
         for plat, readfiles in expected.items():
-            result = frbp( self.tempdir, plat )
-            eq_( readfiles, sorted(result) )
+            result = frbp(self.tempdir, plat)
+            print plat
+            print result
+            eq_( sorted(readfiles), sorted(result) )
 
+    @attr('current')
     def test_filter_reads_by_platform_bad_read_skipped(self):
         from ngs_mapper.data import filter_reads_by_platform as frbp
         fn = 'Sample_F1_1979_01_01_Den1_Den1_0001_A01.junk' 
@@ -169,7 +185,7 @@ class TestFunctional(Base):
             if plat == 'Sanger':
                 # Remove the read as it should not exist
                 del readfiles[readfiles.index( join(self.tempdir,fn) )]
-            eq_( readfiles, sorted(result) )
+            eq_( sorted(readfiles), sorted(result) )
 
     def test_platform_has_paired_reads(self):
         reads = ['read1_r1','read1_r2','read2_r1','read3_r1','read3_r2']
@@ -192,24 +208,22 @@ class TestFunctional(Base):
         eq_( -1, find_mate(self.reads['Sanger'][0], self.reads['Sanger']) )
 
 class TestIntegration(Base):
-    def test_platform_for_read( self ):
-        from ngs_mapper.data import platform_for_read as pfr
-        for readfile, plat in self.reads_for_platforms().items():
-            eq_( plat, pfr( readfile ) )
-
+    @attr('current')
     def test_reads_by_plat_individual(self):
         from ngs_mapper.data import reads_by_plat as rdp
         # Test each platform's file format
         expected = self.mock_reads_dir(self.tempdir)
-        result = rdp( self.tempdir )
+        result = rdp(self.tempdir)
+        print result
         for plat,readfiles in expected.items():
             assert plat in result, "platform {} not in result".format(plat)
             if plat == 'MiSeq':
-                readfiles = [tuple(sorted(readfiles)),]
-                eq_( readfiles, [tuple(sorted(x)) for x in result[plat]] )
+                reads = [(readfiles[i], readfiles[i+1]) for i in range(0, len(readfiles), 2)]
+                eq_( reads, sorted([tuple(sorted(x)) for x in result[plat]]) )
             else:
                 eq_( readfiles, sorted(result[plat]) )
 
+    @attr('current')
     def test_reads_by_all_unkownformats_are_skipped(self):
         self.reads['Sanger'].append( '1517010460_R1425_2011_08_24_H3N2_HA_0151_D09.junk' )
         expected = self.mock_reads_dir(self.tempdir)
@@ -229,15 +243,120 @@ class TestIntegration(Base):
         ex = {}
         for plat, reads in expected.items():
             if plat == 'MiSeq':
-                eq_( sorted(reads), sorted(result[plat][0]) )
+                e = [(reads[i], reads[i+1]) for i in range(0, len(reads), 2)]
+                eq_( sorted(e), sorted(result[plat]) )
             else:
                 eq_( sorted(reads), sorted(result[plat])  )
         eq_( expected.keys(), result.keys() )
 
+    @attr('current')
     def test_platform_has_paired_reads(self):
         from ngs_mapper.data import pair_reads
-        eq_( [tuple(self.reads['MiSeq']),], pair_reads( self.reads['MiSeq'] ) )
+        readlist = self.reads['MiSeq']
+        e = [(readlist[i], readlist[i+1]) for i in range(0, len(readlist), 2)]
+        eq_( e, pair_reads( self.reads['MiSeq'] ) )
 
     def test_platform_does_not_have_paired_reads(self):
         from ngs_mapper.data import pair_reads
         eq_( self.reads['Sanger'], pair_reads( self.reads['Sanger'] ) )
+
+
+# Better practices here
+
+import mock
+import unittest
+
+from .. import data
+
+@mock.patch('__builtin__.open', mock.MagicMock())
+@mock.patch.object(data, 'gzip', mock.MagicMock())
+@mock.patch.object(data, 'SeqIO')
+class TestPlatformForRead(unittest.TestCase):
+    def test_no_reads_in_file(self, mseqio):
+        mseqio.parse.return_value = iter([])
+        self.assertRaises(data.NoPlatformFound, data.platform_for_read, 'file.fastq')
+
+    def test_identifies_roche_reads(self, mseqio):
+        records = [
+            mock.Mock(id='ABC1ABC12ABCA1', seq='ATGC'),
+            mock.Mock(id='CBAABC12ABCDA1', seq='ATGC'),
+        ]
+        for record in records:
+            mseqio.parse.return_value = iter([record])
+            r = data.platform_for_read('/path/to/read.sff')
+            self.assertEqual('Roche454', r)
+
+    def test_identifies_ion_reads(self, mseqio):
+        records = [
+            mock.Mock(id='IIIII:00001:00001', seq='ATGC'),
+            mock.Mock(id='AAAAA:1:1', seq='ATGC'),
+            mock.Mock(id='BBBBB:10:1', seq='ATGC'),
+            mock.Mock(id='BBBBB:10:10', seq='ATGC'),
+        ]
+        for record in records:
+            mseqio.parse.return_value = iter([record])
+            r = data.platform_for_read('/path/to/read.sff')
+            self.assertEqual('IonTorrent', r)
+
+    def test_identifies_sanger_reads(self, mseqio):
+        records = [
+            mock.Mock(id='SangerRead', seq='ATGC'),
+            mock.Mock(id='aZ_09-', seq='ATGC')
+        ]
+        for record in records:
+            mseqio.parse.return_value = iter([record])
+            r = data.platform_for_read('/path/to/read.ab1')
+            self.assertEqual('Sanger', r)
+            self.assertEqual('abi', mseqio.parse.call_args[0][1])
+
+    def test_identifies_miseq_reads(self, mseqio):
+        #@<instrument>:<run number>:<flowcell ID>:<lane>:<tile>:<x-pos>:<y-pos> <read>:<is filtered>:<control number>:<index sequence>
+        #@[a-zA-Z0-9_]+:[0-9]+:[a-zA-Z0-9-]+:[0-9]+:[0-9]+:[0-9]+:[0-9]+ [0-9]+:Y|N:[0-9]+:[ATGC]+
+        records = [
+            mock.Mock(id='aZ0_:1:aZ0-:1:1:1:1', seq='ATGC'),
+            mock.Mock(id='_aZ_:1000:000000000-A1B11:1000:0001:0001:0001', seq='ATGC'),
+        ]
+        for record in records:
+            mseqio.parse.return_value = iter([record])
+            r = data.platform_for_read('/path/to/read.sff')
+            self.assertEqual('MiSeq', r)
+
+    def test_handles_gzipped_filepath(self, mseqio):
+        record = mock.Mock(id='aZ_09-', seq='ATGC')
+        mseqio.parse.return_value = iter([record])
+        r = data.platform_for_read('/path/to/read.fastq.gz')
+        self.assertEqual('Sanger', r)
+
+    def test_raises_no_platform_found_when_no_match_is_found(self, mseqio):
+        records = [
+            mock.Mock(id='!#$%^&*(', seq='ATGC')
+        ]
+        for record in records:
+            mseqio.parse.return_value = iter([record])
+            self.assertRaises(
+                data.NoPlatformFound,
+                data.platform_for_read, '/path/to/read.sff'
+            )
+
+    def test_raises_no_platform_found_when_extension_not_supported_seqio(self, mseqio):
+        mseqio.parse.side_effect = ValueError("Unknown format 'bar'")
+        self.assertRaises(
+            data.NoPlatformFound,
+            data.platform_for_read, '/path/to/foo.bar'
+        )
+
+class TestFileHandle(unittest.TestCase):
+    def test_returns_normal_handle(self):
+        with mock.patch('__builtin__.open') as mopen:
+            r = data.file_handle('/path/to/file.ext')
+            self.assertEqual((mopen.return_value, 'ext'), r)
+
+    def test_returns_normal_handle_basename(self):
+        with mock.patch('__builtin__.open') as mopen:
+            r = data.file_handle('file.ext')
+            self.assertEqual((mopen.return_value, 'ext'), r)
+        
+    def test_returns_gzip_handle(self):
+        with mock.patch.object(data, 'gzip') as mgzip:
+            r = data.file_handle('/path/to/file.ext.gz')
+            self.assertEqual((mgzip.open.return_value, 'ext'), r)

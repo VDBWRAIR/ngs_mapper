@@ -43,6 +43,15 @@ Here you can see we have 2 data sets to play with.
 You will notice that there is a 780/947 directory and a 780/947.ref.fasta file. The 780/947 directory contains all the read files for the 780/947 sample while the 780/947.ref.fasta is the reference to map to.
 You can ignore the .conf files, they are used by the automated tests.
 
+Quick note about your files
+---------------------------
+
+In previous versions of the pipeline the names of your read files were used to identify which platform the reads came from.
+
+Now the reads are identified via the way the first identifier in each file is named.
+
+You can read more about this :ref:`here <platformidentification>`
+
 Using runsample.py to run a single sample
 -----------------------------------------
 
