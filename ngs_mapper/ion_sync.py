@@ -138,7 +138,7 @@ def ion_mapping(fastqpath, ionparampath):
     samplefilemap = get_samplefile_mapping(samplemap, fastqs)
     return samplefilemap
 
-def sync_run(runpath, ngsdata):
+def sync_run(runpath, ngsdata, printmappingonly):
     '''
     Sync an iontorrent or ionproton run into ngsdata
     The runs need to contain ion_params_00.json as well as
@@ -146,6 +146,7 @@ def sync_run(runpath, ngsdata):
 
     :param str runpath: path to ion run
     :param str ngsdata: path to ngsdata
+    :param bool printmappingonly: True to only print mapping
     '''
     runname = basename(runpath)
     rawdata = join(ngsdata, 'RawData', 'IonTorrent', runname)
@@ -160,6 +161,11 @@ def sync_run(runpath, ngsdata):
     samplefilemap = ion_mapping(fastqpath, ionparampath)
     # Ensure we return to the cwd
     os.chdir(cwd)
+
+    if printmappingonly:
+        for k,v in samplefilemap.items():
+            sys.stdout.write("{0} -> {1}\n".format(k,v))
+        return
 
     if isdir(rawdata):
         sys.stderr.write(
@@ -240,8 +246,16 @@ def parse_args():
         help=defaults['ngsdata']['help']
     )
 
+    parser.add_argument(
+        '--print-samplemapping',
+        dest='print_samplemapping',
+        default=False,
+        action='store_true',
+        help='Just print the sample mapping for the run and quit'
+    )
+
     return parser.parse_args(args)
 
 def main():
     args = parse_args()
-    sync_run(args.rundir, args.ngsdata)
+    sync_run(args.rundir, args.ngsdata, args.print_samplemapping)

@@ -180,6 +180,7 @@ class TestFunctional(BaseSync):
         self.args = mock.MagicMock()
         self.args.rundir = self.rundir
         self.args.ngsdata = self.ngsdata
+        self.args.print_samplemapping = False
         self.config = {
             'NGSDATA': self.ngsdata,
             'ion_sync': {
@@ -241,6 +242,24 @@ class TestFunctional(BaseSync):
         for root, dirs, files in os.walk(ngsdatapath):
             for f in files:
                 print join(root,f)
+
+    def test_only_prints_samplemapping(self, margparse, mconfig):
+        sysargs = [self.args.rundir, '--print-samplemapping']
+        mconfig.get_config_argparse.return_value = (
+            mock.Mock(), sysargs, self.config, 'config.yaml'
+        )
+        self.args.print_samplemapping = True
+        margparse.ArgumentParser.return_value.parse_args.return_value = self.args
+        with mock.patch.object(ion_sync, 'sys') as msys:
+            with mock.patch.object(ion_sync, 'sync_readdata') as msync_readdata:
+                with mock.patch.object(ion_sync, 'sync_readsbysample') as msync_readsbysample:
+                    with mock.patch.object(ion_sync, 'shutil') as mshutil:
+                        ion_sync.main()
+                        self.assertFalse(msync_readdata.called)
+                        self.assertFalse(msync_readsbysample.called)
+                        self.assertFalse(mshutil.copytree.called)
+                        for k,v in self.samplefilemap.items():
+                            msys.stdout.write.assert_has_call("{0} -> {1}\n".format(k,v))
 
     def test_syncs_and_creates_directories(self, margparse, mconfig):
         sysargs = [self.args.rundir]
