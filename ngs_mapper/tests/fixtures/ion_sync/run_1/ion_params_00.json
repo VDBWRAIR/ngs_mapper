@@ -1,0 +1,6 @@
+{
+    "expName": "run_1",
+    "experimentAnalysisSettings": {
+        "barcodedSamples": "{\"sample1\":{\"barcodeSampleInfo\":{\"IonXpress_001\":{\"description\":\"\",\"reference\":\"\",\"targetRegionBedFile\":\"\",\"hotSpotRegionBedFile\":\"\",\"nucleotideType\":\"DNA\",\"controlSequenceType\":\"\",\"externalId\":\"\"}},\"barcodes\":[\"IonXpress_001\"]},\"sample2\":{\"barcodeSampleInfo\":{\"IonXpress_02\":{\"description\":\"\",\"reference\":\"\",\"targetRegionBedFile\":\"\",\"hotSpotRegionBedFile\":\"\",\"nucleotideType\":\"DNA\",\"controlSequenceType\":\"\",\"externalId\":\"\"}},\"barcodes\":[\"IonXpress_002\"]}}"
+    }
+}
