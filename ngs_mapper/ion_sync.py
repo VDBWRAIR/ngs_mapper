@@ -183,6 +183,9 @@ def sync_run(runpath, ngsdata, printmappingonly):
     rawdata = os.path.join(ngsdata, 'RawData', 'IonTorrent', runname)
     readdata = os.path.join(ngsdata, 'ReadData', 'IonTorrent', runname)
     rbs = os.path.join(ngsdata, 'ReadsBySample')
+    logger.debug("Run Name: {0}\nRawData: {1}\nReadData: {2}\nReadsBySample: {3}\n".format(
+        runname, rawdata, readdata, rbs
+    ))
     # Have to give relative path to fastq files later on
     #cwd = os.getcwd()
     #os.chdir(runpath)
@@ -204,7 +207,7 @@ def sync_run(runpath, ngsdata, printmappingonly):
 
     if os.path.isdir(rawdata):
         sys.stderr.write(
-            '{0} already os.path.exists so will not be synced.\n' \
+            '{0} already exists so will not be synced.\n' \
             'You may need to remove this directory and rerun the '\
             'sync\n'.format(rawdata)
         )
@@ -216,10 +219,10 @@ def sync_run(runpath, ngsdata, printmappingonly):
             pass
 
     # reset to the copied rawdata version
-    ionparampath = os.path.join(rawdata, ionparampath)
+    ionparampath = os.path.join(rawdata, 'ion_params_00.json')
     fastqpath = os.path.join(rawdata, 'plugin_out', 'downloads')
     # If no plugin_out/downloads, make it from basecaller_results/bams
-    if not os.path.exists(fastqpath):
+    if not glob.glob(os.path.join(fastqpath,'IonXpress_*.fastq')):
         bamfqmap = {}
         logger.info('Putting converted bam->fastq into {0}'.format(fastqpath))
         logger.debug('Basecaller_results bam -> fastq mapping')
@@ -256,7 +259,7 @@ def sync_readdata(samplefilemap, readdatapath):
         src = os.path.join(sympathbase, origpath)
         dst = os.path.join(readdatapath, newname)
         if os.path.exists(dst):
-            sys.stderr.write('{0} exists and will be skipped\n'.format(dst))
+            logger.info('{0} exists and will be skipped'.format(dst))
             continue
         os.symlink(src, dst)
 
@@ -279,7 +282,7 @@ def sync_readsbysample(readdatapath, readsbysample):
             os.makedirs(snpath)
         dst = os.path.join(snpath, fq)
         if os.path.exists(dst):
-            sys.stderr.write('{0} already exists\n'.format(dst))
+            logger.info('{0} already exists'.format(dst))
             continue
         os.symlink(src, dst)
 

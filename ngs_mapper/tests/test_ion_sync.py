@@ -399,8 +399,9 @@ class TestFunctional(BaseSync):
     @attr('current')
     def test_converts_basecaller_results_bams_to_fastq(self, margparse, mconfig):
         # Remove fastq to make sure they are rebuilt in ReadData
-        plugin_out_dir = join(self.rundir, 'plugin_out')
-        shutil.rmtree(plugin_out_dir)
+        plugin_out_dir = join(self.rundir, 'plugin_out', 'downloads')
+        for f in glob(join(plugin_out_dir,'*')):
+            os.unlink(f)
 
         sysargs = [self.args.rundir]
         mconfig.get_config_argparse.return_value = (
