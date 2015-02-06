@@ -9,6 +9,7 @@ from StringIO import StringIO
 
 import mock
 from unittest2 import TestCase
+from nose.plugins.attrib import attr
 
 from .. import ion_sync
 
@@ -26,10 +27,20 @@ class Base(TestCase):
         }
 
         self.ionparam = {
+            'expName': 'R_run_name',
             'experimentAnalysisSettings': {
                 'barcodedSamples': json.dumps(self.barcoded_samples)
             }
         }
+
+        # mock contents of basecaller_results
+        self.basecaller_results = [
+            'basecaller_results/IonXpress_001_rawlib.basecaller.bam',
+            'basecaller_results/IonXpress_002_rawlib.basecaller.bam',
+            'basecaller_results/IonXpress_003_rawlib.basecaller.bam',
+            'basecaller_results/IonXpress_004_rawlib.basecaller.bam',
+            'basecaller_results/nomatch_rawlib.basecaller.bam',
+        ]
 
         # _004 purposely has no matching mapping in ionparam
         self.fastqs = [
@@ -51,7 +62,8 @@ class Base(TestCase):
         self.samplefilemap = {
             'plugin_out/downloads/IonXpress_001.R_run_name.fastq':
                 'sample1.IonXpress_001.R_run_name.fastq',
-            'plugin_out/downloads/IonXpress_002.R_run_name.fastq':                 'sample2.IonXpress_002.R_run_name.fastq',
+            'plugin_out/downloads/IonXpress_002.R_run_name.fastq':
+                'sample2.IonXpress_002.R_run_name.fastq',
             'plugin_out/downloads/IonXpress_003.R_run_name.fastq':
                 'sample2.IonXpress_003.R_run_name.fastq',
             'plugin_out/downloads/IonXpress_004.R_run_name.fastq':
@@ -59,6 +71,47 @@ class Base(TestCase):
             'plugin_out/downloads/nomatch.R_run_name.fastq':
                 'nomatch.nomatch.R_run_name.fastq',
         }
+
+@attr('current')
+@mock.patch('__builtin__.open')
+@mock.patch.object(ion_sync, 'bam')
+class TestConvertBasecallerResultsToFastq(Base):
+    def test_ensures_fastqoutpath_exists(self, *args):
+        mapping = {
+            'basecaller_results/IonXpress_001_rawlib.basecaller.bam':
+                'IonXpress_001.R_run_name.fastq'
+        }
+        fastqpath = 'plugin_out/downloads'
+        with mock.patch.object(ion_sync, 'os') as mos:
+            mos.path.exists.return_value = False
+            ion_sync.convert_basecaller_results_to_fastq(mapping, fastqpath)
+            mos.makedirs.assert_called_once_with(fastqpath)
+
+    def test_converts_bams_to_fastq(self, *args):
+        mock_bam = args[0]
+        mopen = args[1]
+        fqread = '@read1\nATGC\n+\n!!!!'
+        mock_bam.bam_to_fastq.return_value = iter([
+            fqread
+        ])
+        bams = [
+            'basecaller_results/IonXpress_001_rawlib.basecaller.bam',
+            'basecaller_results/IonXpress_002_rawlib.basecaller.bam',
+        ]
+        fastqs = [
+            'IonXpress_001.R_run_name.fastq',
+            'IonXpress_002.R_run_name.fastq'
+        ]
+        mapping = dict(zip(bams,fastqs))
+
+        fastqpath = 'plugin_out/downloads'
+        ion_sync.convert_basecaller_results_to_fastq(mapping, fastqpath)
+        for fq in fastqs:
+            fqpath = join(fastqpath, fq)
+            mopen.assert_has_call(fqpath, 'w')
+            mopen.return_value.__enter__.return_value.write.assert_called_with(
+                fqread + '\n'
+            )
 
 class TestGetSamplemapping(Base):
     def test_ionparam_missing_keys(self):
@@ -82,12 +135,32 @@ class TestGetSamplemapping(Base):
                 expect[bc], r[bc]
             )
 
+@attr('current')
 class TestGetSamplefileMapping(Base):
-    def test_creates_correct_mapping(self):
+    def test_creates_correct_mapping_fastq(self):
         expect = self.samplefilemap
         r = ion_sync.get_samplefile_mapping(
             self.samplemap,
-            self.fastqs
+            self.fastqs,
+            'R_run_name'
+        )
+        for e in expect:
+            self.assertEqual(
+                expect[e],
+                r[e]
+            )
+
+    def test_creates_correct_mapping_rawlibbam(self):
+        expect = {
+            'basecaller_results/IonXpress_001_rawlib.basecaller.bam':
+                'sample1.IonXpress_001.R_run_name.fastq',
+            'basecaller_results/IonXpress_004_rawlib.basecaller.bam':
+                'IonXpress_004.IonXpress_004.R_run_name.fastq'
+        }
+        r = ion_sync.get_samplefile_mapping(
+            self.samplemap,
+            expect.keys(),
+            'R_run_name'
         )
         for e in expect:
             self.assertEqual(
@@ -101,19 +174,21 @@ class TestGetSamplefileMapping(Base):
             ion_sync.InvalidFastqFilename,
             ion_sync.get_samplefile_mapping,
             self.samplemap,
-            self.fastqs
+            self.fastqs,
+            'R_run_name'
         )
 
+@attr('current')
 @mock.patch.object(ion_sync, 'glob')
 @mock.patch.object(ion_sync, 'json')
 @mock.patch('__builtin__.open', mock.Mock())
 class TestIonMapping(Base):
-    def test_creates_correct_mapping(self, mjson, mglob):
+    def test_ion_params_maps_pluginout_downloads_fastq(self, mjson, mglob):
         mjson.load.return_value = self.ionparam
         mjson.loads.return_value = self.barcoded_samples
         mglob.glob.return_value = self.fastqs
         r = ion_sync.ion_mapping(
-            'plugin_out/downloads',
+            self.fastqs,
             'ion_param_00.json'
         )
         for origpath in self.samplefilemap:
@@ -121,6 +196,38 @@ class TestIonMapping(Base):
                 self.samplefilemap[origpath],
                 r[origpath]
             )
+
+    def test_ion_params_maps_basecaller_bams(self, mjson, mglob):
+        mjson.load.return_value = self.ionparam
+        mjson.loads.return_value = self.barcoded_samples
+        mglob.glob.return_value = self.basecaller_results
+        samplefilemap = {
+            'basecaller_results/IonXpress_001_rawlib.basecaller.bam':
+                'sample1.IonXpress_001.R_run_name.fastq',
+            'basecaller_results/IonXpress_002_rawlib.basecaller.bam':
+                'sample2.IonXpress_002.R_run_name.fastq'
+        }
+        r = ion_sync.ion_mapping(
+            samplefilemap.keys(),
+            'ion_param__00.json'
+        )
+        for origpath in samplefilemap:
+            self.assertEqual(
+                samplefilemap[origpath],
+                r[origpath]
+            )
+
+    def test_ion_params_missing_expName(self, mjson, mglob):
+        del self.ionparam['expName']
+        self.assertRaises(
+            ion_sync.InvalidIonParam,
+            self.test_ion_params_maps_pluginout_downloads_fastq,
+        )
+        self.ionparam['expName'] = ''
+        self.assertRaises(
+            ion_sync.InvalidIonParam,
+            self.test_ion_params_maps_pluginout_downloads_fastq,
+        )
 
 class BaseSync(Base):
     def setUp(self):
@@ -139,7 +246,18 @@ class BaseSync(Base):
     def _create_rundir(self, reads, ionparam, path=None):
         '''
         Create ion[Torrent|Proton] run directory
-        reads is a list of IonXpress_XXX.whatever.fastq
+        if path is none than make tempdir
+
+        makes:
+            path/basecaller_results/ with reads in it
+            path/plugin_out/downloads with reads in it if reads has that path
+            path/ion_param__00.json
+
+        reads is a list of 
+        plugin_out/downloads/IonXpress_XXX.whatever.fastq
+            or
+        basecaller_results/IonXpress_XXX_rawlib.basecaller.bam
+
         ionparam is a dict representing the json.load from actual
         ion_params_00.json file
         '''
@@ -147,18 +265,34 @@ class BaseSync(Base):
             rundir = tempfile.mkdtemp(prefix='rundir_',suffix='ion',dir=self.tdir)
         else:
             rundir = path
-        downloads = join(rundir,'plugin_out','downloads')
+        downloads = join(rundir, dirname(reads[0]))
         ion_params = join(rundir,'ion_params_00.json')
+        basecaller_results_dir = join(rundir, 'basecaller_results')
         # Make plugin_out/downloads dir
         os.makedirs(downloads)
+        # If reads is just the bam files location then it may be already created
+        if not isdir(basecaller_results_dir):
+            os.makedirs(basecaller_results_dir)
+            self._make_basecaller_results(rundir, reads)
         # Make ion_params_00.json file
         with open(ion_params,'w') as fh:
             json.dump(ionparam, fh)
+        self._make_plugin_out_downloads(rundir, reads)
+        return rundir, downloads, ion_params
+
+    def _make_basecaller_results(self, outdir, reads):
+        ''' make basecaller_results regardless of dirname of reads '''
+        for read in reads:
+            # Just ionxpress part
+            m = re.search('(IonXpress_\d+|rawtf|nomatch)', read).group(1)
+            bam = join(outdir, 'basecaller_results', m + '_rawlib.basecaller.bam')
+            open(bam,'w').close()
+
+    def _make_plugin_out_downloads(self, outdir, reads):
         # Make mock fastqs
         for read in reads:
-            readpath = join(rundir,read)
+            readpath = join(outdir,read)
             open(readpath,'w').close()
-        return rundir, downloads, ion_params
 
 @mock.patch.object(ion_sync, 'config')
 @mock.patch.object(ion_sync, 'argparse')
@@ -170,7 +304,7 @@ class TestFunctional(BaseSync):
         # Make a broken symlink to make sure
         # it is handled with shutil.copytree
         os.symlink(
-            '/missing/path/IonXpress_001.bam',
+            '/missing/path/IonXpress_001.broken.bam',
             join(self.downloads,'IonXpress_001.bam')
         )
         self.runname = basename(self.rundir)
@@ -196,13 +330,14 @@ class TestFunctional(BaseSync):
             os.stat(self.ion_params).st_size,
             os.stat(join(rawdatapath,'ion_params_00.json')).st_size
         )
-        self.assertEqual(
-            sorted([basename(fq) for fq in self.fastqs]),
-            sorted(os.listdir(join(rawdatapath,'plugin_out','downloads')))
-        )
+        e = sorted([basename(fq) for fq in self.fastqs])
+        print e
+        r = sorted(os.listdir(join(rawdatapath,'plugin_out','downloads')))
+        print r
+        self.assertEqual(e, r)
 
-    def _check_readdata(self, readdatapath):
-        for origpath, newname in self.samplefilemap.items():
+    def _check_readdata(self, readdatapath, samplefilemap):
+        for origpath, newname in samplefilemap.items():
             sympath = join(
                 '../../../RawData/IonTorrent',
                 self.runname,
@@ -238,7 +373,7 @@ class TestFunctional(BaseSync):
                 os.readlink(readpath)
             )
 
-    def _print_ngsdata(self, ngsdatapath):
+    def _print_path(self, ngsdatapath):
         for root, dirs, files in os.walk(ngsdatapath):
             for f in files:
                 print join(root,f)
@@ -261,6 +396,27 @@ class TestFunctional(BaseSync):
                         for k,v in self.samplefilemap.items():
                             msys.stdout.write.assert_has_call("{0} -> {1}\n".format(k,v))
 
+    @attr('current')
+    def test_converts_basecaller_results_bams_to_fastq(self, margparse, mconfig):
+        # Remove fastq to make sure they are rebuilt in ReadData
+        plugin_out_dir = join(self.rundir, 'plugin_out')
+        shutil.rmtree(plugin_out_dir)
+
+        sysargs = [self.args.rundir]
+        mconfig.get_config_argparse.return_value = (
+            mock.Mock(), sysargs, self.config, 'config.yaml'
+        )
+        margparse.ArgumentParser.return_value.parse_args.return_value = self.args
+        ion_sync.main()
+
+        self._print_path(self.ngsdata)
+        print '-----'
+        self._print_path(self.tdir)
+
+        self._check_rawdata(self.rawdata)
+        self._check_readdata(self.readdata, self.samplefilemap)
+        self._check_readsbysample(self.readsbysample)
+
     def test_syncs_and_creates_directories(self, margparse, mconfig):
         sysargs = [self.args.rundir]
         mconfig.get_config_argparse.return_value = (
@@ -268,9 +424,8 @@ class TestFunctional(BaseSync):
         )
         margparse.ArgumentParser.return_value.parse_args.return_value = self.args
         ion_sync.main()
-        self._print_ngsdata(self.ngsdata)
         self._check_rawdata(self.rawdata)
-        self._check_readdata(self.readdata)
+        self._check_readdata(self.readdata, self.samplefilemap)
         self._check_readsbysample(self.readsbysample)
 
     def test_resumes_sync_and_does_not_overwrite_existing_symlink(self, margparse, mconfig):
@@ -328,9 +483,9 @@ class TestFunctional(BaseSync):
             self.assertIn('ReadData', serr[3])
             self.assertIn('sample2', serr[4])
             self.assertIn('ReadsBySample', serr[4])
-        self._print_ngsdata(self.ngsdata)
+        self._print_path(self.ngsdata)
         self._check_rawdata(self.rawdata)
-        self._check_readdata(self.readdata)
+        self._check_readdata(self.readdata, self.samplefilemap)
         self._check_readsbysample(self.readsbysample)
 
     def test_loads_defaults_from_config(self, margparse, mconfig):
@@ -340,7 +495,7 @@ class TestFunctional(BaseSync):
         )
         margparse.ArgumentParser.return_value.parse_args.return_value = self.args
         ion_sync.main()
-        self._print_ngsdata(self.ngsdata)
+        self._print_path(self.ngsdata)
         self._check_rawdata(self.rawdata)
-        self._check_readdata(self.readdata)
+        self._check_readdata(self.readdata, self.samplefilemap)
         self._check_readsbysample(self.readsbysample)

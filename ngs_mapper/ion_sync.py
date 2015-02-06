@@ -60,13 +60,18 @@ If you only have .bam files you should be able to convert them to fastq with the
 """
 
 import json
-from os.path import dirname, basename, join, exists, isdir, relpath
+import os.path
 import argparse
 import glob
 import shutil
 import sys
 import os
 import argparse
+import re
+import bam
+import log
+
+logger = log.setup_logger(__name__, log.get_config())
 
 from ngs_mapper import config
 
@@ -93,50 +98,76 @@ def get_samplemapping(ionparam):
 
 class InvalidFastqFilename(Exception): pass
 
-def get_samplefile_mapping(barcodemapping, fastqs):
+def get_samplefile_mapping(barcodemapping, fastqs, runname):
     '''
-    Given a barcode mapping and a list of fastq paths, returns the mapping
-    that can be used to rename those files
+    Given a barcode mapping and a list of fastq|rawlib.basecaller.bam paths, 
+    returns the mapping that can be used to rename those files
     The returned mapping will be keyed by the original file path given and 
     the key will be just the new filename without the path
+
+    Possible examples:
+    path/to/IonXpress_XXX_rawlib.basecaller.bam
+    path/to/IonXpress_XXX.run_name.fastq
     
     If the barcode is missing from the barcodemapping then just 
     the filename will be used for the value
 
     :param dict barcodemapping: {'barcode1':'samplename1',...}
-    :param list fastqs: list of fastq barcode named files. Probably plugin_out/downloads/IonXpress_001.whatever.fastq
+    :param list fastqs: list of fastq|bam barcode named files
+    :param str runname: what to put in the 3rd field of fastq name to make unique
     :return: mapping of {'originalfilepath:'newfilename no path'}
     '''
     rename_map = {}
     for fq in fastqs:
-        path = dirname(fq)
-        filename = basename(fq)
-        p = filename.split('.')
-        if len(p) == 3:
-            barcode, run, ext = p
+        path = os.path.dirname(fq)
+        filename = os.path.basename(fq)
+        m = re.search('(IonXpress_\d+|nomatch)(?:_rawlib){0,1}.(\w+).(fastq|bam)', filename)
+        if m:
+            barcode, run, ext = m.groups()
         else:
-            raise InvalidFastqFilename("{0} is an invalid filename. Contains more than 2 '.' in the filename".format(fq))
+            raise InvalidFastqFilename("{0} is an invalid filename".format(fq))
         try:
             newname = barcodemapping[barcode]
         except KeyError as e:
             newname = barcode
-        rename_map[fq] = '{0}.{1}.{2}.{3}'.format(newname,barcode,run,ext)
+        rename_map[fq] = '{0}.{1}.{2}.{3}'.format(newname,barcode,runname,'fastq')
     return rename_map
 
-def ion_mapping(fastqpath, ionparampath):
+def ion_mapping(reads, ionparampath):
     '''
     Get a mapping of original filepath to new filename given
     the path to the fastqs and ion_param_00.json file
 
-    :param str fastqpath: Path to fastq directory
+    :param str reads: Path to directory of fastq or bam files
     :param str ionparmpath: path to ion_param*.json
     :return: dictionary of {'original path': 'newpath with samplename'}
     '''
-    fastqs = glob.glob(join(fastqpath,'*.fastq'))
+    #reads = glob.glob(os.path.join(fastqpath,'{IonXpress,nomatch}*{bam,fastq}'))
     ionparam = json.load(open(ionparampath))
+    expName = ionparam.get('expName', '')
+    if not expName:
+        raise InvalidIonParam('{0} is missing expName'.format(ionparampath))
+    runname = ionparam['expName']
     samplemap = get_samplemapping(ionparam)
-    samplefilemap = get_samplefile_mapping(samplemap, fastqs)
+    samplefilemap = get_samplefile_mapping(samplemap, reads, runname)
     return samplefilemap
+
+def convert_basecaller_results_to_fastq(bamfastqmapping, fastqoutpath):
+    '''
+    Convert list of bam files into fastq using the supplied mapping
+
+    Ensures that fastqoutpath exists
+
+    :param dict bamfastqmapping: mapping of rawlibbams to fastq basenames
+    :param str fastqoutpath: directory to place converted fastq in
+    '''
+    if not os.path.exists(fastqoutpath):
+        os.makedirs(fastqoutpath)
+    for bamf, fqf in bamfastqmapping.iteritems():
+        outfq_path = os.path.join(fastqoutpath, fqf)
+        with open(outfq_path, 'w') as fh:
+            for read in bam.bam_to_fastq(bamf):
+                fh.write(read + '\n')
 
 def sync_run(runpath, ngsdata, printmappingonly):
     '''
@@ -148,28 +179,32 @@ def sync_run(runpath, ngsdata, printmappingonly):
     :param str ngsdata: path to ngsdata
     :param bool printmappingonly: True to only print mapping
     '''
-    runname = basename(runpath)
-    rawdata = join(ngsdata, 'RawData', 'IonTorrent', runname)
-    readdata = join(ngsdata, 'ReadData', 'IonTorrent', runname)
-    rbs = join(ngsdata, 'ReadsBySample')
+    runname = os.path.basename(runpath)
+    rawdata = os.path.join(ngsdata, 'RawData', 'IonTorrent', runname)
+    readdata = os.path.join(ngsdata, 'ReadData', 'IonTorrent', runname)
+    rbs = os.path.join(ngsdata, 'ReadsBySample')
     # Have to give relative path to fastq files later on
-    cwd = os.getcwd()
-    os.chdir(runpath)
-    fastqpath = join('plugin_out','downloads')
-    ionparampath = 'ion_params_00.json'
-    # This could raise an exception
-    samplefilemap = ion_mapping(fastqpath, ionparampath)
+    #cwd = os.getcwd()
+    #os.chdir(runpath)
+    ionparampath = os.path.join(runpath, 'ion_params_00.json')
+    basecaller_results_dir = os.path.join(runpath, 'basecaller_results')
+    logger.debug('Looking for rawlib bam files inside of {0}'.format(
+        basecaller_results_dir
+    ))
+    rawlibbams = glob.glob(os.path.join(basecaller_results_dir,'*_rawlib*.bam'))
+    logger.debug('Found the following rawlib bam files: {0}'.format(rawlibbams))
+    bamfastqmap = ion_mapping(rawlibbams, ionparampath)
     # Ensure we return to the cwd
-    os.chdir(cwd)
+    #os.chdir(cwd)
 
     if printmappingonly:
-        for k,v in samplefilemap.items():
+        for k,v in bamfastqmap.items():
             sys.stdout.write("{0} -> {1}\n".format(k,v))
         return
 
-    if isdir(rawdata):
+    if os.path.isdir(rawdata):
         sys.stderr.write(
-            '{0} already exists so will not be synced.\n' \
+            '{0} already os.path.exists so will not be synced.\n' \
             'You may need to remove this directory and rerun the '\
             'sync\n'.format(rawdata)
         )
@@ -179,7 +214,31 @@ def sync_run(runpath, ngsdata, printmappingonly):
         except shutil.Error as e:
             # Probably doesn't matter because broken symlink
             pass
+
+    # reset to the copied rawdata version
+    ionparampath = os.path.join(rawdata, ionparampath)
+    fastqpath = os.path.join(rawdata, 'plugin_out', 'downloads')
+    # If no plugin_out/downloads, make it from basecaller_results/bams
+    if not os.path.exists(fastqpath):
+        bamfqmap = {}
+        logger.info('Putting converted bam->fastq into {0}'.format(fastqpath))
+        logger.debug('Basecaller_results bam -> fastq mapping')
+        for b, f in bamfastqmap.iteritems():
+            # Strip off the sample name off front
+            bamfqmap[b] = '.'.join(f.split('.')[1:])
+            logger.debug('{0} -> {1}'.format(b,bamfqmap[b]))
+        convert_basecaller_results_to_fastq(bamfqmap, fastqpath)
+    # Fastqs should be guaranteed to exist now...hopefully
+    fastqs = [os.path.join('plugin_out', 'downloads',fq) for fq in os.listdir(fastqpath)]
+    logger.debug('Found the following fastq files: {0}'.format(fastqs))
+    # This could raise an exception
+    samplefilemap = ion_mapping(fastqs, ionparampath)
+    logger.debug('Sample fastq file mapping:')
+    for o, n in samplefilemap.iteritems():
+        logger.debug('{0} -> {1}'.format(o,n))
+    logger.info('Syncing read data')
     sync_readdata(samplefilemap, readdata)
+    logger.info('Syncing reads by sample')
     sync_readsbysample(readdata, rbs)
 
 def sync_readdata(samplefilemap, readdatapath):
@@ -189,14 +248,14 @@ def sync_readdata(samplefilemap, readdatapath):
     :param dict samplefilemap: mapping of origin path to newname
     :param str readdatapath: path to sync into
     '''
-    runname = basename(readdatapath)
-    sympathbase = join('../../../RawData/IonTorrent', runname)
-    if not isdir(readdatapath):
+    runname = os.path.basename(readdatapath)
+    sympathbase = os.path.join('../../../RawData/IonTorrent', runname)
+    if not os.path.isdir(readdatapath):
         os.makedirs(readdatapath)
     for origpath, newname in samplefilemap.iteritems():
-        src = join(sympathbase, origpath)
-        dst = join(readdatapath, newname)
-        if exists(dst):
+        src = os.path.join(sympathbase, origpath)
+        dst = os.path.join(readdatapath, newname)
+        if os.path.exists(dst):
             sys.stderr.write('{0} exists and will be skipped\n'.format(dst))
             continue
         os.symlink(src, dst)
@@ -209,17 +268,17 @@ def sync_readsbysample(readdatapath, readsbysample):
     :param str readsbysample: path to readsbysample
     '''
     # Relative path between ReadsBysample and ReadData(../)
-    sympathbase = relpath(readdatapath, readsbysample)
+    sympathbase = os.path.relpath(readdatapath, readsbysample)
     for fq in os.listdir(readdatapath):
         parts = fq.split('.')
         # Have to add another level deeper for relative symlink
-        src = join('..', sympathbase, fq)
+        src = os.path.join('..', sympathbase, fq)
         sn = parts[0]
-        snpath = join(readsbysample, sn)
-        if not isdir(snpath):
+        snpath = os.path.join(readsbysample, sn)
+        if not os.path.isdir(snpath):
             os.makedirs(snpath)
-        dst = join(snpath, fq)
-        if exists(dst):
+        dst = os.path.join(snpath, fq)
+        if os.path.exists(dst):
             sys.stderr.write('{0} already exists\n'.format(dst))
             continue
         os.symlink(src, dst)
