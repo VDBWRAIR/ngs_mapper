@@ -128,7 +128,7 @@ def get_samplefile_mapping(barcodemapping, fastqs, runname):
     for fq in fastqs:
         path = os.path.dirname(fq)
         filename = os.path.basename(fq)
-        m = re.search('(IonXpress_\d+|nomatch)(?:_rawlib){0,1}.(\w+).(fastq|bam)', filename)
+        m = re.search('(IonXpress_\d+|nomatch)(?:_rawlib){0,1}.([-a-zA-Z0-9_]+).(fastq|bam)', filename)
         if m:
             barcode, run, ext = m.groups()
         else:

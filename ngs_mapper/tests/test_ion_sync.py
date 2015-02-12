@@ -185,6 +185,7 @@ class TestGetSamplemapping(Base):
                 expect[bc], r[bc]
             )
 
+@attr('current')
 class TestGetSamplefileMapping(Base):
     def test_creates_correct_mapping_fastq(self):
         expect = self.samplefilemap
@@ -198,6 +199,22 @@ class TestGetSamplefileMapping(Base):
                 expect[e],
                 r[e]
             )
+
+    def test_accepts_dash_in_filename(self):
+        barcodemapping = {
+            'IonXpress_008': 'sample1'
+        }
+        fastqs = [
+            'plugin_out/downloads/IonXpress_008.R_2014_06_29_18_31_56_user_SN2-12-12102014.fastq'
+        ]
+        runname = 'run_name-1'
+        r = ion_sync.get_samplefile_mapping(
+            barcodemapping, fastqs, runname
+        )
+        self.assertEqual(
+            'sample1.IonXpress_008.run_name-1.fastq',
+            r.items()[0][1]
+        )
 
     def test_creates_correct_mapping_rawlibbam(self):
         expect = {
@@ -412,7 +429,6 @@ class TestFunctional(BaseSync):
                         for k,v in self.samplefilemap.items():
                             msys.stdout.write.assert_has_call("{0} -> {1}\n".format(k,v))
 
-    @attr('current')
     def test_converts_basecaller_results_bams_to_fastq(self, margparse, mconfig):
         # Remove fastq to make sure they are rebuilt in ReadData
         plugin_out_dir = join(self.rundir, 'plugin_out', 'downloads')
@@ -435,7 +451,6 @@ class TestFunctional(BaseSync):
         self._check_readdata(self.readdata, self.samplefilemap)
         self._check_readsbysample(self.readsbysample)
 
-    @attr('current')
     def test_syncs_and_creates_directories(self, margparse, mconfig):
         sysargs = [self.args.rundir]
         mconfig.get_config_argparse.return_value = (
