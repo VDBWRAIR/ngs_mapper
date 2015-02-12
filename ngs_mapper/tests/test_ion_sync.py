@@ -3,9 +3,11 @@ import os
 from os.path import *
 import shutil
 from glob import glob
+import fnmatch
 import re
 import json
 from StringIO import StringIO
+import tempfile
 
 import mock
 from unittest2 import TestCase
@@ -14,6 +16,7 @@ from nose.plugins.attrib import attr
 from .. import ion_sync
 
 FILE = mock.Mock()
+seqrec = '@read\nATGC\n+\n!!!!\n'
 
 class Base(TestCase):
     def setUp(self):
@@ -72,7 +75,54 @@ class Base(TestCase):
                 'nomatch.nomatch.R_run_name.fastq',
         }
 
-@attr('current')
+    def _check_rawdata(self, rawdatapath):
+        self.assertEqual(
+            os.stat(self.ion_params).st_size,
+            os.stat(join(rawdatapath,'ion_params_00.json')).st_size
+        )
+        e = sorted([basename(fq) for fq in self.fastqs])
+        print e
+        r = sorted(os.listdir(join(rawdatapath,'plugin_out','downloads')))
+        print r
+        self.assertEqual(e, r)
+
+    def _check_readdata(self, readdatapath, samplefilemap):
+        for origpath, newname in samplefilemap.items():
+            sympath = join(
+                '../../../RawData/IonTorrent',
+                self.runname,
+                origpath
+            )
+            readpath = join(readdatapath, newname)
+            self.assertTrue(
+                exists(readdatapath),
+                '{0} was not created correctly'.format(readdatapath)
+            )
+            self.assertEqual(
+                sympath,
+                os.readlink(readpath)
+            )
+
+    def _check_readsbysample(self, rbspath):
+        for origpath, newfile in self.samplefilemap.items():
+            sn, bc, rn, ext = newfile.split('.')
+            sympath = join(
+                '../../ReadData/IonTorrent',
+                self.runname,
+                newfile
+            )
+            readpath = join(rbspath,sn,newfile)
+            self.assertTrue(
+                exists(rbspath),
+                '{0} does not exist or broken symlink'.format(
+                    rbspath
+                )
+            )
+            self.assertEqual(
+                sympath,
+                os.readlink(readpath)
+            )
+
 @mock.patch('__builtin__.open')
 @mock.patch.object(ion_sync, 'bam')
 class TestConvertBasecallerResultsToFastq(Base):
@@ -135,7 +185,6 @@ class TestGetSamplemapping(Base):
                 expect[bc], r[bc]
             )
 
-@attr('current')
 class TestGetSamplefileMapping(Base):
     def test_creates_correct_mapping_fastq(self):
         expect = self.samplefilemap
@@ -178,7 +227,6 @@ class TestGetSamplefileMapping(Base):
             'R_run_name'
         )
 
-@attr('current')
 @mock.patch.object(ion_sync, 'glob')
 @mock.patch.object(ion_sync, 'json')
 @mock.patch('__builtin__.open', mock.Mock())
@@ -292,7 +340,11 @@ class BaseSync(Base):
         # Make mock fastqs
         for read in reads:
             readpath = join(outdir,read)
-            open(readpath,'w').close()
+            fh = open(readpath,'w')
+            # Write 
+            for i in range(2**10):
+                fh.write(seqrec)
+            fh.close()
 
 @mock.patch.object(ion_sync, 'config')
 @mock.patch.object(ion_sync, 'argparse')
@@ -307,13 +359,18 @@ class TestFunctional(BaseSync):
             '/missing/path/IonXpress_001.broken.bam',
             join(self.downloads,'IonXpress_001.bam')
         )
+        # Make ghost fastq which is just very small(< 1MB)
+        # needs to be skipped
+        self.ghost_fastq_path = join(self.rundir,'plugin_out','downloads','IonXpress_099.R_run_name.fastq')
+        fh = open(self.ghost_fastq_path,'w')
+        fh.write('@idname\nATGC\n+\n!!!!')
+        fh.close()
         self.runname = basename(self.rundir)
         self.readdata = join(self.readdata,'IonTorrent',self.runname)
         self.rawdata = join(self.rawdata,'IonTorrent',self.runname)
 
         self.args = mock.MagicMock()
         self.args.rundir = self.rundir
-        self.args.ngsdata = self.ngsdata
         self.args.print_samplemapping = False
         self.config = {
             'NGSDATA': self.ngsdata,
@@ -321,57 +378,16 @@ class TestFunctional(BaseSync):
                 'ngsdata': {
                     'default': self.ngsdata,
                     'help': 'help msg'
+                },
+                'min_fastq_size': {
+                    'default': 1000,
+                    'help': 'help msg'
                 }
             }
         }
+        self.args.ngsdata = self.config['ion_sync']['ngsdata']['default']
+        self.args.min_fastq_size = self.config['ion_sync']['min_fastq_size']['default']
 
-    def _check_rawdata(self, rawdatapath):
-        self.assertEqual(
-            os.stat(self.ion_params).st_size,
-            os.stat(join(rawdatapath,'ion_params_00.json')).st_size
-        )
-        e = sorted([basename(fq) for fq in self.fastqs])
-        print e
-        r = sorted(os.listdir(join(rawdatapath,'plugin_out','downloads')))
-        print r
-        self.assertEqual(e, r)
-
-    def _check_readdata(self, readdatapath, samplefilemap):
-        for origpath, newname in samplefilemap.items():
-            sympath = join(
-                '../../../RawData/IonTorrent',
-                self.runname,
-                origpath
-            )
-            readpath = join(readdatapath, newname)
-            self.assertTrue(
-                exists(readdatapath),
-                '{0} was not created correctly'.format(readdatapath)
-            )
-            self.assertEqual(
-                sympath,
-                os.readlink(readpath)
-            )
-
-    def _check_readsbysample(self, rbspath):
-        for origpath, newfile in self.samplefilemap.items():
-            sn, bc, rn, ext = newfile.split('.')
-            sympath = join(
-                '../../ReadData/IonTorrent',
-                self.runname,
-                newfile
-            )
-            readpath = join(rbspath,sn,newfile)
-            self.assertTrue(
-                exists(rbspath),
-                '{0} does not exist or broken symlink'.format(
-                    rbspath
-                )
-            )
-            self.assertEqual(
-                sympath,
-                os.readlink(readpath)
-            )
 
     def _print_path(self, ngsdatapath):
         for root, dirs, files in os.walk(ngsdatapath):
@@ -403,11 +419,12 @@ class TestFunctional(BaseSync):
         for f in glob(join(plugin_out_dir,'*')):
             os.unlink(f)
 
-        sysargs = [self.args.rundir]
+        sysargs = [self.args.rundir, '--min-fastq-size', -1]
         mconfig.get_config_argparse.return_value = (
             mock.Mock(), sysargs, self.config, 'config.yaml'
         )
         margparse.ArgumentParser.return_value.parse_args.return_value = self.args
+        self.args.min_fastq_size = -1
         ion_sync.main()
 
         self._print_path(self.ngsdata)
@@ -418,12 +435,14 @@ class TestFunctional(BaseSync):
         self._check_readdata(self.readdata, self.samplefilemap)
         self._check_readsbysample(self.readsbysample)
 
+    @attr('current')
     def test_syncs_and_creates_directories(self, margparse, mconfig):
         sysargs = [self.args.rundir]
         mconfig.get_config_argparse.return_value = (
             mock.Mock(), sysargs, self.config, 'config.yaml'
         )
         margparse.ArgumentParser.return_value.parse_args.return_value = self.args
+        self.fastqs.append(self.ghost_fastq_path)
         ion_sync.main()
         self._check_rawdata(self.rawdata)
         self._check_readdata(self.readdata, self.samplefilemap)
@@ -469,21 +488,18 @@ class TestFunctional(BaseSync):
         )
         os.symlink(src, dst)
         os.symlink(src2, dst2)
-        with mock.patch.object(ion_sync, 'sys') as msys:
-            msys.stderr = StringIO()
+        with mock.patch.object(ion_sync, 'logger') as mlogger:
             ion_sync.main()
-            serr = msys.stderr.getvalue().splitlines()
-            print serr
+            log_calls = mlogger.info.call_args_list + mlogger.debug.call_args_list
+            # Exctract just the text that was in the call
+            log_calls = [x[0][0] for x in log_calls]
+            print '------ Log Calls --------'
+            print '\n'.join(log_calls)
+            print '-------------------------'
             self.assertIn(
                 'You may need to remove this directory and rerun the sync',
-                serr[1]
+                log_calls[0]
             )
-            self.assertIn('sample', serr[2])
-            self.assertIn('ReadData', serr[2])
-            self.assertIn('sample', serr[3])
-            self.assertIn('ReadData', serr[3])
-            self.assertIn('sample2', serr[4])
-            self.assertIn('ReadsBySample', serr[4])
         self._print_path(self.ngsdata)
         self._check_rawdata(self.rawdata)
         self._check_readdata(self.readdata, self.samplefilemap)
@@ -495,8 +511,32 @@ class TestFunctional(BaseSync):
             mock.Mock(), sysargs, self.config, 'config.yaml'
         )
         margparse.ArgumentParser.return_value.parse_args.return_value = self.args
+        self.fastqs.append(self.ghost_fastq_path)
         ion_sync.main()
         self._print_path(self.ngsdata)
         self._check_rawdata(self.rawdata)
         self._check_readdata(self.readdata, self.samplefilemap)
         self._check_readsbysample(self.readsbysample)
+
+class TestFixtures(Base):
+    def setUp(self):
+        super(TestFixtures,self).setUp()
+        self.fixtures_dir = join(dirname(__file__), 'fixtures', 'ion_sync')
+        self.fixtures = fnmatch.filter(os.listdir(self.fixtures_dir), 'run_*')
+
+    def _temp_fixture(self, fixturename, fixtures_dir):
+        '''
+        Copy fixture to temp location to work with
+        Ensure it gets cleaned up after test runs
+
+        Return base temp directory path, fixture path inside base temp path
+        '''
+        temp_path = tempfile.mkdtemp()
+        fix_path = join(fixtures_dir, fixturename)
+        temp_fix_path = join(temp_path, fixturename)
+        self.addCleanup(shutil.rmtree, temp_fix_path)
+        shutil.copytree(fix_path, temp_fix_path)
+        return temp_path, temp_fix_path
+
+    def check_fixture(fixturename):
+        tdir, fixpath = self._temp_fixture(fixturename, self.fixture_dir)

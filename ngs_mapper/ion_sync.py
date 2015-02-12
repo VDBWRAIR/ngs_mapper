@@ -47,16 +47,6 @@ Notes
 As the IonTorrent's and IonProton's software versions change sometimes so does the way the ``ion_params_00.json`` is created by the instrument.
 This means that you may encounter an error as the location of the samplename -> barcode mapping inside of the ``ion_params_00.json`` may
 change. As with any issue, if you encounter an error while using this script, :doc:`submit an issue <../createissue>` and make sure to copy-paste the contents of your ion_params_00.json file in the issue.
-
-Additionally, the naming format of the fastq files as well as the placement of them may change with the different versions of the software.
-If you notice that your fastq files are not located inside of ``plugin_out/downloads`` inside of your runs, please :doc:`submit an issue <../createissue>` and provide the relative path to your run that your fastq files are located.
-
-If you only have .bam files you should be able to convert them to fastq with the following command
-
-.. code-block:: bash
-
-    samtools view /path/to/IonXpress_XXX.bam | awk '{printf("@%s\\n%s\\n+\\n%s\\n",$1,$10,$11)}' > /path/to/IonXpress_XXX.fastq
-
 """
 
 import json
@@ -72,6 +62,9 @@ import bam
 import log
 
 logger = log.setup_logger(__name__, log.get_config())
+
+# MegaByte size-ish
+MB = 2**20
 
 from ngs_mapper import config
 
@@ -162,14 +155,18 @@ def convert_basecaller_results_to_fastq(bamfastqmapping, fastqoutpath):
     :param str fastqoutpath: directory to place converted fastq in
     '''
     if not os.path.exists(fastqoutpath):
+        logger.debug('Creating {0} to put output from bam conversion in'.format(
+            fastqoutpath
+        ))
         os.makedirs(fastqoutpath)
     for bamf, fqf in bamfastqmapping.iteritems():
         outfq_path = os.path.join(fastqoutpath, fqf)
         with open(outfq_path, 'w') as fh:
+            logger.debug('Converting {0} to {1}'.format(bamf, outfq_path))
             for read in bam.bam_to_fastq(bamf):
                 fh.write(read + '\n')
 
-def sync_run(runpath, ngsdata, printmappingonly):
+def sync_run(runpath, ngsdata, printmappingonly, minfastqsize):
     '''
     Sync an iontorrent or ionproton run into ngsdata
     The runs need to contain ion_params_00.json as well as
@@ -206,8 +203,8 @@ def sync_run(runpath, ngsdata, printmappingonly):
         return
 
     if os.path.isdir(rawdata):
-        sys.stderr.write(
-            '{0} already exists so will not be synced.\n' \
+        logger.info(
+            '{0} already exists so the raw data directory will not be copied again.\n' \
             'You may need to remove this directory and rerun the '\
             'sync\n'.format(rawdata)
         )
@@ -240,11 +237,11 @@ def sync_run(runpath, ngsdata, printmappingonly):
     for o, n in samplefilemap.iteritems():
         logger.debug('{0} -> {1}'.format(o,n))
     logger.info('Syncing read data')
-    sync_readdata(samplefilemap, readdata)
+    sync_readdata(samplefilemap, readdata, minfastqsize)
     logger.info('Syncing reads by sample')
     sync_readsbysample(readdata, rbs)
 
-def sync_readdata(samplefilemap, readdatapath):
+def sync_readdata(samplefilemap, readdatapath, minfastqsize):
     '''
     Sync a list of raw fastq files into the ReadData
 
@@ -254,13 +251,24 @@ def sync_readdata(samplefilemap, readdatapath):
     runname = os.path.basename(readdatapath)
     sympathbase = os.path.join('../../../RawData/IonTorrent', runname)
     if not os.path.isdir(readdatapath):
+        logger.debug('Creating {0} to put fastq files'.format(readdatapath))
         os.makedirs(readdatapath)
     for origpath, newname in samplefilemap.iteritems():
         src = os.path.join(sympathbase, origpath)
         dst = os.path.join(readdatapath, newname)
+        _origpath = os.path.join(readdatapath, src)
         if os.path.exists(dst):
             logger.info('{0} exists and will be skipped'.format(dst))
             continue
+        filesize = os.stat(_origpath).st_size
+        if filesize < minfastqsize:
+            logger.info(
+                '{0} will be skipped as its filesize({1}) is below the min-fastq-size ' \
+                'set({2})'.format(
+                    _origpath, filesize, minfastqsize
+            ))
+            continue
+        logger.debug('Symlinking {0} -> {1}'.format(src,dst))
         os.symlink(src, dst)
 
 def sync_readsbysample(readdatapath, readsbysample):
@@ -316,8 +324,16 @@ def parse_args():
         help='Just print the sample mapping for the run and quit'
     )
 
+    parser.add_argument(
+        '--min-fastq-size',
+        dest='min_fastq_size',
+        type=int,
+        default=defaults['min_fastq_size']['default'],
+        help=defaults['min_fastq_size']['help']
+    )
+
     return parser.parse_args(args)
 
 def main():
     args = parse_args()
-    sync_run(args.rundir, args.ngsdata, args.print_samplemapping)
+    sync_run(args.rundir, args.ngsdata, args.print_samplemapping, args.min_fastq_size)
