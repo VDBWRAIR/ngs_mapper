@@ -11,13 +11,26 @@ Usage
 
 .. code-block:: bash
 
-    ion_sync /path/to/run_directory
+    $> ion_sync /path/to/run_directory
 
 Optionally you can specify the NGSdata path as follows
 
 .. code-block:: bash
 
-    ion_sync /path/to/run_directory --ngsdata /path/to/NGSData
+    $> ion_sync /path/to/run_directory --ngsdata /path/to/NGSData
+
+Preview the samplemapping
+=========================
+
+You can see how the IonXpress_XXX barcoded files will be renamed by using the
+``--pring-samplemapping`` option
+
+.. code-block:: bash
+
+    $> ion_sync --print-samplemapping run_1/
+    run_1/basecaller_results/IonXpress_002_rawlib.basecaller.bam -> sample2.IonXpress_002.run_1.fastq
+    run_1/basecaller_results/IonXpress_003_rawlib.basecaller.bam -> IonXpress_003.IonXpress_003.run_1.fastq
+    run_1/basecaller_results/IonXpress_001_rawlib.basecaller.bam -> sample1.IonXpress_001.run_1.fastq
 
 How it works
 ============
@@ -31,8 +44,9 @@ How it works
       experimentAnalysisSettings->barcodedSamples inside of the loaded file.
 
 #. All of the fastq files inside of plugin_out/downloads are compiled and all 
-   IonXpress_XXX are symlinked into the ReadData under the path specified with
-   ``--ngsdata`` and renamed using the mapping that was created from 
+#. All IonXpress_XXX are symlinked into the ReadData under the path specified with
+   ``--ngsdata`` if their filesize is greater than the --min-fastq-size
+#. Then they are renamed using the mapping that was created from 
    the ``ion_params_00.json`` 
 #. All of the fastq files under ReadData are then symlinked under their 
    cooresponding samplename directory inside of ReadsBySample under the path
