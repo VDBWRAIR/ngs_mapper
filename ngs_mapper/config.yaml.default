@@ -89,3 +89,6 @@ ion_sync:
     ngsdata:
         default: *NGSDATA
         help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+    min_fastq_size:
+        default: 1000000
+        help: 'Minimum file size to determine if a fastq is a ghost read [Default: %(default)s]'

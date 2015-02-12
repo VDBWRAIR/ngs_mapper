@@ -1,4 +1,6 @@
-from subprocess import Popen, PIPE
+import subprocess
+import samtools
+import filehandle
 
 import logging
 log = logging.getLogger(__name__)
@@ -28,7 +30,7 @@ def samtobam( sam, outbam ):
         output = outbam
 
     log.debug("CMD: {} STDIN: {} STDOUT: {}".format(cmd,input,output))
-    p = Popen( cmd, stdin=input, stdout=output )
+    p = subprocess.Popen( cmd, stdin=input, stdout=output )
 
     # Returns the original file path or
     # the file like object
@@ -70,7 +72,7 @@ def sortbam( bam, outbam ):
         raise ValueError("Output file for sortbam has to be a path not {}".format(outbam))
 
     log.debug("CMD: {} STDIN: {}".format(cmd,input))
-    p = Popen( cmd, stdin=input )
+    p = subprocess.Popen( cmd, stdin=input )
     p.wait()
     return outbam
 
@@ -90,7 +92,7 @@ def mergebams( sortedbams, mergedbam ):
     cmd = ['samtools','merge',mergedbam] + sortedbams
     log.info('Running {}'.format(' '.join(cmd)))
 
-    p = Popen( cmd )
+    p = subprocess.Popen( cmd )
     p.wait()
 
     return mergedbam
@@ -106,7 +108,7 @@ def indexbam( sortedbam ):
     cmd = ['samtools','index',sortedbam]
     log.info('Running {}'.format(' '.join(cmd)))
 
-    p = Popen( cmd )
+    p = subprocess.Popen( cmd )
     p.wait()
 
     return sortedbam + '.bai'
@@ -119,6 +121,44 @@ def get_refstats( bamfile ):
         @returns dictionary keyed by refname and values of [refname, reflen, #mapped reads, singletons]
     '''
     cmd = ['samtools','idxstats',bamfile]
-    p = Popen( cmd, stdout=PIPE )
+    p = subprocess.Popen( cmd, stdout=subprocess.PIPE )
     sout,serr = p.communicate()
     return {line.split()[0]:line.split() for line in sout.splitlines()}
+
+def bam_to_fastq(input_fh):
+    '''
+    Convert a bam file to fastq format by simply extracting the first, 10th and 11th
+    columns from the sam output
+
+    http://samtools.github.io/hts-specs/SAMv1.pdf
+    1st column is QNAME
+    10th column is SEQ
+    11th column is QUAL
+
+    :param str|file input_fh: path to bam or file handle
+    :return: generator object yielding fastq string records
+    '''
+    # Normalize to make sure we end up with an already opened
+    # filehandle(gzip files should work too since filehandle.open does that
+    if isinstance(input_fh, str):
+        fh, ext = filehandle.open(input_fh)
+    else:
+        fh = input_fh
+
+    # samrows is just an stdout iterator
+    samrows = samtools.view(fh)
+
+    # fastq format string
+    fqformat = '@{read}\n{seq}\n+\n{qual}'
+
+    # Iterate the rows and format to fastq
+    for samrow in samrows:
+        row = samrow.split('\t')
+        qname = row[0]
+        seq = row[9]
+        qual = row[10]
+        yield fqformat.format(
+            read = qname,
+            seq = seq,
+            qual = qual
+        )

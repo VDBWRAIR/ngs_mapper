@@ -4,7 +4,7 @@ from .fixtures import THIS, ungiz
 class Base(BaseClass):
     modulepath = 'ngs_mapper.bam'
 
-@patch('ngs_mapper.bam.Popen')
+@patch('ngs_mapper.bam.subprocess.Popen')
 class TestUnitMergeBam(Base):
     functionname = 'mergebams'
 
@@ -38,7 +38,7 @@ class TestUnitMergeBam(Base):
         else:
             assert False, "Did not raise ValueError with non list item as argument for sortedbams"
 
-@patch('ngs_mapper.bam.Popen')
+@patch('ngs_mapper.bam.subprocess.Popen')
 class TestUnitIndexBam(Base):
     functionname = 'indexbam'
     samtools_cmd = ['samtools','index']
@@ -48,7 +48,7 @@ class TestUnitIndexBam(Base):
         eq_( [call(self.samtools_cmd+['sorted.bam'])], popen_mock.call_args_list )
         eq_( 'sorted.bam.bai', res )
 
-@patch('ngs_mapper.bam.Popen')
+@patch('ngs_mapper.bam.subprocess.Popen')
 @patch('__builtin__.open')
 class TestUnitSortBam(Base):
     functionname = 'sortbam'
@@ -80,7 +80,7 @@ class TestUnitSortBam(Base):
         else:
             assert False, "Did not raise value error on invalid output file"
 
-@patch('ngs_mapper.bam.Popen')
+@patch('ngs_mapper.bam.subprocess.Popen')
 @patch('__builtin__.open')
 class TestUnitSamToBam(Base):
     functionname = 'samtobam'
@@ -121,7 +121,6 @@ class TestUnitSamToBam(Base):
         eq_( [call(self.samtools_cmd,stdin=PIPE,stdout=PIPE)], popen_mock.call_args_list )
         eq_( PIPE, res )
 
-@attr('current')
 class TestIntegrate(Base):
     samfile = join(THIS,'fixtures','bam','samfile.sam.gz')
     unsortedbam = join(THIS,'fixtures','bam','unsorted.bam.gz')
@@ -221,3 +220,86 @@ class TestIntegrate(Base):
         index = indexbam( merged )
         self._fe( self.mergedbam, 'merged.bam' )
         self._fe( self.mergedbamindex, 'merged.bam.bai' )
+
+### Begin better testing stuff haha
+import mock
+import unittest2 as unittest
+import types
+
+from .. import bam
+
+@attr('current')
+@mock.patch.object(bam, 'samtools')
+@mock.patch.object(bam, 'filehandle')
+@mock.patch.object(bam, 'log')
+class TestBamToFastq(unittest.TestCase):
+    def setUp(self):
+        self.sam_rows = [
+            'read1\t4\tref\t1\t60\t1171M\t=\t0\t0\tATGC\t!!!!\tAS:i:0\tXS:i:0\n',
+            'read2\t4\tref\t1\t60\t1117M\t=\t0\t0\tCGTA\t!!!!\tAS:i:0\tXS:i:0\n'
+        ]
+
+    def test_missing_samtools_raises_exception(self, *args):
+            mfilehandle = args[1]
+            msamtools = args[2]
+            mfilehandle.open.return_value = (mock.Mock(),'bam')
+            excep = OSError
+            msamtools.view.side_effect = excep
+            self.assertRaises(
+                excep,
+                next, bam.bam_to_fastq('/path/to/foo.bam')
+            )
+
+    def test_accepts_filehandle(self, *args):
+        msamtools = args[2]
+        fh = mock.Mock(file)
+        msamtools.view.side_effect = [self.sam_rows]
+
+        r = bam.bam_to_fastq(fh)
+
+        self.assertIsInstance(r, types.GeneratorType) 
+        self.assertEqual(
+            '@read1\nATGC\n+\n!!!!', next(r)
+        )
+        self.assertEqual(
+            '@read2\nCGTA\n+\n!!!!', next(r)
+        )
+        msamtools.view.assert_called_once_with(fh)
+
+    def test_accepts_filepath(self, *args):
+        mfilehandle = args[1]
+        msamtools = args[2]
+        fh = mock.Mock(file)
+        mfilehandle.open.return_value = (fh,'bam')
+        f = '/path/to/foo.bam'
+        msamtools.view.side_effect = [self.sam_rows]
+        
+        r = bam.bam_to_fastq(f)
+        
+        self.assertEqual(
+            '@read1\nATGC\n+\n!!!!', next(r)
+        )
+        self.assertEqual(
+            '@read2\nCGTA\n+\n!!!!', next(r)
+        )
+
+        msamtools.view.assert_called_once_with(fh)
+
+    def test_input_contains_0_samrows_logs_warning_returns_empty_generator(self, *args):
+        mfilehandle = args[1]
+        msamtools = args[2]
+        fh = mock.Mock(file)
+        mfilehandle.open.return_value = (fh,'bam')
+        mlog = args[0]
+        f = '/path/to/foo.bam'
+        msamtools.view.side_effect = [[]]
+        
+        r = bam.bam_to_fastq(f)
+        self.assertIsInstance(r, types.GeneratorType) 
+
+        self.assertRaises(
+            StopIteration,
+            next, r
+        )
+
+        msamtools.view.assert_called_once_with(fh)
