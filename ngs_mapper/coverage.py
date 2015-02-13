@@ -73,12 +73,13 @@ from matplotlib.lines import Line2D
 import matplotlib.gridspec as gridspec
 
 # Line color mappings for region types
+TURQUOISE = '#00FFFF'
 LINEARGS = {
-    G: {'color':'red', 'linewidth':5},
-    N: {'color':'grey', 'linewidth':5},
-    LQ: {'color':'blue', 'linewidth':5},
-    LC: {'color':'orange', 'linewidth':5},
-    LCQ: {'color':'yellow', 'linewidth':5},
+    G: {'color':'red', 'linewidth':5},      # Gap
+    N: {'color':'green', 'linewidth':5},     # Normal
+    LQ: {'color':'blue', 'linewidth':5},    # LowQuality
+    LC: {'color':TURQUOISE, 'linewidth':5},  # LowCoverage
+    LCQ: {'color':'yellow', 'linewidth':5}, # LowCoverageLowQuality
 }
 
 def filter_refs(refs, includes, excludes):
