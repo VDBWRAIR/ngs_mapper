@@ -59,6 +59,7 @@ from glob import glob
 import json
 from os.path import join, basename
 from collections import defaultdict, OrderedDict
+import math
 import argparse
 
 from bqd import (
@@ -71,6 +72,10 @@ from bqd import (
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import matplotlib.gridspec as gridspec
+
+import log
+
+logger = log.setup_logger(__name__, log.get_config())
 
 # Line color mappings for region types
 TURQUOISE = '#00FFFF'
@@ -176,33 +181,46 @@ def get_perreference_from_projects(projects, allrefs, refax, gap, lowqual, lowco
             perreference[ref].append(lines2d_from_regions(sampleno, regions, lineargs))
     return perreference
 
-def set_figure_size(perreference, figure):
+def set_figure_size(perreference, figure, min_subplot_height=1.5):
     '''
     Set figure size and dpi based on number of references and number of
     samples
     '''
     # Get maximum number of samples in any reference
     maxnumsamples = max([len(perreference[ref]) for ref in perreference])
-    # Set the size of the figure in inches
-    # Seems that 0.375 inches per sample is enough
-    # Max num samples per referece * num references/2 * 0.357
-    # num references / 2 because 2 columns
+    logger.debug('Maximum number of samples for any reference is {0}'.format(
+        maxnumsamples
+    ))
     numrefs = len(perreference)
-    length = maxnumsamples * (numrefs / 2.0) * 0.375
-    if length > 400:
+    logger.debug('Found {0} references to plot'.format(numrefs))
+    # How many subplot rows there should be in gridspec
+    num_subplot_rows = int(math.ceil(numrefs / 2.0))
+    logger.debug("Looking to created figure big enough for {0} subplot rows".format(
+        num_subplot_rows
+    ))
+
+    subplot_height = maxnumsamples * 0.375
+    if subplot_height < min_subplot_height:
+        # Need at least 2 inches per subplot
+        subplot_height = min_subplot_height
+    logger.debug('Each subplot will be {0} inches high'.format(subplot_height))
+
+    height = subplot_height * num_subplot_rows
+    if height > 400:
         # Scale dpi down
-        scale = 400.0 / length
+        scale = 400.0 / height
         dpi = figure.get_dpi()
         dpi = scale * dpi
-        print "Large amount of samples, scaling image quality down"
+        logger.warning("Large amount of samples, scaling image quality down")
         figure.set_dpi(dpi)
-        # Reset length to our 400 maximum
-        length = 400
+        # Reset height to our 400 maximum
+        height = 400
         bbox = figure.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
 
-    if length < 1:
-        length = 2
-    figure.set_size_inches(20.0, length)
+    if height <= 1:
+        height = 2
+    logger.debug('Setting 20.0, {0} inches(wxh) as the graphic dimensions'.format(height))
+    figure.set_size_inches(20.0, height)
 
 def plot_all_references(projects, perreference, refax):
     # Samplenames
@@ -278,6 +296,17 @@ def create_legend(figure, regiontypes, lineargs):
         #ncol=len(legendlines),
     )
 
+def get_gridspec(num_rows):
+    '''
+    Simply get matplotlib.gridspec.GridSpec with correct ammount of rows
+
+    :param int num_rows: number of rows in gridspec
+    :return: matplotlib.gridspec.GridSpec
+    '''
+    rows = int(math.ceil(num_rows / 2.0))
+    logger.debug('Creating gridspec with {0} rows and 2 columns'.format(rows))
+    return gridspec.GridSpec(rows, 2, width_ratios=[1,1])
+
 def create_figure_for_projects(projects, includes, excludes, lineargs, regionmins):
     gap, lowqual, lowcov = regionmins
 
@@ -289,7 +318,7 @@ def create_figure_for_projects(projects, includes, excludes, lineargs, regionmin
 
     # Grid of figures for each reference
     # 2 columns, numrefs rows
-    gs = gridspec.GridSpec(len(allrefs), 2, width_ratios=[1,1])
+    gs = get_gridspec(len(allrefs))
 
     # Map reference name to it's subplot
     # Keep sorted order of references so they are grouped together
