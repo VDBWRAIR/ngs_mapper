@@ -6,6 +6,10 @@
   
   [upgrade](doc/source/upgrade.rst)
 
+# Changelog
+
+  [changelog](CHANGELOG.rst)
+
 # Running the pipeline
 
   Before you use the pipeline you always need to ensure that you have the virtualenv activated that you installed into. Activating a virtualenv more than once is fine as it is smart enough to know if you already have done it. So if you are unsure, just do it anyways.
