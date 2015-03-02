@@ -13,6 +13,7 @@ Version 1.2.0
   and # of samples would generate a graphic where sub-plots for each reference
   were overlapping
 - Fixed incorrect command in doc/README.rst for how to open documentation with Firefox
+- Fixed issue with sample_coverage's usage statement and arguments description
 
 Version 1.1.0
 +++++++++++++
