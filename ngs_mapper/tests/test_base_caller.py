@@ -1220,6 +1220,7 @@ class TestUnitMain(BaseInty):
             margparse.ArgumentParser.return_value.parse_args.return_value = args
             return main()
 
+    @attr('current')
     def test_noregion_emptypileup(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
@@ -1299,7 +1300,6 @@ class TestIntegrate(BaseInty):
         p = self._C(self.bam, self.ref, out_vcf, None, 25, 100, 10, 0.8)
         eq_(0, p.wait())
 
-    @attr('current')
     def test_outputs_correct_vcf_noregionstr(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
@@ -1308,7 +1308,6 @@ class TestIntegrate(BaseInty):
         print o
         assert self.cmp_files(self.vcf, out_vcf)
 
-    @attr('current')
     def test_outputs_correct_vcf_regionstr(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
@@ -1326,7 +1325,6 @@ class TestIntegrate(BaseInty):
         fh.close()
         assert self.cmp_files('evcf.vcf', out_vcf)
 
-    @attr('current')
     def test_outputs_correct_vcf_nothreads(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
