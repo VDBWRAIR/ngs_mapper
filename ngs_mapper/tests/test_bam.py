@@ -229,6 +229,31 @@ import types
 from .. import bam
 
 @attr('current')
+class TestGetRefstats(unittest.TestCase):
+    def setUp(self):
+        self.subprocess_patcher = mock.patch.object(bam, 'subprocess')
+        self.mock_subprocess = self.subprocess_patcher.start()
+        self.addCleanup(self.subprocess_patcher.stop)
+        
+    def test_parses(self):
+        self.mock_subprocess.Popen.return_value.communicate.return_value = (
+            'ref1\t5\t100\t10\nref2\t10\t100\t10\n*\t0\t0\t0\n',
+            ''
+        )
+        r = bam.get_refstats('foo.bam')
+        self.assertEqual(
+            ['ref1', '5', '100', '10'],
+            r['ref1']
+        )
+        self.assertEqual(
+            ['ref2', '10', '100', '10'],
+            r['ref2']
+        )
+        self.assertEqual(
+            ['*','0','0','0'],
+            r['*']
+        )
+
 @mock.patch.object(bam, 'samtools')
 @mock.patch.object(bam, 'filehandle')
 @mock.patch.object(bam, 'log')
