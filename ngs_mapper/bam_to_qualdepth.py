@@ -30,6 +30,7 @@ def set_unmapped_mapped_reads( bamfile, pileup ):
         if ref != '*':
             try:
                 pileup[ref]['mapped_reads'] = int(stats[2])
+                pileup[ref]['reflen'] = int(stats[1])
             except KeyError:
                 # Skips references that are missing due to no depth
                 continue

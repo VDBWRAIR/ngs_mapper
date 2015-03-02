@@ -99,3 +99,9 @@ class TestSetUMReads(Base):
         get_refstats.return_value = self.idxstats
         res = self._call( self.bamfile, self.pileup )
         eq_( 1000, self.pileup['chr1']['mapped_reads'] )
+
+    @patch('ngs_mapper.bam.get_refstats')
+    def test_sets_reflen(self, get_refstats):
+        get_refstats.return_value = self.idxstats
+        res = self._call( self.bamfile, self.pileup )
+        eq_( 20, self.pileup['chr1']['reflen'] )

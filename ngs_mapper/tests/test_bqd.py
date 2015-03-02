@@ -40,6 +40,8 @@ class Base(BaseTester):
                 0,5,10,15,20    # LowCovQual
             ])
         }
+        if 'reflen' in kwargs:
+            qualdepth['reflen'] = kwargs['reflen']
         return qualdepth
 
 class TestRegionsFromQualDepth(Base):
@@ -89,6 +91,33 @@ class TestRegionsFromQualDepth(Base):
         eq_(21, r[4].start)
         eq_(26, r[4].end)
         eq_(LCQ, r[4].type)
+
+    def test_extends_gap_to_end_of_reference(self):
+        # Make reference to 100 but quals and depth only go to 25
+        self.qualdepth = self._make_qualdepth(reflen=100)
+        # Add gap at end but still no data for base positions 31-100
+        self.qualdepth['depths'] += [0]*5
+        self.qualdepth['avgquals'] += [0]*5
+        r = list(self._C(self.qualdepth, 0, 25, 10))
+        eq_(26, r[5].start)
+        eq_(101, r[5].end)
+        eq_(G, r[5].type)
+
+    def test_adds_gap_to_end_of_reference(self):
+        # Make reference to 100 but quals and depth only go to 25
+        self.qualdepth = self._make_qualdepth(reflen=100)
+        r = list(self._C(self.qualdepth, 0, 25, 10))
+        eq_(26, r[5].start)
+        eq_(101, r[5].end)
+        eq_(G, r[5].type)
+
+    def test_missing_reflen_in_qualdepth_falls_back_on_length(self):
+        # Make reference to 100 but quals and depth only go to 25
+        self.qualdepth = self._make_qualdepth(length=100)
+        r = list(self._C(self.qualdepth, 0, 25, 10))
+        eq_(26, r[5].start)
+        eq_(101, r[5].end)
+        eq_(G, r[5].type)
 
 @attr('current')
 class TestGetRegionType(Base):
