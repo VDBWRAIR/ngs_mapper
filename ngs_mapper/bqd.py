@@ -9,6 +9,9 @@ from itertools import izip
 
 from matplotlib.lines import Line2D
 
+import log
+logger = log.setup_logger(__name__, log.get_config())
+
 # Alias our region strings
 G = 'Gap'
 N = 'Normal'
@@ -45,7 +48,7 @@ def parse_pileup( pileup ):
         - maxq/minq - max/min quality found for that reference
         - depths - depth at each base position
         - avgquals - average quality at each base position
-        - length - length of reference
+        - length - length of assembly
 
     @pileup - file like object that returns lines from samtools mpileup
 
@@ -152,6 +155,14 @@ def regions_from_qualdepth(qualdepth, gap, lowqual, lowcov):
     lowqual and lowcov define the minimum requirements to be called that
     type of region. This is a non-inclusive operation(aka value < LowCoverage would be called LowCoverage)
     Gap is very similar, except it is inclusive since it could be 0
+
+    Since a visible line requires a start and end point to be separated by 1 unit, each base position is 
+    represented via start: baseposition end: baseposition+1
+    So a region of
+
+    (1, 2, 'Gap') would represent a gap for only the very first base position
+    Where on a reference of length 10;
+    (1,11,'Normal') would represent bases 1-10 all normal coverage
     '''
     # The current region we are working on
     curregion = [0,0,'']
@@ -177,8 +188,26 @@ def regions_from_qualdepth(qualdepth, gap, lowqual, lowcov):
             curregion[1] = basepos
     # Increment end by 1 to include the end
     curregion[1] += 1
-    # Yield the last region we are on
+    # reference length +1 because lines require start and end points so
+    # bases are start:basepos end:basepos + 1
+    if 'reflen' in qualdepth:
+        reflen = qualdepth['reflen'] + 1
+    else:
+        reflen = qualdepth['length'] + 1
+    # extend current region if already a gap
+    print "Reflen: {0}".format(reflen)
+    print "Curregion: {0}".format(curregion)
+    if curregion[1] < reflen and curregion[2] == G:
+        # Extend as the last region was already a gap
+        print 'Extending {0} to end of reference({1})'.format(curregion, reflen)
+        curregion[1] = reflen
+    # Yield the last build region
     yield CoverageRegion._make(curregion)
+    # Build a new gap region at end if needed
+    if curregion[1] < reflen:
+        region = [curregion[1],reflen,G]
+        print 'Creating new gap region to cover end of reference: {0}'.format(region)
+        yield CoverageRegion._make(region)
 
 def lines2d_from_regions(yval, regions, line2dargs):
     '''

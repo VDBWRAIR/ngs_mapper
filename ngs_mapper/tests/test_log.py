@@ -79,13 +79,14 @@ from .. import log
 
 class TestSetupLogger(unittest.TestCase):
     def setUp(self):
-        self.filename = join('Projects','project','project.log')
-        if not exists(dirname(self.filename)):
-            os.makedirs(dirname(self.filename))
-        self.format = '%(asctime)-15s %(message)s'
-        self.config = log.get_config(self.filename, self.format)
+        self.config = {
+            'version': 1,
+            'handlers': {
+                'console': {}
+            },
+            'loggers': {}
+        }
 
     def test_python26_missing_dictconfig(self):
-        with mock.patch.object(log.logging, 'config') as mlogconfig:
-            mlogconfig.dictConfig.side_effect = ImportError
+        with mock.patch.object(log, 'logconfig') as mock_logconfig:
             log.setup_logger('foo', self.config)

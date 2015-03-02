@@ -192,37 +192,6 @@ class TestParseMapstats(common.BaseTester):
         stats = {'depths':[100,100,6,6,100],'avgquals':[40,40,6,6,40]}
         eq_( [(1,3,'Normal'),(3,5,'LowCoverage'),(5,5,'Normal')], self._CPM( stats ) )
 
-
-class TestGetRefstats(common.BaseTester):
-    def _deq( self, d1, d2 ):
-        # ensure same reference keys
-        eq_( sorted(d1.keys()), sorted(d2.keys()) )
-        # Ensure refstats are equal
-        for d1r, d2r in zip(d1.keys(),d2.keys()):
-            d1list = sorted( d1[d1r] )
-            d2list = sorted( d2[d2r] )
-            eq_( d1list, d2list )
-
-    def _CGR( self, bam ):
-        from ngs_mapper.bam import get_refstats
-        return get_refstats( bam )
-
-    @patch('ngs_mapper.bam.Popen')
-    def test_parses( self, popen ):
-        popen.return_value.communicate.return_value = (
-            'ref1\t5\t100\t10\n' \
-            'ref2\t10\t100\t10\n' \
-            '*\t0\t0\t0\n',
-            ''
-        )
-        res = self._CGR( 'test' )
-        exp = {
-            'ref1': ['ref1','5','100','10'],
-            'ref2': ['ref2','10','100','10'],
-            '*': ['*','0','0','0']
-        }
-        self._deq( exp, res )
-
 class TestParsePileup(common.BaseTester):
     def _deq( self, d1, d2 ):
         # ensure same reference keys

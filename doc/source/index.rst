@@ -32,6 +32,8 @@ Contents:
     development
     todo
 
+.. include:: ../../CHANGELOG.rst
+
 Indices and tables
 ==================
 

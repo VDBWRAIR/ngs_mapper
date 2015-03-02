@@ -13,4 +13,4 @@ Viewing the documentation
 
 .. code-block:: bash
 
-    firefox docs/build/index.html
+    firefox doc/build/html/index.html
