@@ -14,6 +14,7 @@ Version 1.2.0
   were overlapping
 - Fixed incorrect command in doc/README.rst for how to open documentation with Firefox
 - Fixed issue with sample_coverage's usage statement and arguments description
+- Fixed issue when no reads mapped and graphsample.py would raise an exception
 
 Version 1.1.0
 +++++++++++++

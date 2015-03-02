@@ -39,29 +39,6 @@ class TestUnitHandleArgs(Base):
         res = self._C( args )
         eq_( join('somepath','someprefix'), res.outpath )
 
-class TestUnitRunMontage(Base):
-    functionname = 'run_montage'
-
-    def test_expected_outputfile( self ):
-        images = ['img.'+str(i)+'.png' for i in range(5)]
-        outprefix = 'img.'
-        expected_outfile = 'img.png'
-        eo = expected_outfile
-        # Touch all the files so they exist
-        for f in images:
-            open(f,'w').close()
-        def side_effect( *args, **kwargs ):
-            f = args[0][-1]
-            open( f, 'w' ).close()
-
-        with patch('subprocess.check_call') as check_call:
-            check_call.side_effect = side_effect
-            images = images + [expected_outfile]
-            r = self._C( *images, compress='JPEG', quality=25 )
-            check_call.assert_called_with( ['montage','-compress','JPEG','-quality','25']+images )
-        eq_( eo, r, "Returned file path {} != {}".format(r,eo) )
-        ok_( os.stat( r ), "did not create output file" )
-
 class TestNormalizeRef(Base):
     functionname = 'normalize_ref'
 
@@ -168,3 +145,41 @@ class TestFunctional(Base):
         eq_( es.st_size, rs.st_size )
         eq_( es.st_mtime, rs.st_mtime )
         eq_( es.st_ctime, rs.st_ctime )
+
+# Begin better unittest practices
+import mock
+import unittest2 as unittest
+
+from .. import graphsample
+
+@attr('current')
+class TestRunMontage(unittest.TestCase):
+    def setUp(self):
+        self.subprocess_patch = mock.patch.object(graphsample, 'subprocess')
+        self.m_subprocess = self.subprocess_patch.start()
+        self.addCleanup(self.subprocess_patch.stop)
+
+    def test_runs_montage_on_images(self):
+        infile = '/path/foo.png'
+        outfile = '/path/bar.png'
+        kwargs = {'foo':'bar', 'baz':1}
+        r = graphsample.run_montage(infile, outfile, **kwargs)
+        self.m_subprocess.check_call.assert_called_once_with(
+            ['montage', '-foo', 'bar', '-baz', '1', infile, outfile]
+        )
+        self.assertEqual(outfile, r)
+
+    def test_does_not_raise_exception_on_invalid_file(self):
+        self.m_subprocess.CalledProcessError = ValueError
+        self.m_subprocess.check_call.side_effect = ValueError
+        infile = '/path/foo.png'
+        outfile = '/path/bar.png'
+        kwargs = {'foo':'bar', 'baz':1}
+        r = graphsample.run_montage(infile, outfile, **kwargs)
+
+    def test_missing_montage_command(self):
+        self.m_subprocess.check_call.side_effect = OSError('missing montage')
+        infile = '/path/foo.png'
+        outfile = '/path/bar.png'
+        kwargs = {'foo':'bar', 'baz':1}
+        r = graphsample.run_montage(infile, outfile, **kwargs)
