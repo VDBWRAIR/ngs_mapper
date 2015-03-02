@@ -146,7 +146,7 @@ class TestSetFigureSize(Base):
         from mock import call
         fig = Mock()
         del self.perreference['Ref2']
-        self._C(self.perreference, fig)
+        self._C(self.perreference, fig, 1)
         cl = fig.set_size_inches.call_args_list
         eq_([call(20.0,2)], cl)
 
@@ -256,3 +256,26 @@ class TestMain(Base):
             with open(qdepthfile,'w') as fh:
                 json.dump(qd, fh)
             self._C()
+
+import unittest2 as unittest
+import mock
+
+from .. import coverage
+
+@mock.patch.object(coverage, 'gridspec')
+class TestGetGridSpec(unittest.TestCase):
+    def test_only_1_reference(test, mock_gridspec):
+        r = coverage.get_gridspec(1)
+        mock_gridspec.GridSpec.assert_called_once_with(1, 2, width_ratios=[1,1])
+
+    def test_2_references(test, mock_gridspec):
+        r = coverage.get_gridspec(2)
+        mock_gridspec.GridSpec.assert_called_once_with(1, 2, width_ratios=[1,1])
+
+    def test_odd_number_greater_than_2_references(test, mock_gridspec):
+        r = coverage.get_gridspec(3)
+        mock_gridspec.GridSpec.assert_called_once_with(2, 2, width_ratios=[1,1])
+
+    def test_even_number_greater_than_2_references(test, mock_gridspec):
+        r = coverage.get_gridspec(4)
+        mock_gridspec.GridSpec.assert_called_once_with(2, 2, width_ratios=[1,1])
