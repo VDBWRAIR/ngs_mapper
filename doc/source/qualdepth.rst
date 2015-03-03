@@ -6,7 +6,7 @@ qualdepth.json
 
 This is the base statistics file that is generated from a given bam file. It is intended to contain all supporting information that will be useful to create graphics and do other statistical analysis through an easy means of simply loading this file.
 
-Typically the qualdepth.json file is generated via the :py:mod:`graphsample.py <ngs_mapper.graphsample>` script, but can be manually created for any given bam file via the BamCoverage's :py:mod:`bam_to_qualdepth.py <ngs_mapper.bam_to_qualdepth>` script.
+Typically the qualdepth.json file is generated via the :py:mod:`graphsample <ngs_mapper.graphsample>` script, but can be manually created for any given bam file via the BamCoverage's :py:mod:`bam_to_qualdepth.py <ngs_mapper.bam_to_qualdepth>` script.
 
 h2. Loading the file in Python
 

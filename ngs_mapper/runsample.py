@@ -3,7 +3,7 @@ Purpose
 =======
 
 This script is now the main script for running everything necessary on a single sample. It is the script that is modified when more stages are added/removed/changed for the entirety of the pipeline.
-Keep in mind that runsample.py simply requires all inputs that all stages provide that they do not provide for each other.
+Keep in mind that runsample simply requires all inputs that all stages provide that they do not provide for each other.
 
 Current Pipeline Stages
 -----------------------
@@ -24,7 +24,7 @@ Get help usage
 
     .. code-block:: bash
 
-        runsample.py -h
+        runsample -h
 
 Usage Examples
 ==============
@@ -33,7 +33,7 @@ Creates a folder in the current directory called 00005-01 and puts all files fro
 
     .. code-block:: bash
 
-        runsample.py /path/to/ReadsBySample/00005-01 /path/to/Analysis/References/Den3__Thailand__FJ744727__2001.fasta 00005-01 -od 00005-01
+        runsample /path/to/ReadsBySample/00005-01 /path/to/Analysis/References/Den3__Thailand__FJ744727__2001.fasta 00005-01 -od 00005-01
 
 Same example as above, but shortened a bit using bash variables
 
@@ -44,7 +44,7 @@ Same example as above, but shortened a bit using bash variables
         READSDIR=/path/to/ReadsBySample
         REFDIR=/path/to/Analysis/References
 
-        runsample.py ${READSDIR}/${SAMPLE} ${REFDIR}/${REF} ${SAMPLE} -od ${SAMPLE}
+        runsample ${READSDIR}/${SAMPLE} ${REFDIR}/${REF} ${SAMPLE} -od ${SAMPLE}
 
 .. _runsample-output-directory:
 
@@ -274,7 +274,7 @@ def main():
         rets = []
 
         # Trim Reads
-        cmd = 'trim_reads.py {readsdir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
+        cmd = 'trim_reads {readsdir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
         if cmd_args['config']:
             cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
@@ -284,7 +284,7 @@ def main():
 
         # Mapping
         with open(bwalog, 'wb') as blog:
-            cmd = 'run_bwa_on_samplename.py {trim_outdir} {reference} -o {bamfile}'
+            cmd = 'run_bwa_on_samplename {trim_outdir} {reference} -o {bamfile}'
             if cmd_args['config']:
                 cmd += ' -c {config}'
             p = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
@@ -297,7 +297,7 @@ def main():
                 sys.exit(1)
 
         # Tag Reads
-        cmd = 'tagreads.py {bamfile} -CN {CN}'
+        cmd = 'tagreads {bamfile} -CN {CN}'
         if cmd_args['config']:
             cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
@@ -307,7 +307,7 @@ def main():
         rets.append( r )
 
         # Variant Calling
-        cmd = 'base_caller.py {bamfile} {reference} {vcf} -minth {minth}'
+        cmd = 'base_caller {bamfile} {reference} {vcf} -minth {minth}'
         if cmd_args['config']:
             cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
@@ -329,7 +329,7 @@ def main():
             rets.append( r )
 
         # Graphics
-        cmd = 'graphsample.py {bamfile} -od {tdir}'
+        cmd = 'graphsample {bamfile} -od {tdir}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
@@ -346,7 +346,7 @@ def main():
         rets.append( r )
 
         # Consensus
-        cmd = 'vcf_consensus.py {vcf} -i {samplename} -o {consensus}'
+        cmd = 'vcf_consensus {vcf} -i {samplename} -o {consensus}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:
@@ -361,7 +361,7 @@ def main():
         logger.info( "--- Finished {0} ---".format(args.prefix) )
 
         subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
-        subprocess.call( 'git commit -am \'runsample.py\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        subprocess.call( 'git commit -am \'runsample\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
 
         logger.debug( "Moving {0} to {1}".format( tdir, args.outdir ) )
         # Cannot log any more below this line as the log file will be moved in the following code

@@ -27,4 +27,4 @@ The following scripts exist to sync data from an instrument into the data struct
 * :py:mod:`roche_sync <ngs_mapper.roche_sync>`
 * :py:mod:`miseq_sync <ngs_mapper.miseq_sync>`
 * :py:mod:`sanger_sync <ngs_mapper.sanger_sync>`
-* iontorrent_sync.py coming soon
+* :py:mod:`ion_sync <ngs_mapper.ion_sync>`

@@ -13,10 +13,10 @@ Usage
 
     runsamplesheet.sh /path/to/ReadsBySample /path/to/samplesheet.tsv
 
-Passing options to runsample.py
+Passing options to runsample
 -------------------------------
 
-You can run runsamplesheet.sh and pass arguments to runsample.py by prepending RUNSAMPLEOPTIONS="" to the command
+You can run runsamplesheet.sh and pass arguments to runsample by prepending RUNSAMPLEOPTIONS="" to the command
 
 Example: adding -minth option
 -----------------------------
@@ -31,11 +31,11 @@ Creates
 =======
 
 * graphsample.log
-    * Logfile from running :py:mod:`graphsample.py <ngs_mapper.graphsample>` on all samples in samplesheet
+    * Logfile from running :py:mod:`graphsample <ngs_mapper.graphsample>` on all samples in samplesheet
 * MapUnmapReads.png
     * Graphic that shows each sample's mapped vs unmapped read counts
 * pipeline.log
-    * Logfile that contains essentially the same information on the console you get when you run runsample.py except it also includes debug lines
+    * Logfile that contains essentially the same information on the console you get when you run runsample except it also includes debug lines
 * PipelineTimes.png(See :doc:`graphs`)
 * Projects
     * All output from :py:mod:`runsample <ngs_mapper.runsample>` placed under Projects named after each sample

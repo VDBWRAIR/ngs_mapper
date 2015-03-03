@@ -113,8 +113,8 @@ Frequently Asked Questions
 
 #. The pipeline fails on samples and the bwa.log says something about failing on the reference index
     Make sure to check that you have permissions to read the reference file. The last thing to check is that the reference is formatted correctly in fasta format.
-#. There is an error running vcf_consensus.py that has to do with string index out of bounds
-    This has to do with an outdated version of base_caller.py generating the vcf file you are trying to run vcf_consensus.py on. See Issue #143 for more information on how to fix that.
+#. There is an error running vcf_consensus that has to do with string index out of bounds
+    This has to do with an outdated version of base_caller generating the vcf file you are trying to run vcf_consensus on. See Issue #143 for more information on how to fix that.
 #. The pipeline fails on a sample and the log says Somehow no reads were compiled
     This usually indicates that it could not find any reads inside of the location you specified that should contain sample reads. Make sure that the directory you specified when you ran :doc:`scripts/runsamplesheet` or :py:mod:`ngs_mapper.runsample` actually contains a directory with reads for every sample you are running.
     Also check for errors near the top of the log file that say anything about why any reads might have been skipped
