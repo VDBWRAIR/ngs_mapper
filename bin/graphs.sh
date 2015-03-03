@@ -20,17 +20,17 @@ for p in Projects/*
 do
     if [ "$1" == "-norecreate" ]
     then
-        echo /usr/bin/time ${THIS}/graphsample.py ${p}/$(basename $p).bam -od $p -qualdepth ${p}/$(basename $p).bam.qualdepth.json
+        echo /usr/bin/time ${THIS}/graphsample ${p}/$(basename $p).bam -od $p -qualdepth ${p}/$(basename $p).bam.qualdepth.json
     else
-        echo /usr/bin/time ${THIS}/graphsample.py ${p}/$(basename $p).bam -od $p
+        echo /usr/bin/time ${THIS}/graphsample ${p}/$(basename $p).bam -od $p
     fi
 done | xargs -n 5 -P $CPUS -I CMD bash -c CMD
 
 # Graph the mapped and unmapped reads
-graph_mapunmap.py Projects/*/*.qualdepth.json -o MapUnmapReads.png
+graph_mapunmap Projects/*/*.qualdepth.json -o MapUnmapReads.png
 # Create the Sample Coverage graphic
 sample_coverage Projects/* --output SampleCoverage.png
 # Create one graphic for all QualDepth graphics
 convert -quality 25 -compress JPEG Projects/*/*.qualdepth.png QualDepth.pdf
 # Get a graphic to see how long it took to run each sample
-graph_times.py
+graph_times

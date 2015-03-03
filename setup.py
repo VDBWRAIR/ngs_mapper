@@ -145,7 +145,7 @@ setup(
             'roche_sync = ngs_mapper.roche_sync:main',
             'sample_coverage = ngs_mapper.coverage:main',
             'make_example_config = ngs_mapper.config:main',
-            'base_caller.py = ngs_mapper.base_caller:main',
+            'base_caller = ngs_mapper.base_caller:main',
             'ion_sync = ngs_mapper.ion_sync:main',
             'fqstats = ngs_mapper.fqstats:main',
             'graph_mapunmap = ngs_mapper.graph_mapunmap:main',

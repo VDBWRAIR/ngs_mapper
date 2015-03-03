@@ -301,7 +301,7 @@ class TestRunTrimmomatic(TrimBase):
 
 class TestIntegrate(TrimBase):
     def _C( self, *args, **kwargs ):
-        script = 'trim_reads.py'
+        script = 'trim_reads'
         return TestIntegrate.run_script( '{} {} -q {} -o {}'.format(
                 script, args[0], kwargs.get('q',20), kwargs.get('o','trimmed_reads')
             )
