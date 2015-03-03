@@ -8,7 +8,7 @@ Accessing MiSeq Data
 
 The MiSeq stores runs on a separate drive on the MiSeq(Probably the D:\ drive). You will need to ensure that this directory is shared or at least the MiSeqOutput directory is shared. See :ref:`create-share-user`
 
-On the computer that you will be running miseq_sync.py from you will need to ensure that the MiSeq share is mounted somewhere on the system. A good practice is to create a folder somewhere called Instruments and then under there create folders for each of your sequencers.
+On the computer that you will be running miseq_sync from you will need to ensure that the MiSeq share is mounted somewhere on the system. A good practice is to create a folder somewhere called Instruments and then under there create folders for each of your sequencers.
 
 **Example**
 
@@ -22,11 +22,11 @@ See :ref:`mount-cifs-linux`
 Usage
 =====
 
-At this time there is very little output from the miseq_sync.py command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
+At this time there is very little output from the miseq_sync command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
 
     .. code-block:: bash
 
-        miseq_sync.py /path/to/Illumina/MiSeqOutput/runname
+        miseq_sync /path/to/Illumina/MiSeqOutput/runname
 
 Verify Samples Synced
 ---------------------

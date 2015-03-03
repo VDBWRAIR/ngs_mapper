@@ -93,7 +93,7 @@ def iter_refs( vcffile, fastaid=None ):
 def parse_args( args=sys.argv[1:] ):
     import argparse
     parser = argparse.ArgumentParser(
-        description='Creates a consensus fasta file from a base_caller.py gnerated ' \
+        description='Creates a consensus fasta file from a base_caller gnerated ' \
             'vcf file'
     )
 

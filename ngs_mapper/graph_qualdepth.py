@@ -128,12 +128,12 @@ def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_
 
 def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
-        description='Make a Depth/Quality graphic from a qualdepth.json file from running bam_to_qualdepth.py on a bam file'
+        description='Make a Depth/Quality graphic from a qualdepth.json file from running bam_to_qualdepth on a bam file'
     )
 
     parser.add_argument(
         'jsonfile',
-        help='Output file from running bam_to_qualdepth.py'
+        help='Output file from running bam_to_qualdepth'
     )
 
     parser.add_argument(

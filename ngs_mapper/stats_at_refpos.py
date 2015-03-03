@@ -9,7 +9,7 @@ Usage
 
     .. code-block:: bash
 
-        stats_at_refpos.py <bamfile> <regionstring>
+        stats_at_refpos <bamfile> <regionstring>
 
 Notes
 -----
@@ -20,7 +20,7 @@ The region string is a bit confusing if you are unsure what it is. The region st
 The format is as follows:
 <reference identifier>:<start ref base position>-<end ref base position>
 
-**Note:** You need to put the whole region string inside of quotes when you run stats_at_refpos.py
+**Note:** You need to put the whole region string inside of quotes when you run stats_at_refpos
 
 Examples:
 
@@ -28,7 +28,7 @@ Examples:
 
     .. code-block:: bash
 
-        stats_at_refpos.py somebamfile.bam 'Ref1:1046-1046'
+        stats_at_refpos somebamfile.bam 'Ref1:1046-1046'
 
 About Quality Defaults: 
 -----------------------

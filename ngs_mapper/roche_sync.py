@@ -12,16 +12,16 @@ There are quite a few different setups for this instrument, so no specific instr
 
 Essentially you will want to mount the /data directory on the Roche analysis workstation to your /Instruments/Roche454 directory.
 
-The goal is to be able to browse to the R\_ directory from the workstation that you will be running roche_sync.py from
+The goal is to be able to browse to the R\_ directory from the workstation that you will be running roche_sync from
 
 Usage
 =====
 
-At this time there is very little output from the roche_sync.py command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
+At this time there is very little output from the roche_sync command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
 
     .. code-block:: bash
 
-        roche_sync.py $(pwd) --ngsdata /path/to/NGSData --midparse ~/ngs_mapper/MidParse.conf
+        roche_sync $(pwd) --ngsdata /path/to/NGSData --midparse ~/ngs_mapper/MidParse.conf
 
 Verify Samples Synced
 ---------------------

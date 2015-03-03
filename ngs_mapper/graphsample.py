@@ -10,7 +10,7 @@ import json
 import log
 
 logc = log.get_config( 'graphsample.log' )
-logger = log.setup_logger( 'graphsample.py', logc )
+logger = log.setup_logger( 'graphsample', logc )
 
 def main():
     args = parse_args()
@@ -100,7 +100,7 @@ def handle_args( args ):
 
 def parse_args( args=sys.argv[1:] ):
     parser = argparse.ArgumentParser(
-        description='Runs bam_to_qualdepth.py as well as graph_qualdepth.py from BamCoverage'
+        description='Runs bam_to_qualdepth as well as graph_qualdepth from BamCoverage'
     )
 
     parser.add_argument(
