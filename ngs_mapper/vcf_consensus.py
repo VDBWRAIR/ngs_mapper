@@ -6,7 +6,8 @@ from Bio import SeqIO
 import vcf
 import os
 
-def main( args ):
+def main():
+    args = parse_args()
     seqs = iter_refs( args.vcffile, args.fastaid )
     write_fasta( seqs, args.output_file )
 
@@ -92,7 +93,7 @@ def iter_refs( vcffile, fastaid=None ):
 def parse_args( args=sys.argv[1:] ):
     import argparse
     parser = argparse.ArgumentParser(
-        description='Creates a consensus fasta file from a base_caller.py gnerated ' \
+        description='Creates a consensus fasta file from a base_caller gnerated ' \
             'vcf file'
     )
 

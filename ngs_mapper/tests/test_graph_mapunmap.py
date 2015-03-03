@@ -8,7 +8,7 @@ class Base(common.BaseBamRef):
 
 class TestUnitArgs(Base):
     functionname = 'parse_args'
-    script = 'graph_mapunmap.py'
+    script = 'graph_mapunmap'
 
     def setUp( self ):
         super(TestUnitArgs,self).setUp()
@@ -98,7 +98,7 @@ class TestFunctional(Base):
         assert json.load( open(self.json) )
 
     def _run_cmd( self, jsons, outpath=None ):
-        script_path = 'graph_mapunmap.py'
+        script_path = 'graph_mapunmap'
         args = ' '.join( jsons )
         if outpath is not None:
             args += ' -o {}'.format(outpath)

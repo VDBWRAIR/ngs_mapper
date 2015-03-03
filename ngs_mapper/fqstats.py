@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from os.path import *
 import numpy as np
 
-def main( args ):
+def main():
+    args = parse_args()
     fqs = [(basename(fq),parse( fq, 'fastq' )) for fq in args.fastqs]
     plot_fqs( fqs, args.output )
 

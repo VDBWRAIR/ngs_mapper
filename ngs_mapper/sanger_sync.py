@@ -10,7 +10,7 @@ You will need to configure the Sanger instrument to save your files in a specifi
 
 You will also have to ensure that the location that your Sanger instrument saves its data to is :ref:`shared <create-share-user>`
 
-On the computer that you will be running sanger_sync.py from you will need to ensure that the Sanger share is mounted somewhere on the system. A good practice is to create a folder somewhere called Instruments and then under there create folders for each of your sequencers.
+On the computer that you will be running sanger_sync from you will need to ensure that the Sanger share is mounted somewhere on the system. A good practice is to create a folder somewhere called Instruments and then under there create folders for each of your sequencers.
 
 **Example**
 
@@ -24,11 +24,11 @@ See :ref:`mount-cifs-linux`
 Usage
 =====
 
-At this time there is very little output from the miseq_sync.py command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
+At this time there is very little output from the sanger_sync command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
 
     .. code-block:: bash
 
-        sanger_sync.py /path/to/Sanger/Run_3130xl...
+        sanger_sync /path/to/Sanger/Run_3130xl...
 
 Verify Samples Synced
 ---------------------
@@ -158,7 +158,8 @@ def link_reads( readdata, ngsdata ):
         else:
             logger.info( 'Skipping existing file {}'.format(rdpath) )
 
-def main( args ):
+def main():
+    args = parse_args()
     sync_sanger( args.runpath, args.ngsdata )
 
 def parse_args( args=sys.argv[1:] ):

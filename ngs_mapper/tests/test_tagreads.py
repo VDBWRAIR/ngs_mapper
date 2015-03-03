@@ -369,7 +369,7 @@ class TestUnitGetRGHeaders(Base):
 
 class TestIntegrate(Base):
     def _C( self, bamfiles, options=[] ):
-        cmd = ['tagreads.py'] + bamfiles + options
+        cmd = ['tagreads'] + bamfiles + options
         subprocess.check_call( cmd )
 
     def test_does_not_duplicate( self ):
@@ -381,7 +381,7 @@ class TestIntegrate(Base):
         self._C( [self.bam] )
         size_after = os.stat( self.bam ).st_size
         self.check_tagreadcounts( self.bam )
-        eq_( size_before, size_after, "Running tagreads.py 2x produced a different size bam file" )
+        eq_( size_before, size_after, "Running tagreads 2x produced a different size bam file" )
 
     def test_tags_reads( self ):
         self.temp_copy_files()

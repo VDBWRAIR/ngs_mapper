@@ -57,6 +57,6 @@ See the following naming regular expressions defined in :py:mod:`ngs_mapper.data
 * :py:mod:`roche <ngs_mapper.data.ROCHE_ID>`
 * :py:mod:`iontorrent <ngs_mapper.data.IONTORRENT_ID>`
 
-If you have files that do not match any platform the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample.py <ngs_mapper.runsample>`.
+If you have files that do not match any platform the pipeline will essentially ignore them and you may get errors when you run :py:mod:`runsample <ngs_mapper.runsample>`.
 
 This should only be an issue if you somehow rename the identifiers.

@@ -13,7 +13,8 @@ import shutil
     and rename all files involved
 '''
 
-def main( args ):
+def main():
+    args = parse_args()
     rename_sample( args.origname, args.newname, args.ngsdata )
 
 def rename_sample( origname, newname, ngsdata ):

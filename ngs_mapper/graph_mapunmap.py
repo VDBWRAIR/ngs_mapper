@@ -135,5 +135,6 @@ def make_graphic( jsons, outfile ):
 
     fig.savefig( outfile, bbox_inches='tight', dpi=100, pad_inches=0.1 )
 
-def main( args ):
+def main():
+    args = parse_args()
     make_graphic( args.jsons, args.outfile )

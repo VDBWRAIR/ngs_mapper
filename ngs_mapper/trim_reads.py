@@ -17,7 +17,8 @@ import log
 lconfig = log.get_config()
 logger = log.setup_logger( 'trim_reads', lconfig )
 
-def main( args ):
+def main():
+    args = parse_args()
     trim_reads_in_dir(
         args.readsdir,
         args.q,

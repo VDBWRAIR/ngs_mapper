@@ -1282,7 +1282,7 @@ class TestUnitMain(BaseInty):
 class TestIntegrate(BaseInty):
     def _C(self, bamfile, reffile, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2, threads=2):
         import subprocess
-        script_path = 'base_caller.py'
+        script_path = 'base_caller'
         cmd = [script_path, bamfile, reffile]
         if regionstr:
             cmd += ['-r', regionstr]

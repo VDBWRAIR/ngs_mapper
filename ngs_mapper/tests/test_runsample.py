@@ -108,7 +108,7 @@ class TestMakeProjectRepo(Base):
 
 class TestFunctional(Base):
     def _run_runsample( self, readdir, reference, fileprefix, od=None, configfile=None ):
-        script_path = 'runsample.py'
+        script_path = 'runsample'
         cmd = script_path + ' {0} {1} {2}'.format(readdir, reference, fileprefix)
         if od is not None:
             cmd += ' -od {0}'.format(od)
@@ -227,7 +227,7 @@ class TestFunctional(Base):
             fh.write( '#!/bin/bash\nexit 1\n' )
         os.chmod( join(self.tempdir,'samtools'), 0755 )
         import subprocess
-        script = 'runsample.py'
+        script = 'runsample'
         cmd = 'export PATH={0}:$PATH; {1} {2} {3} {4} -od {5}'.format( self.tempdir, script, self.reads_by_sample, self.ref, 'tests', 'outdir' )
         ret = subprocess.call( cmd, shell=True )
         assert ret != 0, "Return code was 0 even though some executables returned 1"

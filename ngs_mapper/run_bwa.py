@@ -6,12 +6,12 @@ import ngs_mapper.bam
 import os
 import sys
 from os.path import *
-import logging
+import log
 import tempfile
 import shutil
 from subprocess import PIPE
 
-log = logging.getLogger(__name__)
+logger = log.setup_logger(__name__, log.get_config())
 
 # For bwa errors
 class BWAError(Exception): pass
@@ -27,7 +27,7 @@ def main():
     
     # Compile together all the reads into a list
     preads = reads_by_plat( args.reads )
-    log.debug( "Reads parsed by platform: {}".format(preads) )
+    logger.debug( "Reads parsed by platform: {}".format(preads) )
     reads = []
     for plat in args.platforms:
         if plat in preads:
@@ -71,10 +71,10 @@ def main():
     if merge == 3:
         ngs_mapper.bam.mergebams( [pairedbam, nonpairedbam], args.output )
     elif merge == 1:
-        log.debug( "Paired only. Moving result file {} to {}".format(pairedbam, bampath) )
+        logger.debug( "Paired only. Moving result file {} to {}".format(pairedbam, bampath) )
         shutil.move( pairedbam, bampath )
     elif merge == 2:
-        log.debug( "Paired only. Moving result file {} to {}".format(nonpairedbam, bampath) )
+        logger.debug( "Paired only. Moving result file {} to {}".format(nonpairedbam, bampath) )
         shutil.move( nonpairedbam, bampath )
     else:
         raise Exception( "Somehow no reads were compiled" )
@@ -85,9 +85,7 @@ def main():
     if not args.keep_temp:
         shutil.rmtree( tdir )
     else:
-        log.info( "Keeping temporary directory {}. You will probably want to delete it yourself or move it".format(tdir) )
-
-    return bampath
+        logger.info( "Keeping temporary directory {}. You will probably want to delete it yourself or move it".format(tdir) )
 
 def parse_args( args=sys.argv[1:] ):
     '''
@@ -179,12 +177,12 @@ def bwa_mem( read1, mate=None, ref=None, output='bwa.sai', **kwargs ):
     '''
     if os.path.isdir( ref ):
         # Compile ref directory
-        log.debug( "Compiling references inside of {}".format(ref) )
+        logger.debug( "Compiling references inside of {}".format(ref) )
         ref = compile_refs( ref )
-        log.info( "Refs are all compiled into {}".format(ref) )
+        logger.info( "Refs are all compiled into {}".format(ref) )
 
     # First, make sure the reference is indexed
-    log.debug( "Ensuring {} is indexed".format(ref) )
+    logger.debug( "Ensuring {} is indexed".format(ref) )
     if not index_ref(ref):
         raise InvalidReference("{} cannot be indexed by bwa")
 

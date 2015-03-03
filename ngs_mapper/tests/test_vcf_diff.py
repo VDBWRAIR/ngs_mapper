@@ -24,7 +24,7 @@ class Base(common.BaseBaseCaller):
 
     def run_vcf_diff( self, vcffile, *args, **kwargs ):
         import subprocess
-        script = 'vcf_diff.py'
+        script = 'vcf_diff'
 
         cmd = [script,vcffile]
         print "Running {}".format(' '.join(cmd))
@@ -32,16 +32,6 @@ class Base(common.BaseBaseCaller):
             return subprocess.check_output( cmd, stderr=subprocess.STDOUT )
         except subprocess.CalledProcessError as e:
             return e.output
-
-@patch( 'sys.stdout', new_callable=StringIO )
-@patch( 'sys.stderr', new_callable=StringIO )
-class TestUnitMain(Base):
-    functionname = 'main'
-
-    def test_has_main( self, stdout, stderr ):
-        args = Mock()
-        args.vcf_file = self.test_vcf
-        self._C( args )
 
 class TestFunctional(Base):
     def test_fixtures( self ):

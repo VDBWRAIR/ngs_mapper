@@ -131,7 +131,7 @@ class FunctionalBase( Base ):
 
 class TestFunctional( FunctionalBase ):
     def _C( self, *args, **kwargs ):
-        script = 'miseq_sync.py'
+        script = 'miseq_sync'
         cmd = [script, '--ngsdata', args[0], args[1]]
         return subprocess.call( cmd )
 
@@ -178,12 +178,12 @@ class TestFunctional( FunctionalBase ):
     def test_ensure_synced( self ):
         self.mock_miseq_run()
         ngsdata = 'NGSData'
-        eq_( 0, self._C( ngsdata, self.runname ), 'miseq_sync.py did not return 0' )
+        eq_( 0, self._C( ngsdata, self.runname ), 'miseq_sync did not return 0' )
         self.ensure_data_structure( self.runname, ngsdata )
 
     def test_fixes_issue_1060_runpath_has_slash_at_end( self ):
         self.mock_miseq_run()
         ngsdata = 'NGSData'
         runpathwithslash = join( os.getcwd(), self.runname ) + '/'
-        eq_( 0, self._C( ngsdata, runpathwithslash ), 'miseq_sync.py did not return 0' )
+        eq_( 0, self._C( ngsdata, runpathwithslash ), 'miseq_sync did not return 0' )
         self.ensure_data_structure( self.runname, ngsdata )

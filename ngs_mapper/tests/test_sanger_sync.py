@@ -93,7 +93,7 @@ class TestSync( Base ):
 
 class TestFunctional( Base ):
     def _C( self, args ):
-        script = 'sanger_sync.py'
+        script = 'sanger_sync'
         cmd = script + ' ' + args
         return TestFunctional.run_script( cmd )
 

@@ -73,7 +73,7 @@ do
         continue
     fi
 
-    echo runsample.py ${reads_by_sample}/${sample} ${reference} ${sample} -od ${PROJDIR}/${sample} $RUNSAMPLEOPTIONS
+    echo runsample ${reads_by_sample}/${sample} ${reference} ${sample} -od ${PROJDIR}/${sample} $RUNSAMPLEOPTIONS
 done | xargs -n 6 -P $CPUS -I CMD bash -c CMD
 
 # Graph all samples

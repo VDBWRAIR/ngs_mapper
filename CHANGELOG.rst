@@ -17,6 +17,9 @@ Version 1.2.0
 - Fixed issue when no reads mapped and graphsample.py would raise an exception
 - Fixed an issue when there were directories inside of the path specified that
   contains read files
+- Replaced all .py scripts with same name but without .py. This is the correct
+  way to have binary scripts for python. Aka, runsample.py is now just
+  runsample
 
 Version 1.1.0
 +++++++++++++
