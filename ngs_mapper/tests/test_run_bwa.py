@@ -10,25 +10,21 @@ class TestUnitBWAMem(Base):
         with patch('ngs_mapper.run_bwa.BWAMem', return_value=Mock( run=Mock( return_value=0 ) ) ) as b:
             with patch('ngs_mapper.run_bwa.index_ref',Mock(return_value=True)) as a:
                 result = self._C( 'F.fq', mate=None, ref='ref.fna' )
-                eq_( 'bwa.sai', result )
 
     def test_bwa_mem_paired(self):
         with patch('ngs_mapper.run_bwa.BWAMem', return_value=Mock( run=Mock( return_value=0 ) ) ) as b:
             with patch('ngs_mapper.run_bwa.index_ref',Mock(return_value=True)) as a:
                 result = self._C( 'F.fq', mate='R.fq', ref='ref.fna' )
-                eq_( 'bwa.sai', result )
 
     def test_bwa_mem_output_arg(self):
         with patch('ngs_mapper.run_bwa.BWAMem', return_value=Mock( run=Mock( return_value=0 ) ) ) as b:
             with patch('ngs_mapper.run_bwa.index_ref',Mock(return_value=True)) as a:
                 result = self._C( 'F.fq', mate='R.fq', ref='ref.fna', output='file.sai' )
-                eq_( 'file.sai', result )
 
     def test_bwa_mem_fails(self):
         with patch('ngs_mapper.run_bwa.BWAMem', return_value=Mock( run=Mock( return_value=1 ) ) ) as b:
             with patch('ngs_mapper.run_bwa.index_ref',Mock(return_value=True)) as b:
                 result = self._C( 'F.fq', mate='R.fq', ref='ref.fna', output='file.sai' )
-                eq_( 1, result )
 
     @patch('ngs_mapper.run_bwa.index_ref', Mock(return_value=False))
     def test_ref_index_fails(self):
@@ -266,8 +262,9 @@ class TestIntegrateMainArgs(Base):
         print "All files in expected directory:" + str( glob( 'expected/*' ) )
         ff = self.fixture_files
         argv = ['expected/reads', ff['REF']]
-        r = self._CM( argv )
-        assert os.stat( r )
+        self._CM( argv )
+        r = 'bwa_mem.bam'
+        assert os.stat(r)
         import subprocess
         out = subprocess.check_output( ['samtools', 'view', '{}'.format(r)] )
         rochecount = out.count( 'IA52U1' )
@@ -278,18 +275,18 @@ class TestIntegrateMainArgs(Base):
 
     def test_paired_and_nonpaired_get_merged(self):
         ff = self.fixture_files
+        res = 'sampledir/out.bam'
         argv = ['expected/reads', ff['REF'], '--keep-temp', '--output', 'sampledir/out.bam']
-        res = self._CM( argv )
-        eq_( 'sampledir/out.bam', res )
+        self._CM( argv )
         self._eqsize( ff['merged.bam'], res )
         self._eqsize( ff['merged.bam.bai'], res+'.bai' )
         assert os.path.exists( 'sampledir/bwa' ), "Did not keep temp directory"
 
     def test_paired_only(self):
         ff = self.fixture_files
+        res = 'sampledir/out.bam'
         argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'MiSeq', '--output', 'sampledir/out.bam']
-        res = self._CM( argv )
-        eq_( 'sampledir/out.bam', res )
+        self._CM( argv )
         self._eqsize( ff['paired.bam'], res )
         assert not os.path.exists( 'sampledir/bwa' ), "Temp directory still exists"
         assert os.path.exists( 'sampledir/out.bam.bai' )
@@ -297,27 +294,27 @@ class TestIntegrateMainArgs(Base):
     def test_nonpaired_only(self):
         ff = self.fixture_files
         print ff
+        res = 'sampledir/out.bam'
         argv = ['expected/reads', self.fixture_files['REF'], '--platforms', 'Sanger', '--output', 'sampledir/out.bam']
-        res = self._CM( argv )
-        eq_( 'sampledir/out.bam', res )
+        self._CM( argv )
         self._eqsize( ff['nonpaired.bam'], res )
         assert not os.path.exists( 'sampledir/bwa' ), "Temp directory still exists"
         assert os.path.exists( 'sampledir/out.bam.bai' )
 
     def test_output_path(self):
         ff = self.fixture_files
+        res = 'merged.bam'
         argv = ['expected/reads', self.fixture_files['REF'], '-o', 'merged.bam']
-        res = self._CM( argv )
-        eq_( 'merged.bam', res )
+        self._CM( argv )
         self._eqsize( ff['merged.bam'], res )
         assert not os.path.exists( 'bwa' ), "Temp directory still exists"
         assert os.path.exists( 'merged.bam.bai' )
 
     def test_keepfiles(self):
         ff = self.fixture_files
+        res = 'merged.bam'
         argv = ['expected/reads', self.fixture_files['REF'], '-o', 'merged.bam', '--keep-temp']
-        res = self._CM( argv )
-        eq_( 'merged.bam', res )
+        self._CM(argv)
         self._eqsize( ff['merged.bam'], res )
         assert os.path.exists( 'bwa' ), "Temp directory missing"
         assert os.path.exists( 'merged.bam.bai' )
