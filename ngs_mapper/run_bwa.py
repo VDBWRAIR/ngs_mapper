@@ -87,8 +87,6 @@ def main():
     else:
         logger.info( "Keeping temporary directory {}. You will probably want to delete it yourself or move it".format(tdir) )
 
-    return bampath
-
 def parse_args( args=sys.argv[1:] ):
     '''
         Uses argparse to parse arguments
