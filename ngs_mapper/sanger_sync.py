@@ -158,7 +158,8 @@ def link_reads( readdata, ngsdata ):
         else:
             logger.info( 'Skipping existing file {}'.format(rdpath) )
 
-def main( args ):
+def main():
+    args = parse_args()
     sync_sanger( args.runpath, args.ngsdata )
 
 def parse_args( args=sys.argv[1:] ):

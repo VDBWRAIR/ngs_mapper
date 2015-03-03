@@ -217,7 +217,8 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
     except OSError as e:
         raise MissingCommand( "{0} is not an executable?".format(cmd[0]) )
 
-def main( args ):
+def main():
+    args = parse_args()
     # So we can set the global logger
     global logger
 
@@ -337,7 +338,7 @@ def main( args ):
 
         # Read Graphics
         fastqs = ' '.join( glob.glob( os.path.join( cmd_args['trim_outdir'], '*.fastq' ) ) )
-        cmd = 'fqstats.py -o {0}.reads.png {1}'.format(cmd_args['bamfile'].replace('.bam',''),fastqs)
+        cmd = 'fqstats -o {0}.reads.png {1}'.format(cmd_args['bamfile'].replace('.bam',''),fastqs)
         p = run_cmd( cmd, stdout=lfile, stderr=subprocess.STDOUT )
         r = p.wait()
         if r != 0:

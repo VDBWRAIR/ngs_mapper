@@ -33,7 +33,8 @@ RG_TEMPLATE = {
     'CN': None
 }
 
-def main( args ):
+def main():
+    args = parse_args()
     for bam in args.bamfiles:
         tag_bam( bam, args.SM, args.CN )
 

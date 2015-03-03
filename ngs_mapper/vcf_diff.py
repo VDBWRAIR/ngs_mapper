@@ -2,7 +2,8 @@ import vcf
 import sys
 import argparse
 
-def main( args ):
+def main():
+    args = parse_args()
     vcf_reader = vcf.Reader(open(args.vcf_file, 'r'))
     print 'Reference\tPosition\tReference Base\tCalled Base'
     for record in vcf_reader:

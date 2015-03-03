@@ -12,7 +12,8 @@ import log
 logc = log.get_config( 'graphsample.log' )
 logger = log.setup_logger( 'graphsample.py', logc )
 
-def main( args ):
+def main():
+    args = parse_args()
     args = handle_args( args )
     if not args.qualdepth:
         jfile = make_json( args.bamfile, args.outpath )

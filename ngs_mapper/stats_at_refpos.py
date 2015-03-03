@@ -53,7 +53,8 @@ import itertools
 from collections import OrderedDict
 from ngs_mapper import samtools
 
-def main(args):
+def main():
+    args = parse_args()
     return stats_at_pos( args.bamfile, args.regionstr, args.minmq, args.minbq, args.maxd )
 
 def parse_args(args=sys.argv[1:]):

@@ -133,7 +133,8 @@ import csv
 import log
 logger = log.setup_logger( basename(__file__), log.get_config() )
 
-def main( args ):
+def main():
+    args = parse_args()
     sync( args.runpath, args.ngsdata )
 
 #Tested
