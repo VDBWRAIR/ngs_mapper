@@ -341,7 +341,7 @@ def create_figure_for_projects(projects, includes, excludes, lineargs, regionmin
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        'Create graphic to show coverage per sample broken down by reference name'
+        description='Create graphic to show coverage per sample broken down by reference name'
     )
 
     parser.add_argument(
@@ -374,7 +374,7 @@ def parse_args():
         '--gap',
         default=0,
         type=int,
-        help='< this is low quality[Default: %(default)s]'
+        help='Defines what is considered a gap [Default: %(default)s]'
     )
 
     parser.add_argument(
