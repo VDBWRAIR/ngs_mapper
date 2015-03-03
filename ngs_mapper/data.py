@@ -93,7 +93,15 @@ def filter_reads_by_platform( path, platform ):
         try:
             pfr = platform_for_read( f )
         except NoPlatformFound as e:
-            logger.warning( "{} was skipped as the platform cannot be determined".format(f) )
+            logger.warning(
+                "{} was skipped as the platform cannot be determined".format(f)
+            )
+            continue
+        except IOError as e:
+            logger.warning(
+                "Error({0}) trying to determine read type for {1}." \
+                " It will be skipped.".format(e,f)
+            )
             continue
         if pfr == platform:
             files.append( f )
