@@ -80,22 +80,32 @@ class TestCompileStats(Base):
         eq_( 40.0, a['AvgBaseQ'] )
         eq_( 10.0, a['PctTotal'] )
 
+import mock
 class TestMain(StatsAtPos):
     functionname = 'main'
 
+    def setUp(self):
+        self.patch_argparse = mock.patch('ngs_mapper.stats_at_refpos.argparse')
+        self.mock_argparse = self.patch_argparse.start()
+        self.args = mock.Mock()
+        self.mock_argparse.ArgumentParser.return_value.parse_args = self.args
+
+    def tearDown(self):
+        self.patch_argparse.stop()
+
     @patch('ngs_mapper.stats_at_refpos.stats_at_pos')
     def test_unit_runs( self, stats_at_pos ):
-        args = Mock(
+        self.args.return_value = Mock(
             regionstr='ref1:1-1',
             bamfile='somefile.bam',
             minmq=0,
             minbq=0,
             maxd=100000
         )
-        self._C( args )
+        self._C()
 
     def test_func_runs( self ):
-        args = Mock(
+        self.args.return_value = Mock(
             bamfile=self.bam,
             regionstr='Den1/U88535_1/WestPac/1997/Den1_1:6109-6109',
             minmq=0,
@@ -113,18 +123,18 @@ class TestMain(StatsAtPos):
             'AvgBaseQ': 33.38,
             'TotalDepth': 13
         }
-        res = self._C( args )
+        res = self._C()
         self._doit( res, eb, e )
 
     def test_func_filters_minmq( self ):
-        args = Mock(
+        self.args.return_value = Mock(
             bamfile=self.bam,
             regionstr='Den1/U88535_1/WestPac/1997/Den1_1:6109-6109',
             minmq=61,
             minbq=0,
             maxd=100000
         )
-        res = self._C( args )
+        res = self._C()
         #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
         eb = OrderedDict([
                 #('G',{'AvgBaseQ':0.0,'AvgMapQ':37.73,'Depth':11,'PctTotal':84.62}),
@@ -140,14 +150,14 @@ class TestMain(StatsAtPos):
         self._doit( res, eb, e )
 
     def test_func_filters_minbq( self ):
-        args = Mock(
+        self.args.return_value = Mock(
             bamfile=self.bam,
             regionstr='Den1/U88535_1/WestPac/1997/Den1_1:6109-6109',
             minmq=0,
             minbq=30,
             maxd=100000
         )
-        res = self._C( args )
+        res = self._C()
         #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
         eb = OrderedDict([
                 ('G',{'AvgBaseQ':37.73,'AvgMapQ':60.0,'Depth':11,'PctTotal':100.0}),

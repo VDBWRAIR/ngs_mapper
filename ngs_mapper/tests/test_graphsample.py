@@ -67,7 +67,7 @@ class TestFunctional(Base):
     outfiles = ( '.qualdepth.png', '.qualdepth.json' )
 
     def _rungraphsample( self, bamfile, **kwargs ):
-        script_path = 'graphsample.py'
+        script_path = 'graphsample'
         args = ' '.join( ['-{} {}'.format(aname,aval) for aname, aval in kwargs.items()] )
         cmd = script_path + ' {} '.format(bamfile) + args
         print "Running: {}".format(cmd)

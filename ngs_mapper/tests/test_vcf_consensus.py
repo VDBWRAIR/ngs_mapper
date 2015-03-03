@@ -140,7 +140,7 @@ class TestUnitOutputDiff(VCFBase):
 class TestIntegrate(VCFBase):
     def _C( self, vcffile, **kwargs ):
         import subprocess
-        script = 'vcf_consensus.py'
+        script = 'vcf_consensus'
         cmd = [script, vcffile]
         if kwargs.get( 'o', False ):
             cmd += ['-o', kwargs.get( 'o' )]

@@ -151,7 +151,7 @@ setup(
             'graph_mapunmap = ngs_mapper.graph_mapunmap:main',
             'graphsample = ngs_mapper.graphsample:main',
             'graph_times = ngs_mapper.graph_times:main',
-            'miseq_sync = ngs_mapper.miseqsync:main',
+            'miseq_sync = ngs_mapper.miseq_sync:main',
             'rename_sample = ngs_mapper.rename_sample:main',
             'run_bwa_on_samplename = ngs_mapper.run_bwa:main',
             'runsample = ngs_mapper.runsample:main',
