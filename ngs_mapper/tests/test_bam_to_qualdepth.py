@@ -49,7 +49,7 @@ class Base(object):
 class TestSetUMReads(Base):
     def setUp(self):
         super(TestSetUMReads,self).setUp()
-        from ..bqd import mpileup, parse_pileup
+        from ..bqd import parse_pileup
         #self.pileup = parse_pileup( mpileup( self.bamfile ) )
         self.pileup = {
             'chr1': {

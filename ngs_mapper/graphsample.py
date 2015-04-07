@@ -5,6 +5,7 @@ import subprocess
 import argparse
 
 import bqd, graph_qualdepth as qd
+import samtools
 from bam_to_qualdepth import set_unmapped_mapped_reads
 import json
 import log
@@ -22,7 +23,7 @@ def main():
     pngfile = make_image( jfile, args.outpath )
 
 def make_json( bamfile, outpathprefix ):
-    pileup = bqd.mpileup( bamfile )
+    pileup = samtools.nogap_mpileup(bamfile)
     stats = bqd.parse_pileup( pileup )
     set_unmapped_mapped_reads( bamfile, stats )
     outfile = outpathprefix + '.qualdepth.json'
