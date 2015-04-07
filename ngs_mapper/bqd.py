@@ -10,6 +10,7 @@ from itertools import izip
 from matplotlib.lines import Line2D
 
 import log
+import samtools
 logger = log.setup_logger(__name__, log.get_config())
 
 # Alias our region strings
@@ -24,23 +25,8 @@ REGIONTYPES = [
     G, N, LC, LQ, LCQ
 ]
 
-def mpileup( bamfile, regionstr=None ):
-    '''
-    .. todo::
-       This needs to go as samtools.mpileup exists
-    '''
-    cmd = ['samtools','mpileup', '-d', '100000']
-    if regionstr:
-        cmd += ['-r',regionstr]
-    cmd.append( bamfile )
-    p = Popen( cmd, stdout=PIPE )
-    return p.stdout
-
 def parse_pileup( pileup ):
     '''
-    .. todo::
-        This needs to be replaced by samtools stuff        
-
     Parses the raw pileup output from samtools mpileup and returns a dictionary
     with stats for every reference in the pileup
 
@@ -57,55 +43,41 @@ def parse_pileup( pileup ):
     refs = {}
     lastpos = {}
     for line in pileup:
-        info = line.rstrip().split('\t')
-        # Depth is 0
-        if len( info ) == 4:
-            ref, pos, n, depth = info
-            seq = ''
-            quals = ''
-        elif len( info ) == 6:
-            ref,pos,n,depth,seq,quals = info
-        else:
-            raise ValueError( "mpileup line {} is unparseable".format(line) )
+        mcol = samtools.MPileupColumn(line)
+
         # Initialize new reference
-        if ref not in refs:
-            lastpos[ref] = 0
-            refs[ref] = {
+        if mcol.ref not in refs:
+            lastpos[mcol.ref] = 0
+            refs[mcol.ref] = {
                 'maxd': 0,
-                'mind': 8000,
+                'mind': 1000000,
                 'maxq': 0,
-                'minq': 99,
+                'minq': 1000,
                 'depths': [],
                 'avgquals': [],
                 'length': 0
             }
-        pos = int(pos)
         # Fill in gaps with blanks
-        if lastpos[ref] != pos-1:
-            refs[ref]['mind'] = 0
-            refs[ref]['minq'] = 0.0
+        if lastpos[mcol.ref] != mcol.pos-1:
+            refs[mcol.ref]['mind'] = 0
+            refs[mcol.ref]['minq'] = 0.0
             # From the position 1 past the last
             #  all the way up to the current
-            for i in range( lastpos[ref]+1, pos ):
-                refs[ref]['depths'].append( 0 )
-                refs[ref]['avgquals'].append( 0.0 )
-                refs[ref]['length'] += 1
-        depth = int(depth)
-        refs[ref]['maxd'] = max( refs[ref]['maxd'], depth )
-        refs[ref]['mind'] = min( refs[ref]['mind'], depth )
-        sum = 0
-        for o in quals:
-            q = float( ord(o)-33 )
-            refs[ref]['maxq'] = max( refs[ref]['maxq'], q )
-            refs[ref]['minq'] = min( refs[ref]['minq'], q )
-            sum += q
-        if depth != 0:
-            refs[ref]['avgquals'].append( sum / depth )
-        else:
-            refs[ref]['avgquals'].append( 0 )
-        refs[ref]['depths'].append( depth )
-        refs[ref]['length'] += 1
-        lastpos[ref] = pos
+            for i in range( lastpos[mcol.ref]+1, mcol.pos ):
+                refs[mcol.ref]['depths'].append( 0 )
+                refs[mcol.ref]['avgquals'].append( 0.0 )
+                refs[mcol.ref]['length'] += 1
+
+        refs[mcol.ref]['maxd'] = max(refs[mcol.ref]['maxd'], mcol.depth)
+        refs[mcol.ref]['mind'] = min(refs[mcol.ref]['mind'], mcol.depth)
+        for q in mcol.bquals:
+            refs[mcol.ref]['maxq'] = max( refs[mcol.ref]['maxq'], q )
+            refs[mcol.ref]['minq'] = min( refs[mcol.ref]['minq'], q )
+
+        refs[mcol.ref]['avgquals'].append(mcol.bqual_avg())
+        refs[mcol.ref]['depths'].append(mcol.depth)
+        refs[mcol.ref]['length'] += 1
+        lastpos[mcol.ref] = mcol.pos
 
     return refs
 
