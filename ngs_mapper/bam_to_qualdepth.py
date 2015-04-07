@@ -13,7 +13,7 @@ def main():
     print_json( args )
 
 def print_json( args ):
-    pileup = samtools.mpileup(args.bamfile)
+    pileup = samtools.nogap_mpileup(args.bamfile)
     pileup = bqd.parse_pileup( pileup )
     set_unmapped_mapped_reads( args.bamfile, pileup )
     print json.dumps( pileup )

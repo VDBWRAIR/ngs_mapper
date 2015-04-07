@@ -57,16 +57,6 @@ def parse_pileup( pileup ):
                 'avgquals': [],
                 'length': 0
             }
-        # Fill in gaps with blanks
-        if lastpos[mcol.ref] != mcol.pos-1:
-            refs[mcol.ref]['mind'] = 0
-            refs[mcol.ref]['minq'] = 0.0
-            # From the position 1 past the last
-            #  all the way up to the current
-            for i in range( lastpos[mcol.ref]+1, mcol.pos ):
-                refs[mcol.ref]['depths'].append( 0 )
-                refs[mcol.ref]['avgquals'].append( 0.0 )
-                refs[mcol.ref]['length'] += 1
 
         refs[mcol.ref]['maxd'] = max(refs[mcol.ref]['maxd'], mcol.depth)
         refs[mcol.ref]['mind'] = min(refs[mcol.ref]['mind'], mcol.depth)

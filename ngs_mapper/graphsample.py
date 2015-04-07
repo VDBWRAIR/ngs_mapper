@@ -23,7 +23,7 @@ def main():
     pngfile = make_image( jfile, args.outpath )
 
 def make_json( bamfile, outpathprefix ):
-    pileup = samtools.mpileup(bamfile)
+    pileup = samtools.nogap_mpileup(bamfile)
     stats = bqd.parse_pileup( pileup )
     set_unmapped_mapped_reads( bamfile, stats )
     outfile = outpathprefix + '.qualdepth.json'
