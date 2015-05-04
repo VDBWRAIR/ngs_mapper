@@ -15,6 +15,18 @@ trim_reads:
     outputdir:
         default: trimmed_reads
         help: 'Where to output the resulting files[Default: %(default)s]'
+    platforms:
+        choices:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        default:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        help: 'List of platforms to include data for[Default: %(default)s]'
 run_bwa_on_samplename:
     platforms:
         choices:
