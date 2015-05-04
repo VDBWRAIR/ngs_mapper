@@ -27,6 +27,22 @@ This would run each sample and pass "-minth 0.95" to :py:mod:`runsample <ngs_map
 
     RUNSAMPLEOPTIONS="-minth 0.95" runsamplesheet.sh /path/to/ReadsBySample /path/to/samplesheet.tsv
 
+Example: Supplying custom config.yaml file
+------------------------------------------
+
+#. Generate your custom config.yaml
+
+    .. code-block:: bash
+
+        make_example_config
+
+#. Edit the config.yaml generated to suit your needs
+#. Run ``runsamplesheet.sh`` with custom config.yaml
+
+    .. code-block:: bash
+
+        RUNSAMPLEOPTIONS="-c config.yaml" runsamplesheet.sh /path/to/ReadsBySample /path/to/samplesheet.tsv
+
 Creates
 =======
 

@@ -113,6 +113,7 @@ import glob
 # Ideally the entire sample would be run inside of a prefix directory under
 # /dev/shm and drop back on tmpdir if /dev/shm didn't exist
 
+from ngs_mapper import config
 import log
 # We will configure this later after args have been parsed
 logger = None
@@ -124,13 +125,13 @@ class AlreadyExists(Exception):
     pass
 
 def parse_args( args=sys.argv[1:] ):
-    from ngs_mapper import config
-    conf_parser, args, config, configfile = config.get_config_argparse(args)
+    conf_parser, args, _config, configfile = config.get_config_argparse(args)
 
     parser = argparse.ArgumentParser(
         description='Runs a single sample through the pipeline',
         parents=[conf_parser]
     )
+    print parser
 
     parser.add_argument(
         dest='readsdir',
@@ -150,30 +151,30 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '-trim_qual',
         dest='trim_qual',
-        default=config['trim_reads']['q']['default'],
-        help=config['trim_reads']['q']['help'],
+        default=_config['trim_reads']['q']['default'],
+        help=_config['trim_reads']['q']['help'],
     )
 
     parser.add_argument(
         '-head_crop',
         dest='head_crop',
-        default=config['trim_reads']['headcrop']['default'],
-        help=config['trim_reads']['headcrop']['help'],
+        default=_config['trim_reads']['headcrop']['default'],
+        help=_config['trim_reads']['headcrop']['help'],
     )
 
     minth_default=0.8
     parser.add_argument(
         '-minth',
         dest='minth',
-        default=config['base_caller']['minth']['default'],
-        help=config['base_caller']['minth']['help'],
+        default=_config['base_caller']['minth']['default'],
+        help=_config['base_caller']['minth']['help'],
     )
 
     parser.add_argument(
         '--CN',
         dest='CN',
-        default=config['tagreads']['CN']['default'],
-        help=config['tagreads']['CN']['help'],
+        default=_config['tagreads']['CN']['default'],
+        help=_config['tagreads']['CN']['help'],
     )
 
     default_outdir = os.getcwd()

@@ -23,7 +23,8 @@ def main():
         args.readsdir,
         args.q,
         args.outputdir,
-        head_crop=args.headcrop
+        head_crop=args.headcrop,
+        platforms=args.platforms
     )
 
 def trim_reads_in_dir( *args, **kwargs ):
@@ -31,14 +32,17 @@ def trim_reads_in_dir( *args, **kwargs ):
         Trims all read files in a given directory and places the resulting files into out_path directory
         Combines all unpaired trimmed fastq files into a single file as a result of running Trimmomatic
 
-        @param readdir - Directory with read files in it(sff and fastq only)
-        @qual_th - What to pass to cutadapt -q
-        @out_path - Output directory path
+        :param str readdir: Directory with read files in it(sff and fastq only)
+        :param int qual_th: What to pass to cutadapt -q
+        :param str out_path: Output directory path
+        :param int headcrop: How many bases to crop off ends
+        :param list platforms: List of platform's reads to use
     '''
     readdir = args[0]
     qual_th = args[1]
     out_path = args[2]
     headcrop = kwargs.get('head_crop', 0)
+    platforms = kwargs.get('platforms', None)
 
     # Only sff and fastq files
     #reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
@@ -49,25 +53,26 @@ def trim_reads_in_dir( *args, **kwargs ):
     # Trim all the reads
     unpaired = []
     for plat, reads in platreads.iteritems():
-        for r in reads:
-            inreads = None
-            if isinstance(r,str):
-                # Only accept .sff and .fastq
-                if r.endswith('.sff') or r.endswith('.fastq'):
+        if platforms is None or plat in platforms:
+            for r in reads:
+                inreads = None
+                if isinstance(r,str):
+                    # Only accept .sff and .fastq
+                    if r.endswith('.sff') or r.endswith('.fastq'):
+                        inreads = r
+                        outreads = join(out_path, basename(r).replace('.sff','.fastq'))
+                else:
                     inreads = r
-                    outreads = join(out_path, basename(r).replace('.sff','.fastq'))
-            else:
-                inreads = r
-                outreads = [join(out_path, basename(pr)) for pr in r]
-            # Sometimes inreads not set because .ab1 files
-            if inreads is None:
-                continue
-            try:
-                r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
-                unpaired += r[1::2]
-            except subprocess.CalledProcessError as e:
-                print e.output
-                raise e
+                    outreads = [join(out_path, basename(pr)) for pr in r]
+                # Sometimes inreads not set because .ab1 files
+                if inreads is None:
+                    continue
+                try:
+                    r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
+                    unpaired += r[1::2]
+                except subprocess.CalledProcessError as e:
+                    print e.output
+                    raise e
     #!!
     # Combine all *.fastq.unpaired into one file that has a 454 name to be used for mapping as SE
     #!!
@@ -279,6 +284,13 @@ def parse_args( args=sys.argv[1:] ):
         dest='outputdir',
         default=defaults['outputdir']['default'],
         help=defaults['outputdir']['help']
+    )
+
+    parser.add_argument(
+        '--platforms',
+        dest='platforms',
+        default=defaults['platforms']['default'],
+        help=defaults['platforms']['help']
     )
 
     return parser.parse_args( args )
