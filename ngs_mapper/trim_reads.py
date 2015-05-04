@@ -289,6 +289,7 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '--platforms',
         dest='platforms',
+        choices=defaults['platforms']['choices'],
         default=defaults['platforms']['default'],
         help=defaults['platforms']['help']
     )

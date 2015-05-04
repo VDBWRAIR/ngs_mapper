@@ -3,7 +3,7 @@ Analysis
 ========
 
 .. Contents::
-    :Depth: 3
+    :Depth: 4
 
 Complete Examples
 =================
@@ -76,6 +76,9 @@ What you can take from this is:
 * Anything inside of a [] block means that argument to the script is optional and has a default value that will be used if you do not specify it.
 * readsdir, reference and prefix are all required arguments that you **MUST** specify
 
+Simplest form of runsample
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 So to run the project with the fewest amount of arguments would be as follows(don't run this, just an example):
 
 .. code-block:: bash
@@ -86,6 +89,9 @@ This will run the 947 data and use the 947.ref.fasta file to map to. All files w
 Since we did not specify the -od argument, all the files from the pipeline get dumped into your current directory.
 
 Most likely you will want to specify a separate directory to put all the 947 specific analysis files into. But how?
+
+Getting extended help for runsample
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We can get extended help information which should print the defualts as well from any script by using the ``--help`` option
 
@@ -127,6 +133,9 @@ If you find one that doesn't, head over to :doc:`createissue` and file a new Bug
 
 So you can see the -od option's default is our current directory. So if we want our analysis files to go into a specific directory for each sample we run we can specify a different directory. While we are at it, lets try specifying some of the other optional arguments too.
 
+Specifying output directory for analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Let's tell runsample to put our analysis into a directory called 947 and also tell it to crop off 20 bases from the beginning of each read.
 
 .. code-block:: bash
@@ -136,6 +145,62 @@ Let's tell runsample to put our analysis into a directory called 947 and also te
     2014-12-22 10:21:28,526 -- INFO -- runsample       --- Finished 947 ---
 
 You can see from the output that the sample started and finished. If there were errors, they would show up in between those two lines and you would have to view the :doc:`help` documentation.
+
+Specifying specific platforms to map
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes you may find the need to only run specific platforms. Maybe you only
+will want to run MiSeq read files through the pipeline.
+
+The 947 example project has Roche454, MiSeq and Sanger read files in it, so we
+can use it in this example to only map the MiSeq read files
+
+#. Generate your example config which we will edit
+
+    .. code-block:: bash
+
+        make_example_config
+
+#. Now edit the config.yaml file generated in the current directory
+   #. Find the trim_reads section and change the default under platforms to be
+
+        .. code-block:: text
+
+            trim_reads:
+                headcrop:
+                    default: 0
+                    help: 'How many bases to crop off the beginning of the reads after quality
+                        trimming[Default: %(default)s]'
+                outputdir:
+                    default: trimmed_reads
+                    help: 'Where to output the resulting files[Default: %(default)s]'
+                q:
+                    default: 20
+                    help: 'Quality threshold to trim[Default: %(default)s]'
+                platforms:
+                    choices:
+                    - MiSeq
+                    - Sanger
+                    - Roche454
+                    - IonTorrent
+                    default:
+                    - MiSeq
+                    #- Sanger
+                    #- Roche454
+                    #- IonTorrent
+                    help: 'List of platforms to include data for[Default: %(default)s]'
+
+    Notice Sanger, Roche454 and IonTorrent are commented out. You can either
+    comment them out or completely delete them.
+#. Then you can run ``runsample`` with the ``-c config.yaml`` argument and it
+   will only use MiSeq reads
+
+    .. code-block:: bash
+
+        $> runsample -od 947 -head_crop 20 ngs_mapper/tests/fixtures/functional/947 ngs_mapper/tests/fixtures/functional/947.ref.fasta 947 -c config.yaml
+
+Output from runsample explained
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 So what analysis files were created? You can see them by listing the output directory:
 
@@ -166,6 +231,9 @@ So what analysis files were created? You can see them by listing the output dire
     drwxr-xr-x. 2 myusername users     4096 Dec 22 10:17 trim_stats
 
 You can view information about each of the output files via the :ref:`runsample-output-directory`
+
+Viewing bam files
+^^^^^^^^^^^^^^^^^
 
 An easy way to view your bam file quickly from the command line if you have `igv <http://www.broadinstitute.org/igv/>`_  installed is like this:
 
