@@ -28,6 +28,27 @@ class TestTrimReadsInDir(TrimBase):
     def setUp( self ):
         super( TestTrimReadsInDir, self ).setUp()
 
+    @attr('current')
+    @patch('ngs_mapper.trim_reads.os', MagicMock())
+    @patch('__builtin__.open')
+    @patch('ngs_mapper.trim_reads.data')
+    def test_only_does_listed_platforms(self, mdata, mopen):
+        reads = mdata.reads_by_plat.return_value = {
+            'Sanger': [
+                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.ab1',
+                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.fastq'
+            ],
+            'foo': [
+                'bar.fastq',
+                'baz.sff'
+            ]
+        }
+    
+        with patch('ngs_mapper.trim_reads.trim_read') as mtrim_read:
+            self._C('/path/to/reads', 20, '/path/to/outdir', platforms=['Sanger'])
+            _call = call(reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0)
+            eq_([_call], mtrim_read.call_args_list)
+
     @patch('ngs_mapper.trim_reads.os', MagicMock())
     @patch('__builtin__.open')
     @patch('ngs_mapper.trim_reads.data')
@@ -316,7 +337,8 @@ class TestIntegrate(TrimBase):
 
     def test_runs( self ):
         outdir = 'trimmed_reads'
-        r,o = self._C( self.read_dir, q=20, o=outdir )
+        platforms = ['MiSeq','Sanger','Roche454','IonTorrent']
+        r,o = self._C(self.read_dir,q=20,o=outdir,platforms=platforms)
         # Make sure exited correctly
         eq_( 0, r )
         print o

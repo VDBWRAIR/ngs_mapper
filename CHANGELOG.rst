@@ -1,13 +1,14 @@
 Changelog
 ---------
 
-Version 1.3.0
+Version 1.2.1
 +++++++++++++
 
 - Removed all occurances of bqd.mpileup and replaced with samtools.mpileup
 - Changed bqd.parse_pileup such that it utilizes samtools.MPileupColumn to
   generate the dictionary items
 - Remove legacy BamCoverage code that is not used anywhere
+- Added support to select reads by specific platforms in runsample.py
 
 Version 1.2.0
 +++++++++++++
