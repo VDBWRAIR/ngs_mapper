@@ -2,6 +2,9 @@
 Analysis
 ========
 
+.. Contents::
+    :Depth: 3
+
 Complete Examples
 =================
 
@@ -229,7 +232,7 @@ You can then view all of the resulting output files/directories created
     -rw-r--r--. 1 myusername users    122 Dec 22 12:28 samplesheet.tsv
     drwxr-xr-x. 2 myusername users   4096 Dec 22 12:34 vcf_consensus
 
-You can view what each of these files means by heading over to the :doc:`scripts/runsamplesheet`
+You can view advanced usage and what each of these output files mean by heading over to the :doc:`scripts/runsamplesheet`
 
 Changing defaults for pipeline stages
 =====================================
