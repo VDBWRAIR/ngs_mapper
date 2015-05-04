@@ -131,7 +131,6 @@ def parse_args( args=sys.argv[1:] ):
         description='Runs a single sample through the pipeline',
         parents=[conf_parser]
     )
-    print parser
 
     parser.add_argument(
         dest='readsdir',
