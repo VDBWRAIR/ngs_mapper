@@ -1216,8 +1216,8 @@ class TestUnitMain(BaseInty):
             bias=bias,
             threads=threads
        )        
-        with patch('ngs_mapper.base_caller.argparse') as margparse:
-            margparse.ArgumentParser.return_value.parse_args.return_value = args
+        with patch('ngs_mapper.base_caller.parse_args') as margparse:
+            margparse.return_value = args
             return main()
 
     @attr('current')
