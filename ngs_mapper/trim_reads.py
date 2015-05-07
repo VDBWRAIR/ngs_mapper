@@ -60,6 +60,9 @@ def trim_reads_in_dir( *args, **kwargs ):
     for plat, reads in platreads.iteritems():
         if platforms is None or plat in platforms:
             for r in reads:
+                if '_I1_' in r or '_I2_' in r:
+                    logger.debug("Skipped MiSeq index read {0}".format(r))
+                    continue
                 inreads = None
                 if isinstance(r,str):
                     # Only accept .sff and .fastq

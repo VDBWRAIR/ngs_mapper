@@ -9,6 +9,9 @@ Version 1.2.1
   generate the dictionary items
 - Remove legacy BamCoverage code that is not used anywhere
 - Added support to select reads by specific platforms in runsample.py
+- Fixed bug where MiSeq Index reads were being included in the mapping
+- Renamed unpaired read file name that is produced by trim_reads from
+  a generic Roche454 read name to simply unpaired_trimmed.fastq
 
 Version 1.2.0
 +++++++++++++
