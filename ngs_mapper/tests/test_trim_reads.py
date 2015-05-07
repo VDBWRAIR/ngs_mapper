@@ -21,14 +21,12 @@ class TrimBase(common.BaseClass):
         # All reads
         self.reads = self.se + self.pe
 
-@attr('current')
 class TestTrimReadsInDir(TrimBase):
     functionname = 'trim_reads_in_dir'
 
     def setUp( self ):
         super( TestTrimReadsInDir, self ).setUp()
 
-    @attr('current')
     @patch('ngs_mapper.trim_reads.os', MagicMock())
     @patch('__builtin__.open')
     @patch('ngs_mapper.trim_reads.data')
@@ -333,8 +331,9 @@ class TestIntegrate(TrimBase):
         efiles = set(efiles)
         print "Expected files: {}".format(efiles)
         print "Result files: {}".format(files)
-        eq_( set([]), files-efiles, "{} did not contain exactly {}. Difference: {}".format(dir,efiles,files-efiles) )
+        eq_( files, efiles, "{} did not contain exactly {}. Difference: {}".format(dir,efiles,efiles-files) )
 
+    @attr('current')
     def test_runs( self ):
         outdir = 'trimmed_reads'
         platforms = ['MiSeq','Sanger','Roche454','IonTorrent']
@@ -343,6 +342,10 @@ class TestIntegrate(TrimBase):
         eq_( 0, r )
         print o
         # Make sure the file names are same as the input files
-        efiles = [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] + ['unpaired__1__TI1__2001_01_01__Unk.fastq']
+        logout = open('pipeline.log').read()
+        print logout
+        efiles = [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)]
+        if 'All unpaired trimmed files are empty' not in logout:
+            efiles += ['unpaired_trimmed.fastq']
         self.has_files( outdir, efiles )
-        self.has_files( 'trim_stats', [f + '.trim_stats' for f in os.listdir(self.read_dir)] )
+        self.has_files( 'trim_stats', [f + '.trim_stats' for f in os.listdir(self.read_dir) if 'R2' not in f] )

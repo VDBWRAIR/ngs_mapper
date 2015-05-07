@@ -43,6 +43,11 @@ def trim_reads_in_dir( *args, **kwargs ):
     out_path = args[2]
     headcrop = kwargs.get('head_crop', 0)
     platforms = kwargs.get('platforms', None)
+    logger.info(
+        "Only accepting the following platform's read files: {0}".format(
+            platforms
+        )
+    )
 
     # Only sff and fastq files
     #reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
@@ -69,21 +74,30 @@ def trim_reads_in_dir( *args, **kwargs ):
                     continue
                 try:
                     r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
+                    logger.debug("Output from trim_read {0}".format(r))
                     unpaired += r[1::2]
+                    logger.debug("Added {0} to unpaired list".format(r[1::2]))
                 except subprocess.CalledProcessError as e:
                     print e.output
                     raise e
+        else:
+            logger.info("{0} are being excluded as they are not in {1}".format(
+                reads,platforms
+            ))
     #!!
-    # Combine all *.fastq.unpaired into one file that has a 454 name to be used for mapping as SE
+    # Combine all *.fastq.unpaired into one file for mapping as SE
     #!!
     # Filter out unpaired files that are empty
     notempty = filter( lambda f: os.stat(f).st_size > 0, unpaired )
     if notempty:
-        out_unpaired = join( out_path, 'unpaired__1__TI1__2001_01_01__Unk.fastq' )
+        logger.info("Combining all unpaired trimmed files into a single file")
+        out_unpaired = join( out_path, 'unpaired_trimmed.fastq' )
         with open( out_unpaired, 'w' ) as fw:
             for up in notempty:
                 with open(up) as fr:
                     fw.write( fr.read() )
+    else:
+        logger.debug("All unpaired trimmed files are empty")
     # Remove the read now as it is no longer needed
     for up in unpaired:
         os.unlink( up )
