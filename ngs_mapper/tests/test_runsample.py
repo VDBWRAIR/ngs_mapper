@@ -31,24 +31,33 @@ class Base(common.BaseBamRef):
             print e.output
             return False
 
+@attr('current')
 class TestUnitArgs(Base):
     functionname = 'parse_args'
 
     def test_defaults( self ):
         args = ['ReadsBySample','Reference.fasta','Sample1']
         res = self._C( args )
-        eq_( 'ReadsBySample', res.readsdir )
-        eq_( 'Reference.fasta', res.reference )
-        eq_( 'Sample1', res.prefix )
-        eq_( os.getcwd(), res.outdir )
+        eq_( 'ReadsBySample', res[0].readsdir )
+        eq_( 'Reference.fasta', res[0].reference )
+        eq_( 'Sample1', res[0].prefix )
+        eq_( os.getcwd(), res[0].outdir )
 
     def test_set_outdir( self ):
         args = ['ReadsBySample','Reference.fasta','Sample1','-od','outdir']
         res = self._C( args )
-        eq_( 'ReadsBySample', res.readsdir )
-        eq_( 'Reference.fasta', res.reference )
-        eq_( 'Sample1', res.prefix )
-        eq_( 'outdir', res.outdir )
+        eq_( 'ReadsBySample', res[0].readsdir )
+        eq_( 'Reference.fasta', res[0].reference )
+        eq_( 'Sample1', res[0].prefix )
+        eq_( 'outdir', res[0].outdir )
+
+    def test_parses_only_known(self):
+        args = [
+            'ReadsBySample','Reference.fasta','Sample1',
+            '-od','outdir', '--qsub_X', 'foo'
+        ]
+        res = self._C(args)
+        eq_(['--qsub_X','foo'], res[1])
 
 @patch('ngs_mapper.runsample.logger',Mock())
 class TestUnitRunCMD(object):
@@ -107,13 +116,15 @@ class TestMakeProjectRepo(Base):
         ok_( self.check_git_repo( path ) )
 
 class TestFunctional(Base):
-    def _run_runsample( self, readdir, reference, fileprefix, od=None, configfile=None ):
+    def _run_runsample( self, readdir, reference, fileprefix, od=None, configfile=None,qsubargs=[] ):
         script_path = 'runsample'
         cmd = script_path + ' {0} {1} {2}'.format(readdir, reference, fileprefix)
         if od is not None:
             cmd += ' -od {0}'.format(od)
         if configfile:
             cmd += ' -c {0}'.format(configfile)
+        if qsubargs:
+            cmd += ' {0}'.format(' '.join(qsubargs))
         print "Running: {0}".format(cmd)
         cmd = shlex.split( cmd )
         try:
@@ -177,6 +188,19 @@ class TestFunctional(Base):
         print out
         eq_(ret, 0)
         self._ensure_expected_output_files( projdir, prefix )
+
+    @attr('current')
+    def test_outputs_qsub_job(self):
+        projdir = 'outdir'
+        prefix = 'testsample'
+        out,ret = self._run_runsample(
+            self.reads_by_sample,
+            self.ref,
+            prefix,
+            projdir,
+            qsubargs=['--qsub_l', 'nodes=1:ppn=1']
+        )
+        assert_in('#PBS', out)
 
     def test_runs_correctly( self ):
         projdir = 'outdir'

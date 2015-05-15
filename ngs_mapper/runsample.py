@@ -185,9 +185,9 @@ def parse_args( args=sys.argv[1:] ):
         help='The output directory for all files to be put[Default: {0}]'.format(default_outdir)
     )
 
-    args = parser.parse_args( args )
+    args, rest = parser.parse_known_args(args)
     args.config = configfile
-    return args
+    return args,rest
 
 def make_project_repo( projpath ):
     '''
@@ -218,7 +218,12 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
         raise MissingCommand( "{0} is not an executable?".format(cmd[0]) )
 
 def main():
-    args = parse_args()
+    args,rest = parse_args()
+    # Qsub job?
+    if rest and rest[0].startswith('--qsub_'):
+        args, qsubargs = split_args(' '.join(sys.argv[1:]))
+        print pbs_job(args, qsubargs)
+        sys.exit(1)
     # So we can set the global logger
     global logger
 
@@ -371,3 +376,73 @@ def main():
             file_list = [os.path.join(tdir,m) for m in os.listdir(tdir)]
             for f in file_list:
                 shutil.move( f, args.outdir )
+
+def pbs_job(runsampleargs, pbsargs):
+    '''
+    Return a pbs job string that will run runsample with same parameters as were
+    given initially
+
+    :param string runsampleargs: args that are for runsample that originaly came 
+                               from sys.argv(any non --qsub_)
+    :param string pbsargs: args for qsub(any --qsub_)
+    :return: pbs job file string
+    '''
+    qsub_parser = argparse.ArgumentParser(add_help=False)
+    qsub_parser.add_argument(
+        '--qsub_l',
+        default='nodes=1:ppn=1'
+    )
+    qsub_parser.add_argument(
+        '--qsub_M',
+        default=None
+    )
+    qsub_args = qsub_parser.parse_args(pbsargs)
+
+    samplename = runsampleargs[2]
+    template = '#!/bin/bash\n' \
+        '#PBS -N {samplename}-ngs_mapper\n' \
+        '#PBS -j oe\n' \
+        '#PBS -l {qsub_l}\n'
+    if qsub_args.qsub_M is not None:
+        template += '#PBS -m abe\n' \
+            '#PBS -M ' + qsub_args.qsub_M + '\n'
+
+    tmpdir = os.environ.get('TMPDIR',None)
+    if tmpdir is not None:
+        template += 'export TMPDIR=' + tmpdir
+
+    template += '\n' \
+        'cd $PBS_O_WORKDIR\n' \
+        'runsample {runsampleargs}\n'
+
+    return template.format(
+        samplename=samplename,
+        qsub_l=qsub_args.qsub_l,
+        runsampleargs=' '.join(runsampleargs)
+    )
+
+def split_args(argstr):
+    '''
+    Extract all --qsub_ type args out and return (nonqsub, qsub) arg strings
+    Since I don't know how to reconstruct the original args from argparse this
+    will do
+    '''
+    arg_list = shlex.split(argstr)
+    qsub_args = []
+    args = []
+    i = 0
+    while i < len(arg_list):
+        arg = arg_list[i]
+        val = arg_list[i+1]
+        if '--qsub_' in arg:
+            qsub_args.append(arg)
+            qsub_args.append(val)
+            i += 2
+        elif not val.startswith('-'):
+            args.append(arg)
+            args.append(val)
+            i += 2
+        else:
+            args.append(arg)
+            i += 1
+    return args,qsub_args
