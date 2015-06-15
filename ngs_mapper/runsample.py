@@ -220,7 +220,7 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
 def main():
     args,rest = parse_args()
     # Qsub job?
-    if rest and rest[0].startswith('--qsub_'):
+    if rest and rest[0].startswith('--qsub'):
         args, qsubargs = split_args(' '.join(sys.argv[1:]))
         print pbs_job(args, qsubargs)
         sys.exit(1)
@@ -383,20 +383,29 @@ def pbs_job(runsampleargs, pbsargs):
     given initially
 
     :param string runsampleargs: args that are for runsample that originaly came 
-                               from sys.argv(any non --qsub_)
-    :param string pbsargs: args for qsub(any --qsub_)
+                               from sys.argv(any non --qsub\_)
+    :param string pbsargs: args for qsub(any --qsub\_)
     :return: pbs job file string
     '''
     qsub_parser = argparse.ArgumentParser(add_help=False)
     qsub_parser.add_argument(
+        '--qsub-help',
+        default=False,
+        action='store_true'
+    )
+    qsub_parser.add_argument(
         '--qsub_l',
-        default='nodes=1:ppn=1'
+        default='nodes=1:ppn=1',
     )
     qsub_parser.add_argument(
         '--qsub_M',
         default=None
     )
     qsub_args = qsub_parser.parse_args(pbsargs)
+
+    if qsub_args.qsub_help:
+        qsub_parser.print_help()
+        return ''
 
     samplename = runsampleargs[2]
     template = '#!/bin/bash\n' \
@@ -423,7 +432,7 @@ def pbs_job(runsampleargs, pbsargs):
 
 def split_args(argstr):
     '''
-    Extract all --qsub_ type args out and return (nonqsub, qsub) arg strings
+    Extract all --qsub\_ type args out and return (nonqsub, qsub) arg strings
     Since I don't know how to reconstruct the original args from argparse this
     will do
     '''
@@ -433,14 +442,19 @@ def split_args(argstr):
     i = 0
     while i < len(arg_list):
         arg = arg_list[i]
-        val = arg_list[i+1]
-        if '--qsub_' in arg:
+        if i+1 < len(arg_list):
+            val = arg_list[i+1]
+        else:
+            val = None
+        if '--qsub' in arg:
             qsub_args.append(arg)
-            qsub_args.append(val)
+            if val is not None:
+                qsub_args.append(val)
             i += 2
-        elif not val.startswith('-'):
+        elif val is not None and not val.startswith('-'):
             args.append(arg)
-            args.append(val)
+            if val is not None:
+                args.append(val)
             i += 2
         else:
             args.append(arg)

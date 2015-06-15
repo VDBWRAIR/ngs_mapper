@@ -343,3 +343,35 @@ You can control what directory this is by utilizing the TMPDIR environmental var
     export TMPDIR=/path/to/custom/tmpdir
     SAMPLE=samplename
     runsample /path/to/NGSData/ReadsBySample/${SAMPLE} /path/to/reference ${SAMPLE} -od Projects/${SAMPLE}
+
+Integration with the PBS Schedulers
+===================================
+
+runsample has the ability to output a PBS job file instead of running. This may be 
+useful if you have access to a PBS Cluster. By default the PBS job that is generated 
+is very simplistic.
+
+* The job will change directory to the same directory that qsub is run from
+* If TMPDIR is set when you run qsub, it will be exported for the job as well.
+* runsample is then run with the same arguments that were given to generate the
+  pbs job without the --qsub arguments.
+
+Example
+-------
+
+.. code-block:: bash
+
+    $> export TMPDIR=/path/to/TMPDIR
+    $> runsample ngs_mapper/tests/fixtures/functional/947{,.ref.fasta} 947 --outdir 947test --qsub_l nodes=1:ppn=1 --qsub_M me@example.com
+    #!/bin/bash
+    #PBS -N 947-ngs_mapper
+    #PBS -j oe
+    #PBS -l nodes=1:ppn=1
+    #PBS -m abe
+    #PBS -M me@example.com
+    export TMPDIR=/path/to/TMPDIR
+    cd $PBS_O_WORKDIR
+    runsample ngs_mapper/tests/fixtures/functional/947 ngs_mapper/tests/fixtures/functional/947.ref.fasta 947 --outdir 947test
+
+You can see that the job that was generated essentialy just stripped off any 
+--qsub\_ arguments and will rerun the same runsample command in the job.

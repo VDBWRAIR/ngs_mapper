@@ -270,3 +270,21 @@ class TestFunctional(Base):
             loglines = fh.read().splitlines()
         # 5 stages + start/finish
         ok_( 7 <= len(loglines), "Should be at least 7 loglines in log file" )
+
+import mock
+import unittest2 as unittest
+
+from ngs_mapper import runsample
+@attr('current')
+class TestSplitArgs(unittest.TestCase):
+    def test_splits_correctly(self):
+        argstr = '--foo 1 --bar --qsub_l foo --qsub-help'
+        r = runsample.split_args(argstr)
+        self.assertEqual(
+            r[0],
+            ['--foo','1','--bar']
+        )
+        self.assertEqual(
+            r[1],
+            ['--qsub_l','foo','--qsub-help']
+        )
