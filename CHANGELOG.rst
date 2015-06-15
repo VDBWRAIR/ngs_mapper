@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+Version 1.2.2
++++++++++++++
+
+- runsample accepts --qsub_m and --qsub_l commands which will direct it to
+  return a PBS qsub job that can be piped into qsub
+
 Version 1.2.1
 +++++++++++++
 
