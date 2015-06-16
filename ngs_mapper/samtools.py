@@ -105,7 +105,7 @@ class SamRow(object):
             elif typ == 'B':
                 value = [int(x) for x in val.split(',')]
             else:
-                raise ValueError("{} is not a supported field type".format(typ))
+                raise ValueError("{0} is not a supported field type".format(typ))
 
             t.append( (name,value) )
             
@@ -140,7 +140,7 @@ def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
     @returns file like object representing the output of mpileup
     '''
     # The command that will be executed
-    cmd = ['samtools','mpileup','-s','-q',str(minmq),'-Q',str(minbq),'-d','{}'.format(maxd)]
+    cmd = ['samtools','mpileup','-s','-q',str(minmq),'-Q',str(minbq),'-d','{0}'.format(maxd)]
     # Only include -r if regionstr is set
     if regionstr:
         cmd += ['-r',regionstr]
@@ -375,14 +375,14 @@ def parse_regionstring( regionstr ):
     '''
     import re
     if not regionstr:
-        raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )
+        raise InvalidRegionString( "{0} is not a valid regionstring".format(regionstr) )
     m = re.match( '(\S+):(\d+)-(\d+)', regionstr )
     if not m:
-        raise InvalidRegionString( "{} is not a valid regionstring".format(regionstr) )
+        raise InvalidRegionString( "{0} is not a valid regionstring".format(regionstr) )
 
     region = (m.group(1), int(m.group(2)), int(m.group(3)))
     if region[1] > region[2]:
-        raise InvalidRegionString( "Start cannot be > stop in a region string: {}".format(regionstr) )
+        raise InvalidRegionString( "Start cannot be > stop in a region string: {0}".format(regionstr) )
 
     return region
 

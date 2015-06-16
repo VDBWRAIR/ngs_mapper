@@ -82,16 +82,16 @@ def compile_reads( readfilelist, outputdir ):
             if is_valid_read( read ):
                 files_written['NP'].append(read)
             else:
-                raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read))
+                raise InvalidReadFile("{0} is not a fastq file. Only fastq files are supported at this time.".format(read))
         elif isinstance(read,tuple) and len(read) == 2:
             if is_valid_read( read[0] ):
                 files_written['F'].append(read[0])
             else:
-                raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read[0]))
+                raise InvalidReadFile("{0} is not a fastq file. Only fastq files are supported at this time.".format(read[0]))
             if is_valid_read( read[1] ):
                 files_written['R'].append(read[1])
             else:
-                raise InvalidReadFile("{} is not a fastq file. Only fastq files are supported at this time.".format(read[1]))
+                raise InvalidReadFile("{0} is not a fastq file. Only fastq files are supported at this time.".format(read[1]))
         else:
             raise ValueError("Somehow neither got 1 or 2 items for a read in readfilelist")
 
@@ -99,7 +99,7 @@ def compile_reads( readfilelist, outputdir ):
     for f,files in files_written.items():
         if files:
             outfile = join(outputdir,f+'.fq')
-            log.info( "Compiling reads from {} into {}".format( files, outfile ) )
+            log.info( "Compiling reads from {0} into {1}".format( files, outfile ) )
             # List of only sff
             sffs = [r for r in files if r.endswith('.sff')]
             # List of all others
@@ -111,7 +111,7 @@ def compile_reads( readfilelist, outputdir ):
             # Cat all sff
             if sffs:
                 sff_out = join(outputdir,'sffs.fq')
-                log.debug( "Converting {} to temp fastq file {}".format(sffs,sff_out) )
+                log.debug( "Converting {0} to temp fastq file {1}".format(sffs,sff_out) )
                 try:
                     r = sffs_to_fastq( sffs, sff_out )
                 except AssertionError as e:
@@ -125,7 +125,7 @@ def compile_reads( readfilelist, outputdir ):
                 cfiles += other
 
             # concat everything together now
-            log.debug( "Concating all files {} to {}".format(cfiles,outfile) )
+            log.debug( "Concating all files {0} to {1}".format(cfiles,outfile) )
             seqio.concat_files(cfiles, outfile)
             # Remove the sff concatted file
             if sffs:

@@ -51,19 +51,19 @@ class Base( common.BaseClass ):
         ''' abilist is just basename list of abi files expected '''
         abi = set( os.listdir( rawd ) )
         abilist_set = set( abilist )
-        eq_( set([]), abilist_set - abi, 'Abi lists were not identical {} != {}'.format(abi, abilist_set) )
+        eq_( set([]), abilist_set - abi, 'Abi lists were not identical {0} != {1}'.format(abi, abilist_set) )
 
     def check_readdata( self, abilist, readd ):
         ''' abilist is just basename list of abi files expected '''
         abi = [basename(r) for r in glob( join( readd, '*.ab1' ) )]
         abi = set( abi )
         abilist_set = set( abilist )
-        eq_( set([]), abilist_set - abi, 'Abi lists were not identical {} != {}'.format(abi, abilist_set) )
+        eq_( set([]), abilist_set - abi, 'Abi lists were not identical {0} != {1}'.format(abi, abilist_set) )
         for abi in abilist:
             a = join( readd, abi )
-            ok_( islink( a ), '{} is not a valid file/symlink'.format(a) )
+            ok_( islink( a ), '{0} is not a valid file/symlink'.format(a) )
             j = a.replace('.ab1', '.fastq')
-            ok_( isfile( j ), 'Fastq version of {} does not exist'.format(j) )
+            ok_( isfile( j ), 'Fastq version of {0} does not exist'.format(j) )
 
     def print_ngs( self ):
         print subprocess.check_output( 'find . -ls', shell=True )
@@ -76,9 +76,9 @@ class Base( common.BaseClass ):
             sn = samplename_from_read( abi )
             rbsd = join( rbs, sn )
             read = join( rbsd, abi )
-            ok_( islink( read ), '{}({}) is not a valid symlink'.format(read,os.readlink(read)) )
+            ok_( islink( read ), '{0}({1}) is not a valid symlink'.format(read,os.readlink(read)) )
             fastq = read.replace('.ab1','.fastq')
-            ok_( islink( fastq ), '{}({}) is not a valid symlink'.format(fastq,os.readlink(read)) )
+            ok_( islink( fastq ), '{0}({1}) is not a valid symlink'.format(fastq,os.readlink(read)) )
 
 class TestSync( Base ):
     functionname = 'sync_sanger'
@@ -100,7 +100,7 @@ class TestFunctional( Base ):
     def test_runscorrectly( self ):
         rund, samples, abilist = self.make_from_dir()
         ngsdata = 'NGSData'
-        args = '--ngsdata {} {}'.format(ngsdata, rund)
+        args = '--ngsdata {0} {1}'.format(ngsdata, rund)
         retcode, output = self._C( args )
         eq_( 0, retcode, output )
         self.print_ngs()
@@ -259,4 +259,4 @@ class TestSyncRun( Base ):
         r = self._C( rund, 'NGSData' )
         expect = set([join(rawd,abi) for abi in abilist])
         result = set(r)
-        eq_( set([]), expect ^ result, 'Return value {} != {} Diff: {}'.format(result,expect,expect ^ result) )
+        eq_( set([]), expect ^ result, 'Return value {0} != {1} Diff: {2}'.format(result,expect,expect ^ result) )

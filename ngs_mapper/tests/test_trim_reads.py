@@ -163,7 +163,7 @@ class TestTrimReadsInDir(TrimBase):
         print rs - es
 
         # Make sure lists are same
-        eq_( expectedfiles, resultfiles, 'Expected files({}) was not equal to Resulting files({})'.format(expectedfiles,resultfiles) )
+        eq_( expectedfiles, resultfiles, 'Expected files({0}) was not equal to Resulting files({1})'.format(expectedfiles,resultfiles) )
 
 class TestTrimRead(TrimBase):
     functionname = 'trim_read'
@@ -173,17 +173,17 @@ class TestTrimRead(TrimBase):
 
     def check_read( self, read, r ):
         bn = basename(read)
-        eq_( bn, r, 'Given outpath({}) and returned path({}) were different'.format(bn,r) )
+        eq_( bn, r, 'Given outpath({0}) and returned path({1}) were different'.format(bn,r) )
         es = os.stat(read)
         rs = os.stat(bn)
         ok_( not samestat( es, rs ), 'Output file and inputfile are the same file' )
         ok_( 
             es.st_size > rs.st_size, 
-            'Did not seem to trim the file. Output file s.st_size({}) was not smaller than input file s.st_size({})'.format(rs.st_size,es.st_size)
+            'Did not seem to trim the file. Output file s.st_size({0}) was not smaller than input file s.st_size({1})'.format(rs.st_size,es.st_size)
         )
         ok_( isdir('trim_stats'), 'Did not create trim_stats directory' )
         trimstatsfile = join( 'trim_stats', bn + '.trim_stats' )
-        ok_( exists(trimstatsfile), 'Did not create trimstats file {}'.format(trimstatsfile) )
+        ok_( exists(trimstatsfile), 'Did not create trimstats file {0}'.format(trimstatsfile) )
 
     def test_trims_se( self ):
         # Make sure output path and returned path are ==
@@ -200,9 +200,9 @@ class TestTrimRead(TrimBase):
             rread_bn = basename(rread)
             r = self._C( (fread,rread), 40, (fread_bn,rread_bn) )
             self.check_read( fread, r[0] )
-            ok_( exists( r[1] ), 'Did not produce unpaired read for {}'.format(fread_bn) )
+            ok_( exists( r[1] ), 'Did not produce unpaired read for {0}'.format(fread_bn) )
             self.check_read( rread, r[2] )
-            ok_( exists( r[3] ), 'Did not produce unpaired read for {}'.format(rread_bn) )
+            ok_( exists( r[3] ), 'Did not produce unpaired read for {0}'.format(rread_bn) )
 
     def test_head_trim( self ):
         from Bio import SeqIO
@@ -281,7 +281,7 @@ class TestTrimRead(TrimBase):
         sff_fq = basename(sff).replace('.sff','.fastq')
         r = self._C( sff, 20, sff_fq )
         expected_trimfile = join( 'trim_stats', basename(sff) + '.trim_stats' )
-        ok_( exists( expected_trimfile ), '{} was not created'.format(expected_trimfile) )
+        ok_( exists( expected_trimfile ), '{0} was not created'.format(expected_trimfile) )
 
 
 class TestRunCutadapt(TrimBase):
@@ -298,8 +298,8 @@ class TestRunCutadapt(TrimBase):
         r = self._C( self.read, stats=outstat, o=outfq, q=20 )
         # Make sure output is correct from stderr
         ll = len(r.splitlines())
-        #eq_( 14, ll, 'STDERR output was not returned correctly. Got {} lines instead of 12. Output: {}'.format(ll,r) )
-        ok_( exists(outstat), 'Did not create {} stats file'.format(outstat) )
+        #eq_( 14, ll, 'STDERR output was not returned correctly. Got {0} lines instead of 12. Output: {1}'.format(ll,r) )
+        ok_( exists(outstat), 'Did not create {0} stats file'.format(outstat) )
         # Ensure it created the correct file name
         # Stat will freak if the file does not exist
         try:
@@ -321,8 +321,8 @@ class TestRunTrimmomatic(TrimBase):
             r = self._C( 'SE', read, 'output.fq', ('LEADING',20), trimlog=self.outstat )
             # Make sure output is correct from stderr
             ll = len(r.splitlines())
-            #eq_( 14, ll, 'STDERR output was not returned correctly. Got {} lines instead of 12. Output: {}'.format(ll,r) )
-            ok_( exists(self.outstat), 'Did not create {} stats file'.format(self.outstat) )
+            #eq_( 14, ll, 'STDERR output was not returned correctly. Got {0} lines instead of 12. Output: {1}'.format(ll,r) )
+            ok_( exists(self.outstat), 'Did not create {0} stats file'.format(self.outstat) )
             # Ensure it created the correct file name
             ok_( exists('output.fq'), "Did not create correct file" )
             ok_( os.stat(read).st_size != os.stat('output.fq').st_size, 'No trimming happened' )
@@ -350,7 +350,7 @@ class TestRunTrimmomatic(TrimBase):
 class TestIntegrate(TrimBase):
     def _C( self, *args, **kwargs ):
         script = 'trim_reads'
-        return TestIntegrate.run_script( '{} {} -q {} -o {}'.format(
+        return TestIntegrate.run_script( '{0} {1} -q {2} -o {3}'.format(
                 script, args[0], kwargs.get('q',20), kwargs.get('o','trimmed_reads')
             )
         )
@@ -358,9 +358,9 @@ class TestIntegrate(TrimBase):
     def has_files( self, dir, efiles ):
         files = set( os.listdir( dir ) )
         efiles = set(efiles)
-        print "Expected files: {}".format(efiles)
-        print "Result files: {}".format(files)
-        eq_( files, efiles, "{} did not contain exactly {}. Difference: {}".format(dir,efiles,efiles-files) )
+        print "Expected files: {0}".format(efiles)
+        print "Result files: {0}".format(files)
+        eq_( files, efiles, "{0} did not contain exactly {1}. Difference: {2}".format(dir,efiles,efiles-files) )
 
     @attr('current')
     def test_runs( self ):

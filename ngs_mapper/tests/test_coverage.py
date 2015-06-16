@@ -88,10 +88,13 @@ class TestGetPerreferenceFromProjects(Base):
         from ngs_mapper.bqd import REGIONTYPES
 
         self.allrefs = ['Ref1','Ref2','Ref3']
-        self.refax = {ref:Mock() for ref in self.allrefs}
+        self.refax = {}
+        for ref in self.allrefs:
+            self.refax[ref] = Mock()
         self.lineargs = self._make_lineargs(REGIONTYPES)
-        self.qualdepth = {
-            ref:{
+        self.qualdepth = {}
+        for ref in self.allrefs:
+            self.qualdepth[ref] = {
                 'depths':[0*5,10*5,10*5],
                 'avgquals':[0*5,40*5,0*5],
                 'length': 15,
@@ -99,8 +102,7 @@ class TestGetPerreferenceFromProjects(Base):
                 'maxq': 40,
                 'mind': 0,
                 'maxd': 10,
-            } for ref in self.allrefs
-        }
+            }
 
     @raises(ValueError)
     @patch('ngs_mapper.coverage.glob',Mock(return_value=[]))
@@ -162,9 +164,9 @@ class PlotBase(Base):
             'Ref1': [self.line2ds],
             'Ref2': [self.line2ds],
         }
-        self.refax = {
-            ref:Mock() for ref in self.perreference
-        }
+        self.refax = {}
+        for ref in self.perreference:
+            self.refax[ref] = Mock()
         self.projects = [p for p in self.samplenames]
 
     def _mock_line2d(self, xdata, ydata):

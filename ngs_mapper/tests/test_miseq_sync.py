@@ -110,7 +110,7 @@ class FunctionalBase( Base ):
         for i in (1,2):
             readpath = join( outpath, template.format( samplename=samplename, sampleid=sampleid, rf=i ) )
             with gzip.open( readpath, 'wb' ) as fh:
-                fh.write( '@{}\nATGC\n+\nIIII\n'.format(samplename) )
+                fh.write( '@{0}\nATGC\n+\nIIII\n'.format(samplename) )
             reads.append( readpath )
         return reads
         
@@ -118,7 +118,7 @@ class FunctionalBase( Base ):
         from ngs_mapper.miseq_sync import get_basecalls_dir, parse_samplesheet
         # Fixture samplesheet file
         self.rundate = '010101'
-        self.runname = '{}_M02261_0001_00000000-A6F0V'.format(self.rundate)
+        self.runname = '{0}_M02261_0001_00000000-A6F0V'.format(self.rundate)
         self.bcdir = get_basecalls_dir( self.runname )
         # Create all directories to BaseCalls dir
         os.makedirs( self.bcdir )
@@ -126,7 +126,9 @@ class FunctionalBase( Base ):
         shutil.copy( self.samplesheet, self.runname )
         self.samplesheet = join( self.runname, 'SampleSheet.csv' )
         # Parse the samplesheet
-        self.samples = {sample['Sample_ID']:sample for sample in parse_samplesheet(self.samplesheet)}
+        self.samples = {}
+        for sample in parse_samplesheet(self.samplesheet):
+            self.samples[sample['Sample_ID']] = sample 
         self.mock_samples( self.samples, self.bcdir )
 
 class TestFunctional( FunctionalBase ):
@@ -140,11 +142,11 @@ class TestFunctional( FunctionalBase ):
         bcdir = get_basecalls_dir( runpath )
         samples = list( parse_samplesheet( join(runpath, 'SampleSheet.csv') ) )
         for sample in samples:
-            sample_fqs = glob( join(bcdir, '{}_S{}*'.format(sample['Sample_Name'],sample['Sample_ID'])) )
+            sample_fqs = glob( join(bcdir, '{0}_S{1}*'.format(sample['Sample_Name'],sample['Sample_ID'])) )
             eq_( 2, len(sample_fqs) )
 
     def ensure_samplesheet( self, runpath ):
-        ok_( exists( join(runpath,'SampleSheet.csv') ), '{} missing samplesheet'.format(runpath) )
+        ok_( exists( join(runpath,'SampleSheet.csv') ), '{0} missing samplesheet'.format(runpath) )
 
     def ensure_data_structure( self, runpath, ngsdata ):
         from ngs_mapper.miseq_sync import parse_samplesheet
@@ -154,8 +156,8 @@ class TestFunctional( FunctionalBase ):
         rawdata = join( ngsdata, 'RawData', 'MiSeq', basename(runpath) )
         readdata = join( ngsdata, 'ReadData', 'MiSeq', basename(runpath) )
         readsbysample = join( ngsdata, 'ReadsBySample' )
-        ok_( exists(rawdata), 'Did not create {}'.format(rawdata) )
-        ok_( exists(readdata), 'Did not create {}'.format(readdata) )
+        ok_( exists(rawdata), 'Did not create {0}'.format(rawdata) )
+        ok_( exists(readdata), 'Did not create {0}'.format(readdata) )
         # Verifies SampleSheet.csv was copied
         samples = list( parse_samplesheet( join(rawdata,'SampleSheet.csv') ) )
         for sample in samples:
@@ -164,16 +166,16 @@ class TestFunctional( FunctionalBase ):
     def ensure_reads_by_sample( self, readsbysampledir, readdata, samplename, sampleid ):
         # Should be links
         rbs = join( readsbysampledir, samplename )
-        ok_( exists(rbs), 'Did not create {}'.format(rbs) )
-        sample_fqs = glob( join( rbs, '{}_S{}*.fastq'.format(samplename,sampleid) ) )
-        eq_( 2, len(sample_fqs), 'There were not 2 reads for {}. Reads found in {}: {}'.format(samplename,rbs,sample_fqs) )
+        ok_( exists(rbs), 'Did not create {0}'.format(rbs) )
+        sample_fqs = glob( join( rbs, '{0}_S{1}*.fastq'.format(samplename,sampleid) ) )
+        eq_( 2, len(sample_fqs), 'There were not 2 reads for {0}. Reads found in {1}: {2}'.format(samplename,rbs,sample_fqs) )
         # Every fq in readsbysample should be a link to the runname in readdata
         for fq in sample_fqs:
             lnkdst = os.readlink( fq )
             runname = basename( dirname( lnkdst ) )
             runpth = join( '..', '..', 'ReadData', 'MiSeq', runname )
-            ok_( exists( fq ), '{} is a broken link to {}'.format(fq, lnkdst) )
-            eq_( runpth, dirname(lnkdst), '{} is not a correct lnk path. It should be {}'.format(lnkdst, runpth) )
+            ok_( exists( fq ), '{0} is a broken link to {1}'.format(fq, lnkdst) )
+            eq_( runpth, dirname(lnkdst), '{0} is not a correct lnk path. It should be {1}'.format(lnkdst, runpth) )
 
     def test_ensure_synced( self ):
         self.mock_miseq_run()

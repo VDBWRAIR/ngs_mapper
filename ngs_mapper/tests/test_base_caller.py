@@ -13,9 +13,10 @@ class Base( common.BaseBaseCaller ):
 
     def mock_stats(self):
         s = { 'baseq': [40]*10, 'mapq': [60]*10 }
-        self.stats = self.make_stats({
-            b: s.copy() for b in 'ATGC'
-        })
+        x = {}
+        for b in 'ATGC':
+            x[b] = s.copy()
+        self.stats = self.make_stats(x)
 
     def mock_mpileup_factory(self, **kwargs):
         '''
@@ -88,7 +89,7 @@ class Hpoly(Base):
             for nucs, s, e in hlist:
                    seq[s-1:e] = nucs
             seq = ''.join(seq)
-            fh.write('>ref\n{}\n'.format(seq))
+            fh.write('>ref\n{0}\n'.format(seq))
         return 'ref.fasta'
 
     def setUp(self):
@@ -171,7 +172,7 @@ class TestUnitBiasHQ(StatsBase):
                 ebaseq = v['baseq']*int(bias)
                 rbaseq = r[k]['baseq']
                 eq_(ebaseq, r[k]['baseq'], 
-                    "Len of base {} should be {} but got {}".format(k, len(ebaseq), len(rbaseq))
+                    "Len of base {0} should be {1} but got {2}".format(k, len(ebaseq), len(rbaseq))
                )
         # Verify depth is updated
         eq_(int(stats['depth']*bias), r['depth'])
@@ -918,7 +919,7 @@ class TestUnitInfoStats(Base):
         self.stats2['depth'] = 100
         r = self._C(self.stats2, 'G')
         eq_([40]*4, r['AAQ'])
-        eq_(['A','C','N','T'], r['bases'])
+        eq_(['A','C','N','T'], sorted(r['bases']))
 
 class BaseInty(Base):
     def print_files(self, f1, f2):
@@ -928,9 +929,9 @@ class BaseInty(Base):
     def cmp_files(self, f1, f2):
         import subprocess
         try:
-            assert exists(f1), "{} doesn't exist".format(f1)
-            assert exists(f2), "{} doesn't exist".format(f2)
-            print subprocess.check_output('diff {} {}'.format(f1, f2), shell=True)
+            assert exists(f1), "{0} doesn't exist".format(f1)
+            assert exists(f2), "{0} doesn't exist".format(f2)
+            print subprocess.check_output('diff {0} {1}'.format(f1, f2), shell=True)
             return True
         except subprocess.CalledProcessError as e:
             print e

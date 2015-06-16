@@ -110,7 +110,7 @@ def sync( src, ngsdata ):
     '''
     dst = join( ngsdata, 'RawData', 'Roche454', basename( src ) )
     if isdir( dst ):
-        print "{} already exists so skipping data sync. If this directory was only " \
+        print "{0} already exists so skipping data sync. If this directory was only " \
             "partially synced you may want to remove everything and start over".format(dst)
         return
     shutil.copytree( src, dst )
@@ -189,7 +189,7 @@ def demultiplex_read( inputsff, outputsff, barcodename, midparse ):
 
         sfffile -o {outputsff} -mcf {midparse} {barcodename}@{inputsff}
     '''
-    cmd = ['sfffile','-o',outputsff,'-mcf',midparse,'{}@{}'.format(barcodename,inputsff)]
+    cmd = ['sfffile','-o',outputsff,'-mcf',midparse,'{0}@{1}'.format(barcodename,inputsff)]
     print ' '.join( cmd )
     subprocess.call( cmd )
 
@@ -204,7 +204,7 @@ def sff_region_map( sffdir ):
         try:
             r = p.search( sff ).group(1)
         except AttributeError as e:
-            raise ValueError( "{} is not a standard multiplexed sff file name".format(sff) )
+            raise ValueError( "{0} is not a standard multiplexed sff file name".format(sff) )
         map[r] = basename(sff)
     return map
 
@@ -215,7 +215,7 @@ def get_sigprocdir( rdir ):
     try:
         return glob( join(rdir, '*signalProcessing') )[0]
     except IndexError as e:
-        raise ValueError( "{} does not contain a signalProcessing directory".format(rdir) )
+        raise ValueError( "{0} does not contain a signalProcessing directory".format(rdir) )
 
 def parse_samplesheet( sheetpath ):
     '''
@@ -224,7 +224,7 @@ def parse_samplesheet( sheetpath ):
     @returns csv.DictReader iterator
     '''
     if not exists( sheetpath ):
-        raise IOError( "{} does not exist".format(sheetpath) )
+        raise IOError( "{0} does not exist".format(sheetpath) )
     with open( sheetpath ) as fh:
         for row in csv.DictReader( fh ):
             yield row

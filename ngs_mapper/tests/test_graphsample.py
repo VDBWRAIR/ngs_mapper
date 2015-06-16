@@ -1,5 +1,6 @@
 from imports import *
-from subprocess import check_output, CalledProcessError, STDOUT
+from subprocess import CalledProcessError, STDOUT
+from ngs_mapper.compat import check_output
 import shlex
 
 class Base(common.BaseBamRef):
@@ -68,9 +69,9 @@ class TestFunctional(Base):
 
     def _rungraphsample( self, bamfile, **kwargs ):
         script_path = 'graphsample'
-        args = ' '.join( ['-{} {}'.format(aname,aval) for aname, aval in kwargs.items()] )
-        cmd = script_path + ' {} '.format(bamfile) + args
-        print "Running: {}".format(cmd)
+        args = ' '.join( ['-{0} {1}'.format(aname,aval) for aname, aval in kwargs.items()] )
+        cmd = script_path + ' {0} '.format(bamfile) + args
+        print "Running: {0}".format(cmd)
         cmd = shlex.split( cmd )
         try:
             sout = check_output( cmd, stderr=STDOUT )
@@ -85,7 +86,7 @@ class TestFunctional(Base):
         for of in self.outfiles:
             o = out + of
             expected_files.append( o )
-            assert os.path.isfile( o ), "Did not produce {}".format(o)
+            assert os.path.isfile( o ), "Did not produce {0}".format(o)
         return expected_files
 
     def test_multiple_references( self ):

@@ -18,8 +18,8 @@ class Base(common.BaseClass):
         print 'Orig:' + origseq
         print 'Trim:' + trimseq
         if trim:
-            eq_( start, cql, 'clip_qual_left {} and beginning of trim {} did not match'.format(cql,start) )
-            eq_( end, cqr, 'clip_qual_right {} and end of trim {} did not match'.format(cqr,end) )
+            eq_( start, cql, 'clip_qual_left {0} and beginning of trim {1} did not match'.format(cql,start) )
+            eq_( end, cqr, 'clip_qual_right {0} and end of trim {1} did not match'.format(cqr,end) )
             eq_( cqr - cql, len(trimmedrec._per_letter_annotations['phred_quality']), 'Did not trim qualities' )
         else:
             eq_( origseq, trimseq, 'Sequence was trimmed when it should not have been' )

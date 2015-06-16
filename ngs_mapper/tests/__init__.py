@@ -21,7 +21,7 @@ def tearDownPackage():
     # Clean up all shm and tmp stuff that was made
     for df in shmcontents + tmpcontents:
         if df not in before:
-            print "Removing {}".format(df)
+            print "Removing {0}".format(df)
             if isdir( df ):
                 shutil.rmtree(df)
             else:

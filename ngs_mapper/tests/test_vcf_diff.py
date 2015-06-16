@@ -20,14 +20,14 @@ class Base(common.BaseBaseCaller):
     def run_fixture( self, vcf, diff_file ):
         output = self.run_vcf_diff( vcf )
         with open(diff_file) as fh:
-            eq_( fh.read(), output, "Output did not match expected output from file {}".format(diff_file) )
+            eq_( fh.read(), output, "Output did not match expected output from file {0}".format(diff_file) )
 
     def run_vcf_diff( self, vcffile, *args, **kwargs ):
         import subprocess
         script = 'vcf_diff'
 
         cmd = [script,vcffile]
-        print "Running {}".format(' '.join(cmd))
+        print "Running {0}".format(' '.join(cmd))
         try:
             return subprocess.check_output( cmd, stderr=subprocess.STDOUT )
         except subprocess.CalledProcessError as e:

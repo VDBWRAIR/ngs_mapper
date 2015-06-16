@@ -56,7 +56,7 @@ class TestUnitIterRefs(VCFBase):
         for i in range( 1, 3 ):
             # Generates a vcf with one ref and all CB are equal to Ref base
             for p in range( len(ref) ):
-                rec = self.br( 'Ref{}'.format(i), ref, p+1, ref[p] )
+                rec = self.br( 'Ref{0}'.format(i), ref, p+1, ref[p] )
                 self.writer.write_record( rec )
         self.writer.close()
         return ref
@@ -66,7 +66,7 @@ class TestUnitIterRefs(VCFBase):
         for i, row in enumerate( self._C( self.fp ) ):
             ok_( isinstance( row, SeqRecord ), "Did not return a Bio.SeqRecord instance"  )
             # Correct id field
-            eq_( 'Ref{}'.format(i+1), row.id )
+            eq_( 'Ref{0}'.format(i+1), row.id )
             # Correct sequence field
             eq_( ref, str(row.seq) )
 
@@ -77,7 +77,7 @@ class TestUnitIterRefs(VCFBase):
             # id matches set fastaid
             eq_( 'samplename', row.id )
             # Correct description field
-            eq_( 'Ref{}'.format(i+1), row.description )
+            eq_( 'Ref{0}'.format(i+1), row.description )
             # Correct sequence field
             eq_( ref, str(row.seq) )
 
@@ -90,7 +90,7 @@ class TestUnitWriteFasta(VCFBase):
         for i in range( num ):
             s = SeqRecord(
                 Seq( str(generic_dna.letters), generic_dna ),
-                id='Rec{}'.format(i)
+                id='Rec{0}'.format(i)
             )
             yield s
 
@@ -100,13 +100,13 @@ class TestUnitWriteFasta(VCFBase):
         # Make sure lengths are the same
         count = 0
         for eseq in expectedrecords:
-            ok_( seqs.get( eseq.id, False ), "{} did not make it into consensus fasta file" )
+            ok_( seqs.get( eseq.id, False ), "{0} did not make it into consensus fasta file" )
             eq_( str(eseq.seq), str(seqs[eseq.id].seq), "Sequences did not match" )
             count += 1
         le = len(expectedrecords)
         ls = len(seqs)
         eq_( le, ls, "Did not have the same amount of records "\
-                "in file({}) as in expected list({})".format(le,ls) )
+                "in file({0}) as in expected list({1})".format(le,ls) )
 
         return len(seqs)
     # lazy alias

@@ -190,7 +190,7 @@ class TestIntegration(Base):
         result = rdp(self.tempdir)
         print result
         for plat,readfiles in expected.items():
-            assert plat in result, "platform {} not in result".format(plat)
+            assert plat in result, "platform {0} not in result".format(plat)
             if plat == 'MiSeq':
                 reads = [(readfiles[i], readfiles[i+1]) for i in range(0, len(readfiles), 2)]
                 eq_( reads, sorted([tuple(sorted(x)) for x in result[plat]]) )

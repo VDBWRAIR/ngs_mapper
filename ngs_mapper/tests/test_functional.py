@@ -40,7 +40,7 @@ class BaseFunctional(BaseClass):
             for readsdir, conf in fixtures:
                 c = klass.parse_conf( conf )
                 ref = join( dirname(readsdir), c['reference'] )
-                fh.write( '{}\t{}\n'.format(basename(readsdir),ref) )
+                fh.write( '{0}\t{1}\n'.format(basename(readsdir),ref) )
 
     @classmethod
     def run_fixtures( klass, fixtures ):
@@ -49,7 +49,7 @@ class BaseFunctional(BaseClass):
         runsh_sh = TestRunPipeline.script_path( 'runsamplesheet.sh' )
         # All fixtures should be in same dir, so just grab the dirname of the first
         rbsdir = dirname( fixtures[0][0] )
-        cmd = '{} {} {}'.format(runsh_sh,rbsdir,samplesheet)
+        cmd = '{0} {1} {2}'.format(runsh_sh,rbsdir,samplesheet)
         ret,out = TestRunPipeline.run_script( cmd )
 
         return samplesheet,ret,out
@@ -71,14 +71,14 @@ class TestRunPipeline(BaseFunctional):
         eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
         for reads, config in self.fixtures:
             sn = basename(reads)
-            p = 'Please check the logfile (/tmp/\w+/{}.log)'.format(sn)
+            p = 'Please check the logfile (/tmp/\w+/{0}.log)'.format(sn)
             m = re.search( p, self.output, re.S|re.M )
             if m:
                 print m.group(1)
                 print open(m.group(1)).read()
             print self.output
-            ok_( 'Starting {}'.format(sn) in self.output, "Did not start {}".format(sn) )
-            ok_( 'Finished {}'.format(sn) in self.output, "Did not finish {}".format(sn) )
+            ok_( 'Starting {0}'.format(sn) in self.output, "Did not start {1}".format(sn) )
+            ok_( 'Finished {0}'.format(sn) in self.output, "Did not finish {1}".format(sn) )
 
     def check_sample_project_files( self, projdir, fixture ):
         # Files defined that should exist
@@ -89,7 +89,7 @@ class TestRunPipeline(BaseFunctional):
             for f in files:
                 print join(root,f)
         for f in failed:
-            print 'Pipeline did not produce project file {}'.format(f)
+            print 'Pipeline did not produce project file {0}'.format(f)
         if failed:
             ok_( False )
 
@@ -108,7 +108,7 @@ class TestRunPipeline(BaseFunctional):
         ]
 
         for e, typ in expected:
-            ok_( exists( e ), 'Pipeline did not produce {}'.format(e) )
+            ok_( exists( e ), 'Pipeline did not produce {0}'.format(e) )
 
     def test_project_directories_have_expected_files( self ):
         # Ensure each project has correct files too
@@ -122,7 +122,7 @@ class TestRunPipeline(BaseFunctional):
             sn = basename(pdir)
             consensus_file = join( pdir, sn + '.bam.consensus.fasta' )
             consensus_link = join( 'vcf_consensus', sn + '.fasta' )
-            ok_( samefile(consensus_file, consensus_link), 'vcf_consensus file {} is not correctly linked'.format(consensus_link) )
+            ok_( samefile(consensus_file, consensus_link), 'vcf_consensus file {0} is not correctly linked'.format(consensus_link) )
 
     def count_mutations( self, fastapath ):
         amb_bases = 'nmrwsykvhdb'
@@ -130,7 +130,9 @@ class TestRunPipeline(BaseFunctional):
         for seq in SeqIO.parse(fastapath,'fasta'):
             id = seq.description
             # Init counts to 0 for this reference
-            counts[id] = {b:0 for b in amb_bases}
+            counts[id] = {}
+            for b in amb_bases:
+                counts[id][b] = 0
             # Count amb bases
             for b in seq.seq:
                 b = b.lower()

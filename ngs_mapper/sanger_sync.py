@@ -93,11 +93,11 @@ def sync_run( runpath, ngsdata ):
     for read in reads_to_copy:
         rp = join( rund, basename(read) )
         if not exists( rp ):
-            logger.info( 'Copied {} to {}'.format(read,rp) )
+            logger.info( 'Copied {0} to {1}'.format(read,rp) )
             shutil.copy( read, rp )
             synced.append( rp )
         else:
-            logger.info( '{} already existed so it was skipped'.format(rp) )
+            logger.info( '{0} already existed so it was skipped'.format(rp) )
     return synced
 
 def sync_readdata( rawdir, ngsdata ):
@@ -116,23 +116,23 @@ def sync_readdata( rawdir, ngsdata ):
         lnk = relpath( read, readd )
         rdpath = join( readd, basename(read) )
         if not exists( rdpath ):
-            logger.info( 'Symlinking {} to {}'.format(rdpath, lnk) )
+            logger.info( 'Symlinking {0} to {1}'.format(rdpath, lnk) )
             cd = os.getcwd()
             os.symlink( lnk, rdpath )
         else:
-            logger.info( 'Skipping existing abi file {}'.format(rdpath) )
+            logger.info( 'Skipping existing abi file {0}'.format(rdpath) )
         fqpath = rdpath.replace('.ab1', '.fastq' )
         if not exists( fqpath ):
-            logger.info( 'Converting {} to fastq {}'.format(rdpath,fqpath) )
+            logger.info( 'Converting {0} to fastq {1}'.format(rdpath,fqpath) )
             SeqIO.convert( rdpath, 'abi', fqpath, 'fastq' )
         else:
-            logger.info( 'Skipping existing fastq file {}'.format(fqpath) )
+            logger.info( 'Skipping existing fastq file {0}'.format(fqpath) )
 
 def samplename_from_read( filepath ):
     p = '(\S+?)_[FR]\d+_\d{4}_\d{2}_\d{2}_\S+?_\S+?_[A-H]\d{2}.(fastq|ab1)'
     m = re.match( p, basename( filepath ) )
     if not m:
-        raise InvalidFormat( '{} is not a valid Sanger filename'.format(filepath) )
+        raise InvalidFormat( '{0} is not a valid Sanger filename'.format(filepath) )
     return m.groups(0)[0]
 
 def link_reads( readdata, ngsdata ):
@@ -153,10 +153,10 @@ def link_reads( readdata, ngsdata ):
         if not isdir( rbs ):
             os.makedirs( rbs )
         if not islink( rdpath ):
-            logger.info( 'Symlinking {} to {}'.format(rdpath, lnk) )
+            logger.info( 'Symlinking {0} to {1}'.format(rdpath, lnk) )
             os.symlink( lnk, rdpath )
         else:
-            logger.info( 'Skipping existing file {}'.format(rdpath) )
+            logger.info( 'Skipping existing file {0}'.format(rdpath) )
 
 def main():
     args = parse_args()

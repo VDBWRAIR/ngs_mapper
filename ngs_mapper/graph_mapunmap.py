@@ -42,7 +42,7 @@ def sample_from_filename( filename ):
     '''
     m = re.match( '(\S+)\.bam.*', os.path.basename(filename) )
     if not m:
-        raise ValueError( "Filename given({}) does not contain .bam".format(filename) )
+        raise ValueError( "Filename given({0}) does not contain .bam".format(filename) )
     return m.group(1)
 
 def get_mapunmap( jsons ):

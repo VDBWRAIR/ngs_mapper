@@ -25,13 +25,13 @@ VCF_HEAD = '''##fileformat=VCFv4.2
 ##INFO=<ID=CBD,Number=1,Type=Integer,Description="Called Base Depth(Depth of only bases supporting CB">
 ##INFO=<ID=CB,Number=1,Type=Character,Description="Called Base">
 ##INFO=<ID=HPOLY,Number=0,Type=Flag,Description="Is a homopolymer">
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{}'''
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{0}'''
 
 def timeit(func):
     def wrapper(*args, **kwargs):
         import time; st = time.time()
         result = func(*args, **kwargs)
-        print "{} took {} seconds to run".format(func, time.time() - st)
+        print "{0} took {1} seconds to run".format(func, time.time() - st)
         return result
     return wrapper
 
@@ -488,7 +488,7 @@ def bias_hq(stats, biasth=50, bias=10):
     :return: stats2 formatted dictionary with all baseq lists appended to with the bias amount
     '''
     if bias < 1 or int(bias) != bias:
-        raise ValueError("bias was set to {} which is less than 1. Cannot bias on a factor < 1".format(bias))
+        raise ValueError("bias was set to {0} which is less than 1. Cannot bias on a factor < 1".format(bias))
 
     # Because we are adding onto the existing list this needs to be one less
     bias = int(bias) - 1
@@ -550,7 +550,6 @@ def generate_vcf_row(mpileupcol, refseq, minbq, maxd, mind=10, minth=0.8, biasth
 
     @returns a vcf.model._Record
     '''
-    from collections import OrderedDict
     # The base position should be the same as the second item in the parsed region string
     start = mpileupcol.pos
     # Get the reference base from the reference sequence
