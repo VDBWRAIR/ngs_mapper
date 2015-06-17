@@ -1,4 +1,5 @@
 from imports import *
+from ngs_mapper import compat
 
 class Base(common.BaseBamRef):
     modulepath = 'ngs_mapper.runsample'
@@ -25,7 +26,7 @@ class Base(common.BaseBamRef):
         gitdir = join( path, '.git' )
         cmd = 'git status status'.format( path, gitdir )
         try:
-            output = subprocess.check_output( cmd, cwd=path, stderr=subprocess.STDOUT, shell=True )
+            output = compat.check_output( cmd, cwd=path, stderr=subprocess.STDOUT, shell=True )
             return 'Not a git repository' not in output
         except subprocess.CalledProcessError as e:
             print e.output
@@ -128,7 +129,7 @@ class TestFunctional(Base):
         print "Running: {0}".format(cmd)
         cmd = shlex.split( cmd )
         try:
-            sout = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+            sout = compat.check_output( cmd, stderr=subprocess.STDOUT )
         except subprocess.CalledProcessError as e:
             return (e.output,-1)
         return sout,0
@@ -200,7 +201,7 @@ class TestFunctional(Base):
             projdir,
             qsubargs=['--qsub_l', 'nodes=1:ppn=1']
         )
-        assert_in('#PBS', out)
+        assert '#PBS' in out, '#PBS not in output'
 
     def test_runs_correctly( self ):
         projdir = 'outdir'

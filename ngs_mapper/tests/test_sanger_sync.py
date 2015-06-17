@@ -1,6 +1,7 @@
 from imports import *
 import common
 import string
+from ngs_mapper import compat
 
 class Base( common.BaseClass ):
     modulepath = 'ngs_mapper.sanger_sync'
@@ -66,7 +67,7 @@ class Base( common.BaseClass ):
             ok_( isfile( j ), 'Fastq version of {0} does not exist'.format(j) )
 
     def print_ngs( self ):
-        print subprocess.check_output( 'find . -ls', shell=True )
+        print compat.check_output( 'find . -ls', shell=True )
 
     def check_rbs( self, abilist, rbs ):
         ''' abilist is just basename list of abi files expected '''

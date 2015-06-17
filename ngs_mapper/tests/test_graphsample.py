@@ -149,7 +149,10 @@ class TestFunctional(Base):
 
 # Begin better unittest practices
 import mock
-import unittest2 as unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 from .. import graphsample
 
@@ -165,9 +168,15 @@ class TestRunMontage(unittest.TestCase):
         outfile = '/path/bar.png'
         kwargs = {'foo':'bar', 'baz':1}
         r = graphsample.run_montage(infile, outfile, **kwargs)
-        self.m_subprocess.check_call.assert_called_once_with(
-            ['montage', '-foo', 'bar', '-baz', '1', infile, outfile]
-        )
+        ca = self.m_subprocess.check_call.call_args
+        args = ca[0][0]
+        self.assertEqual('montage', args[0])
+        self.assertIn('-foo', args)
+        self.assertIn('bar', args)
+        self.assertIn('-baz', args)
+        self.assertIn('1', args)
+        self.assertIn(infile, args)
+        self.assertEqual([infile,outfile], args[-2:])
         self.assertEqual(outfile, r)
 
     def test_does_not_raise_exception_on_invalid_file(self):

@@ -1,4 +1,5 @@
 from imports import *
+from ngs_mapper import compat
 
 class Base(common.BaseTester):
     modulepath = 'ngs_mapper.tagreads'
@@ -31,11 +32,11 @@ class Base(common.BaseTester):
 
     def get_readgroup( self, bam, rg ):
         cmd = ['samtools', 'view', '-r', rg, bam]
-        return subprocess.check_output( cmd )
+        return compat.check_output( cmd )
 
     def get_numreads( self, bam ):
         try:
-            out = subprocess.check_output( 'samtools flagstat {0} | head -1 | cut -d\' \' -f 1'.format(bam), shell=True )
+            out = compat.check_output( 'samtools flagstat {0} | head -1 | cut -d\' \' -f 1'.format(bam), shell=True )
         except subprocess.CalledProcessError as e:
             print e.output
             print e

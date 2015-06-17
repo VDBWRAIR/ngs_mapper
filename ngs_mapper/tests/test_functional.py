@@ -1,6 +1,7 @@
 from imports import *
 #from test_install import Base
 import json
+import sh
 
 # Derive from installer base to make life easier
 class BaseFunctional(BaseClass):
@@ -50,7 +51,11 @@ class BaseFunctional(BaseClass):
         # All fixtures should be in same dir, so just grab the dirname of the first
         rbsdir = dirname( fixtures[0][0] )
         cmd = '{0} {1} {2}'.format(runsh_sh,rbsdir,samplesheet)
+        fh = open('/tmp/thingy','w')
+        fh.write(cmd)
         ret,out = TestRunPipeline.run_script( cmd )
+        fh.write(out)
+        fh.close()
 
         return samplesheet,ret,out
 
@@ -58,6 +63,8 @@ class TestRunPipeline(BaseFunctional):
     @classmethod
     def setUpClass( klass ):
         klass.fixtures = klass.compile_functional_fixtures( join(fixtures.FIXDIR,'functional') )
+        fh = open('/tmp/thingy2','w')
+        fh.close()
         klass.samplesheet, klass.ret, klass.out = klass.run_fixtures( klass.fixtures )
         #klass.samplesheet, klass.ret, klass.out = 'ss.tsv',0,''
 
@@ -77,8 +84,8 @@ class TestRunPipeline(BaseFunctional):
                 print m.group(1)
                 print open(m.group(1)).read()
             print self.output
-            ok_( 'Starting {0}'.format(sn) in self.output, "Did not start {1}".format(sn) )
-            ok_( 'Finished {0}'.format(sn) in self.output, "Did not finish {1}".format(sn) )
+            ok_( 'Starting {0}'.format(sn) in self.output, "Did not start {0}".format(sn) )
+            ok_( 'Finished {0}'.format(sn) in self.output, "Did not finish {0}".format(sn) )
 
     def check_sample_project_files( self, projdir, fixture ):
         # Files defined that should exist

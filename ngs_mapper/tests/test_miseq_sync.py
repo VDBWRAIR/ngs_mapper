@@ -109,8 +109,9 @@ class FunctionalBase( Base ):
         reads = []
         for i in (1,2):
             readpath = join( outpath, template.format( samplename=samplename, sampleid=sampleid, rf=i ) )
-            with gzip.open( readpath, 'wb' ) as fh:
-                fh.write( '@{0}\nATGC\n+\nIIII\n'.format(samplename) )
+            fh = gzip.open( readpath, 'wb' )
+            fh.write( '@{0}\nATGC\n+\nIIII\n'.format(samplename) )
+            fh.close()
             reads.append( readpath )
         return reads
         

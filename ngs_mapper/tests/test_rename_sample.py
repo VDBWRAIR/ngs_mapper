@@ -2,6 +2,7 @@ from imports import *
 import common
 from ngs_mapper.rename_sample import RenameException
 import gzip
+from ngs_mapper import compat
 
 class Base( common.BaseClass ):
     modulepath = 'ngs_mapper.rename_sample'
@@ -32,7 +33,7 @@ class Base( common.BaseClass ):
     }
 
     def print_tempdir( self ):
-        print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
+        print compat.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
 
     def create_ngs( self ):
         self.ngs = 'NGSData'
@@ -289,12 +290,12 @@ class TestRenameFile( Base ):
         ok_(exists(s1))
         ok_(exists(s2))
         ok_(exists(f))
-        print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
+        print compat.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
 
         # Try to rename a symlink -> symlink -> file
         self._C( s2, 'somefile', 'some1' )
     
-        print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
+        print compat.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
         ok_( exists( join('sym2','some1.txt') ), 'Did not rename sym2 file' )
         ok_( exists( join('sym1','some1.txt') ), 'Did not rename sym1 file' )
         ok_( exists( 'some1.txt' ), 'Did not rename actual file' )

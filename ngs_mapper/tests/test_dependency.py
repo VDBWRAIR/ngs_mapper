@@ -1,5 +1,7 @@
 from imports import *
 import tempdir
+from ngs_mapper import compat
+import sh
 
 def make_mock_exec_file( path ):
     ''' just make a mock bwa to be called '''
@@ -357,9 +359,9 @@ def urllib_urlretrieve_mock( url, filename=None, reporthook=None, data=None ):
         fh.write('hello\n')
     if ext == '.zip':
         import zipfile
-        with zipfile.ZipFile(dst,'w') as zfh:
-            zfh.write('Trimmomatic-0.01/trimmomatic-0.01.jar')
-            zfh.write('hello.txt')
+        zfh = zipfile.ZipFile(dst,'w')
+        zfh.write('Trimmomatic-0.01/trimmomatic-0.01.jar')
+        zfh.write('hello.txt')
     else:
         import tarfile
         compression = ''
@@ -371,9 +373,10 @@ def urllib_urlretrieve_mock( url, filename=None, reporthook=None, data=None ):
             compression = 'w'
         else:
             raise Exception('Cannot determine compression for file {0}'.format(dst))
-        with tarfile.open(dst, compression) as tar:
-            tar.add('Trimmomatic-0.01')
-            tar.add('hello.txt')
+        tar = tarfile.open(dst, compression)
+        tar.add('Trimmomatic-0.01')
+        tar.add('hello.txt')
+        tar.close()
     shutil.rmtree('Trimmomatic-0.01')
     os.unlink('hello.txt')
     return (dst, '')
@@ -738,13 +741,14 @@ def urllib_urlretrieve_python_mock( url, filename=None, reporthook=None, data=No
         compression = 'w'
     else:
         raise Exception('Cannot determine compression for file {0}'.format(dst))
-    with tarfile.open(dst, compression) as tar:
-        tar.add(base_name)
+    tar = tarfile.open(dst, compression)
+    tar.add(base_name)
+    tar.close()
     shutil.rmtree(base_name)
     return (dst, '')
 
 def check_output( *args, **kwargs ):
-    return subprocess.check_output(*args, **kwargs)
+    return compat.check_output(*args, **kwargs)
 
 def Popen( *args, **kwargs ):
     p = Mock()
@@ -789,7 +793,7 @@ class TestInstallPython(Base):
         ok_( isfile(exepth), "Did not copy python executable into prefix/bin" )
         ok_( isdir(libpth), "Did not create {0} in prefix/lib".format(libpth) )
 
-        rversion = subprocess.check_output([exepth], stderr=subprocess.STDOUT)
+        rversion = compat.check_output([exepth], stderr=subprocess.STDOUT)
         eq_( 'Python {0}\n'.format(version), rversion )
 
     def test_installs_into_given_prefix(self):

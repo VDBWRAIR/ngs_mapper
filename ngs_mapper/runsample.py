@@ -107,6 +107,7 @@ import tempfile
 import logging
 import shutil
 import glob
+from ngs_mapper import compat
 
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
@@ -195,7 +196,7 @@ def make_project_repo( projpath ):
     '''
     gitdir = os.path.join( projpath, '.git' )
     cmd = ['git', '--work-tree', projpath, '--git-dir', gitdir, 'init']
-    output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+    output = compat.check_output( cmd, stderr=subprocess.STDOUT )
     logger.debug( output )
 
 def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, script_dir=None ):

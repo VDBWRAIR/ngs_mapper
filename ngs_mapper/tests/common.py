@@ -4,6 +4,7 @@ import os
 from os.path import *
 from . import tdir
 import subprocess
+from ngs_mapper import compat
 
 class BaseTester(object):
     def _C( self, *args, **kwargs ):
@@ -68,8 +69,13 @@ class BaseClass( BaseTester ):
     @classmethod
     def run_script( self, script ):
         print "Running {0}".format(script)
+        fh = open('/tmp/test_run.txt','w')
+        fh.write('Running {0}'.format(script))
         try:
-            return (0,subprocess.check_output( script, stderr=subprocess.STDOUT, shell=True ))
+            out = compat.check_output( script, stderr=subprocess.STDOUT, shell=True)
+            fh.write(out)
+            fh.close()
+            return (0,out)
         except subprocess.CalledProcessError as e:
             return (e.returncode, e.output)
 

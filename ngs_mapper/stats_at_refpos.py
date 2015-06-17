@@ -174,8 +174,28 @@ def compile_stats( stats ):
             base_stats['Bases'][base]['PctTotal'] = round((float(len(mquals))/stats['depth'])*100,2)
 
     # Quit out of loop we are done
-    # Order bases by PctTotal descending
-    sorted_bases = sorted( base_stats['Bases'].items(), key=lambda x: x[1]['PctTotal'], reverse=True )
+    # Order bases by PctTotal, then AvgBaseQ descending
+    def cmp_func(x,y):
+        x1 = x[1]
+        y1 = y[1]
+        if x1['PctTotal'] < y1['PctTotal']:
+            return -1
+        elif x1['PctTotal'] > y1['PctTotal']:
+            return 1
+        else:
+            if x1['AvgBaseQ'] < y1['AvgBaseQ']:
+                return -1
+            elif x1['AvgBaseQ'] > y1['AvgBaseQ']:
+                return 1
+            else:
+                return 0
+
+    sorted_bases = sorted(
+        base_stats['Bases'].items(),
+        cmp=cmp_func,
+        #key=lambda x: x[1]['PctTotal']+x[1]['AvgBaseQ'],
+        reverse=True
+    )
     base_stats['Bases'] = OrderedDict(sorted_bases)
     return base_stats
 

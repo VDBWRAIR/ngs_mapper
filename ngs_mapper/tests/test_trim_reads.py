@@ -51,10 +51,7 @@ class TestTrimReadsInDir(TrimBase):
             self._C('/path/to/reads', 20, '/path/to/outdir')
             #_call = call(reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0)
             for call in mtrim_read.call_args_list:
-                assert_not_in(
-                    '_I', call[0][0],
-                    'Did not skip MiSeq Index {0}'.format(call[0][0])
-                )
+                assert '_I', call[0][0] not in 'Did not skip MiSeq Index {0}'.format(call[0][0])
 
     @patch('ngs_mapper.trim_reads.os', MagicMock())
     @patch('__builtin__.open')

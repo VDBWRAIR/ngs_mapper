@@ -1,4 +1,5 @@
 from imports import *
+from ngs_mapper import compat
 
 class Base(common.BaseBaseCaller):
     modulepath = 'ngs_mapper.vcf_diff'
@@ -29,7 +30,7 @@ class Base(common.BaseBaseCaller):
         cmd = [script,vcffile]
         print "Running {0}".format(' '.join(cmd))
         try:
-            return subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+            return compat.check_output( cmd, stderr=subprocess.STDOUT )
         except subprocess.CalledProcessError as e:
             return e.output
 

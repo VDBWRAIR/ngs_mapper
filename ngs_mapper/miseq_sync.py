@@ -129,6 +129,7 @@ from glob import glob
 from datetime import datetime
 import gzip
 import csv
+from ngs_mapper import compat
 
 import log
 logger = log.setup_logger( basename(__file__), log.get_config() )
@@ -228,7 +229,7 @@ def rsync_run( rundir, ngsdata ):
     logger.info( 'The fastq read data is synced. Syncing the rest of the data' )
     cmd = 'rsync -av --progress --size-only {0} {1}'.format( src, dst )
     cmd = shlex.split( cmd )
-    logger.debug( subprocess.check_output( cmd ) )
+    logger.debug( compat.check_output( cmd ) )
 
 
 def create_readdata( rundir, ngsdata ):
@@ -245,8 +246,11 @@ def create_readdata( rundir, ngsdata ):
         dstfq = join( dstroot, basename( gz ).replace( '.fastq.gz', '_{0}.fastq'.format( rundate ) ) )
         if not exists( dstfq ):
             logger.info( 'Unpacking {0} to {1}'.format(gz, dstfq) )
-            with gzip.open( gz, 'rb' ) as fr, open( dstfq, 'w' ) as fw:
-                fw.write( fr.read() )
+            fr = gzip.open( gz, 'rb' )
+            fw = open( dstfq, 'w' )
+            fw.write( fr.read() )
+            fw.close()
+            fr.close()
         else:
             logger.debug( '{0} looks to be unpacked already as {1}'.format(gz, dstfq) )
 

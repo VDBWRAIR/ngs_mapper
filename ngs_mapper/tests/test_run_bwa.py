@@ -1,4 +1,5 @@
 from imports import *
+from ngs_mapper import compat
 
 class Base(BaseClass):
     modulepath = 'ngs_mapper.run_bwa'
@@ -266,7 +267,7 @@ class TestIntegrateMainArgs(Base):
         r = 'bwa_mem.bam'
         assert os.stat(r)
         import subprocess
-        out = subprocess.check_output( ['samtools', 'view', '{0}'.format(r)] )
+        out = compat.check_output( ['samtools', 'view', '{0}'.format(r)] )
         rochecount = out.count( 'IA52U1' )
         print rochecount
         eq_( 100, rochecount, 'Sff file reads did not make it into bam file' )

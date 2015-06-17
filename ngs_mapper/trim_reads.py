@@ -12,6 +12,7 @@ import tempfile
 import reads
 import shlex
 import data
+from ngs_mapper import compat
 
 import log
 lconfig = log.get_config()
@@ -235,7 +236,7 @@ def run_trimmomatic( *args, **kwargs ):
     # Allow us to read stderr which should be stats from cutadapt
     logger.debug( "Running {0}".format(' '.join(cmd)) )
     try:
-        output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+        output = compat.check_output( cmd, stderr=subprocess.STDOUT )
         return output
     except subprocess.CalledProcessError as e:
         logger.critical( "Trimmomatic error: {0}".format(e.output) )

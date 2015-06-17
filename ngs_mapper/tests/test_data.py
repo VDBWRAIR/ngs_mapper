@@ -220,7 +220,7 @@ class TestIntegration(Base):
                 eq_( sorted(e), sorted(result[plat]) )
             else:
                 eq_( sorted(reads), sorted(result[plat])  )
-        eq_( expected.keys(), result.keys() )
+        eq_( sorted(expected.keys()), sorted(result.keys()) )
 
     def test_platform_has_paired_reads(self):
         from ngs_mapper.data import pair_reads
@@ -236,7 +236,10 @@ class TestIntegration(Base):
 # Better practices here
 
 import mock
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 from os.path import *
 import os

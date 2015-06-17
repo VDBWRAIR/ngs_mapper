@@ -14,7 +14,7 @@ class Base(BaseTester):
     def _make_lineargs(self, regiontypes):
         lineargs = {}
         for r in regiontypes:
-            x[r] = {'color':r,'linewidth':1}
+            lineargs[r] = {'color':r,'linewidth':1}
         return lineargs
 
     def _make_qualdepth(self, **kwargs):

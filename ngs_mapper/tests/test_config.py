@@ -55,7 +55,7 @@ class TestLoadConfigFile(Base):
         from ngs_mapper.config import Config
         mock_yaml.load.return_value = self.config
         r = self._C('/path/to/my.yaml')
-        assert_is_instance(r, Config)
+        assert isinstance(r, Config), 'not instance of Config'
 
 @attr('current')
 class TestConfigClass(Base):
