@@ -1,3 +1,6 @@
+from ngs_mapper.ez_setup import use_setuptools
+use_setuptools()
+ 
 from glob import glob
 import sys
 from os.path import join, expanduser
