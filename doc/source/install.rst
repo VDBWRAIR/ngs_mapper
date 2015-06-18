@@ -147,6 +147,10 @@ Installation
         Red Hat/CentOS comes pre-shipped with Python 2.6.6 and the latest versions
         of Ubuntu come with 2.7.x so this is likely not needed.
 
+        If the above command does not return 2.6.x or 2.7.x and you think it should,
+        there is a chance that the system installed python is not first in your
+        environment's PATH.
+
         Here we specify to install into our home directory and to install Python
         version 2.7.10. You can specify anywhere you want and any version(less than
         3.0), but you will need to then specify the path to that python later on.
