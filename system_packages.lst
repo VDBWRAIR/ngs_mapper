@@ -46,7 +46,8 @@
 	"rcs",
 	"subversion",
 	"swig",
-	"systemtap"
+	"systemtap",
+    "python-devel"
 ],
 "apt-get": [
     "build-essential",
@@ -64,7 +65,8 @@
 	"imagemagick",
 	"libpng12-dev",
 	"default-jre",
-	"libbz2-dev"
+	"libbz2-dev",
+    "python-dev",
 ],
 "pacman": [
     "base-devel",
