@@ -25,7 +25,7 @@ If you want to change the quality threshold to use to trim reads when you run :p
 
     .. code-block:: bash
 
-        #> trim_reads --help
+        $> trim_reads --help
         usage: trim_reads [-h] [--config CONFIG] [-q Q] [--head-crop HEADCROP]
                              [-o OUTPUTDIR]
                              readsdir
@@ -50,7 +50,7 @@ If you want to change the quality threshold to use to trim reads when you run :p
 
     .. code-block:: bash
 
-        #> trim_reads -q 5 /path/to/my/input.fastq
+        $> trim_reads -q 5 /path/to/my/input.fastq
 
 This process works pretty slick until you notice that there is no way to easily tell :py:mod:`runsample <ngs_mapper.runsample>` to specify that same value.
 With the version 1.0 release of the pipeline there is now a config file that you can edit and change the Default value any script will use.
@@ -62,7 +62,7 @@ Example running :py:mod:`runsample <ngs_mapper.runsample>` using config.yaml
 
     .. code-block:: bash
 
-        #> make_example_config
+        $> make_example_config
         /current/working/directory/config.yaml
 
 #. We just need to edit that config.yaml file which should be in the current directory and change the trim_reads's q option default value to 5 then save the file
@@ -70,7 +70,7 @@ Example running :py:mod:`runsample <ngs_mapper.runsample>` using config.yaml
 
     .. code-block:: bash
 
-        #> runsample /path/to/NGSData /path/to/reference.fasta mysample -od mysample -c config.yaml
+        $> runsample /path/to/NGSData /path/to/reference.fasta mysample -od mysample -c config.yaml
         2014-11-28 14:39:14,906 -- INFO -- runsample       --- Starting mysample --- 
         2014-11-28 14:39:14,906 -- INFO -- runsample       --- Using custom config from config.yaml ---
         2014-11-28 14:39:35,926 -- INFO -- runsample       --- Finished mysample ---
@@ -78,7 +78,7 @@ Example running :py:mod:`runsample <ngs_mapper.runsample>` using config.yaml
 Example running runsamplesheet.sh using a custom config.yaml
 ------------------------------------------------------------
 
-You will probably want to be able to run an entire samplesheet with a custom config file as well. If you check out the :doc:`scripts/runsamplesheet` page you will notice that you can specify options to pass on to :py:mod:`runsample <ngs_mapper.runsample>` by using the RUNSAMPLEOPTIONS variable
+You will probably want to be able to run an entire samplesheet with a custom config file as well. If you check out the :doc:`scripts/runsamplesheet` page you will notice that you can specify options to pass on to :py:mod:`runsample <ngs_mapper.runsample>` by using the ``RUNSAMPLEOPTIONS`` variable
 
 #. Generate your config.yaml template
 
@@ -90,7 +90,7 @@ You will probably want to be able to run an entire samplesheet with a custom con
 
     .. code-block:: bash
 
-        #> RUNSAMPLESHEET="-c config.yaml" runsamplesheet.sh /path/to/NGSData/ReadsBySample samplesheet.tsv
+        $> RUNSAMPLEOPTIONS"-c config.yaml" runsamplesheet.sh /path/to/NGSData/ReadsBySample samplesheet.tsv
 
 Editing config.yaml
 ===================
