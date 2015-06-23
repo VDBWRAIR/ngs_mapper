@@ -50,8 +50,8 @@ class TestFqstats( Base ):
         rlb, aqb, mrl, maq, mrc, mqc = self._C( randseqs )
         d = time.time() - s
 
-        eq_( mlen, mrl, 'Did not compute max read length correctly {} != {}'.format(mlen,mrl) )
-        eq_( mqual, maq, 'Did not compute max AvgQual correctly {} != {}'.format(mqual,maq) )
+        eq_( mlen, mrl, 'Did not compute max read length correctly {0} != {1}'.format(mlen,mrl) )
+        eq_( mqual, maq, 'Did not compute max AvgQual correctly {0} != {1}'.format(mqual,maq) )
         rlbin, aa = bin_values( [len(r.seq._data) for r in randseqs] )
         aqbin, bb = bin_values( [read_avg_qual(r) for r in randseqs] )
 
@@ -59,9 +59,9 @@ class TestFqstats( Base ):
             eq_( v, rlb[k] )
         for k,v in aqbin.iteritems():
             eq_( v, aqb[k] )
-        ok_( d < acceptable_time, 'Took {} seconds'.format(d) )
-        eq_( aa, mrc, 'Did not set maximum read count correctly {} != {}'.format(100,mrc) )
-        eq_( bb, mqc, 'Did not set maximum qual read count correctl {} != {}'.format(100,mqc) )
+        ok_( d < acceptable_time, 'Took {0} seconds'.format(d) )
+        eq_( aa, mrc, 'Did not set maximum read count correctly {0} != {1}'.format(100,mrc) )
+        eq_( bb, mqc, 'Did not set maximum qual read count correctl {0} != {1}'.format(100,mqc) )
 
     def test_noseqs( self ):
         r = self._C( [] )

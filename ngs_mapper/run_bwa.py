@@ -27,7 +27,7 @@ def main():
     
     # Compile together all the reads into a list
     preads = reads_by_plat( args.reads )
-    logger.debug( "Reads parsed by platform: {}".format(preads) )
+    logger.debug( "Reads parsed by platform: {0}".format(preads) )
     reads = []
     for plat in args.platforms:
         if plat in preads:
@@ -71,10 +71,10 @@ def main():
     if merge == 3:
         ngs_mapper.bam.mergebams( [pairedbam, nonpairedbam], args.output )
     elif merge == 1:
-        logger.debug( "Paired only. Moving result file {} to {}".format(pairedbam, bampath) )
+        logger.debug( "Paired only. Moving result file {0} to {1}".format(pairedbam, bampath) )
         shutil.move( pairedbam, bampath )
     elif merge == 2:
-        logger.debug( "Paired only. Moving result file {} to {}".format(nonpairedbam, bampath) )
+        logger.debug( "Paired only. Moving result file {0} to {1}".format(nonpairedbam, bampath) )
         shutil.move( nonpairedbam, bampath )
     else:
         raise Exception( "Somehow no reads were compiled" )
@@ -85,7 +85,7 @@ def main():
     if not args.keep_temp:
         shutil.rmtree( tdir )
     else:
-        logger.info( "Keeping temporary directory {}. You will probably want to delete it yourself or move it".format(tdir) )
+        logger.info( "Keeping temporary directory {0}. You will probably want to delete it yourself or move it".format(tdir) )
 
 def parse_args( args=sys.argv[1:] ):
     '''
@@ -177,14 +177,14 @@ def bwa_mem( read1, mate=None, ref=None, output='bwa.sai', **kwargs ):
     '''
     if os.path.isdir( ref ):
         # Compile ref directory
-        logger.debug( "Compiling references inside of {}".format(ref) )
+        logger.debug( "Compiling references inside of {0}".format(ref) )
         ref = compile_refs( ref )
-        logger.info( "Refs are all compiled into {}".format(ref) )
+        logger.info( "Refs are all compiled into {0}".format(ref) )
 
     # First, make sure the reference is indexed
-    logger.debug( "Ensuring {} is indexed".format(ref) )
+    logger.debug( "Ensuring {0} is indexed".format(ref) )
     if not index_ref(ref):
-        raise InvalidReference("{} cannot be indexed by bwa")
+        raise InvalidReference("{0} cannot be indexed by bwa")
 
     # Setup BWA Mem
     mem = None

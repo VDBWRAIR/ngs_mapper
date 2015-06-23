@@ -85,7 +85,7 @@ Options: -b       output BAM
         for i, line in enumerate( res, 10 ):
             line = line.split()
             print line
-            eq_( 'Read{}'.format(i), line[0] )
+            eq_( 'Read{0}'.format(i), line[0] )
         eq_( 20, i )
 
 class TestProp(Base):
@@ -158,15 +158,15 @@ class TestUnitTagsToList(SamRowBase):
         )
         for c,t in types:
             if c == 'B':
-                row = self.row + 'aa:{}:'.format(c) + '1,1'
+                row = self.row + 'aa:{0}:'.format(c) + '1,1'
                 r = self._C( row )
                 eq_( ('aa',[1,1]), r.TAGS[0] )
             else:
-                row = self.row + 'aa:{}:'.format(c) + str(t(1))
+                row = self.row + 'aa:{0}:'.format(c) + str(t(1))
                 r = self._C( row )
                 if c == 'H':
                     t = str
-                ok_( isinstance( r.TAGS[0][1], t ), "Expected {} to be a {} but got {}".format(c,t,type(r.TAGS[0][1])) )
+                ok_( isinstance( r.TAGS[0][1], t ), "Expected {0} to be a {1} but got {2}".format(c,t,type(r.TAGS[0][1])) )
             ok_( c in r._tags, "Did not set the correct field type" )
 
     def test_multi( self ):

@@ -16,7 +16,7 @@ def samtobam( sam, outbam ):
         @returns outbam or the file descriptor of the object
     '''
     cmd = ['samtools','view','-Sb','-']
-    log.info('Running {}'.format(' '.join(cmd)))
+    log.info('Running {0}'.format(' '.join(cmd)))
     # Determine if sam is a filepath or file like object
     if isinstance(sam,str):
         input = open(sam)
@@ -29,7 +29,7 @@ def samtobam( sam, outbam ):
     else:
         output = outbam
 
-    log.debug("CMD: {} STDIN: {} STDOUT: {}".format(cmd,input,output))
+    log.debug("CMD: {0} STDIN: {1} STDOUT: {2}".format(cmd,input,output))
     p = subprocess.Popen( cmd, stdin=input, stdout=output )
 
     # Returns the original file path or
@@ -57,7 +57,7 @@ def sortbam( bam, outbam ):
         @returns outbam or the file descriptor of the object
     '''
     cmd = ['samtools','sort','-f','-']
-    log.info('Running {}'.format(' '.join(cmd)))
+    log.info('Running {0}'.format(' '.join(cmd)))
 
     # Determine if sam is a filepath or file like object
     if isinstance(bam,str):
@@ -69,9 +69,9 @@ def sortbam( bam, outbam ):
     if isinstance(outbam,str):
         cmd.append( outbam )
     else:
-        raise ValueError("Output file for sortbam has to be a path not {}".format(outbam))
+        raise ValueError("Output file for sortbam has to be a path not {0}".format(outbam))
 
-    log.debug("CMD: {} STDIN: {}".format(cmd,input))
+    log.debug("CMD: {0} STDIN: {1}".format(cmd,input))
     p = subprocess.Popen( cmd, stdin=input )
     p.wait()
     return outbam
@@ -86,11 +86,11 @@ def mergebams( sortedbams, mergedbam ):
         @returns the path to mergedbam
     '''
     if not isinstance( sortedbams, list ) or len( sortedbams ) < 2:
-        raise ValueError( "Merging bams requires >= 2 bam files to merge. {} was given".format(sortedbams) )
+        raise ValueError( "Merging bams requires >= 2 bam files to merge. {0} was given".format(sortedbams) )
 
     print sortedbams
     cmd = ['samtools','merge',mergedbam] + sortedbams
-    log.info('Running {}'.format(' '.join(cmd)))
+    log.info('Running {0}'.format(' '.join(cmd)))
 
     p = subprocess.Popen( cmd )
     p.wait()
@@ -106,7 +106,7 @@ def indexbam( sortedbam ):
         @returns the path to the index file for sortedbam(probably sortedbam+'.bai')
     '''
     cmd = ['samtools','index',sortedbam]
-    log.info('Running {}'.format(' '.join(cmd)))
+    log.info('Running {0}'.format(' '.join(cmd)))
 
     p = subprocess.Popen( cmd )
     p.wait()
@@ -123,7 +123,10 @@ def get_refstats( bamfile ):
     cmd = ['samtools','idxstats',bamfile]
     p = subprocess.Popen( cmd, stdout=subprocess.PIPE )
     sout,serr = p.communicate()
-    return {line.split()[0]:line.split() for line in sout.splitlines()}
+    r = {}
+    for line in sout.splitlines():
+        r[line.split()[0]] = line.split() 
+    return r
 
 def bam_to_fastq(input_fh):
     '''

@@ -58,7 +58,8 @@ Exclude pH1N1 H3N2, but show all references with /MP/ in them(even pH1N1 and H3N
 from glob import glob
 import json
 from os.path import join, basename
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
+from compat import OrderedDict
 import math
 import argparse
 

@@ -94,7 +94,7 @@ def filter_reads_by_platform( path, platform ):
             pfr = platform_for_read( f )
         except NoPlatformFound as e:
             logger.warning(
-                "{} was skipped as the platform cannot be determined".format(f)
+                "{0} was skipped as the platform cannot be determined".format(f)
             )
             continue
         except IOError as e:
@@ -134,16 +134,16 @@ def platform_for_read( filepath ):
             first_record = next(SeqIO.parse(fh, ext))
         except StopIteration:
             logger.debug('It appears that {0} is empty'.format(filepath))
-            raise NoPlatformFound("No platform found for empty read file {}".format(filepath))
+            raise NoPlatformFound("No platform found for empty read file {0}".format(filepath))
         except ValueError as e:
             logger.debug('{0} is not a parseable type by Biopython\'s Seqio.parse: {1}'.format(filepath, str(e)))
-            raise NoPlatformFound("No platform found for invalid read file {}".format(filepath))
+            raise NoPlatformFound("No platform found for invalid read file {0}".format(filepath))
             
         # Find first platform that matches
         for p, plat in READ_ID_MAPPING:
             if re.match(p, first_record.id):
                 return plat
-        raise NoPlatformFound("No platform found for {}".format(filepath))
+        raise NoPlatformFound("No platform found for {0}".format(filepath))
     finally:
         fh.close()
 
@@ -203,26 +203,26 @@ def pair_reads( readlist ):
     paired_reads = []
     skiplist = []
     for i in range(len(readlist)):
-        logger.info("paired_reads: {}".format(paired_reads))
-        logger.debug("i: {}".format(i))
+        logger.info("paired_reads: {0}".format(paired_reads))
+        logger.debug("i: {0}".format(i))
         # Don't do anything with reads that have been mated already
         if not readlist[i] in skiplist:
             # Is there a mate file?
             index = find_mate( readlist[i], readlist )
-            logger.debug("Index in readlist for {} is {}".format(readlist[i],index))
+            logger.debug("Index in readlist for {0} is {1}".format(readlist[i],index))
             # No mate found so just add it to list
             if index == -1:
                 logger.debug("Index was -1 so appending readfile")
                 paired_reads.append(readlist[i])
             else:
                 # Append mate pair
-                logger.debug("Appending mated pairs ({},{})".format(readlist[i],readlist[index]))
+                logger.debug("Appending mated pairs ({0},{1})".format(readlist[i],readlist[index]))
                 paired_reads.append( tuple(sorted([readlist[i],readlist[index]])) )
                 # Append mate to be skipped so we don't re-add it again
                 skiplist.append(readlist[index])
-                logger.debug("Mate list {}".format(skiplist))
+                logger.debug("Mate list {0}".format(skiplist))
         else:
-            logger.debug("Ignoring {} because it has already been added to the mate list".format(readlist[i]))
+            logger.debug("Ignoring {0} because it has already been added to the mate list".format(readlist[i]))
     return paired_reads
 
 def find_mate( filepath, readlist ):

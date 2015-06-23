@@ -2,6 +2,7 @@ from imports import *
 import common
 from ngs_mapper.rename_sample import RenameException
 import gzip
+from ngs_mapper import compat
 
 class Base( common.BaseClass ):
     modulepath = 'ngs_mapper.rename_sample'
@@ -32,7 +33,7 @@ class Base( common.BaseClass ):
     }
 
     def print_tempdir( self ):
-        print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
+        print compat.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
 
     def create_ngs( self ):
         self.ngs = 'NGSData'
@@ -72,7 +73,7 @@ class Base( common.BaseClass ):
     def mock_sanger( self, runname, samplename ):
         rw, rd, rbs = self.make_dirs('Sanger', runname, samplename)
         
-        sample = '{}_F1_2001_01_01_Den1_Den1_0001_A01'.format(samplename)
+        sample = '{0}_F1_2001_01_01_Den1_Den1_0001_A01'.format(samplename)
         rawfile = join( rw, sample+'.ab1' )
         ab1read = join( rd, sample+'.ab1' )
         fqread = join( rd, sample+'.fastq' )
@@ -93,7 +94,7 @@ class Base( common.BaseClass ):
     def mock_iontorrent( self, runname, samplename ):
         rw, rd, rbs = self.make_dirs('IonTorrent', runname, samplename)
         rawfile = join( rw, 'somedirs', 'IonXpress_001_R_2001_01_01_01_01_01_user_XXX-01_Auto_user_XXX-01_02.fastq' )
-        rawsample = '{}__1__RL1__2001_01_01__Den1.fastq'.format(samplename)
+        rawsample = '{0}__1__RL1__2001_01_01__Den1.fastq'.format(samplename)
         samplefile = samplename + '__1__IX001__2001_01_01__vir.fastq' 
         rdfile = join( rd, samplefile )
         rbsfile = join( rbs, samplefile )
@@ -125,7 +126,7 @@ class Base( common.BaseClass ):
         # rd is just the sigproc dir not the R_ dir so we fix it here
         rd = join( self.ReadData, 'Roche454', ddir )
 
-        rawsample = '{}__1__RL1__2001_01_01__Den1.fastq'.format(samplename)
+        rawsample = '{0}__1__RL1__2001_01_01__Den1.fastq'.format(samplename)
 
         if byregion:
             rwdemul = join( rw, ddir, 'demultiplexed', '1' )
@@ -139,10 +140,10 @@ class Base( common.BaseClass ):
         # Do the sigproc symlink
         target = relpath( join(rw,ddir), join(self.ReadData,'Roche454') )
         os.symlink( target, rd )
-        ok_( exists(rd), 'Sigproc {} -> {} symlink broken'.format(rd, target) )
+        ok_( exists(rd), 'Sigproc {0} -> {1} symlink broken'.format(rd, target) )
 
-        ok_( exists(rwdemul), '{} does not exist'.format(rwdemul) )
-        ok_( exists(rddemul), '{} does not exist'.format(rddemul) )
+        ok_( exists(rwdemul), '{0} does not exist'.format(rwdemul) )
+        ok_( exists(rddemul), '{0} does not exist'.format(rddemul) )
 
         rawfile = join( rwdemul, rawsample )
         fh = open(rawfile,'w')
@@ -166,7 +167,7 @@ class Base( common.BaseClass ):
     def mock_miseq( self, runname, samplename ):
         rw, rd, rbs = self.make_dirs('MiSeq', runname, samplename)
 
-        rawsample = '{}_S01_L001_R1_001.fastq.gz'.format(samplename)
+        rawsample = '{0}_S01_L001_R1_001.fastq.gz'.format(samplename)
         readsample = rawsample.replace( '.fastq.gz', '_2001_01_01.fastq' )
 
         bcdir = join( rw, 'Data', 'Intensities', 'BaseCalls' )
@@ -289,12 +290,12 @@ class TestRenameFile( Base ):
         ok_(exists(s1))
         ok_(exists(s2))
         ok_(exists(f))
-        print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
+        print compat.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
 
         # Try to rename a symlink -> symlink -> file
         self._C( s2, 'somefile', 'some1' )
     
-        print subprocess.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
+        print compat.check_output('find '+self.tempdir+' -exec ls -ld {} \;',shell=True)
         ok_( exists( join('sym2','some1.txt') ), 'Did not rename sym2 file' )
         ok_( exists( join('sym1','some1.txt') ), 'Did not rename sym1 file' )
         ok_( exists( 'some1.txt' ), 'Did not rename actual file' )
@@ -330,7 +331,7 @@ class TestRenameFile( Base ):
         os.makedirs(dirname(e))
         self._C( f, '313', 'replaced' )
         ok_( not exists(f.replace('313','replaced')), 'Incorrectly replaced replace string' )
-        ok_( exists(e), '{} was not created'.format(e) )
+        ok_( exists(e), '{0} was not created'.format(e) )
 
     def test_missing_originalname( self ):
         # Sometimes the file that the symlinks resolve to doesn't contain the
@@ -350,7 +351,7 @@ class TestRenameFile( Base ):
         self._C( rbsf, 'fromname', 'tothis' )
 
         self.print_tempdir()
-        ok_( not exists(rbsf), 'Did not rename {}'.format(rbsf) )
+        ok_( not exists(rbsf), 'Did not rename {0}'.format(rbsf) )
         ok_( exists(rbsf.replace('fromname','tothis')), 'Did not create new symlink' )
         ok_( not exists(readf), 'Did not rename intermediate symlink file' )
         ok_( exists(readf.replace('fromname','tothis')), 'Did not recreate intermediate symlink file' )
@@ -390,8 +391,8 @@ class TestRenameIonTorrent( Base ):
         newrbs = rbs.replace('fromsamplename', 'tosamplename')
 
         self.print_tempdir()
-        ok_( not exists(read), 'Did not rename the ReadData symlink({} still exists)'.format(read) )
-        ok_( not exists(rbs), 'Did not rename ReadsBySample symlink({} still exists)'.format(rbs) )
+        ok_( not exists(read), 'Did not rename the ReadData symlink({0} still exists)'.format(read) )
+        ok_( not exists(rbs), 'Did not rename ReadsBySample symlink({0} still exists)'.format(rbs) )
 
         ok_( exists(raw), 'Renamed IonXpress raw file when it should not have' )
         ok_( exists(newread), 'Did not create the correct ReadData symlink' )
@@ -408,10 +409,10 @@ class TestRenameRoche( Base ):
         self.print_tempdir()
 
         for f in files:
-            ok_( not exists(f), '{} still exists'.format(f) )
+            ok_( not exists(f), '{0} still exists'.format(f) )
         # Only need to do one exist here since it is a symlink all the way through
         newp = rbs.replace( 'sample1', 'sample_1' )
-        ok_( exists(newp), '{} does not exist'.format(rbs) )
+        ok_( exists(newp), '{0} does not exist'.format(rbs) )
 
     def test_renames_roche_noregion( self ):
         files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=False )
@@ -420,10 +421,10 @@ class TestRenameRoche( Base ):
         self._C( rbs, 'sample1', 'sample_1', 'NGSData' )
         self.print_tempdir()
         for f in files:
-            ok_( not exists(f), '{} still exists'.format(f) )
+            ok_( not exists(f), '{0} still exists'.format(f) )
         # Only need to do one exist here since it is a symlink all the way through
         newp = rbs.replace( 'sample1', 'sample_1' )
-        ok_( exists(newp), '{} does not exist'.format(rbs) )
+        ok_( exists(newp), '{0} does not exist'.format(rbs) )
 
     def test_renames_roche_symlinkrawdata( self ):
         files = self.mock_roche( 'R_2001_01_01_01_01_01_FLX00000001_adminrig_000000_TEST1', 'sample1', byregion=False, rbsraw=True )
@@ -432,10 +433,10 @@ class TestRenameRoche( Base ):
         self._C( rbs, 'sample1', 'sample_1', 'NGSData' )
         self.print_tempdir()
         for f in files:
-            ok_( not exists(f), '{} still exists'.format(f) )
+            ok_( not exists(f), '{0} still exists'.format(f) )
         # Only need to do one exist here since it is a symlink all the way through
         newp = rbs.replace( 'sample1', 'sample_1' )
-        ok_( exists(newp), '{} does not exist'.format(rbs) )
+        ok_( exists(newp), '{0} does not exist'.format(rbs) )
 
 class TestRenameMiSeq( Base ):
     functionname = 'rename_miseq'
@@ -449,9 +450,9 @@ class TestRenameMiSeq( Base ):
         self._C( rbs, samplename, samplename+'rename', 'NGSData' )
         self.print_tempdir()
         for f in files:
-            ok_( not exists(f), '{} still exists'.format(f) )
+            ok_( not exists(f), '{0} still exists'.format(f) )
             newp = f.replace(samplename,samplename+'rename')
-            ok_( exists(newp), '{} did not get created' )
+            ok_( exists(newp), '{0} did not get created' )
 
 class TestRenameSanger( Base ):
     functionname = 'rename_sanger'
@@ -468,10 +469,10 @@ class TestRenameSanger( Base ):
         self.print_tempdir()
         for f in files:
             # Old file should not exist anymore
-            ok_( not exists(f), '{} still exists'.format(f) )
+            ok_( not exists(f), '{0} still exists'.format(f) )
             newname = f.replace(samplename,samplename+'rename')
             # SHould rename
-            ok_( exists(newname), '{} does not exist'.format(newname) )
+            ok_( exists(newname), '{0} does not exist'.format(newname) )
 
 class TestRenameSample( Base ):
     functionname = 'rename_sample'

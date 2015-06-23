@@ -1,4 +1,5 @@
 from imports import *
+from ngs_mapper import compat
 
 class Base(common.BaseTester):
     modulepath = 'ngs_mapper.tagreads'
@@ -31,11 +32,11 @@ class Base(common.BaseTester):
 
     def get_readgroup( self, bam, rg ):
         cmd = ['samtools', 'view', '-r', rg, bam]
-        return subprocess.check_output( cmd )
+        return compat.check_output( cmd )
 
     def get_numreads( self, bam ):
         try:
-            out = subprocess.check_output( 'samtools flagstat {} | head -1 | cut -d\' \' -f 1'.format(bam), shell=True )
+            out = compat.check_output( 'samtools flagstat {0} | head -1 | cut -d\' \' -f 1'.format(bam), shell=True )
         except subprocess.CalledProcessError as e:
             print e.output
             print e
@@ -48,7 +49,7 @@ class Base(common.BaseTester):
         for rg in self.read_group_ids:
             c = len( self.get_readgroup( bamfile, rg ).splitlines() )
             read_count += c
-            print "Read Group: {} had {} reads".format(rg,c)
+            print "Read Group: {0} had {1} reads".format(rg,c)
 
         eq_( self.get_numreads(bamfile), read_count )
 
@@ -329,7 +330,7 @@ class TestUnitGetRGHeaders(Base):
         hdr = self._C( self.bam, 'sample1', 'seqcenter' )
         linesexpected = len(self.read_group_ids) + numlines
         resultlines = len(hdr.splitlines())
-        eq_( linesexpected, resultlines, "Expected {} header lines but got {}".format(linesexpected,resultlines) )
+        eq_( linesexpected, resultlines, "Expected {0} header lines but got {1}".format(linesexpected,resultlines) )
 
     def test_adds_platform_read_groups( self ):
         self.temp_copy_files()
@@ -402,7 +403,7 @@ class TestIntegrate(Base):
             s = samtools.view( b, H=True )
             rg = [header.split('\t') for header in s if header.startswith( '@RG' )]
             for rgline in rg:
-                eq_( 'SM:'+n, rgline[2], "Did not set {} as SM for {}. Header: {}".format(n,b,rgline) )
+                eq_( 'SM:'+n, rgline[2], "Did not set {0} as SM for {1}. Header: {2}".format(n,b,rgline) )
 
     def test_samplename_argument( self ):
         from ngs_mapper import samtools

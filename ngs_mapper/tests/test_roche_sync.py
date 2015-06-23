@@ -17,7 +17,7 @@ class BaseClass( BaseTester ):
         self.primers = ['/path/to/primer.fasta','']
         self.sheet = self.make_samplesheet( None, self.samples, self.regions, self.mids, self.primers )
         self.d = self.roche_dir_time()
-        self.rdir = join( os.getcwd(), 'R_{}_FLX00000001_admin_00000001_test'.format(self.d) )
+        self.rdir = join( os.getcwd(), 'R_{0}_FLX00000001_admin_00000001_test'.format(self.d) )
         self.listing = self.make_rdir( basename(self.rdir), self.samples, self.regions, self.mids, self.primers )
 
     def tearDown( self ):
@@ -43,7 +43,7 @@ class BaseClass( BaseTester ):
         raw454 = join( ngsdata, 'RawData', 'Roche454' )
         for l in self.listing:
             l = join(raw454,l)
-            ok_( exists( l ), '{} did not get synced'.format(l) )
+            ok_( exists( l ), '{0} did not get synced'.format(l) )
 
     def make_rdir( self, root, samplelist, regions, barcodes, primers ):
         '''
@@ -64,10 +64,10 @@ class BaseClass( BaseTester ):
             'SampleSheet.csv',
         ]
         d = self.roche_dir_time()
-        sigproc = 'D_{}_machine_signalProcessing'.format(d)
+        sigproc = 'D_{0}_machine_signalProcessing'.format(d)
         dirs = [
             sigproc,
-            'D_{}_FLX12070283_imageProcessingOnly'.format(d),
+            'D_{0}_FLX12070283_imageProcessingOnly'.format(d),
             'rawImages'
         ]
         
@@ -99,15 +99,15 @@ class BaseClass( BaseTester ):
                 'gsRunProcessor.log',
         ]
         for r in regions:
-            files.append( '{}.TCA.454Reads.qual'.format(r) )
-            files.append( '{}.TCA.454Reads.fna'.format(r) )
+            files.append( '{0}.TCA.454Reads.qual'.format(r) )
+            files.append( '{0}.TCA.454Reads.fna'.format(r) )
         dirs = [
             'sff',
             'regions',
         ]
         listing += self.make_filesdirs( root, files, dirs )
-        listing += self.make_filesdirs( join(root,'sff'), ['ABCDEFGH0{}.sff'.format(r) for r in regions], [] )
-        listing += self.make_filesdirs( join(root,'regions'), ['{}.cwf'.format(r) for r in regions], [] )
+        listing += self.make_filesdirs( join(root,'sff'), ['ABCDEFGH0{0}.sff'.format(r) for r in regions], [] )
+        listing += self.make_filesdirs( join(root,'regions'), ['{0}.cwf'.format(r) for r in regions], [] )
         return listing
 
     def make_samplesheet( self, sheetpath=None, samplelist=[], regions=[], barcodes=[], primers=[] ):
@@ -154,7 +154,7 @@ class BaseClass( BaseTester ):
             sample['date'] = d
             f = format_read_name( **sample )
             f = join( demuldir, f )
-            ok_( exists( f ), 'Did not create {}'.format(f) )
+            ok_( exists( f ), 'Did not create {0}'.format(f) )
 
     def check_reads_by_sample( self, rdir, readsbysampledir ):
         from ngs_mapper.roche_sync import format_read_name, get_rundate, get_sigprocdir, parse_samplesheet
@@ -167,9 +167,9 @@ class BaseClass( BaseTester ):
             sampledir = join( readsbysampledir, samplen )
             read = join( sampledir, f )
             readpth = join( sigprocdir, 'demultiplexed', f )
-            ok_( isdir( sampledir ), 'Did not create sample directory {}'.format(sampledir) )
+            ok_( isdir( sampledir ), 'Did not create sample directory {0}'.format(sampledir) )
             # This also checks for broken symlink
-            ok_( exists( read ), 'Did not create sample file {}'.format(read) )
+            ok_( exists( read ), 'Did not create sample file {0}'.format(read) )
 
 class TestSymlinkSigProc( BaseClass ):
     functionname = 'symlink_sigproc'
@@ -269,7 +269,7 @@ class TestDemultiplexRun( BaseClass ):
         removesample = samplefiles[0]
         noremovesample = samplefiles[1]
         os.unlink( removesample[0] )
-        ok_( not exists(removesample[0]), "{} did not get removed?".format(removesample[0]) )
+        ok_( not exists(removesample[0]), "{0} did not get removed?".format(removesample[0]) )
         # Make sure mtime will change
         import time; time.sleep(0.5);
         # Rerun demultiplex on same directory
@@ -288,7 +288,7 @@ class TestDemultiplexRun( BaseClass ):
         # Check the non-removed file
         eq_( 
             noremovesample[1].st_mtime, noremovesample_new[1].st_mtime,
-            "Must have redemultiplexed {} as the mtime's were not the same {} -> {}".format(
+            "Must have redemultiplexed {0} as the mtime's were not the same {1} -> {2}".format(
                 noremovesample[0], noremovesample[1].st_mtime, noremovesample_new[1].st_mtime
             )
         )
@@ -322,7 +322,7 @@ class TestGetSigProcDir( BaseClass ):
     def test_has_sigproc_abspath( self ):
         sig = self._C( self.rdir )
         ok_( sig.endswith('signalProcessing'), 'Returned wrong path' )
-        ok_( 'R_' in dirname(sig), '{} does not contain the original rdir'.format(sig)  )
+        ok_( 'R_' in dirname(sig), '{0} does not contain the original rdir'.format(sig)  )
 
     def test_has_sigproc_basename( self ):
         sig = self._C( basename(self.rdir) )
@@ -367,7 +367,7 @@ class TestFunctional( BaseClass ):
         
     def _C( self, *args, **kwargs ):
         script = 'roche_sync'
-        cmd = 'PATH={}:$PATH {} --ngsdata {} --midparse {} {}'.format(os.getcwd(), script, args[1], args[2], args[0])
+        cmd = 'PATH={0}:$PATH {1} --ngsdata {2} --midparse {3} {4}'.format(os.getcwd(), script, args[1], args[2], args[0])
         p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True )
         eo = p.communicate()
         return (p.returncode, eo)

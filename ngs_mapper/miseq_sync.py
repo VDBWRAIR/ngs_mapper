@@ -129,6 +129,7 @@ from glob import glob
 from datetime import datetime
 import gzip
 import csv
+from ngs_mapper import compat
 
 import log
 logger = log.setup_logger( basename(__file__), log.get_config() )
@@ -168,7 +169,7 @@ def get_rundate( rundir ):
         int(d)
     except ValueError as e:
         raise ValueError( 'run directory does not contain a valid date in the beginning' )
-    return '20{}_{}_{}'.format(y,m,d)
+    return '20{0}_{1}_{2}'.format(y,m,d)
 
 #Tested
 def samplename_from_fq( fastqp ):
@@ -203,9 +204,9 @@ def sync_fastq( srcrun, ngsdata ):
     for fq in gz:
         dst = join( dst_fastq_path, basename( fq ) )
         if exists( dst ) and file_already_copied( fq, dst ):
-            logger.info( '{} already exists at {}'.format(fq, dst_fastq_path) )
+            logger.info( '{0} already exists at {1}'.format(fq, dst_fastq_path) )
         else:
-            logger.info( 'Copying {} into {}'.format(fq, dst_fastq_path) )
+            logger.info( 'Copying {0} into {1}'.format(fq, dst_fastq_path) )
             shutil.copy( fq, dst_fastq_path )
 
 def sync( src, ngsdata ):
@@ -226,9 +227,9 @@ def rsync_run( rundir, ngsdata ):
     # Dst will end in MiSeq since we removed the trailing / in src
     dst = join( ngsdata, 'RawData', 'MiSeq' )
     logger.info( 'The fastq read data is synced. Syncing the rest of the data' )
-    cmd = 'rsync -av --progress --size-only {} {}'.format( src, dst )
+    cmd = 'rsync -av --progress --size-only {0} {1}'.format( src, dst )
     cmd = shlex.split( cmd )
-    logger.debug( subprocess.check_output( cmd ) )
+    logger.debug( compat.check_output( cmd ) )
 
 
 def create_readdata( rundir, ngsdata ):
@@ -242,13 +243,16 @@ def create_readdata( rundir, ngsdata ):
     if not exists( dstroot ):
         os.makedirs( dstroot )
     for gz in glob( join( fqpath, '*.fastq.gz' ) ):
-        dstfq = join( dstroot, basename( gz ).replace( '.fastq.gz', '_{}.fastq'.format( rundate ) ) )
+        dstfq = join( dstroot, basename( gz ).replace( '.fastq.gz', '_{0}.fastq'.format( rundate ) ) )
         if not exists( dstfq ):
-            logger.info( 'Unpacking {} to {}'.format(gz, dstfq) )
-            with gzip.open( gz, 'rb' ) as fr, open( dstfq, 'w' ) as fw:
-                fw.write( fr.read() )
+            logger.info( 'Unpacking {0} to {1}'.format(gz, dstfq) )
+            fr = gzip.open( gz, 'rb' )
+            fw = open( dstfq, 'w' )
+            fw.write( fr.read() )
+            fw.close()
+            fr.close()
         else:
-            logger.debug( '{} looks to be unpacked already as {}'.format(gz, dstfq) )
+            logger.debug( '{0} looks to be unpacked already as {1}'.format(gz, dstfq) )
 
 def link_reads( rundir, ngsdata ):
     '''
@@ -265,10 +269,10 @@ def link_reads( rundir, ngsdata ):
         rpath = relpath( fq, sampledir )
         lnkdst = join( sampledir, basename( fq ) )
         if not exists( lnkdst ):
-            logger.info( 'Symlinking {} to {}'.format( rpath, lnkdst ) )
+            logger.info( 'Symlinking {0} to {1}'.format( rpath, lnkdst ) )
             os.symlink( rpath, lnkdst )
         else:
-            logger.debug( '{} already exists.'.format( lnkdst ) )
+            logger.debug( '{0} already exists.'.format( lnkdst ) )
 
 def parse_args( args=sys.argv[1:] ):
     from ngs_mapper import config

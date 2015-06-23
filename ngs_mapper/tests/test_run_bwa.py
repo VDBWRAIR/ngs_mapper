@@ -1,4 +1,5 @@
 from imports import *
+from ngs_mapper import compat
 
 class Base(BaseClass):
     modulepath = 'ngs_mapper.run_bwa'
@@ -250,7 +251,7 @@ class TestIntegrateMainArgs(Base):
         s1 = os.stat( f1 ).st_size
         s2 = os.stat( f2 ).st_size
         diff = abs( s1 - s2 )
-        assert diff <= threshold, "Size of {}({}) - {}({}) was greater than threshold of {}".format(
+        assert diff <= threshold, "Size of {0}({1}) - {2}({3}) was greater than threshold of {4}".format(
             f1, s1, f2, s2, threshold
         )
 
@@ -266,7 +267,7 @@ class TestIntegrateMainArgs(Base):
         r = 'bwa_mem.bam'
         assert os.stat(r)
         import subprocess
-        out = subprocess.check_output( ['samtools', 'view', '{}'.format(r)] )
+        out = compat.check_output( ['samtools', 'view', '{0}'.format(r)] )
         rochecount = out.count( 'IA52U1' )
         print rochecount
         eq_( 100, rochecount, 'Sff file reads did not make it into bam file' )

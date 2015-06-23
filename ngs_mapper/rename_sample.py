@@ -105,7 +105,7 @@ def resolve_symlink( path ):
         @param path - Symlink location such that os.readlink(path) works as expected
     '''
     if not exists( path ):
-        raise OSError( '{} does not exist or is a broken link'.format(path) )
+        raise OSError( '{0} does not exist or is a broken link'.format(path) )
 
     if not islink( path ):
         return path
@@ -146,7 +146,7 @@ def rename_file( path, find, replace ):
         # since that would indicate that you would truely be overwriting 
         # a different file with new data
         if exists( newp ) and newp != path:
-            raise RenameException( '{} already exists. Refusing to overwrite it. Please inspect this situation'.format(newp) )
+            raise RenameException( '{0} already exists. Refusing to overwrite it. Please inspect this situation'.format(newp) )
         else:
             # Since this is an actual file
             # it is the endpoint for recursion and 
@@ -158,7 +158,7 @@ def rename_file( path, find, replace ):
             else:
                 pass
     else:
-        raise Exception("{} is not a valid path".format(path))
+        raise Exception("{0} is not a valid path".format(path))
     return newp
 
 def runread_path( path, platform ):

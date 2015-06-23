@@ -1,4 +1,5 @@
 from imports import *
+from ngs_mapper import compat
 
 class Base(common.BaseBamRef):
     modulepath = 'ngs_mapper.runsample'
@@ -25,7 +26,7 @@ class Base(common.BaseBamRef):
         gitdir = join( path, '.git' )
         cmd = 'git status status'.format( path, gitdir )
         try:
-            output = subprocess.check_output( cmd, cwd=path, stderr=subprocess.STDOUT, shell=True )
+            output = compat.check_output( cmd, cwd=path, stderr=subprocess.STDOUT, shell=True )
             return 'Not a git repository' not in output
         except subprocess.CalledProcessError as e:
             print e.output
@@ -128,7 +129,7 @@ class TestFunctional(Base):
         print "Running: {0}".format(cmd)
         cmd = shlex.split( cmd )
         try:
-            sout = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+            sout = compat.check_output( cmd, stderr=subprocess.STDOUT )
         except subprocess.CalledProcessError as e:
             return (e.output,-1)
         return sout,0
@@ -200,7 +201,7 @@ class TestFunctional(Base):
             projdir,
             qsubargs=['--qsub_l', 'nodes=1:ppn=1']
         )
-        assert_in('#PBS', out)
+        assert '#PBS' in out, '#PBS not in output'
 
     def test_runs_correctly( self ):
         projdir = 'outdir'
@@ -270,3 +271,21 @@ class TestFunctional(Base):
             loglines = fh.read().splitlines()
         # 5 stages + start/finish
         ok_( 7 <= len(loglines), "Should be at least 7 loglines in log file" )
+
+import mock
+import unittest2 as unittest
+
+from ngs_mapper import runsample
+@attr('current')
+class TestSplitArgs(unittest.TestCase):
+    def test_splits_correctly(self):
+        argstr = '--foo 1 --bar --qsub_l foo --qsub-help'
+        r = runsample.split_args(argstr)
+        self.assertEqual(
+            r[0],
+            ['--foo','1','--bar']
+        )
+        self.assertEqual(
+            r[1],
+            ['--qsub_l','foo','--qsub-help']
+        )

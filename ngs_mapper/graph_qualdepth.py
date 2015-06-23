@@ -14,7 +14,7 @@ def main( args ):
     make_graphic( args.jsonfile, args.outfile, args.ref, titleprefix=title )
 
 def plot_depths( ax, xvals, yvals, maxdepth, color, title ):
-    ax.set_title( "{} Depth/Qual".format(title) )
+    ax.set_title( "{0} Depth/Qual".format(title) )
     ax.set_xlabel( "Reference Position" )
     ax.set_ylabel( "Depth" )
     ax.fill_between( xvals, yvals, facecolor=color, alpha=0.5 )
@@ -150,7 +150,7 @@ def parse_args( args=sys.argv[1:] ):
         '--outfile',
         dest='outfile',
         default=default_output,
-        help='Where to save the image file[Default: {}]'.format(default_output)
+        help='Where to save the image file[Default: %(default)s]'
     )
 
     parser.add_argument(

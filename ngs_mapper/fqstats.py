@@ -29,7 +29,7 @@ def plot_fqs( iterable, out ):
         s = fqstats(recs)
         if s[2] == 0 or s[3] == 0 or s[4] == 0 or s[5] == 0:
             nrows -= 1
-            print 'Skipping {} because it has no sequences'.format(fq)
+            print 'Skipping {0} because it has no sequences'.format(fq)
             continue
         # Empty seqs no graph
         stats.append( s )
@@ -133,7 +133,7 @@ def parse_args( args=sys.argv[1:] ):
         '-o',
         dest='output',
         default=out_default,
-        help='Path for output png file[Default: {}]'.format(out_default)
+        help='Path for output png file[Default: %(default)s]'
     )
 
     parser.add_argument(

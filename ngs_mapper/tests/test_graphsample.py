@@ -1,5 +1,6 @@
 from imports import *
-from subprocess import check_output, CalledProcessError, STDOUT
+from subprocess import CalledProcessError, STDOUT
+from ngs_mapper.compat import check_output
 import shlex
 
 class Base(common.BaseBamRef):
@@ -68,9 +69,9 @@ class TestFunctional(Base):
 
     def _rungraphsample( self, bamfile, **kwargs ):
         script_path = 'graphsample'
-        args = ' '.join( ['-{} {}'.format(aname,aval) for aname, aval in kwargs.items()] )
-        cmd = script_path + ' {} '.format(bamfile) + args
-        print "Running: {}".format(cmd)
+        args = ' '.join( ['-{0} {1}'.format(aname,aval) for aname, aval in kwargs.items()] )
+        cmd = script_path + ' {0} '.format(bamfile) + args
+        print "Running: {0}".format(cmd)
         cmd = shlex.split( cmd )
         try:
             sout = check_output( cmd, stderr=STDOUT )
@@ -85,7 +86,7 @@ class TestFunctional(Base):
         for of in self.outfiles:
             o = out + of
             expected_files.append( o )
-            assert os.path.isfile( o ), "Did not produce {}".format(o)
+            assert os.path.isfile( o ), "Did not produce {0}".format(o)
         return expected_files
 
     def test_multiple_references( self ):
@@ -148,7 +149,10 @@ class TestFunctional(Base):
 
 # Begin better unittest practices
 import mock
-import unittest2 as unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 from .. import graphsample
 
@@ -164,9 +168,15 @@ class TestRunMontage(unittest.TestCase):
         outfile = '/path/bar.png'
         kwargs = {'foo':'bar', 'baz':1}
         r = graphsample.run_montage(infile, outfile, **kwargs)
-        self.m_subprocess.check_call.assert_called_once_with(
-            ['montage', '-foo', 'bar', '-baz', '1', infile, outfile]
-        )
+        ca = self.m_subprocess.check_call.call_args
+        args = ca[0][0]
+        self.assertEqual('montage', args[0])
+        self.assertIn('-foo', args)
+        self.assertIn('bar', args)
+        self.assertIn('-baz', args)
+        self.assertIn('1', args)
+        self.assertIn(infile, args)
+        self.assertEqual([infile,outfile], args[-2:])
         self.assertEqual(outfile, r)
 
     def test_does_not_raise_exception_on_invalid_file(self):

@@ -31,5 +31,5 @@ def iupac_amb( dnalist ):
     try:
         return AMBIGUITY_TABLE[dnalist]
     except KeyError as e:
-        raise ValueError( "{} is not a valid ambigious base".format(dnalist) )
+        raise ValueError( "{0} is not a valid ambigious base".format(dnalist) )
 

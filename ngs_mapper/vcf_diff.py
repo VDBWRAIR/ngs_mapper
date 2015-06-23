@@ -13,7 +13,7 @@ def main():
         ref_seq = record.CHROM
 
         if ref != cb:
-            print "{}\t{}\t{}\t{}".format(
+            print "{0}\t{1}\t{2}\t{3}".format(
                 ref_seq, pos, ref, cb 
                 )
 

@@ -87,7 +87,7 @@ samtools idxstats <in.bam> | awk '!/^*/ {print $1}' | sort | uniq'''
         dest='minmq',
         type=float,
         default=default_minmq,
-        help='Minimum mapping quality to be included in stats. Keep reads that are >= [Default: {}]'.format(default_minmq)
+        help='Minimum mapping quality to be included in stats. Keep reads that are >= [Default: %(default)s]'
     )
 
     default_minbq = 25.0
@@ -97,7 +97,7 @@ samtools idxstats <in.bam> | awk '!/^*/ {print $1}' | sort | uniq'''
         dest='minbq',
         type=float,
         default=default_minbq,
-        help='Minimum base quality to be included in stats. Keep bases that are >= [Default: {}]'.format(default_minbq)
+        help='Minimum base quality to be included in stats. Keep bases that are >= [Default: %(default)s]'
     )
 
     default_maxdepth = 100000
@@ -107,25 +107,25 @@ samtools idxstats <in.bam> | awk '!/^*/ {print $1}' | sort | uniq'''
         dest='maxd',
         type=int,
         default=default_maxdepth,
-        help='Maximum read depth at position to use[Default: {}]'.format(default_maxdepth)
+        help='Maximum read depth at position to use[Default: %(default)s]'
     )
     
     return parser.parse_args(args)
 
 def stats_at_pos( bamfile, regionstr, minmq, minbq, maxd ):
     base_stats = compile_stats( stats( bamfile, regionstr, minmq, minbq, maxd ) )
-    print "Maximum Depth: {}".format(maxd)
-    print "Minumum Mapping Quality Threshold: {}".format(minmq)
-    print "Minumum Base Quality Threshold: {}".format(minbq)
-    print "Average Mapping Quality: {}".format(base_stats['AvgMapQ'])
-    print "Average Base Quality: {}".format(base_stats['AvgBaseQ'])
-    print "Depth: {}".format(base_stats['TotalDepth'])
+    print "Maximum Depth: {0}".format(maxd)
+    print "Minumum Mapping Quality Threshold: {0}".format(minmq)
+    print "Minumum Base Quality Threshold: {0}".format(minbq)
+    print "Average Mapping Quality: {0}".format(base_stats['AvgMapQ'])
+    print "Average Base Quality: {0}".format(base_stats['AvgBaseQ'])
+    print "Depth: {0}".format(base_stats['TotalDepth'])
     for base, bstats in base_stats['Bases'].iteritems():
-        print "Base: {}".format(base)
-        print "\tDepth: {}".format( bstats['Depth'] )
-        print "\tAverage Mapping Quality: {}".format( bstats['AvgMapQ'] )
-        print "\tAverage Base Quality: {}".format( bstats['AvgBaseQ'] )
-        print "\t% of Total: {}".format( bstats['PctTotal'] )
+        print "Base: {0}".format(base)
+        print "\tDepth: {0}".format( bstats['Depth'] )
+        print "\tAverage Mapping Quality: {0}".format( bstats['AvgMapQ'] )
+        print "\tAverage Base Quality: {0}".format( bstats['AvgBaseQ'] )
+        print "\t% of Total: {0}".format( bstats['PctTotal'] )
 
     return base_stats
 
@@ -174,8 +174,28 @@ def compile_stats( stats ):
             base_stats['Bases'][base]['PctTotal'] = round((float(len(mquals))/stats['depth'])*100,2)
 
     # Quit out of loop we are done
-    # Order bases by PctTotal descending
-    sorted_bases = sorted( base_stats['Bases'].items(), key=lambda x: x[1]['PctTotal'], reverse=True )
+    # Order bases by PctTotal, then AvgBaseQ descending
+    def cmp_func(x,y):
+        x1 = x[1]
+        y1 = y[1]
+        if x1['PctTotal'] < y1['PctTotal']:
+            return -1
+        elif x1['PctTotal'] > y1['PctTotal']:
+            return 1
+        else:
+            if x1['AvgBaseQ'] < y1['AvgBaseQ']:
+                return -1
+            elif x1['AvgBaseQ'] > y1['AvgBaseQ']:
+                return 1
+            else:
+                return 0
+
+    sorted_bases = sorted(
+        base_stats['Bases'].items(),
+        cmp=cmp_func,
+        #key=lambda x: x[1]['PctTotal']+x[1]['AvgBaseQ'],
+        reverse=True
+    )
     base_stats['Bases'] = OrderedDict(sorted_bases)
     return base_stats
 

@@ -12,6 +12,7 @@ import tempfile
 import reads
 import shlex
 import data
+from ngs_mapper import compat
 
 import log
 lconfig = log.get_config()
@@ -136,7 +137,7 @@ def trim_read( *args, **kwargs ):
     for i, out_path in enumerate(out_paths):
         if out_path is None:
             out_paths[i] = basename( readpaths[i] ).replace('.sff','.fastq')
-        logger.debug( "Using {} as the output path".format(out_path) )
+        logger.debug( "Using {0} as the output path".format(out_path) )
 
     # Keep the original name for later( Have to copy otherwise we are dealing with a pointer )
     orig_readpaths = [f for f in readpaths]
@@ -144,7 +145,7 @@ def trim_read( *args, **kwargs ):
     # Convert sff to fastq
     for i,readpath in enumerate(readpaths):
         if readpath.endswith('.sff'):
-            logger.debug( "Converting {} to fastq".format(readpath) )
+            logger.debug( "Converting {0} to fastq".format(readpath) )
             # Just put in temp location then remove later
             _, tfile = tempfile.mkstemp(prefix='trimreads',suffix='sff.fastq')
             try:
@@ -222,7 +223,7 @@ def run_trimmomatic( *args, **kwargs ):
     # Change all steps to strings of STEPNAME:VALUE
     steps = [':'.join([str(x) for x in s]) for s in steps]
     # Set all options
-    options = shlex.split( ' '.join( ['-{} {}'.format(k,v) for k,v in kwargs.items()] ) )
+    options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
     # Jarpath is in virtualenv's lib directory
     jarpath = join(expandvars('$VIRTUAL_ENV'), 'lib', 'Trimmo*', '*.jar' )
     try:
@@ -233,12 +234,12 @@ def run_trimmomatic( *args, **kwargs ):
 
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
-    logger.debug( "Running {}".format(' '.join(cmd)) )
+    logger.debug( "Running {0}".format(' '.join(cmd)) )
     try:
-        output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+        output = compat.check_output( cmd, stderr=subprocess.STDOUT )
         return output
     except subprocess.CalledProcessError as e:
-        logger.critical( "Trimmomatic error: {}".format(e.output) )
+        logger.critical( "Trimmomatic error: {0}".format(e.output) )
         raise e
 
 def run_cutadapt( *args, **kwargs ):
@@ -257,8 +258,8 @@ def run_cutadapt( *args, **kwargs ):
     fout = open(out_stats,'wb')
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
-    logger.debug( "Running {}".format(cmd) )
-    logger.debug( "Sending stdout to {}".format(out_stats) )
+    logger.debug( "Running {0}".format(cmd) )
+    logger.debug( "Sending stdout to {0}".format(out_stats) )
     p = subprocess.Popen( cmd, stdout=fout, stderr=subprocess.PIPE )
     # Only stderr should be available
     _,se = p.communicate()

@@ -13,7 +13,7 @@ logger = log.setup_logger( 'graph_times', logc )
 
 def main():
     ss = start_stop( 'Projects' )
-    logger.info( "Plotting all projects inside of {}".format('Projects') )
+    logger.info( "Plotting all projects inside of {0}".format('Projects') )
     x,y = [],[]
     samplenames = sorted(ss.keys())
     for sn in samplenames:
@@ -56,7 +56,7 @@ def start_stop( basedir ):
         proj = basename( p )
         diff = datediff( start_stop_for_project( p ) )
         if diff < 60:
-            logger.warning( "{} ran in only {} seconds".format(p,diff) )
+            logger.warning( "{0} ran in only {1} seconds".format(p,diff) )
         ss[proj] = diff
     return ss
 

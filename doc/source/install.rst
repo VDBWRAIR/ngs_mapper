@@ -22,36 +22,46 @@ Hardware
 Python Packages
 ---------------
 
-All python packages can be defined in a pip requirements.txt file
-The pipeline comes with all of the necessary python packages already defined inside of `requirements.txt`_.
+The pipeline comes with all of the necessary python packages already defined 
+inside of `requirements.txt`_ as well as `requirements-py26.txt`_
 
 .. _requirements.txt: ../../../requirements.txt
+.. _requirements-py26.txt: ../../../requirements-py26.txt
 
 System Packages
 ---------------
 
-The pipeline requires some system level packages(software installed via your Linux distribution's package manager)
-The installer looks for the `system_packages.lst <../../../system_packages.lst>`_ and installs the correct packages using that file.
-This file is a simple json formatted file that defines packages for each package manager
+The pipeline requires some system level packages(software installed via your 
+Linux distribution's package manager). The installer looks for 
+`system_packages.lst <../../../system_packages.lst>`_ and installs the correct 
+packages using that file. This file is a simple json formatted file that defines 
+packages for some common Linux distrubutions(CentOS, Red Hat and Ubuntu).
 
 Roche Utilities
 ^^^^^^^^^^^^^^^
 
-If you intend on using the :py:mod:`roche_sync <ngs_mapper.roche_sync>` you will need to ensure that the ``sfffile`` command is in your PATH. That is, if you execute ``$> sfffile`` it returns the help message for the command.
+If you intend on using the :py:mod:`roche_sync <ngs_mapper.roche_sync>` you will 
+need to ensure that the ``sfffile`` command is in your PATH. That is, if you 
+execute ``$> sfffile`` it returns the help message for the command.
 
-This command should automatically be installed and put in your path if you install the Data Analysis CD #3 that was given to you with your Roche instrument.
+This command should automatically be installed and put in your path if you install 
+the Data Analysis CD #3 that was given to you with your Roche instrument.
 
 MidParse.conf
 ^^^^^^^^^^^^^
 
-If you inted on using the :py:mod:`roche_sync <ngs_mapper.roche_sync>` you may need to edit the included ngs_mapper/MidParse.conf file before installing. This file is formatted to be used by the Roche utilities and more information about how it is used can be found in the Roche documentation.
+If you inted on using the :py:mod:`roche_sync <ngs_mapper.roche_sync>` you may need 
+to edit the included ngs_mapper/MidParse.conf file before installing. This file is 
+formatted to be used by the Roche utilities and more information about how it is 
+used can be found in the Roche documentation.
 
 Installation
 ============
 
 1. Clone/Download the version you want
 
-    Assumes you already have git installed. If not you will need to get it installed by your system administrator.
+    Assumes you already have git installed. If not you will need to get it 
+    installed by your system administrator.
 
    #. Set your github username
    
@@ -72,37 +82,18 @@ Installation
       
          git tag
    
-   #. Checkout the version you want
+   #. Checkout the version you want(current version |release|)
    
       .. code-block:: bash
       
-         git checkout -b v1.1.0 v1.1.0
-
-.. _install:
-
-2. Build the initial documentation
-
-    You can build the intial documentation that will be missing some features until after you install
-    and rebuild the documentation
-
-    .. raw:: html
-
-        <a name="install-docs"></a>
-
-    The following command will only build the bare-minimum documenation and will not
-    include the documentation inside of the code(you will build that after the install)
-    It will generate some errors that you will most likely ignore
-
-    .. code-block:: bash
-
-        python setup.py build_sphinx
-        firefox doc/build/html/install.html#install-docs
+         git checkout -b vX.Y.Z vX.Y.Z
 
 .. _install-system-packages:
 
-3. Install System Packages
+2. Install System Packages
 
-    This is the only part of the installation process that you should need to become the super user
+    This is the only part of the installation process that you should need to 
+    become the super user
 
     - Red Hat/CentOS(Requires the root password)
   
@@ -116,7 +107,7 @@ Installation
 
             sudo python setup.py install_system_packages
 
-4. Configure the defaults
+3. Configure the defaults
 
     You need to configure the ngs_mapper/:doc:`config` file.
 
@@ -126,9 +117,11 @@ Installation
 
             cp ngs_mapper/config.yaml.default ngs_mapper/config.yaml
 
-    2. Then edit the ngs_mapper/config.yaml file which is in `yaml <http://docs.ansible.com/YAMLSyntax.html>`_ format
+    2. Then edit the ngs_mapper/config.yaml file which is in 
+       `yaml <http://docs.ansible.com/YAMLSyntax.html>`_ format
 
-        The most important thing is that you edit the NGSDATA value so that it contains the path to your NGSDATA directory.
+        The most important thing is that you edit the NGSDATA value so that it 
+        contains the path to your NGSDATA directory.
 
         **The path you use for NGSDATA must already exist**
 
@@ -136,28 +129,41 @@ Installation
 
             mkdir -p /path/to/NGSDATA
 
-5. Python
+4. Python
 
-    The ngs_mapper requires python 2.7.3+ but < 3.0
+    The ngs_mapper requires python 2.6 or 2.7
 
-    - Ensure python is installed
+    - Quick verify that the correct version of Python is installed
 
-        .. code-block:: bash
-
-            python setup.py install_python
-
-    - Quick verify that Python is installed
-
-        The following should return python 2.7.x(where x is somewhere from 3 to 9)
+        The following should return python 2.6.x or 2.7.x
 
         .. code-block:: bash
 
-            $HOME/bin/python --version
+            python --version
 
-6. Setup virtualenv
+    - Install supported Python version into your home directory
+
+        This is only needed if you do not have python 2.6.x or 2.7.x already.
+        Red Hat/CentOS comes pre-shipped with Python 2.6.6 and the latest versions
+        of Ubuntu come with 2.7.x so this is likely not needed.
+
+        If the above command does not return 2.6.x or 2.7.x and you think it should,
+        there is a chance that the system installed python is not first in your
+        environment's PATH.
+
+        Here we specify to install into our home directory and to install Python
+        version 2.7.10. You can specify anywhere you want and any version(less than
+        3.0), but you will need to then specify the path to that python later on.
+
+        .. code-block:: bash
+
+            python setup.py install_python --prefix $HOME --version 2.7.10
+
+5. Setup virtualenv
   
-  
-    1. Where do you want the pipeline to install? Don't forget this path, you will need it every time you want to activate the pipeline
+    1. Where do you want the pipeline to install? 
+       *Don't forget this path, you will need it every time you want to activate 
+       the pipeline*
 
         .. code-block:: bash
 
@@ -168,22 +174,26 @@ Installation
         .. code-block:: bash
 
             wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
-            $HOME/bin/python virtualenv-1.11.6/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
+            python virtualenv-1.11.6/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
 
-    3. Activate the virtualenv. You need to do this any time you want to start using the pipeline
+        If you had to install your own version of python above, you will need to use
+        $HOME/bin/python instead of just python in the command above.
+
+    3. Activate the virtualenv. You need to do this any time you want to start 
+       using the pipeline
 
          .. code-block:: bash
 
             . ${venvpath}/bin/activate
 
-7. Install the pipeline into virtualenv
+6. Install the pipeline into virtualenv
 
     .. code-block:: bash
 
         python setup.py install
 
-    It should be safe to run this more than once in case some dependencies do not fully install.
-
+    It should be safe to run this more than once in case some dependencies do not 
+    fully install.
 
 Build and view complete documentation
 -------------------------------------
@@ -203,109 +213,3 @@ You can pseudo test the installation of the pipeline by running the functional t
 .. code-block:: bash
 
     nosetests ngs_mapper/tests/test_functional.py
-
-Offline Installation
-====================
-
-You may want to do an offline installation where you pre-download all requirements 
-and then install all those requirements from the predownloaded location.
-The installation will be quite similar to the regular installation process but differs
-as follows.
-
-Online Workstation
-------------------
-
-#. Download the python packages listed in requirements.txt
-    You can do this manually by downloading all packages listed in ``requirements.txt`` via http://pypi.python.org
-     or you can use pip as follows
-    
-    #. Comment out the pyBWA requirements line in requirements.txt
-
-        .. code-block:: bash
-
-            sed -i 's/^git/#git/' requirements.txt
-
-    #. Run the following commands to download all software needed
-
-        This requires that you have pip installed on some online workstation
-    
-        .. code-block:: bash
-
-            mkdir -p software
-            pip install --no-use-wheel -d software -r requirements.txt
-            pip install --no-use-wheel -d software virtualenv setuptools
-            git clone https://github.com/VDBWRAIR/pyBWA.git software/pyBWA
-            git clone https://github.com/lh3/bwa software/bwa
-            git clone https://github.com/samtools/samtools software/samtools
-            wget https://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz -O software/Python-2.7.8.tgz
-            wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.32.zip -O software/Trimmomatic-0.32.zip
-
-Offline Workstation
--------------------
-
-    #. Copy the ngs_mapper directory over to your offline workstation
-    #. Enter ngs_mapper directory
-
-        .. code-block:: bash
-
-            cd ngs_mapper
-
-    #. Edit the ``ngs_mapper/config.yaml`` file as described above in the normal installation
-
-    #. Setup setuptools
-
-        .. code-block:: bash
-
-            tar xzf software/setuptools*
-            cp -f setuptools*/ez_setup.py ./
-            
-    #. Install System Packages
-
-        Pick one of these depending if you have Ubuntu or Fedora/RedHat/CentOS
-
-        Ubuntu
-
-        .. code-block:: bash
-
-            pkgs=$(python -c "import json; print ' '.join(json.load(open('system_packages.lst'))['apt-get'])")
-            sudo apt-get install $pkgs
-
-        Fedora/RedHat/CentOS
-
-        .. code-block:: bash
-
-            pkgs=$(python -c "import json; print ' '.join(json.load(open('system_packages.lst'))['yum'])")
-            su -c "yum install $pkgs"
-
-    #. Manuall install all software
-        
-        .. code-block:: bash
-
-            tar xzf software/Python*.tgz
-            cd Python*
-            ./configure --prefix $HOME
-            make
-            make install
-            cd ..
-            tar xzf software/virtualenv*
-            venvpath=~/.ngs_mapper
-            $HOME/bin/python virtualenv*/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
-            . ${venvpath}/bin/activate
-            python setuptools*/setup.py install
-            cd software/bwa
-            make
-            cp bwa ${venvpath}/bin/
-            cd ..
-            cd samtools
-            git checkout standalone
-            make
-            cp samtools bcftools/bcftools ${venvpath}/bin/
-            cd ../../
-            sed -i 's/git/#git/' requirements.txt
-            pip install --no-index -f software numpy six argparse
-            pip install --no-index -f software -r requirements.txt
-            cd software/pyBWA
-            python software/pyBWA/setup.py install
-            cd ../..
-            unzip software/Trimmomatic* && mv Trimmomatic* $venvpath/lib/
-            python setup.py install

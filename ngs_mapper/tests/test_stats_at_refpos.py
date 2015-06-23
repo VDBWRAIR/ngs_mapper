@@ -7,7 +7,7 @@ from mock import MagicMock, patch, Mock, call
 
 from os.path import *
 import os
-from collections import OrderedDict
+from ngs_mapper.compat import OrderedDict
 
 class Base(common.BaseBamRef):
     modulepath = 'ngs_mapper.stats_at_refpos'
@@ -24,7 +24,7 @@ class StatsAtPos(Base):
 
         for base, valuesd in eb.iteritems():
             for k,v in valuesd.items():
-                eq_( v, res['Bases'][base][k], "{} != {} for {}".format(v, res['Bases'][base][k], k) )
+                eq_( v, res['Bases'][base][k], "{0} != {1} for {2}".format(v, res['Bases'][base][k], k) )
 
         for k in e:
             eq_( e[k], res[k] )
@@ -35,7 +35,7 @@ class TestStatsAtPos(StatsAtPos):
     def test_func_works( self ):
         ref = 'Den1/U88535_1/WestPac/1997/Den1_1'
         pos = '6109'
-        regionstr = '{}:{}-{}'.format(ref,pos,pos)
+        regionstr = '{0}:{1}-{2}'.format(ref,pos,pos)
         res = self._C( self.bam, regionstr, 0, 0, 100000 )
         #Den1/U88535_1/WestPac/1997/Den1_1  6109    N   13  GgnGgggggtGgg   CB#GHHHHG2GHH
         eb = OrderedDict([

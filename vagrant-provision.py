@@ -52,6 +52,9 @@ def install_python( version='2.7.8', installprefix='$HOME' ):
     prefix = expandvars(installprefix)
     # Where python will be located
     pythonexe = join(prefix,'bin','python')
+    # Don't reinstall
+    if exists(pythonexe):
+        return pythonexe
 
     cmd = 'python setup.py install_python --prefix {0} --version {1}'.format(
         installprefix, version
@@ -97,10 +100,10 @@ def run_setup( venvpath ):
         '. {0}; python setup.py install'.format(activatepath)
     )
 
-def install_pipeline():
+def install_pipeline(python_prefix):
     clone_pipeline('/vagrant', '~/ngs_mapper')
-    install_python()
-    venvpath = create_virtualenv()
+    install_python(installprefix=python_prefix)
+    venvpath = create_virtualenv(pythonprefix=python_prefix)
     run_setup( venvpath )
 
 def parse_args(args=sys.argv[1:]):
@@ -126,13 +129,20 @@ def parse_args(args=sys.argv[1:]):
         help='Installs pipeline'
     )
 
+    parser.add_argument(
+        '--python-prefix',
+        dest='python_prefix',
+        default='/usr',
+        help='Python prefix to use[Default: %(default)s]'
+    )
+
     return parser.parse_args(args)
 
 def main( args ):
     if args.install_system:
         shell_cmd('python setup.py install_system_packages',True)
     else:
-        install_pipeline()
+        install_pipeline(args.python_prefix)
 
 if __name__ == '__main__':
     main(parse_args())

@@ -77,9 +77,9 @@ def run_montage( *args, **kwargs ):
     '''
     cmd = ['montage']
     for k,v in kwargs.items():
-        cmd += ['-{}'.format(k),str(v)]
+        cmd += ['-{0}'.format(k),str(v)]
     cmd += args
-    logger.debug( 'Running {}'.format( ' '.join(cmd) ) )
+    logger.debug( 'Running {0}'.format( ' '.join(cmd) ) )
     try:
         subprocess.check_call( cmd )
     except subprocess.CalledProcessError as e:

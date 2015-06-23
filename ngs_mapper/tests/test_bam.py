@@ -150,7 +150,7 @@ class TestIntegrate(Base):
 
     def _fe( self, left, right ):
         from filecmp import cmp
-        assert cmp( left, right, False ), "{} was not equal to {}".format(left, right)
+        assert cmp( left, right, False ), "{0} was not equal to {1}".format(left, right)
 
     def test_samtobam_pipes( self ):
         from ngs_mapper.bam import samtobam

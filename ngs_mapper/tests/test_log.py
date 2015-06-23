@@ -22,9 +22,12 @@ class TestUnitGetConfig(LogBase):
     functionname = 'get_config'
 
     def is_valid_config( self, config ):
-        import logging.config
+        try:
+            from logging.config import dictConfig
+        except ImportError:
+            from ngs_mapper.dictconfig import dictConfig
         # Should throw exceptions if parsing fails
-        logging.config.dictConfig( config )
+        dictConfig( config )
     ivc = is_valid_config
 
     def test_valid_config( self ):

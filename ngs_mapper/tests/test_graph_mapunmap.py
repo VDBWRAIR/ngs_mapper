@@ -1,6 +1,7 @@
 from imports import *
 
-from subprocess import check_output, CalledProcessError, STDOUT
+from subprocess import CalledProcessError, STDOUT
+from ngs_mapper.compat import check_output
 import numpy as np
 
 class Base(common.BaseBamRef):
@@ -101,9 +102,9 @@ class TestFunctional(Base):
         script_path = 'graph_mapunmap'
         args = ' '.join( jsons )
         if outpath is not None:
-            args += ' -o {}'.format(outpath)
-        cmd = script_path + ' {} '.format(args)
-        print "Running: {}".format(cmd)
+            args += ' -o {0}'.format(outpath)
+        cmd = script_path + ' {0} '.format(args)
+        print "Running: {0}".format(cmd)
         cmd = shlex.split( cmd )
         try:
             sout = check_output( cmd, stderr=STDOUT )

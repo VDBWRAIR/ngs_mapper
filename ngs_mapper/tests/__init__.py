@@ -11,7 +11,7 @@ def setUpPackage():
     global before
     os.chdir(tdir)
     vpath = join(tdir, '.venv')
-    before = glob( '/dev/shm/*' ) + glob( '/tmp/*' )
+    before = glob( '/dev/shm/*' )# + glob( '/tmp/*' )
 
 def tearDownPackage():
     shutil.rmtree(tdir)
@@ -19,9 +19,9 @@ def tearDownPackage():
     tmpcontents = glob( '/tmp/*' )
 
     # Clean up all shm and tmp stuff that was made
-    for df in shmcontents + tmpcontents:
+    for df in shmcontents:# + tmpcontents:
         if df not in before:
-            print "Removing {}".format(df)
+            print "Removing {0}".format(df)
             if isdir( df ):
                 shutil.rmtree(df)
             else:

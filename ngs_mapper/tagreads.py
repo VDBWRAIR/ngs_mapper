@@ -39,7 +39,7 @@ def main():
         tag_bam( bam, args.SM, args.CN )
 
 def tag_bam( bam, SM, CN ):
-    logger.info( "Gathering existing header for {}".format(bam) )
+    logger.info( "Gathering existing header for {0}".format(bam) )
     hdr = get_rg_headers( bam, SM, CN )
     tag_reads( bam, hdr )
 
@@ -55,7 +55,7 @@ def tag_read( untagged_read, tags ):
     '''
     if untagged_read.FLAG >= 2048:
         # Skip supplementary
-        logger.debug( "Skipping read {} because it is supplementary".format(untagged_read.QNAME) )
+        logger.debug( "Skipping read {0} because it is supplementary".format(untagged_read.QNAME) )
         return untagged_read
     # Append the new tags
     if untagged_read._tags and untagged_read._tags[-1] != '\t':
@@ -79,7 +79,7 @@ def tag_readgroup( read ):
         @returns SamRow that is tagged with the appropriate read group
     '''
     rg = get_rg_for_read( read )
-    #logger.debug( "Tagging {} with Read group {}".format(read.qname,rg) )
+    #logger.debug( "Tagging {0} with Read group {0}".format(read.qname,rg) )
     return tag_read( read, ['RG:Z:'+rg] )
 
 def tag_reads( bam, hdr ):
@@ -98,15 +98,15 @@ def tag_reads( bam, hdr ):
         # Write the hdr to the file first
         sam.write( hdr )
         # Tag the reads
-        logger.info( "Tagging reads for {}".format(bam) )
+        logger.info( "Tagging reads for {0}".format(bam) )
         for read in untagged_bam:
             samrow = samtools.SamRow(read)
             read = tag_readgroup( samrow )
             sam.write( str(read) + '\n' )
     # Close stdout
     untagged_bam.close()
-    logger.info( "Finished tagging reads for {}".format(bam) )
-    logger.info( "Sorting {}".format(bam) )
+    logger.info( "Finished tagging reads for {0}".format(bam) )
+    logger.info( "Sorting {0}".format(bam) )
     b = samtools.view( samf, h=True, S=True, b=True )
     sortbam( b, bam )
     # Close the fh
@@ -114,7 +114,7 @@ def tag_reads( bam, hdr ):
     # Remove temp sam file
     # maybe some day could even just use pipes all the way through :)
     os.unlink( samf )
-    logger.info( "Indexing {}".format(bam) )
+    logger.info( "Indexing {0}".format(bam) )
     indexbam( bam )
 
 def get_rg_for_read( aread ):
@@ -123,25 +123,25 @@ def get_rg_for_read( aread ):
     for i, p in enumerate( ID_MAP ):
         if p.match( rname ):
             return IDS[i]
-    raise UnknownReadNameFormat( "{} is from an unknown platform and cannot be tagged".format(rname) )
+    raise UnknownReadNameFormat( "{0} is from an unknown platform and cannot be tagged".format(rname) )
 
 def get_rg_headers( bam, SM=None, CN=None ):
     old_header = get_bam_header( bam ) + '\n'
 
     for id, pl in zip( IDS, PLATFORMS ):
         # Skip headers that exist already
-        if 'ID:{}\t'.format(id) in old_header:
+        if 'ID:{0}\t'.format(id) in old_header:
             continue
 
-        rg = '@RG\tID:{}\tSM:{}\t'
+        rg = '@RG\tID:{0}\tSM:{1}\t'
         if SM is None:
             SM = os.path.basename(bam).replace( '.bam', '' )
 
         if CN is not None:
-            rg += 'CN:{}\tPL:{}'
+            rg += 'CN:{2}\tPL:{3}'
             old_header += rg.format( id, SM, CN, pl ) + '\n'
         else:
-            rg += 'PL:{}'
+            rg += 'PL:{2}'
             old_header += rg.format( id, SM, pl ) + '\n'
 
     return old_header
