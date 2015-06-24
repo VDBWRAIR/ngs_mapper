@@ -1,123 +1,3 @@
-"""
-The intention of this script is to easily sync a given MiSeq run path from the sequencer into the :doc:`NGSData <../ngsdata>` structure
-
-You need to ensure that the run directory for the run you want to sync is available and that you know the path to it.
-
-Accessing MiSeq Data
-====================
-
-The MiSeq stores runs on a separate drive on the MiSeq(Probably the D:\ drive). You will need to ensure that this directory is shared or at least the MiSeqOutput directory is shared. See :ref:`create-share-user`
-
-On the computer that you will be running miseq_sync from you will need to ensure that the MiSeq share is mounted somewhere on the system. A good practice is to create a folder somewhere called Instruments and then under there create folders for each of your sequencers.
-
-**Example**
-
-    .. code-block:: bash
-
-        mkdir -p /Instruments/MiSeq
-
-Then you can mount the MiSeq shared drive to that folder.
-See :ref:`mount-cifs-linux`
-
-Usage
-=====
-
-At this time there is very little output from the miseq_sync command until it finishes copying data which can take anywhere from 30 minutes to 2 hours depending on data sizes and network congestion. Be patient and scan through the output to look for failures after it finishes.
-
-    .. code-block:: bash
-
-        miseq_sync /path/to/Illumina/MiSeqOutput/runname
-
-Verify Samples Synced
----------------------
-
-coming soon...
-
-How it works
-============
-
-The miseq instrument reads the SampleSheet.csv and numbers each row listed under the comma separated values section. It assings each row a number starting with 0 which is the sample number.
-
-Under each MiSeq run's raw data directory inside of Data/Intensities/BaseCalls it creates the gzipped(compressed) fastq file for each paired read.
-
-You can read more about the naming structure `here <http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm>`_
-
-Sync Process
-------------
-
-For the examples, we will assume that your NGS Data directory is::
-
-    /home/NGSData
-
-and your miseq run name is::
-
-    140101_M00001_0001_000000000-AAAAA
-
-#. First the script syncs the fastq.gz files from inside of <run name>/Data/Intensities/BaseCalls/ to the destination specified when you run the script using the --ngsdata
-
-    This will create::
-
-        /home/NGSData/RawData/MiSeq/140101_M00001_0001_000000000-AAAAA/Data/Intensities/BaseCalls
-
-    and then copies all .fastq.gz from your run into there
-
-    You can view the `FASTQ Files <http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm>`_ site to see how the MiSeq names it's .fastq.gz files
-
-    An example paired .fastq.gz would be::
-
-        SAMPLENAME1_S1_L001_R1_001.fastq.gz
-        SAMPLENAME1_S1_L001_R2_001.fastq.gz
-
-    This name can then be parsed as follows:
-
-        * SAMPLENAME1 is the name of the sample
-        * S1 indicates it is sample #1(aka first sample in the samplesheet)
-        * L001 means it was lane 1
-            * Most likely all sample files will have L001
-        * R1 means Read 1(forward), R2 means Read 2(reverse)
-        * 001 then indicates it was set 1
-            * Most likely all sample files will have 001 unless you changed some setting related to ``--fastq-cluster-count``
-    
-#. The script then creates a directory with the same name as the MiSeq raw data directory under ReadData/MiSeq
-
-    Creates::
-
-        /home/NGSData/ReadData/140101_M00001_0001_000000000-AAAAA
-
-#. Then it unpacks each fastq.gz file into that directory so there are only .fastq files and appends the run date to them before the .fastq
-
-    So in the previous example the two file names would become::
-
-        SAMPLENAME1_S1_L001_R1_001_2014_01_01.fastq
-        SAMPLENAME1_S1_L001_R2_001_2014_01_01.fastq
-
-    and be placed inside of::
-
-        /home/NGSData/ReadData/140101_M00001_0001_000000000-AAAAA
-
-#. Once the files are unpacked it uses the <sample name> field in the each of the file names to determine the final samplename to use
-
-        Aka::
-
-            SAMPLENAME1
-
-#. It then ensures there is a directory with each samplename under ReadsBySample
-
-        Per our example, the following directory would be created::
-            
-            /home/NGSData/ReadsBySample/SAMPLENAME1
-
-#. It then creates a symlink with the same name as the file in the ReadData/MiSeq/<rundirectory> inside of the appropriate ReadsBySample/<samplename> that links back to the .fastq file
-
-    The symlinks would come out as follows::
-
-        SAMPLENAME1_S1_L001_R1_001_2014_01_01.fastq -> ../../ReadData/MiSeq/140101_M00001_0001_000000000-AAAAA/SAMPLE1_S01_L001_R1_001_2014_01_01.fastq
-        SAMPLENAME1_S1_L001_R2_001_2014_01_01.fastq -> ../../ReadData/MiSeq/140101_M00001_0001_000000000-AAAAA/SAMPLE1_S01_L001_R2_001_2014_01_01.fastq
-        
-#. Once all ReadsBySample directories and files are symlinked it finishes syncing the rest of the miseq run directory
-
-"""
-
 import argparse
 import os
 import sys
@@ -129,13 +9,11 @@ from glob import glob
 from datetime import datetime
 import gzip
 import csv
-from ngs_mapper import compat
 
 import log
 logger = log.setup_logger( basename(__file__), log.get_config() )
 
-def main():
-    args = parse_args()
+def main( args ):
     sync( args.runpath, args.ngsdata )
 
 #Tested
@@ -229,7 +107,7 @@ def rsync_run( rundir, ngsdata ):
     logger.info( 'The fastq read data is synced. Syncing the rest of the data' )
     cmd = 'rsync -av --progress --size-only {0} {1}'.format( src, dst )
     cmd = shlex.split( cmd )
-    logger.debug( compat.check_output( cmd ) )
+    logger.debug( subprocess.check_output( cmd ) )
 
 
 def create_readdata( rundir, ngsdata ):
@@ -246,11 +124,8 @@ def create_readdata( rundir, ngsdata ):
         dstfq = join( dstroot, basename( gz ).replace( '.fastq.gz', '_{0}.fastq'.format( rundate ) ) )
         if not exists( dstfq ):
             logger.info( 'Unpacking {0} to {1}'.format(gz, dstfq) )
-            fr = gzip.open( gz, 'rb' )
-            fw = open( dstfq, 'w' )
-            fw.write( fr.read() )
-            fw.close()
-            fr.close()
+            with gzip.open( gz, 'rb' ) as fr, open( dstfq, 'w' ) as fw:
+                fw.write( fr.read() )
         else:
             logger.debug( '{0} looks to be unpacked already as {1}'.format(gz, dstfq) )
 
@@ -275,13 +150,8 @@ def link_reads( rundir, ngsdata ):
             logger.debug( '{0} already exists.'.format( lnkdst ) )
 
 def parse_args( args=sys.argv[1:] ):
-    from ngs_mapper import config
-    conf_parser, args, config, configfile = config.get_config_argparse(args)
-    defaults = config['miseq_sync']
-
     parser = argparse.ArgumentParser(
-        description='Sync MiSeq run into the NGSData structure',
-        parents=[conf_parser]
+        description='Sync MiSeq run into the NGSData structure'
     )
 
     parser.add_argument(
@@ -289,10 +159,11 @@ def parse_args( args=sys.argv[1:] ):
         help='Path to the run to be synced(/path/to/YYMMDD_)'
     )
 
+    ngsdata_default = '/home/EIDRUdata/NGSData'
     parser.add_argument(
         '--ngsdata',
-        default=defaults['ngsdata']['default'],
-        help=defaults['ngsdata']['help']
+        default=ngsdata_default,
+        help='Path to the root of the NGSData data structure[Default: {0}]'.format(ngsdata_default)
     )
 
     return parser.parse_args( args )
