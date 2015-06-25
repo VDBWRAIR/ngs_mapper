@@ -28,7 +28,7 @@ class Base(common.BaseClass):
 def rand_sff_seqs( ):
     ''' To aid in mocking Bio.SeqIO.parse '''
     for i in range( 10 ):
-        yield common.rand_seqrec( 100, 0, 0, 5, 10 )
+        yield common.rand_seqrec( 100, 0, 0, 5, 75 )
 
 @patch('ngs_mapper.reads.SeqIO.parse')
 class TestSffsToFastq(Base):
