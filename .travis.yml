@@ -15,4 +15,5 @@ install:
     - sudo chmod -R ugo=rwX ./
     - python setup.py install
 script:
-    - nosetests ngs_mapper/tests -v --nologcapture
+    - nosetests ngs_mapper/tests -v --nologcapture -a '!slow' -I '.*test_functional.py$'
+    - travis_wait nosetests ngs_mapper/tests/test_functional.py
