@@ -246,7 +246,7 @@ def main():
     if os.path.isdir( args.outdir ):
         if os.listdir( args.outdir ):
             raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
-    make_project_repo( tdir )
+    #make_project_repo( tdir )
 
     logger.info( "--- Starting {0} --- ".format(args.prefix) )
     if args.config:
@@ -366,8 +366,8 @@ def main():
             sys.exit( 1 )
         logger.info( "--- Finished {0} ---".format(args.prefix) )
 
-        subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
-        subprocess.call( 'git commit -am \'runsample\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        #subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        #subprocess.call( 'git commit -am \'runsample\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
 
         logger.debug( "Moving {0} to {1}".format( tdir, args.outdir ) )
         # Cannot log any more below this line as the log file will be moved in the following code
