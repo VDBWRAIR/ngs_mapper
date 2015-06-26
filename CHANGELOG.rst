@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 1.2.3
++++++++++++++
+
+- Added travis-ci support to automatically run tests when code is pushed to github
+
 Version 1.2.2
 +++++++++++++
 
