@@ -137,7 +137,12 @@ class TestFunctional(Base):
     def _ensure_expected_output_files( self, outdir, prefix ):
         efiles = self._expected_files( outdir, prefix )
         ef = set( [x for y,x in efiles] )
-        rf = set( [join(outdir,f) for f in os.listdir( outdir )] )
+        # exclude tmpdir because middle portion of name is random
+        resultfiles = [
+            join(outdir,f) for f in os.listdir( outdir )
+            if not re.search('.*?'+prefix+'\w+runsample',f)
+        ]
+        rf = set( resultfiles )
         print "Files missing from project:"
         print ef - rf
         print "Extra files in project:"
@@ -168,8 +173,8 @@ class TestFunctional(Base):
         efiles.append( (d,join( outdir, 'qualdepth') ) )
         efiles.append( (d,join( outdir, 'trimmed_reads' )) )
         efiles.append( (f,join( outdir, prefix+'.reads.png' )) )
-        #efiles.append( (d,(join( outdir, '.git' ))) )
         efiles.append( (d,(join( outdir, 'trim_stats' ))) )
+        efiles.append((d,(join(outdir,'.com_ibm_tools_attach'))))
 
         # Reference and indexes
         ref = join(outdir, basename(self.ref))
