@@ -5,6 +5,10 @@ Version 1.2.3
 +++++++++++++
 
 - Added travis-ci support to automatically run tests when code is pushed to github
+- Projects now default to running inside of a temporary directory inside of the
+  specified output directory(-od)
+- runsample now sets TMPDIR to tmpdir inside of output directory so that all
+  analysis is run within that directory  
 
 Version 1.2.2
 +++++++++++++
