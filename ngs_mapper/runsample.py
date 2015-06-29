@@ -228,12 +228,26 @@ def main():
     # So we can set the global logger
     global logger
 
-    tmpdir = os.environ.get('TMPDIR', tempfile.tempdir)
+    # Setup analysis directory
+    if os.path.isdir( args.outdir ):
+        if os.listdir( args.outdir ):
+            raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
+    else:
+        os.makedirs(args.outdir)
+
+    # tempdir root will be TMPDIR environ variable if it exists
+    # unless outdir is set
+    # allows user to specify TMPDIR somewhere else if they want such as
+    # /dev/shm
+    tmpdir = args.outdir
+    # Directory analysis is run in will be inside of tmpdir
     tdir = tempfile.mkdtemp('runsample', args.prefix, dir=tmpdir)
+    os.environ['TMPDIR'] = tdir
+
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
-    consensus = os.path.join( tdir, bamfile+'.consensus.fasta' )
-    vcf = os.path.join( tdir, bamfile+'.vcf' )
+    consensus = bamfile+'.consensus.fasta'
+    vcf = bamfile+'.vcf'
     bwalog = os.path.join( tdir, 'bwa.log' )
     stdlog = os.path.join( tdir, args.prefix + '.std.log' )
     logfile = os.path.join( tdir, args.prefix + '.log' )
@@ -243,10 +257,7 @@ def main():
     config = log.get_config( logfile )
     logger = log.setup_logger( 'runsample', config )
 
-    if os.path.isdir( args.outdir ):
-        if os.listdir( args.outdir ):
-            raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
-    make_project_repo( tdir )
+    #make_project_repo( tdir )
 
     logger.info( "--- Starting {0} --- ".format(args.prefix) )
     if args.config:
@@ -366,8 +377,8 @@ def main():
             sys.exit( 1 )
         logger.info( "--- Finished {0} ---".format(args.prefix) )
 
-        subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
-        subprocess.call( 'git commit -am \'runsample\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        #subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        #subprocess.call( 'git commit -am \'runsample\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
 
         logger.debug( "Moving {0} to {1}".format( tdir, args.outdir ) )
         # Cannot log any more below this line as the log file will be moved in the following code
@@ -416,10 +427,6 @@ def pbs_job(runsampleargs, pbsargs):
     if qsub_args.qsub_M is not None:
         template += '#PBS -m abe\n' \
             '#PBS -M ' + qsub_args.qsub_M + '\n'
-
-    tmpdir = os.environ.get('TMPDIR',None)
-    if tmpdir is not None:
-        template += 'export TMPDIR=' + tmpdir
 
     template += '\n' \
         'cd $PBS_O_WORKDIR\n' \

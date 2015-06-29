@@ -56,14 +56,6 @@ class TestPBSJob(unittest.TestCase):
         self.assertNotIn('#PBS -M', r)
         self.assertNotIn('#PBS -m', r)
 
-    def test_sets_TMPDIR_only_if_already_in_environment(self):
-        with mock.patch.dict(runsample.os.environ, TMPDIR='/path/foo'):
-            r = runsample.pbs_job(*self.args)
-            self.assertIn(
-                'export TMPDIR=/path/foo',
-                r
-            )
-
 class TestSplitArgs(unittest.TestCase):
     def test_splits_correctly(self):
         r = runsample.split_args(
