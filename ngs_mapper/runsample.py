@@ -427,12 +427,6 @@ def pbs_job(runsampleargs, pbsargs, tmpdir=None):
         template += '#PBS -m abe\n' \
             '#PBS -M ' + qsub_args.qsub_M + '\n'
 
-<<<<<<< HEAD
-    if tmpdir is not None:
-        template += 'export TMPDIR=' + tmpdir
-
-=======
->>>>>>> 06ec38b1d4ac09d486a92afa37448b5de092009e
     template += '\n' \
         'cd $PBS_O_WORKDIR\n' \
         'runsample {runsampleargs}\n'
