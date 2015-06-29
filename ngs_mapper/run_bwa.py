@@ -74,7 +74,7 @@ def main():
         logger.debug( "Paired only. Moving result file {0} to {1}".format(pairedbam, bampath) )
         shutil.move( pairedbam, bampath )
     elif merge == 2:
-        logger.debug( "Paired only. Moving result file {0} to {1}".format(nonpairedbam, bampath) )
+        logger.debug( "Includes non-paired. Moving result file {0} to {1}".format(nonpairedbam, bampath) )
         shutil.move( nonpairedbam, bampath )
     else:
         raise Exception( "Somehow no reads were compiled" )
