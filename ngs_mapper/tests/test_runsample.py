@@ -174,7 +174,9 @@ class TestFunctional(Base):
         efiles.append( (d,join( outdir, 'trimmed_reads' )) )
         efiles.append( (f,join( outdir, prefix+'.reads.png' )) )
         efiles.append( (d,(join( outdir, 'trim_stats' ))) )
-        efiles.append((d,(join(outdir,'.com_ibm_tools_attach'))))
+        ibmtools = join(outdir, '.com_ibm_tools_attach')
+        if exists(ibmtools):
+            efiles.append((d,ibmtools))
 
         # Reference and indexes
         ref = join(outdir, basename(self.ref))
