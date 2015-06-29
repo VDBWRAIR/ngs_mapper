@@ -223,12 +223,16 @@ def main():
     # Qsub job?
     if rest and rest[0].startswith('--qsub'):
         args, qsubargs = split_args(' '.join(sys.argv[1:]))
-        print pbs_job(args, qsubargs)
+        print pbs_job(args, qsubargs, args.outdir)
         sys.exit(1)
     # So we can set the global logger
     global logger
-
-    tmpdir = os.environ.get('TMPDIR', tempfile.tempdir)
+    if os.path.isdir( args.outdir ):
+        if os.listdir( args.outdir ):
+            raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
+    else: os.mkdir(args.outdir)
+    tmpdir = args.outdir or os.environ.get('TMPDIR', tempfile.tempdir)
+    print "outdir %s, tmpdir %s" % (args.outdir, tmpdir)
     tdir = tempfile.mkdtemp('runsample', args.prefix, dir=tmpdir)
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
@@ -243,9 +247,6 @@ def main():
     config = log.get_config( logfile )
     logger = log.setup_logger( 'runsample', config )
 
-    if os.path.isdir( args.outdir ):
-        if os.listdir( args.outdir ):
-            raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
     #make_project_repo( tdir )
 
     logger.info( "--- Starting {0} --- ".format(args.prefix) )
@@ -378,7 +379,7 @@ def main():
             for f in file_list:
                 shutil.move( f, args.outdir )
 
-def pbs_job(runsampleargs, pbsargs):
+def pbs_job(runsampleargs, pbsargs, tmpdir=None):
     '''
     Return a pbs job string that will run runsample with same parameters as were
     given initially
@@ -417,7 +418,6 @@ def pbs_job(runsampleargs, pbsargs):
         template += '#PBS -m abe\n' \
             '#PBS -M ' + qsub_args.qsub_M + '\n'
 
-    tmpdir = os.environ.get('TMPDIR',None)
     if tmpdir is not None:
         template += 'export TMPDIR=' + tmpdir
 
