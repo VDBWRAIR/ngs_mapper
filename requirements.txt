@@ -17,3 +17,5 @@ filehandle
 sh
 argparse
 counter
+docopt
+schema
