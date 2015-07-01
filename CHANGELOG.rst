@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 1.2.4
++++++++++++++
+
+- Fixes documentation issue with umask for sync user
+
 Version 1.2.3
 +++++++++++++
 
