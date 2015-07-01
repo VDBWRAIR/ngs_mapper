@@ -108,6 +108,7 @@ import logging
 import shutil
 import glob
 from ngs_mapper import compat
+import sh
 
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
@@ -297,6 +298,13 @@ def main():
         rets.append( p.wait() )
         if rets[-1] != 0:
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+
+        # Filter on index quality and Ns
+        from ngs_mapper import config as __cfg
+        the_config = __cfg.get_config_argparse(sys.argv[1:])[2]
+        qualmin = the_config['ngs_filter']['indexQualityMin']['default']
+        dropNs = the_config['ngs_filter']['dropNs']['default']
+#        sh.ngs_filter(cmd_args['readsdir'], index_min=qualmin, drop_ns=dropNs)
 
         # Mapping
         with open(bwalog, 'wb') as blog:

@@ -124,6 +124,8 @@ def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_
     plot_quals( ax3, xvals, quals, color='green' )
     plot_mapunmap( ax2, mapped_reads, unmapped_reads )
     #TODO: Here, get and plot paired v. unpaired
+#    paired, unpaired = samtools.get_pair_info()
+#    plot_mapunmap( ax2, paired, unpaired, mapped_color='blue', unmapped_color='r', mapped_read_text_color='black', unmapped_read_text_color='white', ylabel='Paired/Unpaired Reads'):
 
     fig.savefig( outputfile, bbox_inches='tight', dpi=100, pad_inches=0.1 )
 

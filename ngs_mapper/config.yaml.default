@@ -27,6 +27,13 @@ trim_reads:
         - Roche454
         - IonTorrent
         help: 'List of platforms to include data for[Default: %(default)s]'
+
+ngs_filter:
+    indexQualityMin:
+        default: 0
+    dropNs:
+        default: false
+
 run_bwa_on_samplename:
     platforms:
         choices:
