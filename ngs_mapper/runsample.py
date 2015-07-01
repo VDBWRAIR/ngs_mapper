@@ -224,7 +224,7 @@ def main():
     # Qsub job?
     if rest and rest[0].startswith('--qsub'):
         args, qsubargs = split_args(' '.join(sys.argv[1:]))
-        print pbs_job(args, qsubargs, args.outdir)
+        print pbs_job(args, qsubargs)
         sys.exit(1)
     # So we can set the global logger
     global logger
@@ -396,7 +396,7 @@ def main():
             for f in file_list:
                 shutil.move( f, args.outdir )
 
-def pbs_job(runsampleargs, pbsargs, tmpdir=None):
+def pbs_job(runsampleargs, pbsargs):
     '''
     Return a pbs job string that will run runsample with same parameters as were
     given initially
