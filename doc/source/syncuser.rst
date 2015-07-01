@@ -55,7 +55,7 @@ Create the Sync User
 
     .. code-block:: bash
 
-        echo "umask 0022" >> ~/.bash_profile
+        echo "umask 0022" >> ~/.bashrc
 
 Ensure your sync user has read/write/execute to your data
 =========================================================
