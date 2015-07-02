@@ -136,13 +136,13 @@ class TestFunctional(Base):
 
     def _ensure_expected_output_files( self, outdir, prefix ):
         efiles = self._expected_files( outdir, prefix )
-        ef = set( [x for y,x in efiles] )
+        ef = set( [x for y,x in efiles] ) | set(['outdir/filtered'])
         # exclude tmpdir because middle portion of name is random
         resultfiles = [
             join(outdir,f) for f in os.listdir( outdir )
             if not re.search('.*?'+prefix+'\w+runsample',f)
         ]
-        rf = set( resultfiles )
+        rf = set( resultfiles ) 
         print "Files missing from project:"
         print ef - rf
         print "Extra files in project:"

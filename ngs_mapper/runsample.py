@@ -276,6 +276,7 @@ def main():
             'CN': CN,
             'trim_qual': args.trim_qual,
             'trim_outdir': os.path.join(tdir,'trimmed_reads'), 
+            'filtered_dir' : os.path.join(tdir, 'filtered'),
             'head_crop': args.head_crop,
             'minth': args.minth,
             'config': args.config
@@ -291,7 +292,18 @@ def main():
         rets = []
 
         # Trim Reads
-        cmd = 'trim_reads {readsdir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
+        from ngs_mapper import config as __cfg
+        the_config = __cfg.get_config_argparse(sys.argv[1:])[2]
+        qualmin = the_config['ngs_filter']['indexQualityMin']['default']
+        dropNs = the_config['ngs_filter']['dropNs']['default']
+        try:
+            __result = sh.ngs_filter(cmd_args['readsdir'], index_min=qualmin, drop_ns=dropNs, outdir=cmd_args['filtered_dir']) 
+            logger.debug( 'ngs_filter: %s' % __result )
+        except sh.ErrorReturnCode, e:
+                logger.error(e.stderr)
+                sys.exit(1)
+
+        cmd = 'trim_reads {filtered_dir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
         if cmd_args['config']:
             cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
@@ -300,11 +312,6 @@ def main():
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
 
         # Filter on index quality and Ns
-        from ngs_mapper import config as __cfg
-        the_config = __cfg.get_config_argparse(sys.argv[1:])[2]
-        qualmin = the_config['ngs_filter']['indexQualityMin']['default']
-        dropNs = the_config['ngs_filter']['dropNs']['default']
-#        sh.ngs_filter(cmd_args['readsdir'], index_min=qualmin, drop_ns=dropNs)
 
         # Mapping
         with open(bwalog, 'wb') as blog:

@@ -18,6 +18,7 @@ from schema import Schema, Use, Optional
 from itertools import ifilterfalse, izip
 import re
 import os
+import sys
 #TODO: should guarantee that there is an index file or allow there not to be one
 
 ''' given a fastq file and its index file (__R1__, __I1__), drop those reads that aren't good enough.'''
@@ -73,10 +74,10 @@ def make_filtered(readpath, idxQualMin, dropNs):
     Raises an AssertionError if the index-quality filter drops all reads. '''
     index = has_index(readpath)
     if idxQualMin and not index:
-        print "Specified Non-null index quality minimum, but index for file {0} does not exist.".format(readpath)
+        sys.stderr.write("Specified Non-null index quality minimum, but index for file {0} does not exist.\n".format(readpath))
     format = 'sff' if readpath.endswith('sff') else 'fastq'
     fq_open = partial(SeqIO.parse, format=format)
-    if index and idxQualMin:
+    if index and idxQualMin: 
          reads, idxreads = fq_open(readpath), fq_open(index)
          intermediate = (r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) )
     else:
@@ -91,6 +92,12 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir=None):
     '''write the results to the new directory'''
     results = make_filtered(readpath, idxQualMin, dropNs)
     outpath = name_filtered(readpath, outdir)
+    results = list(results)
+    sys.stderr.write('writing %s to %s' % (readpath, outpath)+'\n')
+    sys.stderr.write(str(locals())+'\n')
+    sys.stderr.write(open(readpath).read()[-10:] +'\n')
+
+
     num_written = SeqIO.write(results, outpath, 'fastq')
     assert num_written > 0, "Failed! Quality controls eliminated all reads. Drop-Ns was set to %s; \
         try again with lower quality min than %s. " %(dropNs, idxQualMin)
@@ -127,11 +134,14 @@ def main():
     args = scheme.validate(raw_args)
     mkdir_p(args['--outdir'])
     dropNs, idxMin = args['--drop-ns'], args['--index-min']
-    if not (dropNs or idxMin):
+    if not (dropNs or idxMin > -1):
         raise ValueError("No filter specified, drop Ns:%s, Index Quality Min:%s" % (dropNs, idxMin))
-    minmin, minmax = 0, 50
+    minmin, minmax = -1, 50
     if not ( minmin <= idxMin <= minmax):
         raise ValueError("Invalid Index Quality Minimum specified: %s  is not a valid value between %s and %s" (idxMin, minmin, minmax))
+    sys.stderr.write( "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s\nfrom folder %s to folder %s\n" % (dropNs, idxMin, args['<readdir>'], args['--outdir']))
+    sys.stderr.write(os.getcwd())
+    sys.stderr.write('\nparallel: %s\n' % args['--parallel'])
     outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--outdir'], args['--parallel'])
     return 0
 
