@@ -91,16 +91,14 @@ def make_filtered(readpath, idxQualMin, dropNs):
 def write_filtered(readpath, idxQualMin, dropNs, outdir=None):
     '''write the results to the new directory'''
     results = make_filtered(readpath, idxQualMin, dropNs)
-    outpath = name_filtered(readpath, outdir)
-    results = list(results)
-    sys.stderr.write('writing %s to %s' % (readpath, outpath)+'\n')
-    sys.stderr.write(str(locals())+'\n')
-    sys.stderr.write(open(readpath).read()[-10:] +'\n')
-
-
-    num_written = SeqIO.write(results, outpath, 'fastq')
-    assert num_written > 0, "Failed! Quality controls eliminated all reads. Drop-Ns was set to %s; \
-        try again with lower quality min than %s. " %(dropNs, idxQualMin)
+    outpath = name_filtered(readpath, outdir) 
+    try:
+        num_written = SeqIO.write(results, outpath, 'fastq')
+        if  num_written <= 0: 
+            raise ValueError("Failed! Quality controls eliminated all reads. Drop-Ns was set to %s; \
+        try again with lower quality min than %s. " %(dropNs, idxQualMin))
+    except AssertionError, E:
+        sys.stderr.write(str(E)) 
     return outpath
 
 def write_post_filter(readsdir, idxQualMin, dropNs, outdir=None, parallel=False):
@@ -139,9 +137,9 @@ def main():
     minmin, minmax = -1, 50
     if not ( minmin <= idxMin <= minmax):
         raise ValueError("Invalid Index Quality Minimum specified: %s  is not a valid value between %s and %s" (idxMin, minmin, minmax))
-    sys.stderr.write( "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s\nfrom folder %s to folder %s\n" % (dropNs, idxMin, args['<readdir>'], args['--outdir']))
-    sys.stderr.write(os.getcwd())
-    sys.stderr.write('\nparallel: %s\n' % args['--parallel'])
+    status = "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s\nfrom folder %s to folder %s" % (dropNs, idxMin, args['<readdir>'], args['--outdir'])
+    sys.stderr.write(status +'\n')
+    print status
     outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--outdir'], args['--parallel'])
     return 0
 

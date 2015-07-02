@@ -1,4 +1,4 @@
-from bioframes.nfilter import make_filtered, write_filtered, fqs_excluding_indices, write_post_filter, mkdir_p
+from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indices, write_post_filter, mkdir_p
 import os
 import mock
 import unittest
@@ -55,6 +55,6 @@ class TestNGSFilter(unittest.TestCase):
 
     def test_filter_raises_error_on_empty_filtered_result(self):
         ''' This should raise an AssertionError because no reads will be left after that quality filter.'''
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             write_filtered(self.inputfn, 65, True)
 
