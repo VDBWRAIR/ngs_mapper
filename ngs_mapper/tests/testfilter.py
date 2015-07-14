@@ -3,12 +3,13 @@ import os
 import mock
 import unittest
 import shutil
+import warnings
 #
 from functools import partial
 from imports import fixtures, join
 class TestNGSFilter(unittest.TestCase):
 
-    def setUp(self): 
+    def setUp(self):
         fixpath = join(fixtures.THIS,'fixtures')
         fix = partial(join, fixpath)
         self.actualfn = 'testoutput/filtered.1900_S118_L001_R2_001_2015_04_24.fastq'
@@ -55,6 +56,11 @@ class TestNGSFilter(unittest.TestCase):
 
     def test_filter_raises_error_on_empty_filtered_result(self):
         ''' This should raise an AssertionError because no reads will be left after that quality filter.'''
-        with self.assertRaises(ValueError):
+
+        with warnings.catch_warnings(record=True) as w:
+                # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
             write_filtered(self.inputfn, 65, True)
+            self.assertEquals(len(w), 1)
+        #with self.assertRaises(ValueError):
 

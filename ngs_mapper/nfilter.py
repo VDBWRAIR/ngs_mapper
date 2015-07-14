@@ -6,8 +6,9 @@ Options:
     --parallel                Use python's multiprocessing to run on multiple cores
 
 Help:
+    If an argument is not given for a parameter, that filter is not applied. If no filter parameters are provided, an error is raised.
     --drop-ns                   Drop those reads which contain an N
-    --index-min=<index_min>     Drop reads where the corresponding index is BELOW specified minimum.
+    --index-min=<index_min>     Drop reads where the corresponding index is BELOW specified minimum. Must be between 1 and 50.
 '''
 from functools import partial
 import multiprocessing
@@ -19,6 +20,7 @@ from itertools import ifilterfalse, izip
 import re
 import os
 import sys
+import warnings
 #TODO: should guarantee that there is an index file or allow there not to be one
 
 ''' given a fastq file and its index file (__R1__, __I1__), drop those reads that aren't good enough.'''
@@ -32,6 +34,7 @@ def name_filtered(path, outdir):
     rename = "filtered.{0}".format
     dirpath, filename = os.path.split(path)
     renamed = rename(filename)
+    renamed = renamed[:-3] + 'fastq' if renamed.endswith('sff') else renamed
     outd = outdir or '.'
     return os.path.join(outd, renamed)
 
@@ -55,6 +58,8 @@ def map_to_dir(readsdir, func, parallel=False):
     '''maps *func* to all fastq/sff files which are not indexes.
     fetch the fastqs and indexes of the directory and write the filtered results.'''
     files = fqs_excluding_indices(readsdir)
+    if not files:
+        raise ValueError("No fastq or sff files found in directory %s" % readsdir)
     if parallel:
         pool = multiprocessing.Pool()
         outpaths = pool.map(func, files)
@@ -62,6 +67,7 @@ def map_to_dir(readsdir, func, parallel=False):
         pool.join()
         return outpaths
     else:
+        print "mapping filters over read files %s in directory %s" % (files, readsdir)
         return map(func, files)
 
 def idx_filter(read, idxread, thresh):
@@ -77,7 +83,7 @@ def make_filtered(readpath, idxQualMin, dropNs):
         sys.stderr.write("Specified Non-null index quality minimum, but index for file {0} does not exist.\n".format(readpath))
     format = 'sff' if readpath.endswith('sff') else 'fastq'
     fq_open = partial(SeqIO.parse, format=format)
-    if index and idxQualMin: 
+    if index and idxQualMin:
          reads, idxreads = fq_open(readpath), fq_open(index)
          intermediate = (r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) )
     else:
@@ -91,14 +97,15 @@ def make_filtered(readpath, idxQualMin, dropNs):
 def write_filtered(readpath, idxQualMin, dropNs, outdir=None):
     '''write the results to the new directory'''
     results = make_filtered(readpath, idxQualMin, dropNs)
-    outpath = name_filtered(readpath, outdir) 
+    outpath = name_filtered(readpath, outdir)
     try:
         num_written = SeqIO.write(results, outpath, 'fastq')
-        if  num_written <= 0: 
-            raise ValueError("Failed! Quality controls eliminated all reads. Drop-Ns was set to %s; \
-        try again with lower quality min than %s. " %(dropNs, idxQualMin))
+        print "filtered reads from %s will be written to %s" % (readpath, outpath)
+        print "%s reads left after filtering." % num_written
+        if  num_written <= 0:
+            warnings.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
     except AssertionError, E:
-        sys.stderr.write(str(E)) 
+        sys.stderr.write(str(E))
     return outpath
 
 def write_post_filter(readsdir, idxQualMin, dropNs, outdir=None, parallel=False):
@@ -124,7 +131,7 @@ def main():
         { '<readdir>' : os.path.isdir,
          Optional('--drop-ns') : bool,
          Optional('--parallel') : bool,
-         Optional('--index-min') : Use(int, error="--index-min takes integer"),
+         Optional('--index-min') : Use(lambda x: int(x) if x else x, error="--index-min expects an integer"),
          '--outdir' : str
          })
 
@@ -132,13 +139,10 @@ def main():
     args = scheme.validate(raw_args)
     mkdir_p(args['--outdir'])
     dropNs, idxMin = args['--drop-ns'], args['--index-min']
-    if not (dropNs or idxMin > -1):
+    minmin, minmax = 1, 50
+    if not (dropNs or (minmin <= idxMin <=minmax)):
         raise ValueError("No filter specified, drop Ns:%s, Index Quality Min:%s" % (dropNs, idxMin))
-    minmin, minmax = -1, 50
-    if not ( minmin <= idxMin <= minmax):
-        raise ValueError("Invalid Index Quality Minimum specified: %s  is not a valid value between %s and %s" (idxMin, minmin, minmax))
     status = "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s\nfrom folder %s to folder %s" % (dropNs, idxMin, args['<readdir>'], args['--outdir'])
-    sys.stderr.write(status +'\n')
     print status
     outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--outdir'], args['--parallel'])
     return 0
