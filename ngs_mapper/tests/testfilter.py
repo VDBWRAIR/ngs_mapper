@@ -1,4 +1,5 @@
 from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indices, write_post_filter, mkdir_p
+
 import os
 import mock
 import unittest
@@ -16,6 +17,7 @@ class TestNGSFilter(unittest.TestCase):
         self.expectedfn = fix('expected__R2__.fastq')
         self.inputfn = fix('1900/1900_S118_L001_R2_001_2015_04_24.fastq')
         self.inputdir = fix('1900')
+        self.statsfile = 'testoutput/ngs_filter_stats.txt'
         self.outdir = 'testoutput'
         mkdir_p(self.outdir)
 
@@ -64,3 +66,16 @@ class TestNGSFilter(unittest.TestCase):
             self.assertEquals(len(w), 1)
         #with self.assertRaises(ValueError):
 
+    def test_stat_file_none_filtered(self):
+        write_filtered(self.inputfn, 0, False, outdir=self.outdir)
+        expected = '''ngs_filter found %s reads in file %s, and filtered out %s reads.''' % (4, self.inputfn, 0)
+        actual = open(self.statsfile).readlines()[0].strip()
+        self.assertEquals(actual, expected)
+
+    def test_stat_file_two_filtered(self):
+        write_post_filter(self.inputdir, 32, True, self.outdir)
+        expected_fst = '''ngs_filter found %s reads in file %s, and filtered out %s reads.''' % (4, self.inputfn, 2)
+        expected_snd = '''In file {0}, {1} reads were filtered for poor quality index below {2}. {3} reads had Ns and were filtered.'''.format(self.inputfn, 1, 32, 1)
+        fst, snd =  map(str.strip, open(self.statsfile).readlines())
+        self.assertEquals(fst, expected_fst)
+        self.assertEquals(snd, expected_snd)

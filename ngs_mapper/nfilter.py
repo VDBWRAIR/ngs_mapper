@@ -22,6 +22,9 @@ import os
 import sys
 import warnings
 #TODO: should guarantee that there is an index file or allow there not to be one
+STATSFILE_NAME='ngs_filter_stats.txt'
+stat_header = '''ngs_filter found {0} reads in file {1}, and filtered out {2} reads.'''
+stat_body = '''In file {0}, {1} reads were filtered for poor quality index below {2}. {3} reads had Ns and were filtered.'''
 
 ''' given a fastq file and its index file (__R1__, __I1__), drop those reads that aren't good enough.'''
 ''' also, drop all reads with N value. '''
@@ -35,8 +38,7 @@ def name_filtered(path, outdir):
     dirpath, filename = os.path.split(path)
     renamed = rename(filename)
     renamed = renamed[:-3] + 'fastq' if renamed.endswith('sff') else renamed
-    outd = outdir or '.'
-    return os.path.join(outd, renamed)
+    return os.path.join(outdir, renamed)
 
 def has_index(fn):
     ''' returns index path (ie _I1_ or _I2_)  or none.'''
@@ -73,7 +75,6 @@ def map_to_dir(readsdir, func, parallel=False):
 def idx_filter(read, idxread, thresh):
     ''' AT or ABOVE threshold.'''
     return min(idxread._per_letter_annotations['phred_quality']) >= thresh
-
 def make_filtered(readpath, idxQualMin, dropNs):
     ''' given a fastq file with an index, will filter on low-quality index entries, and drop all reads with N.
     If file does not have an index, only drops Ns.
@@ -83,21 +84,30 @@ def make_filtered(readpath, idxQualMin, dropNs):
         sys.stderr.write("Specified Non-null index quality minimum, but index for file {0} does not exist.\n".format(readpath))
     format = 'sff' if readpath.endswith('sff') else 'fastq'
     fq_open = partial(SeqIO.parse, format=format)
+    reads = list(fq_open(readpath))
     if index and idxQualMin:
-         reads, idxreads = fq_open(readpath), fq_open(index)
-         intermediate = (r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) )
+         idxreads = fq_open(index)
+         intermediate = [r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) ]
     else:
-        intermediate = fq_open(readpath)
+        intermediate = reads
     if dropNs:
         hasNs = lambda rec: 'N' in str(rec.seq).upper()
-        return ifilterfalse(hasNs, intermediate)
+        filtered = list(ifilterfalse(hasNs, intermediate))
     else:
-        return intermediate
+        filtered = intermediate
+    total, badIndex, hadN = len(reads), len(reads) - len(intermediate), \
+        len(intermediate) - len(filtered)
+    return filtered, total, badIndex, hadN
 
-def write_filtered(readpath, idxQualMin, dropNs, outdir=None):
-    '''write the results to the new directory'''
-    results = make_filtered(readpath, idxQualMin, dropNs)
+
+def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
+    '''write the results to the new directory.
+    Also writes a stats file to outdir/ngs_filter_stats.txt, with basic information about how many reads were filtered.'''
+    results, total, badIndex, hadN = make_filtered(readpath, idxQualMin, dropNs)
     outpath = name_filtered(readpath, outdir)
+    msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
+                      stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
+    print msg
     try:
         num_written = SeqIO.write(results, outpath, 'fastq')
         print "filtered reads from %s will be written to %s" % (readpath, outpath)
@@ -106,13 +116,14 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir=None):
             warnings.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
     except AssertionError, E:
         sys.stderr.write(str(E))
+    with open(os.path.join(outdir, STATSFILE_NAME), 'w') as statfile:
+        statfile.write(msg)
     return outpath
 
 def write_post_filter(readsdir, idxQualMin, dropNs, outdir=None, parallel=False):
     '''execute write_filtered on the whole directory'''
     write_filters = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)#, parallel=parallel)
     return map_to_dir(readsdir, write_filters, parallel)
-
 
 def from_config(readsdir, config):
     ''' execute using the config dict derived from config.yaml '''
