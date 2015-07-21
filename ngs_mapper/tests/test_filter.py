@@ -37,7 +37,7 @@ class TestNGSFilter(unittest.TestCase):
         self.assertFilesEqual(self.inputfn, self.actualfn)
 
     def test_filter_pool(self):
-        write_post_filter(self.inputdir, 32, True, self.outdir)
+        write_post_filter(self.inputdir, 32, True, ['Sanger'], self.outdir)
         actual = open(self.actualfn)
         expected = open(self.expectedfn)
         self.assertFilesEqual(expected, actual)
@@ -73,9 +73,14 @@ class TestNGSFilter(unittest.TestCase):
         self.assertEquals(actual, expected)
 
     def test_stat_file_two_filtered(self):
-        write_post_filter(self.inputdir, 32, True, self.outdir)
+        write_post_filter(self.inputdir, 32, True, ['Sanger'], self.outdir)
         expected_fst = '''ngs_filter found %s reads in file %s, and filtered out %s reads.''' % (4, self.inputfn, 2)
         expected_snd = '''In file {0}, {1} reads were filtered for poor quality index below {2}. {3} reads had Ns and were filtered.'''.format(self.inputfn, 1, 32, 1)
         fst, snd =  map(str.strip, open(self.statsfile).readlines())
         self.assertEquals(fst, expected_fst)
         self.assertEquals(snd, expected_snd)
+
+    def test_skips_platforms(self):
+        with self.assertRaises(ValueError):
+            write_post_filter(self.inputdir, 32, True, ['miseq'], self.outdir)
+

@@ -1,5 +1,5 @@
 '''
-Usage: ngs_filter <readdir> [--parallel]  [--drop-ns ] [--index-min=<index_min>] [--outdir <DIR>]
+Usage: ngs_filter <readdir> [--parallel]  [--drop-ns ] [--index-min=<index_min>] [--platforms] [--outdir <DIR>]
 
 Options:
     --outdir=<DIR>,-o=<DIR>   outupt directory [Default: filtered]
@@ -9,6 +9,7 @@ Help:
     If an argument is not given for a parameter, that filter is not applied. If no filter parameters are provided, an error is raised.
     --drop-ns                   Drop those reads which contain an N
     --index-min=<index_min>     Drop reads where the corresponding index is BELOW specified minimum. Must be between 1 and 50.
+    --platforms                 Only accept reads from specified machines. Choices: 'Roche454','IonTorrent','MiSeq', 'Sanger', 'All', [Default: all]
 '''
 from functools import partial
 import multiprocessing
@@ -16,11 +17,14 @@ from operator import methodcaller
 from Bio import SeqIO
 from docopt import docopt
 from schema import Schema, Use, Optional
-from itertools import ifilterfalse, izip
+from itertools import ifilterfalse, izip, chain
 import re
 import os
 import sys
 import warnings
+from data import reads_by_plat
+
+ALLPLATFORMS = 'Roche454','IonTorrent','MiSeq', 'Sanger'
 #TODO: should guarantee that there is an index file or allow there not to be one
 STATSFILE_NAME='ngs_filter_stats.txt'
 stat_header = '''ngs_filter found {0} reads in file {1}, and filtered out {2} reads.'''
@@ -55,13 +59,20 @@ def fqs_excluding_indices(readsdir):
     files = map(full_path, filter(is_valid, all_files))
     return files
 
-
-def map_to_dir(readsdir, func, parallel=False):
+def map_to_dir(readsdir, func, platforms, parallel=False):
     '''maps *func* to all fastq/sff files which are not indexes.
     fetch the fastqs and indexes of the directory and write the filtered results.'''
-    files = fqs_excluding_indices(readsdir)
+    no_index_fqs = fqs_excluding_indices(readsdir)
+    plat_files_dict = reads_by_plat(readsdir)
+    _nested_files = map(plat_files_dict.get, platforms)
+    if _nested_files == [None]:
+        raise ValueError("No fastq or sff files found in directory %s matching platforms. \
+                          Files %s that were not within chosen platforms %s" % ( readsdir, no_index_fqs, platforms) )
+    plat_files = list(chain(*_nested_files))
+    files = set(plat_files) & set(no_index_fqs)
+    msg= "Skipped files %s that were not within chosen platforms %s" % ( set(no_index_fqs) - set(plat_files), platforms)
     if not files:
-        raise ValueError("No fastq or sff files found in directory %s" % readsdir)
+        raise ValueError("No fastq or sff files found in directory %s" % readsdir + '\n' + msg)
     if parallel:
         pool = multiprocessing.Pool()
         outpaths = pool.map(func, files)
@@ -120,22 +131,19 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
         statfile.write(msg)
     return outpath
 
-def write_post_filter(readsdir, idxQualMin, dropNs, outdir=None, parallel=False):
+def write_post_filter(readsdir, idxQualMin, dropNs, platforms, outdir=None, parallel=False):
     '''execute write_filtered on the whole directory'''
     write_filters = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)#, parallel=parallel)
-    return map_to_dir(readsdir, write_filters, parallel)
-
-def from_config(readsdir, config):
-    ''' execute using the config dict derived from config.yaml '''
-    print config
-    qualmin = config['ngs_filter']['indexQualityMin']['default']
-    dropNs = config['ngs_filter']['dropNs']['default']
-    return write_post_filter(readsdir, qualmin, dropNs)
+    return map_to_dir(readsdir, write_filters, platforms, parallel)
 
 def mkdir_p(dir):
     ''' emulate bash command  $ mkdir -p '''
     if not os.path.exists(dir):
         os.mkdir(dir)
+
+def picked_platforms(rawarg):
+    if rawarg.lower().strip() == 'all': return ALLPLATFORMS
+    return [ p for p in ALLPLATFORMS if p.lower() in rawarg.lower()]
 
 def main():
     scheme = Schema(
@@ -143,6 +151,7 @@ def main():
          Optional('--drop-ns') : bool,
          Optional('--parallel') : bool,
          Optional('--index-min') : Use(lambda x: int(x) if x else x, error="--index-min expects an integer"),
+         Optional('--platforms') : Use(picked_platforms),
          '--outdir' : str
          })
 
@@ -155,7 +164,7 @@ def main():
         raise ValueError("No filter specified, drop Ns:%s, Index Quality Min:%s" % (dropNs, idxMin))
     status = "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s\nfrom folder %s to folder %s" % (dropNs, idxMin, args['<readdir>'], args['--outdir'])
     print status
-    outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--outdir'], args['--parallel'])
+    outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--platforms'], args['--outdir'], args['--parallel'])
     return 0
 
 

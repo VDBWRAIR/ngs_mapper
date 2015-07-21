@@ -21,57 +21,12 @@ class TrimBase(common.BaseClass):
         # All reads
         self.reads = self.se + self.pe
 
+@attr('current')
 class TestTrimReadsInDir(TrimBase):
     functionname = 'trim_reads_in_dir'
 
     def setUp( self ):
         super( TestTrimReadsInDir, self ).setUp()
-
-    @attr('current')
-    @patch('ngs_mapper.trim_reads.os', MagicMock())
-    @patch('__builtin__.open')
-    @patch('ngs_mapper.trim_reads.data')
-    def test_skips_miseq_index_reads(self, mdata, mopen):
-        reads = mdata.reads_by_plat.return_value = {
-            'Sanger': [
-                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.ab1',
-                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.fastq'
-            ],
-            'MiSeq': [
-                ('foo_S01_L001_R1_001_2001_01_01.fastq','foo_S01_L001_R2_001_2001_01_01.fastq'),
-                'foo_S01_L001_I1_001_2001_01_01.fastq','foo_S01_L001_I2_001_2001_01_01.fastq',
-            ],
-            'foo': [
-                'bar.fastq',
-                'baz.sff'
-            ]
-        }
-    
-        with patch('ngs_mapper.trim_reads.trim_read') as mtrim_read:
-            self._C('/path/to/reads', 20, '/path/to/outdir')
-            #_call = call(reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0)
-            for call in mtrim_read.call_args_list:
-                assert '_I', call[0][0] not in 'Did not skip MiSeq Index {0}'.format(call[0][0])
-
-    @patch('ngs_mapper.trim_reads.os', MagicMock())
-    @patch('__builtin__.open')
-    @patch('ngs_mapper.trim_reads.data')
-    def test_only_does_listed_platforms(self, mdata, mopen):
-        reads = mdata.reads_by_plat.return_value = {
-            'Sanger': [
-                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.ab1',
-                '1710_F2824_2014_01_14_Den4_Den4_1274_A01.fastq'
-            ],
-            'foo': [
-                'bar.fastq',
-                'baz.sff'
-            ]
-        }
-    
-        with patch('ngs_mapper.trim_reads.trim_read') as mtrim_read:
-            self._C('/path/to/reads', 20, '/path/to/outdir', platforms=['Sanger'])
-            _call = call(reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0)
-            eq_([_call], mtrim_read.call_args_list)
 
     @patch('ngs_mapper.trim_reads.os', MagicMock())
     @patch('__builtin__.open')
@@ -83,7 +38,7 @@ class TestTrimReadsInDir(TrimBase):
                 '1710_F2824_2014_01_14_Den4_Den4_1274_A01.fastq'
             ]
         }
-    
+
         with patch('ngs_mapper.trim_reads.trim_read') as mtrim_read:
             self._C('/path/to/reads', 20, '/path/to/outdir')
             _call = call(reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0)
@@ -100,7 +55,7 @@ class TestTrimReadsInDir(TrimBase):
                 '1710_F2824_2014_01_14_Den4_Den4_1274_A01.fastq'
             ]
         }
-    
+
         calls = sorted([
             call(
                 reads['Sanger'][1], 20, '/path/to/outdir/{0}'.format(basename(reads['Sanger'][1])), head_crop=0
@@ -174,8 +129,8 @@ class TestTrimRead(TrimBase):
         es = os.stat(read)
         rs = os.stat(bn)
         ok_( not samestat( es, rs ), 'Output file and inputfile are the same file' )
-        ok_( 
-            es.st_size > rs.st_size, 
+        ok_(
+            es.st_size > rs.st_size,
             'Did not seem to trim the file. Output file s.st_size({0}) was not smaller than input file s.st_size({1})'.format(rs.st_size,es.st_size)
         )
         ok_( isdir('trim_stats'), 'Did not create trim_stats directory' )
@@ -220,7 +175,7 @@ class TestTrimRead(TrimBase):
         # F has 1 good read, 1 bad read
         f = 'F.fastq'
         # R has 2 good reads
-        r = 'R.fastq' 
+        r = 'R.fastq'
         fr = [
             common.make_seqrec( 'AAAAAAAAAA', [1]+[40]*9, id='fr1' ),
             common.make_seqrec( 'AAAAAAAAAA', [1]+[19]*9, id='fr2' ),
@@ -346,7 +301,7 @@ class TestRunTrimmomatic(TrimBase):
 
 class TestIntegrate(TrimBase):
     def _C( self, *args, **kwargs ):
-        script = 'trim_reads'
+        script = 'trim_reads.py'
         return TestIntegrate.run_script( '{0} {1} -q {2} -o {3}'.format(
                 script, args[0], kwargs.get('q',20), kwargs.get('o','trimmed_reads')
             )
@@ -357,21 +312,15 @@ class TestIntegrate(TrimBase):
         efiles = set(efiles)
         print "Expected files: {0}".format(efiles)
         print "Result files: {0}".format(files)
-        eq_( files, efiles, "{0} did not contain exactly {1}. Difference: {2}".format(dir,efiles,efiles-files) )
+        eq_( set([]), files-efiles, "{0} did not contain exactly {1}. Difference: {2}".format(dir,efiles,files-efiles) )
 
-    @attr('current')
     def test_runs( self ):
         outdir = 'trimmed_reads'
-        platforms = ['MiSeq','Sanger','Roche454','IonTorrent']
-        r,o = self._C(self.read_dir,q=20,o=outdir,platforms=platforms)
+        r,o = self._C( self.read_dir, q=20, o=outdir )
         # Make sure exited correctly
         eq_( 0, r )
         print o
         # Make sure the file names are same as the input files
-        logout = open('pipeline.log').read()
-        print logout
-        efiles = [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)]
-        if 'All unpaired trimmed files are empty' not in logout:
-            efiles += ['unpaired_trimmed.fastq']
+        efiles = [f.replace('.sff','.fastq') for f in os.listdir(self.read_dir)] + ['unpaired__1__TI1__2001_01_01__Unk.fastq']
         self.has_files( outdir, efiles )
-        self.has_files( 'trim_stats', [f + '.trim_stats' for f in os.listdir(self.read_dir) if 'R2' not in f] )
+        self.has_files( 'trim_stats', [f + '.trim_stats' for f in os.listdir(self.read_dir)] )
