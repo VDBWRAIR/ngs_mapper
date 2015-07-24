@@ -205,7 +205,7 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
         Runs a subprocess on cmdstr and logs some timing information for each command
 
         @params stdin/out/err should be whatever is acceptable to subprocess.Popen for the same
-        
+
         @returns the popen object
     '''
     global logger
@@ -275,7 +275,7 @@ def main():
             'vcf': vcf,
             'CN': CN,
             'trim_qual': args.trim_qual,
-            'trim_outdir': os.path.join(tdir,'trimmed_reads'), 
+            'trim_outdir': os.path.join(tdir,'trimmed_reads'),
             'filtered_dir' : os.path.join(tdir, 'filtered'),
             'head_crop': args.head_crop,
             'minth': args.minth,
@@ -296,8 +296,9 @@ def main():
         the_config = __cfg.get_config_argparse(sys.argv[1:])[2]
         qualmin = the_config['ngs_filter']['indexQualityMin']['default']
         dropNs = the_config['ngs_filter']['dropNs']['default']
+        platforms = the_config['ngs_filter']['platforms']['default']
         try:
-            __result = sh.ngs_filter(cmd_args['readsdir'], index_min=qualmin, drop_ns=dropNs, outdir=cmd_args['filtered_dir']) 
+            __result = sh.ngs_filter(cmd_args['readsdir'], index_min=qualmin, drop_ns=dropNs, platforms=platforms, outdir=cmd_args['filtered_dir'])
             logger.debug( 'ngs_filter: %s' % __result )
         except sh.ErrorReturnCode, e:
                 logger.error(e.stderr)
@@ -408,7 +409,7 @@ def pbs_job(runsampleargs, pbsargs):
     Return a pbs job string that will run runsample with same parameters as were
     given initially
 
-    :param string runsampleargs: args that are for runsample that originaly came 
+    :param string runsampleargs: args that are for runsample that originaly came
                                from sys.argv(any non --qsub\_)
     :param string pbsargs: args for qsub(any --qsub\_)
     :return: pbs job file string
