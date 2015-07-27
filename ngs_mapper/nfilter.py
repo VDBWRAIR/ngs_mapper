@@ -86,6 +86,12 @@ def map_to_dir(readsdir, func, platforms, parallel=False):
 def idx_filter(read, idxread, thresh):
     ''' AT or ABOVE threshold.'''
     return min(idxread._per_letter_annotations['phred_quality']) >= thresh
+
+formats={ 'sff' : 'sff', 'fq' : 'fastq', 'fastq' : 'fastq', 'fa' : 'fasta', 'fasta' : 'fasta' }
+extension = lambda s: s.split('.')[-1]
+compose = lambda f, g: lambda x: f(g(x))
+getformat = compose(formats.__getitem__, extension)
+
 def make_filtered(readpath, idxQualMin, dropNs):
     ''' given a fastq file with an index, will filter on low-quality index entries, and drop all reads with N.
     If file does not have an index, only drops Ns.
@@ -93,7 +99,8 @@ def make_filtered(readpath, idxQualMin, dropNs):
     index = has_index(readpath)
     if idxQualMin and not index:
         sys.stderr.write("Specified Non-null index quality minimum, but index for file {0} does not exist.\n".format(readpath))
-    format = 'sff' if readpath.endswith('sff') else 'fastq'
+    #NOTE: this will fail if the reads have an index stored in a different format (ie reads in FASTA, index in FASTQ) but that should never happen
+    format = getformat(readpath)
     fq_open = partial(SeqIO.parse, format=format)
     reads = list(fq_open(readpath))
     if index and idxQualMin:
@@ -109,7 +116,6 @@ def make_filtered(readpath, idxQualMin, dropNs):
     total, badIndex, hadN = len(reads), len(reads) - len(intermediate), \
         len(intermediate) - len(filtered)
     return filtered, total, badIndex, hadN
-
 
 def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     '''write the results to the new directory.
@@ -166,5 +172,3 @@ def main():
     print status
     outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--platforms'], args['--outdir'], args['--parallel'])
     return 0
-
-
