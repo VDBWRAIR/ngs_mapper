@@ -8,6 +8,7 @@ Keep in mind that runsample simply requires all inputs that all stages provide t
 Current Pipeline Stages
 -----------------------
 
+* :py:mod:`ngs_mapper.nfilter`
 * :py:mod:`ngs_mapper.trim_reads`
 * :py:mod:`ngs_mapper.run_bwa_on_samplename <ngs_mapper.run_bwa>`
 * :py:mod:`ngs_mapper.tagreads`
@@ -90,11 +91,15 @@ Output Analysis Directory
     * sample.bam.qualdepth.referencename.png
     * ...
 * trimmed_reads (:py:mod:`ngs_mapper.trim_reads`)
-    * sampleread1.fasta
-    * sampleread2.fasta
+    * sampleread1.fastq
+    * sampleread2.fastq
     * unpaired.fastq
 * trim_stats (:py:mod:`ngs_mapper.trim_reads`)
     * sampleread.trim
+* filtered (:py:mod:`ngs_mapper.nfilter`)
+    * filtered.sampleread1.fastq
+    * filtered.sampleread2.fastq
+    * ngs_filter_stats.txt
 """
 
 import argparse
