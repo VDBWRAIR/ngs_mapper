@@ -1,0 +1,70 @@
+trim_reads.headcrop.default = 0
+tagreads.CN.default = 4
+trim_reads.q.default = 2 
+basecaller.minth.default = 20 
+reference=780/780.ref.fasta
+prefix = pew
+cfg= --config ../config.yaml #{CONFIG_PATH} 
+trim_outdir = trimmed_reads
+flagstats = flagstats.txt
+bwalog = bwa.log
+
+readsdir=fresh
+all: consensus stats
+consensus: %.consensus.fasta
+alignment: %.bam
+stats: ${flagstats}  %.reads.png  %.qualdepth.png
+
+%.bam: ${trim_outdir}/%.fastq
+        #bamfile = $(addsuffix .bam, ${samplename}) 
+	run_bwa_on_samplename ${trim_outdir} ${reference} -o $@ ${cfg} > ${bwalog} 
+	#TODO: tagreads should be a seperate step, even though it doesn't generate a new file
+	tagreads $@ -CN ${tagreads.CN.default} ${cfg}
+
+%.vcf: %.bam
+	base_caller $< ${reference} $@ -minth ${basecaller.minth.default} ${cfg}
+
+${flagstats}:  %.bam
+	samtools flagstat $< > $@
+
+%.qualdepth.png %.qualdepth.json: %.bam %.vcf ${flagstats} 
+	graphsample $< -od .
+
+%.reads.png: $(trim_outdir)/*.fastq
+	echo trimming $<
+	fqstats -o $@  $<
+
+%.consensus.fasta:  %.vcf
+	vcf_consensus $< -i ${prefix} -o $@
+
+${trim_outdir}/%.fastq:  ${readsdir}
+	trim_reads $< -q ${trim_reads.q.default} -o ${trim_outdir} --head-crop ${trim_reads.headcrop.default} ${cfg} 
+
+#all: consensus stats
+#consensus: ${samplename}.bam.consensus.fasta
+#alignment: ${bamfile}
+#stats: ${flagstats}  $(basename ${bamfile}).reads.png  ${samplename}.bam.qualdepth.png
+#
+#%.bam: ${trim_outdir}/%.fastq
+#	run_bwa_on_samplename ${trim_outdir} ${reference} -o ${bamfile} ${cfg} > ${bwalog} 
+#	tagreads ${bamfile} -CN ${CN} ${cfg}
+#
+#%.vcf: %.bam
+#	base_caller ${bamfile} ${reference} $@ -minth ${minth} ${cfg}
+#
+#${flagstats}:
+#	samtools flagstat ${bamfile} > $@
+#
+#%.bam.qualdepth.png %.bam.qualdepth.json: %.vcf ${flagstats}
+#	graphsample ${bamfile} -od .
+#
+#%.reads.png: $(trim_outdir)/*.fastq
+#	echo trimming $<
+#	fqstats -o $@  $<
+#
+#%.bam.consensus.fasta:  %.vcf
+#	vcf_consensus $< -i ${samplename} -o $@
+#
+#${trim_outdir} ${trim_outdir}/%.fastq: 
+#	trim_reads ${readsdir} -q ${trim_qual} -o ${trim_outdir} --head-crop ${head_crop} ${cfg} 
+#
