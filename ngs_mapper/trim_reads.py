@@ -33,9 +33,9 @@ def trim_reads_in_dir( *args, **kwargs ):
         Trims all read files in a given directory and places the resulting files into out_path directory
         Combines all unpaired trimmed fastq files into a single file as a result of running Trimmomatic
 
-        @param readdir - Directory with read files in it(sff and fastq only)
-        @qual_th - What to pass to cutadapt -q
-        @out_path - Output directory path
+        :param str readdir - Directory with read files in it(sff and fastq only)
+        :param int qual_th - What to pass to cutadapt -q
+        :param str out_path - Output directory path
     '''
     readdir = args[0]
     qual_th = args[1]
