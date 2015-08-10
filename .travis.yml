@@ -10,7 +10,7 @@ before_install:
     - sudo chmod 777 /ngsdata
     - sed 's%/path/to/NGSDATA%/ngsdata%' ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
 install:
-    -  pip install -U pip wheel setuptools
+    - sudo pip install -U pip wheel setuptools
     - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2 ordereddict; fi
     - sudo python setup.py install_system_packages
     - python setup.py install
