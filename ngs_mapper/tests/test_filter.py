@@ -1,4 +1,4 @@
-from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indices, write_post_filter, mkdir_p
+from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indices, write_post_filter, mkdir_p, run_from_config
 
 import os
 import mock
@@ -42,14 +42,14 @@ class TestNGSFilter(unittest.TestCase):
         expected = open(self.expectedfn)
         self.assertFilesEqual(expected, actual)
 
-    @mock.patch('bioframes.nfilter.os.listdir')
+    @mock.patch('ngs_mapper.nfilter.os.listdir')
     def test_fqs_excluding_indices_extensions(self, mlistdir):
         mlistdir.return_value = candidates = ['foo.fq', 'foo.sff', 'foo.fastq', 'foo.bad']
         actual = fqs_excluding_indices('D')
         expected = ['D/foo.fq', 'D/foo.sff', 'D/foo.fastq']
         self.assertListEqual(expected, actual)
 
-    @mock.patch('bioframes.nfilter.os.listdir')
+    @mock.patch('ngs_mapper.nfilter.os.listdir')
     def test_fqs_excluding_indices_excludes_index(self, mlistdir):
         mlistdir.return_value = ['foo_1R_.fq', 'foo.sff', 'foo_I2_.fastq', 'foo__I1__.fq']
         actual = fqs_excluding_indices('D')
@@ -83,4 +83,22 @@ class TestNGSFilter(unittest.TestCase):
     def test_skips_platforms(self):
         with self.assertRaises(ValueError):
             write_post_filter(self.inputdir, 32, True, ['miseq'], self.outdir)
+
+
+    @mock.patch('ngs_mapper.nfilter.load_config')
+    def test_with_config(self, mload_config):
+        mfig = { 'ngs_filter' :
+         {'platforms' : ['Sanger'],
+          'dropNs' : True,
+          'indexQualityMin' : 32}
+         }
+        mload_config.return_value = mfig
+        run_from_config(self.inputdir,self.outdir, '_', False)
+        actual = open(self.actualfn)
+        expected = open(self.expectedfn)
+        self.assertFilesEqual(expected, actual)
+
+
+
+
 

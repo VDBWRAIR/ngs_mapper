@@ -76,7 +76,7 @@ def trim_reads_in_dir( *args, **kwargs ):
     # Filter out unpaired files that are empty
     notempty = filter( lambda f: os.stat(f).st_size > 0, unpaired )
     if notempty:
-        out_unpaired = join( out_path, 'unpaired__1__TI1__2001_01_01__Unk.fastq' )
+        out_unpaired = join( out_path, 'unpaired_trimmed.fastq' )
         with open( out_unpaired, 'w' ) as fw:
             for up in notempty:
                 with open(up) as fr:

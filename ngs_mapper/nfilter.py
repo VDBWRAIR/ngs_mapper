@@ -1,5 +1,5 @@
 '''
-Usage: ngs_filter <readdir> [--parallel]  [--drop-ns ] [--index-min=<index_min>] [--platforms] [--outdir <DIR>]
+Usage: ngs_filter <readdir> [--parallel]  [--drop-ns ] [--index-min=<index_min>] [--platforms] [--outdir <DIR>] [--config <CONFIG>]
 
 Options:
     --outdir=<DIR>,-o=<DIR>   outupt directory [Default: filtered]
@@ -10,6 +10,7 @@ Help:
     --drop-ns                   Drop those reads which contain an N
     --index-min=<index_min>     Drop reads where the corresponding index is BELOW specified minimum. Must be between 1 and 50.
     --platforms                 Only accept reads from specified machines. Choices: 'Roche454','IonTorrent','MiSeq', 'Sanger', 'All', [Default: all]
+    --config                    Derive options from provided YAML file instead of commandline
 '''
 from functools import partial
 import multiprocessing
@@ -23,6 +24,7 @@ import os
 import sys
 import warnings
 from data import reads_by_plat
+from ngs_mapper.config import load_config
 
 ALLPLATFORMS = 'Roche454','IonTorrent','MiSeq', 'Sanger'
 #TODO: should guarantee that there is an index file or allow there not to be one
@@ -151,6 +153,12 @@ def picked_platforms(rawarg):
     if rawarg.lower().strip() == 'all': return ALLPLATFORMS
     return [ p for p in ALLPLATFORMS if p.lower() in rawarg.lower()]
 
+
+def run_from_config(readsdir, outdir, config_path, parallel):
+    _config = load_config(config_path)
+    defaults = _config['ngs_filter']
+    return write_post_filter(readsdir, defaults['indexQualityMin'], defaults['dropNs'], defaults['platforms'], outdir, parallel)
+
 def main():
     scheme = Schema(
         { '<readdir>' : os.path.isdir,
@@ -158,12 +166,16 @@ def main():
          Optional('--parallel') : bool,
          Optional('--index-min') : Use(lambda x: int(x) if x else x, error="--index-min expects an integer"),
          Optional('--platforms') : Use(picked_platforms),
+         Optional('--config') : os.path.exists,
          '--outdir' : str
          })
 
     raw_args = docopt(__doc__, version='Version 0')
     args = scheme.validate(raw_args)
     mkdir_p(args['--outdir'])
+    if args['--config']:
+        run_from_config(args['<readdir>'], args['--outdir'], args['--config'], args['--parallel'])
+        return 0
     dropNs, idxMin = args['--drop-ns'], args['--index-min']
     minmin, minmax = 1, 50
     if not (dropNs or (minmin <= idxMin <=minmax)):
