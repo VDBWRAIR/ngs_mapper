@@ -296,19 +296,15 @@ def main():
         # Return code list
         rets = []
 
-        # Trim Reads
-        from ngs_mapper import config as __cfg
-        the_config = __cfg.get_config_argparse(sys.argv[1:])[2]
-        qualmin = the_config['ngs_filter']['indexQualityMin']['default']
-        dropNs = the_config['ngs_filter']['dropNs']['default']
-        platforms = the_config['ngs_filter']['platforms']['default']
+        #Filter
         try:
-            __result = sh.ngs_filter(cmd_args['readsdir'], index_min=qualmin, drop_ns=dropNs, platforms=platforms, outdir=cmd_args['filtered_dir'])
+            __result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
             logger.debug( 'ngs_filter: %s' % __result )
         except sh.ErrorReturnCode, e:
                 logger.error(e.stderr)
                 sys.exit(1)
 
+        #Trim reads
         cmd = 'trim_reads {filtered_dir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
         if cmd_args['config']:
             cmd += ' -c {config}'
