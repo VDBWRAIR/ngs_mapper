@@ -35,6 +35,7 @@ def trim_reads_in_dir( *args, **kwargs ):
 
         :param str readdir - Directory with read files in it(sff and fastq only)
         :param int qual_th - What to pass to cutadapt -q
+        :param int headcrop: How many bases to crop off ends
         :param str out_path - Output directory path
     '''
     readdir = args[0]
