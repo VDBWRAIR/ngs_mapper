@@ -1,16 +1,16 @@
 '''
-Usage: ngs_filter <readdir> [--parallel]  [--drop-ns ] [--index-min=<index_min>] [--platforms] [--outdir <DIR>] [--config <CONFIG>]
+Usage: ngs_filter <readdir> [--parallel]  [--drop-ns ] [--index-min=<index_min>] [--platforms <PLATFORMS>] [--outdir <DIR>] [--config <CONFIG>]
 
 Options:
     --outdir=<DIR>,-o=<DIR>   outupt directory [Default: filtered]
+    --config=<CONFIG>,-c=<CONFIG>  Derive options from provided YAML file instead of commandline
     --parallel                Use python's multiprocessing to run on multiple cores
+    --platforms=<PLATFORMS>   Only accept reads from specified machines. Choices: 'Roche454','IonTorrent','MiSeq', 'Sanger', 'All', [Default: All]
 
 Help:
     If an argument is not given for a parameter, that filter is not applied. If no filter parameters are provided, an error is raised.
     --drop-ns                   Drop those reads which contain an N
     --index-min=<index_min>     Drop reads where the corresponding index is BELOW specified minimum. Must be between 1 and 50.
-    --platforms                 Only accept reads from specified machines. Choices: 'Roche454','IonTorrent','MiSeq', 'Sanger', 'All', [Default: all]
-    --config                    Derive options from provided YAML file instead of commandline
 '''
 from functools import partial
 import multiprocessing
@@ -166,11 +166,11 @@ def main():
          Optional('--parallel') : bool,
          Optional('--index-min') : Use(lambda x: int(x) if x else x, error="--index-min expects an integer"),
          Optional('--platforms') : Use(picked_platforms),
-         Optional('--config') : os.path.exists,
+         Optional('--config') : str,
          '--outdir' : str
          })
 
-    raw_args = docopt(__doc__, version='Version 0')
+    raw_args = docopt(__doc__, version='Version 1.0')
     args = scheme.validate(raw_args)
     mkdir_p(args['--outdir'])
     if args['--config']:
