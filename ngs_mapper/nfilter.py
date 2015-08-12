@@ -166,7 +166,7 @@ def main():
          Optional('--parallel') : bool,
          Optional('--index-min') : Use(lambda x: int(x) if x else x, error="--index-min expects an integer"),
          Optional('--platforms') : Use(picked_platforms),
-         Optional('--config') : str,
+         Optional('--config') : Use(lambda x: x or None),
          '--outdir' : str
          })
 
