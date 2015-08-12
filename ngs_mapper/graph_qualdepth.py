@@ -43,7 +43,7 @@ def plot_quals( ax, xvals, yvals, color ):
     ax.minorticks_on()
     ax.axhline( y=37, color='g', linestyle=':' )
 
-def plot_mapunmap( ax, mapped, unmapped, mapped_color='g', unmapped_color='r', mapped_read_text_color='black', unmapped_read_text_color='white' ):
+def plot_mapunmap( ax, mapped, unmapped, mapped_color='g', unmapped_color='r', mapped_read_text_color='black', unmapped_read_text_color='white', ylabel='Unmapped/Mapped Reads'):
     mr = ax.bar( [0], [mapped], 0.05, color=mapped_color, bottom=unmapped )
     ur = ax.bar( [0], [unmapped], 0.05, color=unmapped_color )
     ax.minorticks_off()
@@ -54,7 +54,7 @@ def plot_mapunmap( ax, mapped, unmapped, mapped_color='g', unmapped_color='r', m
     ax.set_yticklabels([])
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_ylabel( 'Unmapped/Mapped Reads' )
+    ax.set_ylabel( ylabel )
 
     def autolabel( rects, color=mapped_read_text_color, bottom=0, text_under=False ):
         # Text size in pt
@@ -123,6 +123,9 @@ def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_
     plot_depths( ax1, xvals, depths, max_depth, title=titleprefix, color='blue' )
     plot_quals( ax3, xvals, quals, color='green' )
     plot_mapunmap( ax2, mapped_reads, unmapped_reads )
+    #TODO: Here, get and plot paired v. unpaired
+#    paired, unpaired = samtools.get_pair_info()
+#    plot_mapunmap( ax2, paired, unpaired, mapped_color='blue', unmapped_color='r', mapped_read_text_color='black', unmapped_read_text_color='white', ylabel='Paired/Unpaired Reads'):
 
     fig.savefig( outputfile, bbox_inches='tight', dpi=100, pad_inches=0.1 )
 

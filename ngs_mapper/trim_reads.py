@@ -1,4 +1,6 @@
 """
+
+
 Here be some documentation
 """
 
@@ -12,8 +14,7 @@ import tempfile
 import reads
 import shlex
 import data
-from ngs_mapper import compat
-
+import compat
 import log
 lconfig = log.get_config()
 logger = log.setup_logger( 'trim_reads', lconfig )
@@ -24,8 +25,7 @@ def main():
         args.readsdir,
         args.q,
         args.outputdir,
-        head_crop=args.headcrop,
-        platforms=args.platforms
+        head_crop=args.headcrop
     )
 
 def trim_reads_in_dir( *args, **kwargs ):
@@ -33,22 +33,15 @@ def trim_reads_in_dir( *args, **kwargs ):
         Trims all read files in a given directory and places the resulting files into out_path directory
         Combines all unpaired trimmed fastq files into a single file as a result of running Trimmomatic
 
-        :param str readdir: Directory with read files in it(sff and fastq only)
-        :param int qual_th: What to pass to cutadapt -q
-        :param str out_path: Output directory path
+        :param str readdir - Directory with read files in it(sff and fastq only)
+        :param int qual_th - What to pass to cutadapt -q
         :param int headcrop: How many bases to crop off ends
-        :param list platforms: List of platform's reads to use
+        :param str out_path - Output directory path
     '''
     readdir = args[0]
     qual_th = args[1]
     out_path = args[2]
     headcrop = kwargs.get('head_crop', 0)
-    platforms = kwargs.get('platforms', None)
-    logger.info(
-        "Only accepting the following platform's read files: {0}".format(
-            platforms
-        )
-    )
 
     # Only sff and fastq files
     #reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
@@ -59,49 +52,36 @@ def trim_reads_in_dir( *args, **kwargs ):
     # Trim all the reads
     unpaired = []
     for plat, reads in platreads.iteritems():
-        if platforms is None or plat in platforms:
-            for r in reads:
-                if '_I1_' in r or '_I2_' in r:
-                    logger.debug("Skipped MiSeq index read {0}".format(r))
-                    continue
-                inreads = None
-                if isinstance(r,str):
-                    # Only accept .sff and .fastq
-                    if r.endswith('.sff') or r.endswith('.fastq'):
-                        inreads = r
-                        outreads = join(out_path, basename(r).replace('.sff','.fastq'))
-                else:
+        for r in reads:
+            inreads = None
+            if isinstance(r,str):
+                # Only accept .sff and .fastq
+                if r.endswith('.sff') or r.endswith('.fastq'):
                     inreads = r
-                    outreads = [join(out_path, basename(pr)) for pr in r]
-                # Sometimes inreads not set because .ab1 files
-                if inreads is None:
-                    continue
-                try:
-                    r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
-                    logger.debug("Output from trim_read {0}".format(r))
-                    unpaired += r[1::2]
-                    logger.debug("Added {0} to unpaired list".format(r[1::2]))
-                except subprocess.CalledProcessError as e:
-                    print e.output
-                    raise e
-        else:
-            logger.info("{0} are being excluded as they are not in {1}".format(
-                reads,platforms
-            ))
+                    outreads = join(out_path, basename(r).replace('.sff','.fastq'))
+            else:
+                inreads = r
+                outreads = [join(out_path, basename(pr)) for pr in r]
+            # Sometimes inreads not set because .ab1 files
+            if inreads is None:
+                continue
+            try:
+                r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
+                unpaired += r[1::2]
+            except subprocess.CalledProcessError as e:
+                print e.output
+                raise e
     #!!
-    # Combine all *.fastq.unpaired into one file for mapping as SE
+    # Combine all *.fastq.unpaired into one file that has a 454 name to be used for mapping as SE
     #!!
     # Filter out unpaired files that are empty
     notempty = filter( lambda f: os.stat(f).st_size > 0, unpaired )
     if notempty:
-        logger.info("Combining all unpaired trimmed files into a single file")
         out_unpaired = join( out_path, 'unpaired_trimmed.fastq' )
         with open( out_unpaired, 'w' ) as fw:
             for up in notempty:
                 with open(up) as fr:
                     fw.write( fr.read() )
-    else:
-        logger.debug("All unpaired trimmed files are empty")
     # Remove the read now as it is no longer needed
     for up in unpaired:
         os.unlink( up )
@@ -219,7 +199,7 @@ def run_trimmomatic( *args, **kwargs ):
         steps = args[7:]
     else:
         raise ValueError( 'SE or PE need to be supplied' )
-    
+
     # Change all steps to strings of STEPNAME:VALUE
     steps = [':'.join([str(x) for x in s]) for s in steps]
     # Set all options
@@ -245,7 +225,7 @@ def run_trimmomatic( *args, **kwargs ):
 def run_cutadapt( *args, **kwargs ):
     '''
         Runs cutadapt with the given arguments and kwargs
-        
+
         @param - fastq file to trim
         @param - output file location
         @param q - Quality threshold
@@ -302,14 +282,6 @@ def parse_args( args=sys.argv[1:] ):
         dest='outputdir',
         default=defaults['outputdir']['default'],
         help=defaults['outputdir']['help']
-    )
-
-    parser.add_argument(
-        '--platforms',
-        dest='platforms',
-        choices=defaults['platforms']['choices'],
-        default=defaults['platforms']['default'],
-        help=defaults['platforms']['help']
     )
 
     return parser.parse_args( args )

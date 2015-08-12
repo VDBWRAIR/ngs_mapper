@@ -140,6 +140,7 @@ setup(
     scripts = glob('bin/*'),
     entry_points = {
         'console_scripts': [
+            'ngs_filter = ngs_mapper.nfilter:main',
             'roche_sync = ngs_mapper.roche_sync:main',
             'sample_coverage = ngs_mapper.coverage:main',
             'make_example_config = ngs_mapper.config:main',

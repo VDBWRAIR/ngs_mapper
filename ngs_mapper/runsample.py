@@ -8,6 +8,7 @@ Keep in mind that runsample simply requires all inputs that all stages provide t
 Current Pipeline Stages
 -----------------------
 
+* :py:mod:`ngs_mapper.nfilter`
 * :py:mod:`ngs_mapper.trim_reads`
 * :py:mod:`ngs_mapper.run_bwa_on_samplename <ngs_mapper.run_bwa>`
 * :py:mod:`ngs_mapper.tagreads`
@@ -90,11 +91,15 @@ Output Analysis Directory
     * sample.bam.qualdepth.referencename.png
     * ...
 * trimmed_reads (:py:mod:`ngs_mapper.trim_reads`)
-    * sampleread1.fasta
-    * sampleread2.fasta
+    * sampleread1.fastq
+    * sampleread2.fastq
     * unpaired.fastq
 * trim_stats (:py:mod:`ngs_mapper.trim_reads`)
     * sampleread.trim
+* filtered (:py:mod:`ngs_mapper.nfilter`)
+    * filtered.sampleread1.fastq
+    * filtered.sampleread2.fastq
+    * ngs_filter_stats.txt
 """
 
 import argparse
@@ -108,6 +113,7 @@ import logging
 import shutil
 import glob
 from ngs_mapper import compat
+import sh
 
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
@@ -204,7 +210,7 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
         Runs a subprocess on cmdstr and logs some timing information for each command
 
         @params stdin/out/err should be whatever is acceptable to subprocess.Popen for the same
-        
+
         @returns the popen object
     '''
     global logger
@@ -227,7 +233,6 @@ def main():
         sys.exit(1)
     # So we can set the global logger
     global logger
-
     # Setup analysis directory
     if os.path.isdir( args.outdir ):
         if os.listdir( args.outdir ):
@@ -275,7 +280,8 @@ def main():
             'vcf': vcf,
             'CN': CN,
             'trim_qual': args.trim_qual,
-            'trim_outdir': os.path.join(tdir,'trimmed_reads'), 
+            'trim_outdir': os.path.join(tdir,'trimmed_reads'),
+            'filtered_dir' : os.path.join(tdir, 'filtered'),
             'head_crop': args.head_crop,
             'minth': args.minth,
             'config': args.config
@@ -290,14 +296,24 @@ def main():
         # Return code list
         rets = []
 
-        # Trim Reads
-        cmd = 'trim_reads {readsdir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
+        #Filter
+        try:
+            __result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
+            logger.debug( 'ngs_filter: %s' % __result )
+        except sh.ErrorReturnCode, e:
+                logger.error(e.stderr)
+                sys.exit(1)
+
+        #Trim reads
+        cmd = 'trim_reads {filtered_dir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
         if cmd_args['config']:
             cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
         if rets[-1] != 0:
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+
+        # Filter on index quality and Ns
 
         # Mapping
         with open(bwalog, 'wb') as blog:
@@ -394,7 +410,7 @@ def pbs_job(runsampleargs, pbsargs):
     Return a pbs job string that will run runsample with same parameters as were
     given initially
 
-    :param string runsampleargs: args that are for runsample that originaly came 
+    :param string runsampleargs: args that are for runsample that originaly came
                                from sys.argv(any non --qsub\_)
     :param string pbsargs: args for qsub(any --qsub\_)
     :return: pbs job file string
