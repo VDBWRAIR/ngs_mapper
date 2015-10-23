@@ -1,10 +1,11 @@
 from ngs_mapper.ez_setup import use_setuptools
 use_setuptools()
- 
+
 from glob import glob
 import sys
 from os.path import join, expanduser
 import os
+import subprocess
 
 from setuptools import setup, find_packages
 import setuptools
@@ -14,7 +15,6 @@ from setuptools.command.install import install as _install
 
 import ngs_mapper
 from ngs_mapper import util
-
 
 class InstallSystemPackagesCommand(setuptools.Command):
     '''
@@ -36,12 +36,11 @@ class InstallSystemPackagesCommand(setuptools.Command):
             UserNotRootError,
             make_directory_readable
         )
-        # Ensure setuptools is readable for everybody since it is likely installed
+        # Ensure readable/writeable for everybody since it is likely installed
         # first by root
-        setuptoolspath = glob('setuptools*')
-        if setuptoolspath:
-            for p in setuptoolspath:
-                os.chmod(p, 0666)
+        p = subprocess.Popen('chmod -R ugo=rwX .eggs setuptools* pipeline.log', shell=True)
+        p.wait()
+
         try:
             system_packages = get_distribution_package_list('system_packages.lst')
             install_system_packages(system_packages)
@@ -141,6 +140,8 @@ setup(
     scripts = glob('bin/*'),
     entry_points = {
         'console_scripts': [
+            'sff_to_fastq = ngs_mapper.sff_to_fastq:main',
+            'ngs_filter = ngs_mapper.nfilter:main',
             'roche_sync = ngs_mapper.roche_sync:main',
             'sample_coverage = ngs_mapper.coverage:main',
             'make_example_config = ngs_mapper.config:main',
@@ -168,7 +169,8 @@ setup(
         'tempdir',
         'sphinx',
         'sphinx_rtd_theme',
-        'logconfig'
+        'logconfig',
+        'sh'
     ],
     tests_require = [
         'nose',

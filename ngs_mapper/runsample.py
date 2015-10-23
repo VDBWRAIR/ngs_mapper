@@ -8,6 +8,7 @@ Keep in mind that runsample simply requires all inputs that all stages provide t
 Current Pipeline Stages
 -----------------------
 
+* :py:mod:`ngs_mapper.nfilter`
 * :py:mod:`ngs_mapper.trim_reads`
 * :py:mod:`ngs_mapper.run_bwa_on_samplename <ngs_mapper.run_bwa>`
 * :py:mod:`ngs_mapper.tagreads`
@@ -90,11 +91,15 @@ Output Analysis Directory
     * sample.bam.qualdepth.referencename.png
     * ...
 * trimmed_reads (:py:mod:`ngs_mapper.trim_reads`)
-    * sampleread1.fasta
-    * sampleread2.fasta
+    * sampleread1.fastq
+    * sampleread2.fastq
     * unpaired.fastq
 * trim_stats (:py:mod:`ngs_mapper.trim_reads`)
     * sampleread.trim
+* filtered (:py:mod:`ngs_mapper.nfilter`)
+    * filtered.sampleread1.fastq
+    * filtered.sampleread2.fastq
+    * ngs_filter_stats.txt
 """
 
 import argparse
@@ -108,6 +113,7 @@ import logging
 import shutil
 import glob
 from ngs_mapper import compat
+import sh
 
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
@@ -177,6 +183,27 @@ def parse_args( args=sys.argv[1:] ):
         help=_config['tagreads']['CN']['help'],
     )
 
+    parser.add_argument(
+        '--index-min',
+        dest='index_min',
+        default=_config['ngs_filter']['indexQualityMin']['default'],
+        help=_config['ngs_filter']['indexQualityMin']['help'],
+    )
+
+    parser.add_argument(
+        '--drop-ns',
+        dest='drop_ns',
+        default=_config['ngs_filter']['dropNs']['default'],
+        help=_config['ngs_filter']['dropNs']['help'],
+    )
+
+    parser.add_argument(
+        '--platforms',
+        dest='platforms',
+        default=_config['ngs_filter']['platforms']['default'],
+        help=_config['ngs_filter']['platforms']['help'],
+    )
+
     default_outdir = os.getcwd()
     parser.add_argument(
         '-od',
@@ -204,7 +231,7 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
         Runs a subprocess on cmdstr and logs some timing information for each command
 
         @params stdin/out/err should be whatever is acceptable to subprocess.Popen for the same
-        
+
         @returns the popen object
     '''
     global logger
@@ -227,13 +254,26 @@ def main():
         sys.exit(1)
     # So we can set the global logger
     global logger
+    # Setup analysis directory
+    if os.path.isdir( args.outdir ):
+        if os.listdir( args.outdir ):
+            raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
+    else:
+        os.makedirs(args.outdir)
 
-    tmpdir = os.environ.get('TMPDIR', tempfile.tempdir)
+    # tempdir root will be TMPDIR environ variable if it exists
+    # unless outdir is set
+    # allows user to specify TMPDIR somewhere else if they want such as
+    # /dev/shm
+    tmpdir = args.outdir
+    # Directory analysis is run in will be inside of tmpdir
     tdir = tempfile.mkdtemp('runsample', args.prefix, dir=tmpdir)
+    os.environ['TMPDIR'] = tdir
+
     bamfile = os.path.join( tdir, args.prefix + '.bam' )
     flagstats = os.path.join( tdir, 'flagstats.txt' )
-    consensus = os.path.join( tdir, bamfile+'.consensus.fasta' )
-    vcf = os.path.join( tdir, bamfile+'.vcf' )
+    consensus = bamfile+'.consensus.fasta'
+    vcf = bamfile+'.vcf'
     bwalog = os.path.join( tdir, 'bwa.log' )
     stdlog = os.path.join( tdir, args.prefix + '.std.log' )
     logfile = os.path.join( tdir, args.prefix + '.log' )
@@ -243,10 +283,7 @@ def main():
     config = log.get_config( logfile )
     logger = log.setup_logger( 'runsample', config )
 
-    if os.path.isdir( args.outdir ):
-        if os.listdir( args.outdir ):
-            raise AlreadyExists( "{0} already exists and is not empty".format(args.outdir) )
-    make_project_repo( tdir )
+    #make_project_repo( tdir )
 
     logger.info( "--- Starting {0} --- ".format(args.prefix) )
     if args.config:
@@ -264,10 +301,14 @@ def main():
             'vcf': vcf,
             'CN': CN,
             'trim_qual': args.trim_qual,
-            'trim_outdir': os.path.join(tdir,'trimmed_reads'), 
+            'trim_outdir': os.path.join(tdir,'trimmed_reads'),
+            'filtered_dir' : os.path.join(tdir, 'filtered'),
             'head_crop': args.head_crop,
             'minth': args.minth,
-            'config': args.config
+            'config': args.config,
+            'platforms': args.platforms,
+            'drop_ns': args.drop_ns,
+            'index_min': args.index_min,
         }
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
@@ -278,15 +319,35 @@ def main():
 
         # Return code list
         rets = []
+        logger.debug(cmd_args)
+        #Filter
+        def select_keys(d, keys):
+            return dict( ((k, v) for k, v in d.items() if k in keys))
 
-        # Trim Reads
-        cmd = 'trim_reads {readsdir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
+        #convert sffs to fastq
+
+        print sh.sff_to_fastq(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
+        try:
+            if cmd_args['config']:
+                __result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
+            else:
+                filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
+                __result = sh.ngs_filter(cmd_args['readsdir'], outdir=cmd_args['filtered_dir'], **filter_args)
+            logger.debug( 'ngs_filter: %s' % __result )
+        except sh.ErrorReturnCode, e:
+                logger.error(e.stderr)
+                sys.exit(1)
+
+        #Trim reads
+        cmd = 'trim_reads {filtered_dir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
         if cmd_args['config']:
             cmd += ' -c {config}'
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
         if rets[-1] != 0:
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+
+        # Filter on index quality and Ns
 
         # Mapping
         with open(bwalog, 'wb') as blog:
@@ -366,8 +427,8 @@ def main():
             sys.exit( 1 )
         logger.info( "--- Finished {0} ---".format(args.prefix) )
 
-        subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
-        subprocess.call( 'git commit -am \'runsample\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        #subprocess.call( 'git add -A', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
+        #subprocess.call( 'git commit -am \'runsample\'', cwd=tdir, shell=True, stdout=lfile, stderr=subprocess.STDOUT )
 
         logger.debug( "Moving {0} to {1}".format( tdir, args.outdir ) )
         # Cannot log any more below this line as the log file will be moved in the following code
@@ -383,7 +444,7 @@ def pbs_job(runsampleargs, pbsargs):
     Return a pbs job string that will run runsample with same parameters as were
     given initially
 
-    :param string runsampleargs: args that are for runsample that originaly came 
+    :param string runsampleargs: args that are for runsample that originaly came
                                from sys.argv(any non --qsub\_)
     :param string pbsargs: args for qsub(any --qsub\_)
     :return: pbs job file string
@@ -416,10 +477,6 @@ def pbs_job(runsampleargs, pbsargs):
     if qsub_args.qsub_M is not None:
         template += '#PBS -m abe\n' \
             '#PBS -M ' + qsub_args.qsub_M + '\n'
-
-    tmpdir = os.environ.get('TMPDIR',None)
-    if tmpdir is not None:
-        template += 'export TMPDIR=' + tmpdir
 
     template += '\n' \
         'cd $PBS_O_WORKDIR\n' \
