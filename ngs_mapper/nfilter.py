@@ -196,7 +196,7 @@ def picked_platforms(rawarg):
 def run_from_config(readsdir, outdir, config_path, parallel):
     _config = load_config(config_path)
     defaults = _config['ngs_filter']
-    return write_post_filter(readsdir, defaults['indexQualityMin'], defaults['dropNs'], defaults['platforms'], outdir, parallel)
+    return write_post_filter(readsdir, defaults['indexQualityMin']['default'], defaults['dropNs']['default'], defaults['platforms']['default'], outdir, parallel)
 
 def main():
     scheme = Schema(
