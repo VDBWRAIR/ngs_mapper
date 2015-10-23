@@ -50,7 +50,7 @@ Tips & Tricks
 import argparse
 import sys
 import itertools
-from collections import OrderedDict
+from compat import OrderedDict
 from ngs_mapper import samtools
 
 def main():

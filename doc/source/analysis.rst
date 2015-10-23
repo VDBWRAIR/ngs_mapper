@@ -330,19 +330,13 @@ Temporary Directories/Files
 ===========================
 
 The pipeline initially creates a temporary analysis directory for each sample that you run with :py:mod:`runsample <ngs_mapper.runsample>`.
-By default this directory will be created in your system's configured temporary directory(most likely /tmp). This is especially useful if your /tmp partition is not very large or if you
-have a custom temporary partition that is on a very fast hard drive such as a Solid State Drive that you want to use.
 
-It is important that you first create the temporary directory as it will not be created for you(/tmp is already available from when Linux was installed though, FYI).
+The name of this temporary directory will be samplenameRANDOMrunsample
 
-You can control what directory this is by utilizing the TMPDIR environmental variable as follows:
+This directory will be located inside of each project's specified output directory
+that was given with ``-od``
 
-.. code-block:: bash
-
-    mkdir -p /path/to/custom/tmpdir
-    export TMPDIR=/path/to/custom/tmpdir
-    SAMPLE=samplename
-    runsample /path/to/NGSData/ReadsBySample/${SAMPLE} /path/to/reference ${SAMPLE} -od Projects/${SAMPLE}
+If the project fails to complete for some reason then you will need to look inside of that directory for relevant log files to inspect what happened.
 
 Integration with the PBS Schedulers
 ===================================
@@ -352,7 +346,6 @@ useful if you have access to a PBS Cluster. By default the PBS job that is gener
 is very simplistic.
 
 * The job will change directory to the same directory that qsub is run from
-* If TMPDIR is set when you run qsub, it will be exported for the job as well.
 * runsample is then run with the same arguments that were given to generate the
   pbs job without the --qsub arguments.
 
@@ -361,7 +354,6 @@ Example
 
 .. code-block:: bash
 
-    $> export TMPDIR=/path/to/TMPDIR
     $> runsample ngs_mapper/tests/fixtures/functional/947{,.ref.fasta} 947 --outdir 947test --qsub_l nodes=1:ppn=1 --qsub_M me@example.com
     #!/bin/bash
     #PBS -N 947-ngs_mapper
@@ -369,7 +361,6 @@ Example
     #PBS -l nodes=1:ppn=1
     #PBS -m abe
     #PBS -M me@example.com
-    export TMPDIR=/path/to/TMPDIR
     cd $PBS_O_WORKDIR
     runsample ngs_mapper/tests/fixtures/functional/947 ngs_mapper/tests/fixtures/functional/947.ref.fasta 947 --outdir 947test
 

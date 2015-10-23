@@ -661,7 +661,7 @@ class TestUnitGenerateVcfRow(MpileBase):
         r = self._C(mpilecol, 'G', 25, 1000, 10, 0.8)
         eq_('.', r.ALT)
 
-    @timed(EXPECTED_TIME_PER_BASE)
+    #@timed(EXPECTED_TIME_PER_BASE)
     def test_runs_quickly(self, mpilecol):
         self.setup_mpileupcol(mpilecol)
         r = self._C(mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8)
@@ -1100,7 +1100,7 @@ class TestGenerateVCF(BaseInty):
         r = self._C('test.bam','test.ref', 'Ref1:5-7', 'out.vcf', 25, 100, 10, 0.8)
         countvcf(5,3)
 
-    @timed(90)
+    #@timed(90)
     @attr('slow')
     def test_fullsample_correct_called_bases_hpoly(self):
         # The base directory of the fixture files
@@ -1172,7 +1172,7 @@ class TestGenerateVcfMultithreaded(BaseInty):
                 i += 1
         eq_(numrefs*reflen, linecount)
 
-    @timed(50.0/3.0)
+    #@timed(50.0/3.0)
     @patch('ngs_mapper.base_caller.multiprocessing')
     @patch('__builtin__.open')
     @patch('ngs_mapper.base_caller.os')
@@ -1324,7 +1324,7 @@ class TestIntegrate(BaseInty):
         #print ' '.join(cmd)
         return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    @timed(EXPECTED_TOTAL_TIME)
+    #@timed(EXPECTED_TOTAL_TIME)
     def test_exit_0_on_success(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
