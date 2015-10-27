@@ -1,0 +1,67 @@
+
+# so capture the sffs at the beginning
+SFFS = $(wildcard *.sff)
+FASTQS = $(wildcard *.fastq)
+
+UNPAIRED_ = $(filter-out $(wildcard _R[12]_), $(FASTQS)) #this will get screwed up after sff conversion . . . 
+UNPAIRED = $(join $(UNPAIRED_), $(SFFS:.sff=.fastq))
+all:
+	@echo $(UNPAIRED_)
+	@echo $(UNPAIRED)
+PAIRED = $(filter $(wildcard _R[12]_.fastq), $(ALL))
+
+.PHONY: unpaired foo bar
+#
+#foo: bar
+#	echo $(UP)
+#unpaired: UP = $(filter-out $(wildcard _R[12]_), $(wildcard *.fa ))
+#unpaired: foo
+#bar:
+#	touch someboo.fastq
+#
+#
+#convert_sanger: *.fastq
+#	conv_read $<
+#	
+#convert_sff: *.sff
+#	sffs_to_fastq . #current directory
+#
+#trim_unpaired: trimmed/unpaired.fastq
+#	if [ -s $< ]; then rm $<; fi;
+#
+#problems: inconvenient to have a dependency which is not used in the rule because of how $+ works
+#negative regex for unpaired
+#variables (required for negative regex) are instantiated at startup?
+#
+#unpaired.fastq: convert_sanger convert_sff
+#	cat $(unpaired) > $@
+#
+#trimmed/unpaired.fastq: unpaired.fastq
+#	mkdir -p trimmed
+#	java -jar trimmomatic.jar SE $< $@ LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log
+#
+#trimmed: 
+#	mkir trimmed
+##prepending % doesn't work hmm
+## in filter-out, only one % counts. 
+#get_unpaired = $(filter-out $(wildcard foo_R[12]_.fastq), $(1))
+##theunpaired.fastq: $(filter-out $(wildcard foo_R[12]_.fastq), $(wildcard *.fastq))
+#
+#foo: theunpaired.fastq  
+#	@echo $(filter-out $(wildcard foo_R[12]_.fastq), $(wildcard *.fastq))
+#
+#
+#theunpaired.fastq:  
+#	@#cat $+ > $@
+#	@echo $(filter-out $(wildcard foo_R[12]_.fastq), $(wildcard *.fastq))
+#	touch nunu.fastq
+#	touch theunpaired.fastq
+#
+#
+#	
+#
+#
+#
+
+
+
