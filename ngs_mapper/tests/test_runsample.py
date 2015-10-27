@@ -102,13 +102,13 @@ class TestMakeProjectRepo(Base):
 
     def test_no_existing_repo( self ):
         path = 'outdir'
-        os.mkdir( path ) 
+        os.mkdir( path )
         self._C( path )
         ok_( self.check_git_repo( path ) )
-    
+
     def test_existing_repo( self ):
         path = 'outdir'
-        os.mkdir( path ) 
+        os.mkdir( path )
         curd = os.getcwd()
         os.chdir( path )
         subprocess.call( 'git init', shell=True )
@@ -149,7 +149,7 @@ class TestFunctional(Base):
         print "Extra files in project:"
         print rf - ef
         eq_( ef, rf )
-        for typ, ef in efiles:     
+        for typ, ef in efiles:
             if typ == 'file':
                 assert isfile( ef ), "{0} was not created".format(ef)
                 assert os.stat( ef ).st_size > 0, "{0} was not > 0 bytes".format(ef)
@@ -214,7 +214,7 @@ class TestFunctional(Base):
     def test_runs_correctly( self ):
         projdir = 'outdir'
         prefix = 'testsample'
-    
+
         out,ret = self._run_runsample( self.reads_by_sample, self.ref, prefix, projdir )
         #ok_( self.check_git_repo( projdir ), 'Did not create Git repository for project' )
         self._ensure_expected_output_files( projdir, prefix )
