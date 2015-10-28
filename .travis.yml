@@ -5,11 +5,12 @@ python:
 before_install:
     - sudo apt-get update -qq
     - "export DISPLAY=:99.0" # Should fix matplotlib errors
-    - "sh -e /etc/init.d/xvfb start"
+    - "sh -e /etc/init.d/xvfb start" #trigger travis
     - sudo mkdir -p /ngsdata
     - sudo chmod 777 /ngsdata
     - sed 's%/path/to/NGSDATA%/ngsdata%' ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
 install:
+    - sudo pip install -U pip wheel setuptools
     - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2 ordereddict; fi
       #- sudo bash -c "umask 0002"
     - sudo python setup.py install_system_packages
