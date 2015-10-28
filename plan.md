@@ -1,5 +1,6 @@
 # lots of file name-fu
 
+
 use the js-velocity business. concatenate the commandline args to the json. 
 = is lazy!
 # when to remove empty unpaired file?
@@ -13,6 +14,19 @@ note: if a pre-req matches multiple files, you still need to use $+ to grab all 
 sff->fastq
 run ngs_filter 
 
+%.bam: unpaired.fastq paried.fastq
+     if [-s unpaired.fastq] run_bwa   $<
+     run_bwa $>
+
+merged.bam: *.bam
+    samtools merge -r -h rg.txt $+ > $@
+
+ $* automatic variable, which is defined as the part of the filename that matched the % character in a pattern rule.
+
+$*_R1_.fastq
+http://stackoverflow.com/questions/5561123/how-to-get-a-particular-dependency-from-the-dependency-list-for-a-target?lq=1
+
+make -C subdir/Makefile will cd to subdir first then run make
 ---trim reads
 -capture trim stats
 -SE/PE option
