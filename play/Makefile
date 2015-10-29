@@ -8,18 +8,19 @@ FASTQS := $(wildcard *.fastq)
 PAIRED := $(filter $(wildcard $(PAIR)), $(FASTQS)) 
 UNPAIRED := $(filter-out $(wildcard $(PAIR)), $(FASTQS)) 
 F_UNPAIRED := $(addprefix filtered/, $(UNPAIRED) $(SFFS:.sff=.fastq))
-UNPTRIM := unpaired_trimmed/unpaired.trimmed.fastq
-REF := {{ prefix }}.fasta 
-REF_INDEX := $(REF).amb $(REF).ann $(REF).bwt $(REF).pac $(REF).sa 
+UNPTRIM := trimmed_reads/unpaired.trimmed.fastq
+REF := {{ args.prefix }}.fasta 
+REF_INDEX := $(REF:=.amb) $(REF:=.ann) $(REF:=.bwt) $(REF:=.pac) $(REF:=.sa)
 BAM := {{args.prefix}}.bam
 BAI := $(BAM:.bam=.bai)
 
+trimmed_reads/%.fastq: unpaired_trimmed trimmed_reads/$(PAIR)
 .PHONY:  all plots 
 #make sure backup runs first
 all: backup plots flagstats.txt $(BAM).consensus.fasta
 
-plots: {{prefix}}.reads.png  $(BAM).qualdepth.png $(BAM).qualdepth.json 
-
+plots: {{args.prefix}}.reads.png  $(BAM).qualdepth.png $(BAM).qualdepth.json 
+#TODO: fix basename calls?
 backup: $(FASTQS) $(SFFS)
 	mkdir $@ && cp $^ $@
 
@@ -31,14 +32,14 @@ $(SFFS:.sff=.fastq): $(SFFS)
 	conv_read $@ $(UNPAIRED) 
 
 $(F_UNPAIRED) filtered/$(PAIR): $(PAIRED) $(UNPAIRED)
-	ngs_filter . --outdir $(@D) { % if ngs_filer.drop_ns % } --drop-ns  {% endif %} --platforms {{ ngs_filter.platforms }} --index-min {{ ngs_filter.index_min }}
+	ngs_filter . --outdir $(@D) {% if ngs_filter.dropNs %} --drop-ns  {% endif %} --platforms {{ ngs_filter.platforms|join(',') }} --index-min {{ ngs_filter.indexQualityMin }}
 
 
 TMPFQ := up.tmp.fastq 
-unpaired_trimmed/: $(F_UNPAIRED) 
-	mkdir $@
+unpaired_trimmed: $(F_UNPAIRED) 
 	if [ $^ ]; then cat $^ > unpaired.fastq; rm $^;  java -jar trimmomatic.jar SE unpaired.fastq $(TMPFQ) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log;  fi;
 	if [[ -s $(TMPFQ) ]]; then cp $(TMPFQ) $(UNPTRIM); fi;
+	touch $@
 
 trimmed_reads/$(PAIR): filtered/$(PAIR)
 	mkdir -p trimmed_reads
@@ -75,7 +76,7 @@ $(BAM): $(REF) F.fq P.fq unpaired_trimmed/ $(REF_INDEX)
 	fi;
 
 $(BAM).vcf: $(BAM) $(BAI) $(REF)
-	base_caller $< $(word 3, $^) $@ -mith {base_caller.minth}
+	base_caller $< $(word 3, $^) $@ -mith {{base_caller.minth}}
 
 flagstats.txt: $(BAM) $(BAI)
 	samtools flagstat $< > $@
@@ -83,8 +84,8 @@ flagstats.txt: $(BAM) $(BAI)
 $(BAM).qualdepth.png $(BAM).qualdepth.json: $(BAM) $(BAI) 
 	graphsample $< -od $(@D) #directory of target 
 
-{{prefix}}.reads.png: trimmed_reads/*.fastq
-	fqstats -o $@ $^
+{{args.prefix}}.reads.png:  unpaired_trimmed trimmed_reads/$(PAIR) 
+	fqstats -o $@ trimmed_reads/*.fastq
 
 $(BAM).consensus.fasta:   $(BAM).vcf
 	vcf_consensus $< -i {{args.prefix}} -o $@ 

@@ -221,7 +221,7 @@ def main():
     minmin, minmax = 1, 50
     if not (dropNs or (minmin <= idxMin <=minmax)):
         raise ValueError("No filter specified, drop Ns:%s, Index Quality Min:%s" % (dropNs, idxMin))
-    status = "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s\nfrom folder %s to folder %s" % (dropNs, idxMin, args['<readdir>'], args['--outdir'])
+    status = "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s Platforms:%s\nfrom folder %s to folder %s" % (dropNs, idxMin, args['--platforms'], args['<readdir>'], args['--outdir'])
     print status
     outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--platforms'], args['--outdir'], args['--parallel'])
     return 0
