@@ -14,6 +14,10 @@ from imports import fixtures, join
 
 class TestNGSFilter(unittest.TestCase):
 
+    def assertListEqual(L1, L2):
+        assert len(L1) == len(L2) and sorted(L1) == sorted(L2), "%s != %s" % (L1, L2)
+#
+
     def setUp(self):
         fixpath = join(fixtures.THIS,'fixtures')
         fix = partial(join, fixpath)
