@@ -2,10 +2,13 @@ from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indi
 
 import os
 import mock
-import unittest
+from imports import uni
 import shutil
 import warnings
-#
+try:
+        import unittest2 as unittest
+except ImportError:
+        import unittest
 from functools import partial
 from imports import fixtures, join
 
