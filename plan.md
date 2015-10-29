@@ -1,3 +1,10 @@
+
+#aliasing a rule will cause stuff to be re-run even if it's .PHONY;the alternative is to store it in a variable!
+reference is first arg b/c third argument (reverse fastq) is optional
+ samtools sort creates a new file doesn't touch existing file
+This misses out on stuff like bwa_return_code which checks stdout/err to ensure that BWA ran correctly
+first arg is output lol
+ 
  In a pattern rule that has multiple targets (see Introduction to Pattern Rules), ‘$@’ is the name of whichever target caused the rule’s recipe to be run. 
 ordered-only will make Make ignore timestamp info . . . 
  this conj's the lists together
