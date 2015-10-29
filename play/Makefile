@@ -2,15 +2,17 @@
 # handle bwa keep-temp 
 # this doesn't put stuff in tmpdir
 # This creates stuff in the directory it runs in ... 
-REF := {{ prefix }}.fasta 
-REF_INDEX := $(REF).amb $(REF).ann $(REF).bwt $(REF).pac $(REF).sa 
 PAIR := *_R[12]_*.fastq
 SFFS := $(wildcard *.sff)
 FASTQS := $(wildcard *.fastq)
 PAIRED := $(filter $(wildcard $(PAIR)), $(FASTQS)) 
+UNPAIRED := $(filter-out $(wildcard $(PAIR)), $(FASTQS)) 
+F_UNPAIRED := $(addprefix filtered/, $(UNPAIRED) $(SFFS:.sff=.fastq))
+UNPTRIM := unpaired_trimmed/unpaired.trimmed.fastq
+REF := {{ prefix }}.fasta 
+REF_INDEX := $(REF).amb $(REF).ann $(REF).bwt $(REF).pac $(REF).sa 
 BAM := {{args.prefix}}.bam
 BAI := $(BAM:.bam=.bai)
-UNPTRIM := unpaired_trimmed/unpaired.trimmed.fastq
 
 .PHONY:  all plots 
 #make sure backup runs first
@@ -26,15 +28,19 @@ backup: $(FASTQS) $(SFFS)
 $(SFFS:.sff=.fastq): $(SFFS)
 	@#mv $< $@
 	sffs_to_fastq $^
-	conv_read $(^:.sff=.fastq) 
+	conv_read $@ $(UNPAIRED) 
+
+$(F_UNPAIRED) filtered/$(PAIR): $(PAIRED) $(UNPAIRED)
+	ngs_filter . --outdir $(@D) { % if ngs_filer.drop_ns % } --drop-ns  {% endif %} --platforms {{ ngs_filter.platforms }} --index-min {{ ngs_filter.index_min }}
+
 
 TMPFQ := up.tmp.fastq 
-unpaired_trimmed/: $(UNPAIRED) $(SFFS:.sff=.fastq) 
+unpaired_trimmed/: $(F_UNPAIRED) 
 	mkdir $@
 	if [ $^ ]; then cat $^ > unpaired.fastq; rm $^;  java -jar trimmomatic.jar SE unpaired.fastq $(TMPFQ) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log;  fi;
 	if [[ -s $(TMPFQ) ]]; then cp $(TMPFQ) $(UNPTRIM); fi;
 
-trimmed_reads/$(PAIR): $(PAIR)
+trimmed_reads/$(PAIR): filtered/$(PAIR)
 	mkdir -p trimmed_reads
 	java -jar trimmomatic.jar PE $^ $@ LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log
 
