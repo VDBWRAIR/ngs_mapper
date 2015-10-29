@@ -8,6 +8,7 @@ import warnings
 #
 from functools import partial
 from imports import fixtures, join
+
 class TestNGSFilter(unittest.TestCase):
 
     def setUp(self):
@@ -42,14 +43,14 @@ class TestNGSFilter(unittest.TestCase):
         expected = open(self.expectedfn)
         self.assertFilesEqual(expected, actual)
 
-    @mock.patch('bioframes.nfilter.os.listdir')
+    @mock.patch('ngs_mapper.nfilter.os.listdir')
     def test_fqs_excluding_indices_extensions(self, mlistdir):
         mlistdir.return_value = candidates = ['foo.fq', 'foo.sff', 'foo.fastq', 'foo.bad']
         actual = fqs_excluding_indices('D')
         expected = ['D/foo.fq', 'D/foo.fastq']
         self.assertListEqual(expected, actual)
 
-    @mock.patch('bioframes.nfilter.os.listdir')
+    @mock.patch('ngs_mapper.nfilter.os.listdir')
     def test_fqs_excluding_indices_excludes_index(self, mlistdir):
         mlistdir.return_value = ['foo_1R_.fq', 'foo.sff', 'foo_I2_.fastq', 'foo__I1__.fq']
         actual = fqs_excluding_indices('D')
@@ -81,6 +82,9 @@ class TestNGSFilter(unittest.TestCase):
         self.assertEquals(snd, expected_snd)
 
     def test_skips_platforms(self):
-        with self.assertRaises(ValueError):
+        try:
             write_post_filter(self.inputdir, 32, True, ['miseq'], self.outdir)
+            assert False, "failed to raise valueerror on bad input"
+        except ValueError, e:
+            pass
 
