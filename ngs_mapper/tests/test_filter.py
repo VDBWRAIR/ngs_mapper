@@ -2,7 +2,6 @@ from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indi
 
 import os
 import mock
-from imports import uni
 import shutil
 import warnings
 try:
@@ -14,7 +13,7 @@ from imports import fixtures, join
 
 class TestNGSFilter(unittest.TestCase):
 
-    def assertListEqual(L1, L2):
+    def assertListEqual(self, L1, L2):
         assert len(L1) == len(L2) and sorted(L1) == sorted(L2), "%s != %s" % (L1, L2)
 #
 
