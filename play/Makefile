@@ -2,19 +2,23 @@
 # handle bwa keep-temp 
 # this doesn't put stuff in tmpdir
 # This creates stuff in the directory it runs in ... 
+TRIMJAR := $(VIRTUAL_ENV)/lib/Trimmo*/*.jar
 PAIR := *_R[12]_*.fastq
 SFFS := $(wildcard *.sff)
 FASTQS := $(wildcard *.fastq)
-PAIRED := $(filter $(wildcard $(PAIR)), $(FASTQS)) 
-UNPAIRED := $(filter-out $(wildcard $(PAIR)), $(FASTQS)) 
-F_UNPAIRED := $(addprefix filtered/, $(UNPAIRED) $(SFFS:.sff=.fastq))
+PAIRED :=  $(filter $(wildcard $(PAIR)), $(FASTQS)) 
+UNPAIRED :=  $(filter-out $(wildcard $(PAIR)), $(FASTQS)) 
+#sort removes duplicates
+F_UNPAIRED := $(addprefix filtered/filtered., $(UNPAIRED) $(SFFS:.sff=.fastq))
+F_PAIRED := $(sort $(addprefix filtered/filtered., $(PAIRED) $(SFFS:.sff=.fastq)))
 UNPTRIM := trimmed_reads/unpaired.trimmed.fastq
 REF := {{ args.prefix }}.fasta 
 REF_INDEX := $(REF:=.amb) $(REF:=.ann) $(REF:=.bwt) $(REF:=.pac) $(REF:=.sa)
 BAM := {{args.prefix}}.bam
 BAI := $(BAM:.bam=.bai)
+do: $(F_UNPAIRED) filtered/$(PAIR)
+	echo $(F_UNPAIRED) filtered/$(PAIR)
 
-trimmed_reads/%.fastq: unpaired_trimmed trimmed_reads/$(PAIR)
 .PHONY:  all plots 
 #make sure backup runs first
 all: backup plots flagstats.txt $(BAM).consensus.fasta
@@ -31,19 +35,20 @@ $(SFFS:.sff=.fastq): $(SFFS)
 	sffs_to_fastq $^
 	conv_read $@ $(UNPAIRED) 
 
-$(F_UNPAIRED) filtered/$(PAIR): $(PAIRED) $(UNPAIRED)
+$(F_UNPAIRED) $(F_PAIRED): $(PAIRED) $(UNPAIRED)
 	ngs_filter . --outdir $(@D) {% if ngs_filter.dropNs %} --drop-ns  {% endif %} --platforms {{ ngs_filter.platforms|join(',') }} --index-min {{ ngs_filter.indexQualityMin }}
 
 
 TMPFQ := up.tmp.fastq 
 unpaired_trimmed: $(F_UNPAIRED) 
-	if [ $^ ]; then cat $^ > unpaired.fastq; rm $^;  java -jar trimmomatic.jar SE unpaired.fastq $(TMPFQ) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log;  fi;
+	mkdir -p trimmed_reads
+	if [ "$^" ]; then cat $^ > unpaired.fastq; rm $^;  java -jar $(TRIMJAR) SE unpaired.fastq $(TMPFQ) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log;  fi;
 	if [[ -s $(TMPFQ) ]]; then cp $(TMPFQ) $(UNPTRIM); fi;
 	touch $@
 
-trimmed_reads/$(PAIR): filtered/$(PAIR)
+trimmed_reads/$(PAIR): $(F_PAIRED)
 	mkdir -p trimmed_reads
-	java -jar trimmomatic.jar PE $^ $@ LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log
+	java -jar $(TRIMJAR) PE $^ $(addprefix trimmed_reads/, $^) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log
 
 $(BAI): $(BAM)
 	samtools index $< 
@@ -68,11 +73,11 @@ UNPBAM := align/unpaired.bam
 $(BAM): $(REF) F.fq P.fq unpaired_trimmed/ $(REF_INDEX)
 	mkdir -p align
 	bwa mem $(REF) $(word 2, $^) $(word 3 $^) > $(PBAM);
-	if [[ -s $(UNPTRIM) ]];  then 
-	   bwa mem $(REF) $(UNPTRIM) -t {{run_bwa_on_samplename.threads}} > $(UNPBAM);
-	   samtools merge - $(UNPBAM) $(PBAM) | samtools sort - $(basename $@);
-	else
-	   samtools sort $(PBAM) $(basename $@);
+	if [[ -s $(UNPTRIM) ]];  then \
+	   bwa mem $(REF) $(UNPTRIM) -t {{run_bwa_on_samplename.threads}} > $(UNPBAM);\
+	   samtools merge - $(UNPBAM) $(PBAM) | samtools sort - $(basename $@);\
+	else\
+	   samtools sort $(PBAM) $(basename $@);\
 	fi;
 
 $(BAM).vcf: $(BAM) $(BAI) $(REF)
