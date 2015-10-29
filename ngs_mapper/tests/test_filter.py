@@ -94,3 +94,16 @@ class TestNGSFilter(unittest.TestCase):
         except ValueError, e:
             pass
 
+
+    @mock.patch('ngs_mapper.nfilter.load_config')
+    def test_with_config(self, mload_config):
+        mfig = { 'ngs_filter' :
+         {'platforms' : ['Sanger'],
+          'dropNs' : True,
+          'indexQualityMin' : 32}
+         }
+        mload_config.return_value = mfig
+        run_from_config(self.inputdir,self.outdir, '_', False)
+        actual = open(self.actualfn)
+        expected = open(self.expectedfn)
+        self.assertFilesEqual(expected, actual)
