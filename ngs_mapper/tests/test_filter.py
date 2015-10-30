@@ -1,4 +1,4 @@
-from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indices, write_post_filter, mkdir_p
+from ngs_mapper.nfilter import make_filtered, write_filtered, fqs_excluding_indices, write_post_filter, mkdir_p, run_from_config
 
 import os
 import mock
@@ -98,9 +98,9 @@ class TestNGSFilter(unittest.TestCase):
     @mock.patch('ngs_mapper.nfilter.load_config')
     def test_with_config(self, mload_config):
         mfig = { 'ngs_filter' :
-         {'platforms' : ['Sanger'],
-          'dropNs' : True,
-          'indexQualityMin' : 32}
+                {'platforms' : { 'default' : ['Sanger'] },
+                 'dropNs' : { 'default' : True },
+                 'indexQualityMin' : {'default' : 32}}
          }
         mload_config.return_value = mfig
         run_from_config(self.inputdir,self.outdir, '_', False)
