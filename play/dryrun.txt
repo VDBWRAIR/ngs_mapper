@@ -1,0 +1,30 @@
+make: Entering directory `/home/AMED/michael.panciera/ngs_mapper-1.2/play/947'
+ngs_filter . --outdir filtered  --platforms MiSeq,Sanger,Roche454,IonTorrent --index-min 1
+mkdir -p trimmed_reads
+if [ "filtered/filtered.947_F2824_2014_01_29_Den4_Den4_1280_G01.fastq filtered/filtered.947_R3415_2014_01_29_Den4_Den4_1280_H01.fastq filtered/filtered.947_R4111_2014_01_29_Den4_Den4_1280_A02.fastq filtered/filtered.947__1__TI86__2012_08_06__Unk.fastq filtered/filtered.947__2__TI86__2012_08_06__Unk.fastq filtered/filtered.947__2__TI86__2012_08_06__Unk.fastq," ]; then cat filtered/filtered.947_F2824_2014_01_29_Den4_Den4_1280_G01.fastq filtered/filtered.947_R3415_2014_01_29_Den4_Den4_1280_H01.fastq filtered/filtered.947_R4111_2014_01_29_Den4_Den4_1280_A02.fastq filtered/filtered.947__1__TI86__2012_08_06__Unk.fastq filtered/filtered.947__2__TI86__2012_08_06__Unk.fastq filtered/filtered.947__2__TI86__2012_08_06__Unk.fastq, > unpaired.fastq; java -jar /home/AMED/michael.panciera/.ngs/lib/Trimmo*/*.jar SE unpaired.fastq up.tmp.fastq  LEADING:20 TRAILING:20 HEADCROP:0;  fi;
+if [[ -s up.tmp.fastq  ]]; then cp up.tmp.fastq  trimmed_reads/unpaired.trimmed.fastq; fi;
+touch unpaired_trimmed
+mkdir -p trimmed_reads 
+echo -jar /home/AMED/michael.panciera/.ngs/lib/Trimmomatic-0.32/trimmomatic-0.32.jar PE filtered/filtered.947_S32_L001_R1_001_2013_12_17.fastq filtered/filtered.947_S32_L001_R2_001_2013_12_17.fastq trimmed_reads/filtered/filtered.947_S32_L001_R1_001_2013_12_17.fastq trimmed_reads/filtered/filtered.947_S32_L001_R1_001_2013_12_17.fastq.unpaired trimmed_reads/filtered/filtered.947_S32_L001_R2_001_2013_12_17.fastq trimmed_reads/filtered/filtered.947_S32_L001_R2_001_2013_12_17.fastq.unpaired LEADING:20 TRAILING:20 HEADCROP:0 
+fqstats -o 947.reads.png trimmed_reads/*.fastq
+#if the reference is a directory, merge all fastas in it
+if [[ -d 947.ref.fasta ]]; then cat 947.ref.fasta/* > 947.fasta; else cp 947.ref.fasta 947.fasta; fi; 
+cat trimmed_reads/*_R1_*.fastq > F.fastq
+cat trimmed_reads/*_R2_*.fastq > R.fastq
+bwa index 947.fasta
+mkdir -p align
+bwa mem 947.fasta  F.fastq R.fastq > align/paired.bam;
+if [[ -s trimmed_reads/unpaired.trimmed.fastq ]];  then \
+	   bwa mem 947.fasta  trimmed_reads/unpaired.trimmed.fastq -t 1 > align/unpaired.bam  ;\
+	   samtools merge - align/unpaired.bam   align/paired.bam | samtools sort - 947;\
+	else\
+	   samtools sort align/paired.bam 947;\
+	fi;
+samtools index 947.bam 
+tagreads 947.bam -CN None
+graphsample 947.bam -od . #directory of target 
+graphsample 947.bam -od . #directory of target 
+samtools flagstat 947.bam > flagstats.txt
+base_caller 947.bam 947.fasta 947.bam.vcf -mith 0.8
+vcf_consensus 947.bam.vcf -i 947 -o 947.bam.consensus.fasta 
+make: Leaving directory `/home/AMED/michael.panciera/ngs_mapper-1.2/play/947'
