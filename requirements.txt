@@ -20,3 +20,4 @@ counter
 schema
 docopt
 toolz
+jinja2
