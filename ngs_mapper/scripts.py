@@ -1,6 +1,6 @@
 from Bio import SeqIO
 import sys, os
-from itertools import imap 
+from itertools import imap
 import tempfile, shutil
 
 
@@ -27,7 +27,7 @@ def convert_file(fn):
     fixed = imap(conv_read, reads)
     SeqIO.write(fixed, fn, format='fastq')
 
-def convert_sangers():
+def convert_read_quals():
     files = sys.arv[1:]
     sangers = filter(is_sanger, files)
     for s in sangers:
@@ -36,7 +36,7 @@ def convert_sangers():
             convert_file(s)
         except Exception, e:
             shutil.move(copy, s)
-            sys.stderr.write( "Conversion of file %s failed with error %s" % (s, e)) 
+            sys.stderr.write( "Conversion of file %s failed with error %s" % (s, e))
 
 def create_temporary_copy(path):
     '''http://stackoverflow.com/questions/6587516/how-to-concisely-create-a-temporary-file-that-is-a-copy-of-another-file-in-pytho'''

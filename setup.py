@@ -141,7 +141,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'is_sanger = ngs_mapper.scripts:is_sanger',
-            'convert_sangers = ngs_mapper.scripts:convert_sangers',
+            'convert_read_quals = ngs_mapper.scripts:convert_read_quals',
             'sff_to_fastq = ngs_mapper.sff_to_fastq:main',
             'ngs_filter = ngs_mapper.nfilter:main',
             'roche_sync = ngs_mapper.roche_sync:main',
