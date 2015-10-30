@@ -12,10 +12,29 @@ $(shell <no-commas-ever)
 #call is itself a funciton requires a comma after
 $(var:=.newsuff)  -- add a suffix
 $(var:.old=.new) -- replace a suffix
-use the js-velocity business. concatenate the commandline args to the json. 
-= is lazy!
-# when to remove empty unpaired file?
-#problems: inconvenient to have a dependency which is not used in the rule because of how $+ works
+=======
+
+#aliasing a rule will cause stuff to be re-run even if it's .PHONY;the alternative is to store it in a variable!
+reference is first arg b/c third argument (reverse fastq) is optional
+ samtools sort creates a new file doesn't touch existing file
+This misses out on stuff like bwa_return_code which checks stdout/err to ensure that BWA ran correctly
+first arg is output lol
+ 
+ In a pattern rule that has multiple targets (see Introduction to Pattern Rules), ‘$@’ is the name of whichever target caused the rule’s recipe to be run. 
+ordered-only will make Make ignore timestamp info . . . 
+ this conj's the lists together
+UNPAIRED = $(filter-out unpaired.fastq, $(UNPAIRED_)) $(SFFS:.sff=.fastq)
+aliasing a rule will cause stuff to be re-run even if it's .PHONY;the alternative is to store it in a variable!
+`jinja2.Environment().from_string(s).render(dict)`
+make will try to build any rule that's required even if it's LHS is empty
+call is itself a funciton requires a comma after
+also just doing $(call func) w/in a rule will try to run the resul tof the call, which makes sense
+
+this below works but just puts in the file name under RG name
+1$ samtools merge -rh rg.txt - s1.bam s.bam | samtools view -h - | head
+= is lazy, := is strict
+ when to remove empty unpaired file?
+problems: inconvenient to have a dependency which is not used in the rule because of how $+ works
 #negative regex for unpaired
 #variables (required for negative regex) are instantiated at startup?
 #
@@ -113,3 +132,6 @@ leave alone
 
 
 
+ lots of file name-fu
+can ngs_mapper take multilple sets of forward/reverse? yes
+ do we need to cat refs together? yes

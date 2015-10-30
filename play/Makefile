@@ -1,91 +1,107 @@
-include gsml
-
+include gsml 
 #TODO: add logging for bwa & !trimmomatic 
+#TODO: fix basename calls?
+# handle bwa keep-temp 
+# this doesn't put stuff in tmpdir, This creates stuff in the directory it runs in ... 
+#make will try to build any rule that's required even if it's LHS is empty
 
-REF_INDEX := REF.amb REF.ann REF.bwt REF.pac REF.sa REF.amb 
+TRIMJAR := $(VIRTUAL_ENV)/lib/Trimmo*/*.jar
 PAIR := *_R[12]_*.fastq
-SFFS = $(wildcard *.sff)
-FASTQS := $(wildcard *.fastq)
-UNPAIRED_ := $(filter-out $(wildcard $(PAIR)), $(FASTQS)) #this will get screwed up after sff conversion . . . 
-PAIRED := $(filter $(wildcard $(PAIR)), $(FASTQS))
+SFFS := $(wildcard *.sff)
+FASTQS := $(wildcard *.fastq) 
+PAIRED :=  $(filter $(wildcard $(PAIR)), $(FASTQS)) 
 FORWARD := $(wildcard *_R1_*, $(PAIRED))
 REVERSE := $(wildcard *_R2_*, $(PAIRED))
-# watch out, gets applied to the list...
+UNPAIRED :=  $(filter-out $(wildcard $(PAIR)), $(FASTQS)) 
+#sort removes duplicates
+F_UNPAIRED := $(sort $(addprefix filtered/filtered., $(UNPAIRED) $(SFFS:.sff=.fastq)))
+F_PAIRED := $(sort $(addprefix filtered/filtered., $(PAIRED) $(SFFS:.sff=.fastq)))
+UNPTRIM := trimmed_reads/unpaired.trimmed.fastq
+REF := {{ args.prefix }}.fasta 
+REF_INDEX := $(REF:=.amb) $(REF:=.ann) $(REF:=.bwt) $(REF:=.pac) $(REF:=.sa)
+BAM := {{args.prefix}}.bam
+BAI := $(BAM:.bam=.bai)
 
-# this conj's the lists together
-#UNPAIRED = $(filter-out unpaired.fastq, $(UNPAIRED_)) $(SFFS:.sff=.fastq)
+do: $(F_UNPAIRED) filtered/$(PAIR)
+	echo $(F_UNPAIRED) filtered/$(PAIR)
 
-#call is itself a funciton requires a comma after
-# also just doing $(call func) w/in a rule will try to run the resul tof the call, which makes sense
-UNPAIRED = $(filter-out unpaired.fastq, $(UNPAIRED_))
-.PHONY:  align_unpaired
-all: backup 
+.PHONY:  all plots 
+#TODO: make sure backup runs first
+all: backup plots flagstats.txt $(BAM).consensus.fasta 
 
-#make will try to build any rule that's required even if it's LHS is empty
+plots: {{args.prefix}}.reads.png  $(BAM).qualdepth.png $(BAM).qualdepth.json 
+
+backup: $(FASTQS) $(SFFS)
+	mkdir $@ && cp $^ $@
 
 # This works even if there are no sff files (it doesn't get triggered?)
 # Will it work if there is somename.sff + somename.fastq?
 $(SFFS:.sff=.fastq): $(SFFS)
-	@#mv $< $@
 	sffs_to_fastq $^
-	conv_read $@
+	conv_read $@ $(UNPAIRED) 
 
 trimmed/maybe.unpaired.fastq: $(UNPAIRED) $(SFFS:.sff=.fastq) 
 	mkdir -p trimmed_reads
 	if [ $^ ]; then  cat $^ > unpaired.fastq; rm $^;  java -jar trimmomatic.jar SE unpaired.fastq $@ LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log; else touch $@; fi;
 
+$(F_UNPAIRED) $(F_PAIRED): $(PAIRED) $(UNPAIRED)
+	ngs_filter . --outdir $(@D) {% if ngs_filter.dropNs %} --drop-ns  {% endif %} --platforms {{ ngs_filter.platforms|join(',') }} --index-min {{ ngs_filter.indexQualityMin }}
+
+TMPFQ := up.tmp.fastq 
+unpaired_trimmed: $(F_UNPAIRED) 
+	mkdir -p trimmed_reads
+	if [ "$^" ]; then cat $^ > unpaired.fastq; rm $^;  java -jar $(TRIMJAR) SE unpaired.fastq $(TMPFQ) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log;  fi;
+	if [[ -s $(TMPFQ) ]]; then cp $(TMPFQ) $(UNPTRIM); fi;
+	touch $@
+
 trimargs_priv = $(1) $(1:=.unpaired) $(2) $(2:=.unpaired) 
 trimouts =  $(call map, trimargs_priv, $(addprefix trimmed_reads/, $1 $2))
-trim_paired = $(shell java -jar trimmomatic.jar PE $1 $2 $(call trimouts, $1, $2) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log
-
-trimmed_reads/$(PAIR): $(PAIR)
+trim_paired = $(shell java -jar $(TRIMJAR) PE $1 $2 $(call trimouts, $1, $2) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log trim.log)
+trimmed_reads/$(PAIR): $(F_PAIRED)
 	mkdir -p trimmed_reads
 	echo $(call pairmap, trim_paired, $^ ) 
 
-backup: original/%
-	mkdir -p original
-	cp *.{fastq,sff} original 
-
-#this shoudl work because align/paired.bam is listed first and should get run first
-# $^ -> all prereqs
-merged.bam: align/%.bam | align_unpaired
-        samtools merge - $+ | samtools sort - $(basename $@)
-	samtools sort $@ $(basename $@) 
-
-
-# this works but just puts in the file name under RG name
-#(.ngs)-bash-4.1$ samtools merge -rh rg.txt - s1.bam s.bam | samtools view -h - | head
-
-merged.bai: merged.bam
+$(BAI): $(BAM)
 	samtools index $< 
+	tagreads $< -CN {{ tagreads.CN }}
 
-R.fastq:  trimmed/%_R2_%.fastq
+R.fastq:  trimmed_reads/*_R2_*.fastq
 	cat $^ > $@
 
-F.fastq: trimmed/%_R1_%.fastq
-	cat $^ > $@
+F.fastq: trimmed_reads/*_R1_*.fastq
+	cat $^ > $@ 
 
-#aliasing a rule will cause stuff to be re-run even if it's .PHONY; the alternative is to store it in a variable
-$(REF_INDEX): REF.fasta
+$(REF_INDEX): $(REF)
 	bwa index $<
 
-REF.fasta: {{ref}}
-	if [[ -d $< ]]; then cat $</* > $@; else cp $< $@; fi;
-#ordered-only will make Make ignore timestamp info . . . 
-#this one is .PHONY
-#reference is first arg b/c third argument (reverse fastq) is optional
-bwa_mem = $(shell bwa mem $(2) $(3) $(1) -t {{bwa.threads}} > {{bwa.output}} )
+$(REF): {{ args.reference }}  
+	@#if the reference is a directory, merge all fastas in it
+	if [[ -d $< ]]; then cat $</* > $@; else cp $< $@; fi; 
 
-# output file, keep_temp, threads 
-# env = jinja2.Environment()
-# env.from_string("-t {{bwa.threads}} -o").render( { "bwa" : { "threads" : 10 }})
 
-align_unpaired:  REF.fasta trimmed/maybe.unpaired.fastq    | indexed_ref
-	if [ $< ]; then bwa mem $< $(word $^ 2); fi;
+PBAM := align/paired.bam
+UNPBAM := align/unpaired.bam 
+$(BAM): $(REF) F.fq P.fq unpaired_trimmed/ $(REF_INDEX)
+	mkdir -p align
+	bwa mem $(REF) $(word 2, $^) $(word 3 $^) > $(PBAM);
+	if [[ -s $(UNPTRIM) ]];  then \
+	   bwa mem $(REF) $(UNPTRIM) -t {{run_bwa_on_samplename.threads}} > $(UNPBAM);\
+	   samtools merge - $(UNPBAM) $(PBAM) | samtools sort - $(basename $@);\
+	else\
+	   samtools sort $(PBAM) $(basename $@);\
+	fi;
 
-#This misses out on stuff like bwa_return_code which ensure that BWA ran correctly
+$(BAM).vcf: $(BAM) $(BAI) $(REF)
+	base_caller $< $(word 3, $^) $@ -mith {{base_caller.minth}}
 
-align/paired.bam: REF.fasta R.fastq P.fastq | indexed_ref
-	$(call bwa_mem, $<, $(word $^ 2) $(word $^ 3))
-# # can ngs_mapper take multilple sets of forward/reverse? yes
-# do we really need to cat refs together? yes
+flagstats.txt: $(BAM) $(BAI)
+	samtools flagstat $< > $@
+
+$(BAM).qualdepth.png $(BAM).qualdepth.json: $(BAM) $(BAI) 
+	graphsample $< -od $(@D) #directory of target 
+
+{{args.prefix}}.reads.png:  unpaired_trimmed trimmed_reads/$(PAIR) 
+	fqstats -o $@ trimmed_reads/*.fastq
+
+$(BAM).consensus.fasta:   $(BAM).vcf
+	vcf_consensus $< -i {{args.prefix}} -o $@ 
