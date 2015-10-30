@@ -1,6 +1,6 @@
+include gsml
+
 #TODO: add logging for bwa & !trimmomatic 
-#include tagreads
-#
 
 REF_INDEX := REF.amb REF.ann REF.bwt REF.pac REF.sa REF.amb 
 PAIR := *_R[12]_*.fastq
@@ -8,13 +8,15 @@ SFFS = $(wildcard *.sff)
 FASTQS := $(wildcard *.fastq)
 UNPAIRED_ := $(filter-out $(wildcard $(PAIR)), $(FASTQS)) #this will get screwed up after sff conversion . . . 
 PAIRED := $(filter $(wildcard $(PAIR)), $(FASTQS))
+FORWARD := $(wildcard *_R1_*, $(PAIRED))
+REVERSE := $(wildcard *_R2_*, $(PAIRED))
+# watch out, gets applied to the list...
+
 # this conj's the lists together
 #UNPAIRED = $(filter-out unpaired.fastq, $(UNPAIRED_)) $(SFFS:.sff=.fastq)
 
 #call is itself a funciton requires a comma after
 # also just doing $(call func) w/in a rule will try to run the resul tof the call, which makes sense
-
-
 UNPAIRED = $(filter-out unpaired.fastq, $(UNPAIRED_))
 .PHONY:  align_unpaired
 all: backup 
@@ -29,12 +31,16 @@ $(SFFS:.sff=.fastq): $(SFFS)
 	conv_read $@
 
 trimmed/maybe.unpaired.fastq: $(UNPAIRED) $(SFFS:.sff=.fastq) 
-	mkdir -p trimmed
+	mkdir -p trimmed_reads
 	if [ $^ ]; then  cat $^ > unpaired.fastq; rm $^;  java -jar trimmomatic.jar SE unpaired.fastq $@ LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log; else touch $@; fi;
 
-trimmed/$(PAIR): $(PAIR)
-	mkdir -p trimmed
-	java -jar trimmomatic.jar PE $^ $@ LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log
+trimargs_priv = $(1) $(1:=.unpaired) $(2) $(2:=.unpaired) 
+trimouts =  $(call map, trimargs_priv, $(addprefix trimmed_reads/, $1 $2))
+trim_paired = $(shell java -jar trimmomatic.jar PE $1 $2 $(call trimouts, $1, $2) LEADING:{{trim_reads.q}} TRAILING:{{trim_reads.q}} HEADCROP:{{trim_reads.headcrop}} --trim_log out.log
+
+trimmed_reads/$(PAIR): $(PAIR)
+	mkdir -p trimmed_reads
+	echo $(call pairmap, trim_paired, $^ ) 
 
 backup: original/%
 	mkdir -p original
@@ -59,10 +65,7 @@ R.fastq:  trimmed/%_R2_%.fastq
 F.fastq: trimmed/%_R1_%.fastq
 	cat $^ > $@
 
-
-#call is itself a funciton requires a comma after
-#aliasing a rule will cause stuff to be re-run even if it's .PHONY;
-# the alternative is to store it in a variable!
+#aliasing a rule will cause stuff to be re-run even if it's .PHONY; the alternative is to store it in a variable
 $(REF_INDEX): REF.fasta
 	bwa index $<
 

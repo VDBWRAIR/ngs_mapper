@@ -1,6 +1,17 @@
-# lots of file name-fu
 
 
+concat lists by simply placing them together
+LISTS = $(L1) $(L2)
+
+note that the commas are weird (but consistent) with function calls:
+gsml includes map, pairedmap (zip-with) etc.
+
+$(addprefix <nocomma> arg1 <commas...> arg2)
+$(call func <nocomma> arg1, arg2)
+$(shell <no-commas-ever)
+#call is itself a funciton requires a comma after
+$(var:=.newsuff)  -- add a suffix
+$(var:.old=.new) -- replace a suffix
 use the js-velocity business. concatenate the commandline args to the json. 
 = is lazy!
 # when to remove empty unpaired file?
@@ -14,6 +25,7 @@ note: if a pre-req matches multiple files, you still need to use $+ to grab all 
 sff->fastq
 run ngs_filter 
 
+lots of file name-fu
 %.bam: unpaired.fastq paried.fastq
      if [-s unpaired.fastq] run_bwa   $<
      run_bwa $>
