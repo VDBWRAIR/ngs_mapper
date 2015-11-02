@@ -22,7 +22,7 @@ class Base( common.BaseBaseCaller ):
     def mock_mpileup_factory(self, **kwargs):
         '''
         Returns a function that can mock out ngs_mapper.samtools.mpileup
-        
+
         pileupstart - start of the pileup that will be generated
         pileupend - end of the pileup that will be generated
         refdepth - depth of each reference base
@@ -70,7 +70,7 @@ class Base( common.BaseBaseCaller ):
         # Reset to 0
         for k in nonbasekeys:
             stats[k] = 0
-        
+
         # Sum everything
         for k,v in stats.items():
             if k not in nonbasekeys:
@@ -172,7 +172,7 @@ class TestUnitBiasHQ(StatsBase):
             if k not in ('depth','mqualsum','bqualsum'):
                 ebaseq = v['baseq']*int(bias)
                 rbaseq = r[k]['baseq']
-                eq_(ebaseq, r[k]['baseq'], 
+                eq_(ebaseq, r[k]['baseq'],
                     "Len of base {0} should be {1} but got {2}".format(k, len(ebaseq), len(rbaseq))
                )
         # Verify depth is updated
@@ -464,14 +464,14 @@ class TestUnitBlankVcfRows(Base):
         r = self._C('ref', 'A'*10, 0, 3)
         eq_(1, r[0].POS)
         eq_(2, r[1].POS)
-    
+
     def test_gap_middle(self):
         # Should return 4 & 5
         r = self._C('ref', 'A'*10, 3, 6)
         eq_(4, r[0].POS)
         eq_(5, r[1].POS)
-    
-    def test_gap_end(self): 
+
+    def test_gap_end(self):
         r = self._C('ref', 'A'*10, 9, 11)
         eq_(10, r[0].POS)
 
@@ -572,7 +572,7 @@ class TestUnitGenerateVcfRow(MpileBase):
         }
         stats = self.make_stats(base_stats)
         self.setup_mpileupcol(mpilecol, stats=stats)
-    
+
         # Ensure Reference is called
         r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
         eq_('C', r.INFO['CB'])
@@ -1009,7 +1009,7 @@ class BaseInty(Base):
         info = dict(info)
         return {
             'CHROM':ref,
-            'POS':pos, 
+            'POS':pos,
             'ID': id,
             'REF': refbase,
             'ALT': altbase,
@@ -1118,7 +1118,8 @@ class TestGenerateVCF(BaseInty):
         # Run the base caller
         # Set bias to 10. Will probably be what will be used as default eventually
         out_vcf = self._C(bam, ref, 'Den1/U88535_1/WestPac/1997/Den1_1:1-15000', out_vcf, 25, 100000, 10, 0.8, 50, 10)
-
+        #TODO: problem is POS 2018
+       #file, vcf_output_file, regionstr=None, minbq=25, maxd=100000, mind=10, minth=0.8, biasth=50, bias=2, threads=1 ):
         # Compare the expected and result vcf
         for evcf, rvcf in self._iter_two_vcf(vcf, out_vcf):
             ecb = evcf['INFO']['CB']
@@ -1223,7 +1224,7 @@ class TestGenerateVcfMultithreaded(BaseInty):
             # Parse out call info
             regionstr = callargs[2]
             tmpfile = callargs[3]
-            
+
             # Every process call gets a new tempfile
             eq_('out.vcf.{0}'.format(i), tmpfile)
             eq_(eregion, regionstr)
@@ -1246,7 +1247,7 @@ class TestUnitMain(BaseInty):
             biasth=biasth,
             bias=bias,
             threads=threads
-       )        
+       )
         with patch('ngs_mapper.base_caller.parse_args') as margparse:
             margparse.return_value = args
             return main()
@@ -1400,3 +1401,26 @@ class TestIntegrate(BaseInty):
             assert o==''
 
         assert not self.cmp_vcf(self.vcf, out_vcf)
+
+#class TestInsertions(unittest.TestCase):
+#
+#    line = 'KC807175.1_Houston	284	N	297	T+1At+1aT+1AT+1AT+1AT+1At+1aT+1AT+1At+1at+1at+1aT$T$T$T$t$t$t$T+1AT+1AT$t+1at+1at$T+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1AT+1AT+1AT+1At+1at+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1ATT+1AT+1AT+1AT+1AT+1AT+1At+1at+1aT+1AT+1ATT+1AT+1AT+1AtT+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1At+1aT+1AT+1At+1aT+1At+1at+1aT+1At+1at+1at+1aT+1AT$T+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1At+1at+1at+1at+1at+1at$t+1at+1at$t+1aT+1AT+1At+1at+1at+1at+1at+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1at+1at+1at+1at+1at+1at+1aT+1AT$T+1At+1at$T+1At+1at+1aT+1At+1aT+1AT+1AT+1At+1aT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1At+1at+1at+1aT+1AT+1AT+1At+1aT+1AT+1At+1at+1at+1aT+1At+1aT+1AT+1At+1aT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1At+1at+1aT+1AT+1At+1at+1at+1aT+1At+1aT$T+1At+1at+1aT+1AT+1At+1aT+1AT+1AT+1AT+1At+1aT+1AT+1At+1aT+1At+1aT+1AT+1At+1aT+1AT+1AT+1At+1at+1aT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1AT+1At+1aT+1At+1a^]A	6GCG?GGE4GCG?GGFCCCGGDGGCG2FGGCFC>FGCF?FFGGGF9DGGGGGFGF4GGFFCGEFFGGGFGFCGGC9?FF647DFGCCGCGGFGGCGGGCCGGCEFFGGGGEFFGGFGGGGGFGGGGGGG9FG?GGGGGFFGGGGGGFGGCG9CFGGGGGEGGFGGGGGGFCGGGG<FGGGGGCGDFGGGFGGGGGEGGGGGGGDF9GGGGGGGGGGGGGGEGGGGG=G<GGGCGDGGGCGGGGGGGGGGGGGGF9GG;FG;ADFFGGGG6GGFGFGG@GGGF=GGG7=F:FGGFC76'
+#    line2 = 'KC807175.1_Houston	18379	N	237	tTt+3ataT+3ATATt+3atat+3ataT+3ATAT+3ATAtt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATATt+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATATt+3atat+3ataT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATAt+3ataTt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATATT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATATT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAttT^]T	BFG7AGD9FG@8FFGGD>G>@GGGFFGCGGGG9CGGGGFGGGGGDGECGGGBFGGDGFFGGEGGEGAGGGG?GGGCGEFGFG:GGGGGFGGEGGGDG>EFGGGFGFGGCGGEFGGGGGGGFFG>GGGGCD@GGGG;GFGGG9GGGGGGGGCGGGDFGFGGGGGGFGGGGGGF:GGFGFGFFGFFGGGGGGGACGGGCGCFGGGGGFGGGGGEGGGGGGF7GGGGGGGGGGGGG53CG'
+#    multi_inserts = 'KC807175.1_Houston	354	N	252	ggGGGGGGGGGGGGGGGGGGGggGgggGgggGGgGGGGGGgGGGGGGGGGGGGGGGGGGggggggGggggGGGGGGGGggggggGGgGggGGGgGGggGgGGg+2acGGGGG+1AGGG+3CCCggGGGgGGgggGgGGgGGgGGGGGgGGGGgGGggGGgggGGggGGgGGGGgGGgGgGgGgGGGggGGGgggGgGGGgGgGGGgGGGGGGGGGGGGGGGgGGGggGggGGgGGGGGggGGGGGGgGgGgGGGGGGCgGG	CC3;:7F>F>F?>>.38>2>=GGFCAG5G@GFFGF5FFGFGECG6FDFGDGGCGGGGF?GGGGGGGGGGGG8FFEGG6GGGGGGGCFCGGFGGG@G@FFGFDGG@FAG@GGGGGGGCGGG=FGFGGEF@GFGFFGFGGGGGFDG?GGGF7AGGGGD?GGDGFCGGGGGGGGCFFGGGFCGDGGG6FGGGGGG<FG6GGFFGGGGGFGGGGGG2FFCC4G56GG0GGGGGC8GGGGCGGG4@9GGGGFGC9CG'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

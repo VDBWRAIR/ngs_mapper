@@ -78,7 +78,7 @@ Options: -b       output BAM
         eq_( os.stat(self.bam).st_size, os.stat('new.bam').st_size )
 
     def test_regionstring( self ):
-        # Returns all reads for Ref2 since the test sam file 
+        # Returns all reads for Ref2 since the test sam file
         # has reads under every base(reads for ref 2 start at 10 and go to 20
         res = self._C( self.bam, 'Ref2:3-5' )
         i = 0
@@ -296,22 +296,22 @@ class TestUnitBases(MpileupBase):
     def test_lowercaseuppercase( self ):
         str = 'Ref1	1	N	10	AaCcGgTtNn	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'AACCGGTTNN', r.bases )
+        eq_( list('AACCGGTTNN'), r.bases )
 
     def test_dotcomma( self ):
         str = 'Ref1	1	A	12	.,CcGgTtNn.,	IIIIIIIIIIII	]]]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'AACCGGTTNNAA', r.bases )
+        eq_( list('AACCGGTTNNAA'), r.bases )
 
     def test_insertdelete( self ):
         str = 'Ref1	1	A	10	G+2AA-2AA*.G,.....	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'G*AGAAAAAA', r.bases )
+        eq_( ['G','AA'] + list('*AGAAAAAA'), r.bases )
 
     def test_endreadbeginread( self ):
         str = 'Ref1	1	N	10	A^]A$AAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'AAAAAAAAAA', r.bases )
+        eq_( list('AAAAAAAAAA'), r.bases )
 
 class TestUnitBQuals(MpileupBase):
     pass
@@ -321,7 +321,7 @@ class TestUnitMQuals(MpileupBase):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( [60]*10, r.mquals )
-    
+
     def test_mquals_ne_bquals_len_same( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]]'
         r = self._C( str )
@@ -445,44 +445,44 @@ class TestUnitPileupColumnInit(MpileupBase):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII'
         r = self._C( str )
         eq_( [], r.mquals )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
         eq_( [40]*10, r.bquals )
 
     def test_insert_start( self ):
         str = 'Ref1	1	N	10	+2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( ['NN'] + list('A'*10), r.bases )
 
     def test_insert_end( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA+2NN	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10) + ['NN'], r.bases )
 
     def test_insert_middle( self ):
         str = 'Ref1	1	N	10	AAAAA+2NNAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*5) + ['NN'] + list('AAAAA'), r.bases )
 
     def test_delete_start( self ):
         str = 'Ref1	1	N	10	-2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_delete_end( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA-2NN	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_delete_middle( self ):
         str = 'Ref1	1	N	10	AAAAA-2NNAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_other_characters( self ):
         str = 'Ref1	1	N	10	A$.,aAA^]AA*A	IIIIIIIIII	]]]]]]]]]]'
@@ -490,13 +490,13 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( 10, r.depth )
         eq_( 'I'*10, r._bquals )
         eq_( ']'*10, r._mquals )
-        eq_( 'ANNAAAAA*A', r.bases )
+        eq_( list('ANNAAAAA*A'), r.bases )
 
     def test_indel_gt_9( self ):
         str = 'Ref1	1	N	10	AAAAA-10NNNNNNNNNNAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_gap( self ):
         # Guess gaps don't have quality scores
@@ -505,7 +505,7 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( 10, r.depth )
         eq_( 'I'*10, r._bquals )
         eq_( ']'*10, r._mquals )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
 class TestUnitParseRegionString(Base):
     functionname = 'parse_regionstring'
