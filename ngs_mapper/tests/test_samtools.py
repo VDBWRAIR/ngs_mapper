@@ -548,3 +548,13 @@ class TestUnitParseRegionString(Base):
     def test_correct_multibase( self ):
         r = self._C( 'ref:1-2' )
         eq_( ('ref',1,2), r )
+
+
+
+class TesUnitInsertions(Base):
+    pass
+"A$AA+1TA+1TT+1T" == "A-", "A", "AT", "AT", "TT" #order?
+
+#use Counter to get the counts of each afterwards
+"A$AA+1T" == "A-", "A", "AT" #order?
+
