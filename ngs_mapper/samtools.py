@@ -302,10 +302,11 @@ class MPileupColumn(object):
                 n_str = ''.join(takewhile(str.isdigit, self._bases[i+1:]))
                 i += len(n_str) + 1
                 if n_str: #this skips solo hyphens
-                     n = int(n_str)
-                     if x == '+': # deletion
-                         cleaned.append(self._bases[i:i+n])
-                     i += n
+                    n = int(n_str)
+                    if x == '+': # insertion
+                        # Grab [atgcn]+[0-9]+[atgcn]+
+                        cleaned.append(self._bases[i+len(n_str):i+n])
+                    i += n
         return cleaned
 
     @property

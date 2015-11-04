@@ -303,15 +303,20 @@ class TestUnitBases(MpileupBase):
         r = self._C( str )
         eq_( list('AACCGGTTNNAA'), r.bases )
 
-    def test_insertdelete( self ):
-        str = 'Ref1	1	A	10	G+2AA-2AA*.G,.....	IIIIIIIIII	]]]]]]]]]]'
+    def test_delete( self ):
+        str = 'Ref1	1	A	10	G-2AA*.G,.....	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( ['G','AA'] + list('*AGAAAAAA'), r.bases )
+        eq_( list('G*AGAAAAAA'), r.bases )
 
     def test_endreadbeginread( self ):
         str = 'Ref1	1	N	10	A^]A$AAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( list('AAAAAAAAAA'), r.bases )
+
+    def test_insert(self):
+        str = 'Ref1	1	A	10	G+2AA.G,.....	IIIIIIIIII	]]]]]]]]]]'
+        r = self._C(str)
+        eq_(['GAA'] + list('AGAAAAAA'), r.bases)
 
 class TestUnitBQuals(MpileupBase):
     pass
@@ -449,22 +454,22 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( [40]*10, r.bquals )
 
     def test_insert_start( self ):
-        str = 'Ref1	1	N	10	+2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
+        str = 'Ref1	1	N	10	A+2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( ['NN'] + list('A'*10), r.bases )
+        eq_( ['ANN'] + list('A'*10), r.bases )
 
     def test_insert_end( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA+2NN	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( list('A'*10) + ['NN'], r.bases )
+        eq_( list('A'*9) + ['ANN'], r.bases )
 
     def test_insert_middle( self ):
         str = 'Ref1	1	N	10	AAAAA+2NNAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( list('A'*5) + ['NN'] + list('AAAAA'), r.bases )
+        eq_( list('A'*4) + ['ANN'] + list('AAAAA'), r.bases )
 
     def test_delete_start( self ):
         str = 'Ref1	1	N	10	-2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
