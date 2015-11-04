@@ -891,20 +891,72 @@ class TestUnitGenerateVcfRow(MpileBase):
         eq_([100], r.INFO['PAC'])
         eq_(['C'], r.ALT)
 
+@attr('current')
+@patch('ngs_mapper.base_caller.MPileupColumn')
+class TestUnitGenerateVcfRowInsertions(MpileBase):
+    functionname = 'generate_vcf_row'
 
-    def test_stats(self, mpilecol, base_stats, expected, msg='testing insertison'):
+    def tst_stats(self, mpilecol, base_stats, expected):
         stats = self.make_stats(base_stats)
         self.setup_mpileupcol(mpilecol, stats=stats)
         r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_(expected[0], r.INFO['CB'], msg)
-        eq_(expected[1], r.INFO['CBD'], msg)
+        eq_(expected[0], r.INFO['CB'])
+        eq_(expected[1], r.INFO['CBD'])
 
-    def test_insertions(self, mpilecol):
-        test_stats(mpilecol, {'A-' : 60, 'A' : 20, 'AT' : 20} , ('A', 100) , "less than 50% support insertion")
-        test_stats(mpilecol, {'A-' : 20, 'A' : 20, 'AT' : 60} , ('AT', 60), "single base insertion under 80%")
-        test_stats(mpilecol, {'A-' : 10, 'A' : 20, 'AT' : 70} , ('AT', 70), "single base insertion over 80%")
-        test_stats(mpilecol, {'A' : 20, 'AT' : 70, 'AG' : 10} , ('AT', 70), "single base insertion majority T")
-        test_stats(mpilecol, {'A' : 10, 'AT' : 70, 'AG' : 20} , ('AY', 90), "single base insertion degenerate base") #T/G == Y?)
+    def test_less_than_50pct_support_insertion(self, mpilecol):
+        self.tst_stats(
+            mpilecol,
+            {
+                'A-': {'baseq': 60*[40]},
+                'A': {'baseq': 20*[40]},
+                'AT': {'baseq': 20*[40]}
+            },
+            ('A', 100)
+        )
+
+    def test_single_base_insertion_under_80pct(self, mpilecol):
+        self.tst_stats(
+            mpilecol,
+            {
+                'A-': {'baseq': 20*[40]},
+                'A': {'baseq': 20*[40]},
+                'AT': {'baseq': 60*[40]},
+            },
+            ('AT', 60)
+        )
+
+    def test_single_base_insertion_over_80pct(self, mpilecol):
+        self.tst_stats(
+            mpilecol,
+            {
+                'A-': {'baseq': 10*[40]},
+                'A': {'baseq': 20*[40]},
+                'AT': {'baseq': 70*[40]},
+            },
+            ('AT', 70)
+        )
+
+    def test_single_base_insertion_majority_T(self, mpilecol):
+        self.tst_stats(
+            mpilecol,
+            {
+                'A': {'baseq': 20*[40]},
+                'AT': {'baseq': 70*[40]},
+                'AG': {'baseq': 10*[40]},
+            },
+            ('AT', 70)
+        )
+
+    def test_single_base_insertion_degenerate_base(self, mpilecol):
+        self.tst_stats(
+            mpilecol,
+            {
+                'A': {'baseq': 10*[40]},
+                'AT': {'baseq': 70*[40]},
+                'AG': {'baseq': 20*[40]},
+            },
+            ('AY', 90) #T/G == Y?
+        )
 
 
 #'A--', 'ATG', 'A', 'AT-', 'ATT', 'A--', 'AT-' == 'AT'
@@ -1463,20 +1515,3 @@ class TestIntegrate(BaseInty):
 #    line = 'KC807175.1_Houston	284	N	297	T+1At+1aT+1AT+1AT+1AT+1At+1aT+1AT+1At+1at+1at+1aT$T$T$T$t$t$t$T+1AT+1AT$t+1at+1at$T+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1AT+1AT+1AT+1At+1at+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1ATT+1AT+1AT+1AT+1AT+1AT+1At+1at+1aT+1AT+1ATT+1AT+1AT+1AtT+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1At+1aT+1AT+1At+1aT+1At+1at+1aT+1At+1at+1at+1aT+1AT$T+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1At+1at+1at+1at+1at+1at$t+1at+1at$t+1aT+1AT+1At+1at+1at+1at+1at+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1at+1at+1at+1at+1at+1at+1aT+1AT$T+1At+1at$T+1At+1at+1aT+1At+1aT+1AT+1AT+1At+1aT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1At+1at+1at+1aT+1AT+1AT+1At+1aT+1AT+1At+1at+1at+1aT+1At+1aT+1AT+1At+1aT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1At+1at+1aT+1AT+1At+1at+1at+1aT+1At+1aT$T+1At+1at+1aT+1AT+1At+1aT+1AT+1AT+1AT+1At+1aT+1AT+1At+1aT+1At+1aT+1AT+1At+1aT+1AT+1AT+1At+1at+1aT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1AT+1At+1aT+1At+1a^]A	6GCG?GGE4GCG?GGFCCCGGDGGCG2FGGCFC>FGCF?FFGGGF9DGGGGGFGF4GGFFCGEFFGGGFGFCGGC9?FF647DFGCCGCGGFGGCGGGCCGGCEFFGGGGEFFGGFGGGGGFGGGGGGG9FG?GGGGGFFGGGGGGFGGCG9CFGGGGGEGGFGGGGGGFCGGGG<FGGGGGCGDFGGGFGGGGGEGGGGGGGDF9GGGGGGGGGGGGGGEGGGGG=G<GGGCGDGGGCGGGGGGGGGGGGGGF9GG;FG;ADFFGGGG6GGFGFGG@GGGF=GGG7=F:FGGFC76'
 #    line2 = 'KC807175.1_Houston	18379	N	237	tTt+3ataT+3ATATt+3atat+3ataT+3ATAT+3ATAtt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATATt+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATATt+3atat+3ataT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATAt+3ataTt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATATT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATATT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAttT^]T	BFG7AGD9FG@8FFGGD>G>@GGGFFGCGGGG9CGGGGFGGGGGDGECGGGBFGGDGFFGGEGGEGAGGGG?GGGCGEFGFG:GGGGGFGGEGGGDG>EFGGGFGFGGCGGEFGGGGGGGFFG>GGGGCD@GGGG;GFGGG9GGGGGGGGCGGGDFGFGGGGGGFGGGGGGF:GGFGFGFFGFFGGGGGGGACGGGCGCFGGGGGFGGGGGEGGGGGGF7GGGGGGGGGGGGG53CG'
 #    multi_inserts = 'KC807175.1_Houston	354	N	252	ggGGGGGGGGGGGGGGGGGGGggGgggGgggGGgGGGGGGgGGGGGGGGGGGGGGGGGGggggggGggggGGGGGGGGggggggGGgGggGGGgGGggGgGGg+2acGGGGG+1AGGG+3CCCggGGGgGGgggGgGGgGGgGGGGGgGGGGgGGggGGgggGGggGGgGGGGgGGgGgGgGgGGGggGGGgggGgGGGgGgGGGgGGGGGGGGGGGGGGGgGGGggGggGGgGGGGGggGGGGGGgGgGgGGGGGGCgGG	CC3;:7F>F>F?>>.38>2>=GGFCAG5G@GFFGF5FFGFGECG6FDFGDGGCGGGGF?GGGGGGGGGGGG8FFEGG6GGGGGGGCFCGGFGGG@G@FFGFDGG@FAG@GGGGGGGCGGG=FGFGGEF@GFGFFGFGGGGGFDG?GGGF7AGGGGD?GGDGFCGGGGGGGGCFFGGGFCGDGGG6FGGGGGG<FG6GGFFGGGGGFGGGGGG2FFCC4G56GG0GGGGGC8GGGGCGGG4@9GGGGFGC9CG'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
