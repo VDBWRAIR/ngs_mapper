@@ -1,5 +1,5 @@
 from subprocess import Popen, PIPE
-from itertools import takewhile
+from itertools import takewhile, imap
 #import numpy as np
 import itertools
 import re
@@ -194,6 +194,49 @@ def char_to_qual( qual_char ):
     '''
     return ord( qual_char ) - 33
 
+
+def get_base_list(bases, refbase ):
+    cleaned = []
+    # The counter
+    i = 0
+    # Iterate every position
+    while i < len( bases ):
+        x = bases[i]
+        if (i + 1) < len(bases) and bases[i+1] == '$':
+            x += '$' #indicates end of read
+            i += 2
+        # Skip this position and the next quality scores
+        elif x == '^': # start of a read followed by MAPQ
+            i += 2
+        # Add any normal base, but make it uppercase
+        elif x.upper() in ('ACTGN*'):
+            cleaned += x.upper()
+            i += 1
+        # . and , mean a match to the reference base
+        elif x in ('.,'):
+            cleaned += refbase
+            i += 1
+        # We are on an indel number now so can just skip them
+        else:
+            if not x in '+-':
+                print "unexpected character %s" % x
+                raise ValueError("Unexpected character %s" % x)
+            # Build the integer that will tell us how many
+            # indel bases to skip
+            n_str = ''.join(takewhile(str.isdigit, bases[i+1:]))
+            i = i + len(n_str) + 1
+            if n_str: #this skips solo hyphens
+                n = int(n_str)
+                if x == '+': # insertion
+                    # Grab [atgcn]+[0-9]+[atgcn]+
+                    if (i + 1 + n ) < len(bases) and bases[i+1+n] == '$':
+                        n += 1
+                        #insert = bases[i+len
+                        pass
+                    x = cleaned.pop()
+                    cleaned.append(x+bases[i:i+n])
+                i += n
+    return cleaned
 class MPileupColumn(object):
     '''
     Represents a single Mpileup column
@@ -236,8 +279,23 @@ class MPileupColumn(object):
         ''' Position is an integer '''
         self.__dict__['pos'] = int(value)
 
+
+    def fix_gaps(base_list):
+        # read of form +3AAA$ is probably possible.
+        #from itertools import izip_longest
+        #map ifilter(None, izip_longest( zip(*bases[::-1])
+        #import itertools
+        #itertools.izip_longest
+        strip_d = lambda x: x.strip('$')
+        longest_insert = max(imap(len, imap(strip_d, base_list)))
+        is_end = lambda x: x.endswith('$')
+        gap_fill = lambda s: s + (longest_insert - len(s))*'-'
+        return [gap_fill(s) if (not is_end(s)) else strip_d(s) for s  in base_list ]
+
+
     @property
     def bases( self ):
+        return get_base_list(self._bases, self.refbase)
         #what does a hyphen mean?
         # grep and then remove insertions
         # have to do regex's but maintain order
@@ -278,9 +336,9 @@ class MPileupColumn(object):
         # Iterate every position
         while i < len( self._bases ):
             x = self._bases[i]
-            # Just skip - and +
-            if x == '$':
-                i += 1
+            if (i + 1) < len(self._bases) and self._bases[i+1] == '$':
+                x += '$' #indicates end of read
+                i += 2
             # Skip this position and the next quality scores
             elif x == '^': # start of a read followed by MAPQ
                 i += 2

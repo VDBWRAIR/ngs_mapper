@@ -7,7 +7,7 @@ from mock import MagicMock, patch, Mock, call
 
 from os.path import *
 import os
-
+from ngs_mapper.samtools import get_base_list
 class Base(common.BaseBaseCaller):
     modulepath = 'ngs_mapper.samtools'
 
@@ -292,7 +292,42 @@ class TestUnitCharToQual(Base):
 class MpileupBase(Base):
     functionname = 'MPileupColumn'
 
+class TestGetBaseList(Base):
+    def test_read_end(self):
+        res = sorted(get_base_list("A$AA+1TA+1TT+1T", 'C'))
+        eq_(sorted(["A", "A$", "AT", "AT", "TT"]), res) #order?
+
+#use Counter to get the counts of each afterwards
+    def test_insertion_read(self):
+        res = sorted(get_base_list("A$AA+1T", 'C'))
+        eq_(sorted(["A", "A$", "AT"]), res) #order?
+
+    def test_insertion_is_end_of_read_has_no_gap(self):
+        res = sorted(get_base_list("A+1T$A+2TAA+2TT", 'C'))
+        eq_(sorted(["AT$", "ATA", "ATT"]), res) #order?
+
+    def test_insertion_not_end_has_gap(self):
+        res = sorted(get_base_list("A+1TA+2TAA+2TT", 'C'))
+        eq_(sorted(["AT", "ATA", "ATT"]), res) #order?
+
+#    def test_read_end(self):
+#        res = sorted(get_base_list("A$AA+1TA+1TT+1T", 'C'))
+#        eq_(sorted(["A-", "A", "AT", "AT", "TT"]), res) #order?
+#
+##use Counter to get the counts of each afterwards
+#    def test_insertion_read(self):
+#        res = sorted(get_base_list("A$AA+1T", 'C'))
+#        eq_(sorted(["A-", "A", "AT"]), res) #order?
+#
+#    def test_insertion_is_end_of_read_has_no_gap(self):
+#        res = sorted(get_base_list("A+1T$A+2TAA+2TT", 'C'))
+#        eq_(sorted(["AT", "ATA", "ATT"]), res) #order?
+#
+#    def test_insertion_not_end_has_gap(self):
+#        res = sorted(get_base_list("A+1TA+2TAA+2TT", 'C'))
+#        eq_(sorted(["AT-", "ATA", "ATT"]), res) #order?
 class TestUnitBases(MpileupBase):
+
     def test_lowercaseuppercase( self ):
         str = 'Ref1	1	N	10	AaCcGgTtNn	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
@@ -311,7 +346,7 @@ class TestUnitBases(MpileupBase):
     def test_endreadbeginread( self ):
         str = 'Ref1	1	N	10	A^]A$AAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( list('AAAAAAAAAA'), r.bases )
+        eq_( ['A', 'A$'] + list('AAAAAAAA'), r.bases )
 
     def test_insert(self):
         str = 'Ref1	1	A	10	G+2AA.G,.....	IIIIIIIIII	]]]]]]]]]]'
@@ -495,7 +530,7 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( 10, r.depth )
         eq_( 'I'*10, r._bquals )
         eq_( ']'*10, r._mquals )
-        eq_( list('ANNAAAAA*A'), r.bases )
+        eq_( ['A$'] + list('NNAAAAA*A'), r.bases )
 
     def test_indel_gt_9( self ):
         str = 'Ref1	1	N	10	AAAAA-10NNNNNNNNNNAAAAA	IIIIIIIIII	]]]]]]]]]]'
@@ -558,8 +593,4 @@ class TestUnitParseRegionString(Base):
 
 class TesUnitInsertions(Base):
     pass
-"A$AA+1TA+1TT+1T" == "A-", "A", "AT", "AT", "TT" #order?
-
-#use Counter to get the counts of each afterwards
-"A$AA+1T" == "A-", "A", "AT" #order?
 
