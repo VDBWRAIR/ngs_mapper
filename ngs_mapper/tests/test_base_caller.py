@@ -401,6 +401,25 @@ class TestUnitCallOnPct(Base):
         r = self._C(stats, 0.8)
         eq_(('M',66), r)
 
+    def test_deletion_is_n(self):
+        base_stats = {
+            'A': { 'baseq': [40]*49},
+            '*': { 'baseq': [40]*51}
+        }
+        stats = self.make_stats(base_stats)
+        r = self._C(stats, 0.31)
+        eq_(('N',100), r)
+
+    def test_deletion_is_n_2(self):
+        base_stats = {
+            'A': { 'baseq': [40]*15},
+            'C': { 'baseq': [40]*10},
+            '*': { 'baseq': [40]*75}
+        }
+        stats = self.make_stats(base_stats)
+        r = self._C(stats, 0.51)
+        eq_(('N',75), r)
+
     def test_multiple_amb_called(self):
         base_stats = {
             'A': { 'baseq': [40]*33 },
@@ -419,7 +438,7 @@ class TestUnitCallOnPct(Base):
         }
         stats = self.make_stats(base_stats)
         r = self._C(stats, 0.8)
-        eq_(('N',84), r)
+        eq_(('N',84), r) #?
 
     def test_no_majority(self):
         base_stats = {
@@ -597,6 +616,18 @@ class TestUnitGenerateVcfRow(MpileBase):
         r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
         eq_('N', r.INFO['CB'])
         eq_(50, r.INFO['CBD'])
+
+    def test_99_1_deletion(self, mpilecol):
+        # Gap and other base depth == 50% as well, but still should call C
+        base_stats = {
+            'C': {'baseq':[40]*1},
+            '*': {'baseq':[40]*99}
+        }
+        stats = self.make_stats(base_stats)
+        self.setup_mpileupcol(mpilecol, stats=stats)
+        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
+        eq_('N', r.INFO['CB'])
+        eq_(99, r.INFO['CBD'])
 
     def test_issue_1012_alt_count_sum_50_ref_50(self, mpilecol):
         # Gap and other base depth == 50% as well, but still should call C
@@ -860,10 +891,35 @@ class TestUnitGenerateVcfRow(MpileBase):
         eq_([100], r.INFO['PAC'])
         eq_(['C'], r.ALT)
 
-class TestUnitGenerateVCF(Base):
-    # Hard to test each thing without generating sam files and vcf manually so
-    # just going to let the integration tests do it...
-    pass
+
+    def test_stats(self, mpilecol, base_stats, expected, msg='testing insertison'):
+        stats = self.make_stats(base_stats)
+        self.setup_mpileupcol(mpilecol, stats=stats)
+        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
+        eq_(expected[0], r.INFO['CB'], msg)
+        eq_(expected[1], r.INFO['CBD'], msg)
+
+    def test_insertions(self, mpilecol):
+        test_stats(mpilecol, {'A-' : 60, 'A' : 20, 'AT' : 20} , ('A', 100) , "less than 50% support insertion")
+        test_stats(mpilecol, {'A-' : 20, 'A' : 20, 'AT' : 60} , ('AT', 60), "single base insertion under 80%")
+        test_stats(mpilecol, {'A-' : 10, 'A' : 20, 'AT' : 70} , ('AT', 70), "single base insertion over 80%")
+        test_stats(mpilecol, {'A' : 20, 'AT' : 70, 'AG' : 10} , ('AT', 70), "single base insertion majority T")
+        test_stats(mpilecol, {'A' : 10, 'AT' : 70, 'AG' : 20} , ('AY', 90), "single base insertion degenerate base") #T/G == Y?)
+
+
+#'A--', 'ATG', 'A', 'AT-', 'ATT', 'A--', 'AT-' == 'AT'
+#'A--', 'ATG', 'A', 'ATT', 'ATT', 'A--', 'ATT' == 'ATY' #t/g == y
+#'A--', 'ATT', 'ATT', 'A', 'ATG', 'ATT', 'A--', 'ATT' == 'ATT'
+
+
+
+
+
+
+#class TestUnitGenerateVCF(Base):
+#    # Hard to test each thing without generating sam files and vcf manually so
+#    # just going to let the integration tests do it...
+#    pass
 
 class TestUnitInfoStats(Base):
     functionname = 'info_stats'
