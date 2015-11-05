@@ -576,72 +576,21 @@ class TestUnitPileStats(MpileBase):
         r = self._C(mpilecol, 'T', 25, 10, 50, 10)
         eq_(23, r['depth'])
 
-@patch('ngs_mapper.base_caller.MPileupColumn')
-class TestUnitGenerateVcfRow(MpileBase):
+class GenerateVcfRowBase(MpileBase):
     functionname = 'generate_vcf_row'
 
-    def test_issue_1012_calls_alt_or_ref(self, mpilecol):
-        base_stats = {
-            'C': {'baseq':[40]*50+[1]*10},
-            '*': {'baseq':[40]*45},
-            'G': {'baseq':[40]*1},
-            'A': {'baseq':[40]*1},
-            'N': {'baseq':[0]*1},
-            'T': {'baseq':[20]*1}
-        }
+    def tst_stats(self, mpilecol, base_stats, expected,
+            refseq='C', minbq=25, maxd=1000, mind=10,
+            minth=0.8, biasth=50, bias=10):
+        ''' Runs standardized tests '''
         stats = self.make_stats(base_stats)
         self.setup_mpileupcol(mpilecol, stats=stats)
+        r = self._C(mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias)
+        eq_(expected[0], r.INFO['CB'])
+        eq_(expected[1], r.INFO['CBD'])
 
-        # Ensure Reference is called
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('C', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
-        # Ensure Alt is called
-        r = self._C(mpilecol, 'G', 25, 1000, 10, 0.8, 50, 10)
-        eq_('C', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
-    def test_issue_1012_calls_n(self, mpilecol):
-        base_stats = {
-            'C': {'baseq':[40]*45},
-            '*': {'baseq':[40]*50},
-            'G': {'baseq':[40]*1},
-            'A': {'baseq':[40]*1},
-            'N': {'baseq':[0]*1},
-            'T': {'baseq':[20]*1}
-        }
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('N', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
-    def test_99_1_deletion(self, mpilecol):
-        # Gap and other base depth == 50% as well, but still should call C
-        base_stats = {
-            'C': {'baseq':[40]*1},
-            '*': {'baseq':[40]*99}
-        }
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('N', r.INFO['CB'])
-        eq_(99, r.INFO['CBD'])
-
-    def test_issue_1012_alt_count_sum_50_ref_50(self, mpilecol):
-        # Gap and other base depth == 50% as well, but still should call C
-        base_stats = {
-            'C': {'baseq':[40]*50},
-            '*': {'baseq':[40]*25},
-            'G': {'baseq':[40]*25},
-        }
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('C', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
+@patch('ngs_mapper.base_caller.MPileupColumn')
+class TestUnitGenerateVcfRow(GenerateVcfRowBase):
     def test_thing(self, mpilecol):
         base_stats = {
             'T': {'baseq':[29, 35, 37, 32]}
@@ -691,11 +640,6 @@ class TestUnitGenerateVcfRow(MpileBase):
         self.setup_mpileupcol(mpilecol, stats=stats)
         r = self._C(mpilecol, 'G', 25, 1000, 10, 0.8)
         eq_('.', r.ALT)
-
-    #@timed(EXPECTED_TIME_PER_BASE)
-    def test_runs_quickly(self, mpilecol):
-        self.setup_mpileupcol(mpilecol)
-        r = self._C(mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8)
 
     def test_bias_works(self, mpilecol):
         stats = self.mock_stats()
@@ -893,85 +837,94 @@ class TestUnitGenerateVcfRow(MpileBase):
 
 @attr('current')
 @patch('ngs_mapper.base_caller.MPileupColumn')
-class TestUnitGenerateVcfRowInsertions(MpileBase):
+class TestUnitGenerateVcfRowDeletions(GenerateVcfRowBase):
     functionname = 'generate_vcf_row'
 
-    def tst_stats(self, mpilecol, base_stats, expected):
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_(expected[0], r.INFO['CB'])
-        eq_(expected[1], r.INFO['CBD'])
+    def test_issue_1012_calls_alt_or_ref(self, mpilecol):
+        base_stats = {
+            'C': {'baseq':[40]*50}, # 52%
+            '*': {'baseq':[40]*45}, # 48%, removed below minth on 2nd call
+            'G': {'baseq':[40]*1},  #Removed below minth
+            'A': {'baseq':[40]*1},  #Removed below minth
+            'N': {'baseq':[0]*1},   #Removed lq
+            'T': {'baseq':[20]*1}   #Removed lq
+        }
+        # Ensure Reference is called
+        self.tst_stats(mpilecol, base_stats, ('C',50))
+        # Ensure Alt is called
+        self.tst_stats(mpilecol, base_stats, ('C',50), refseq='G')
 
+    def test_deletion_is_n_even_if_major_majority(self, mpilecol):
+        # Even though 99% gap, we sill call N for investigator to
+        # review
+        base_stats = {
+            'C': {'baseq':[40]*1}, #Removed below minth
+            '*': {'baseq':[40]*99} #100%
+        }
+        self.tst_stats(mpilecol, base_stats, ('N',99))
+
+    def test_issue_1012_alt_count_sum_50_ref_50(self, mpilecol):
+        # Gap and other base depth == 50% as well, but still should call C
+        base_stats = {
+            'C': {'baseq':[40]*50}, # 50%, Called C on 2nd call
+            '*': {'baseq':[40]*25}, # 25%, removed below minth on 2nd call
+            'G': {'baseq':[40]*25}, # 25%, removed below minth on 2nd call
+        }
+        self.tst_stats(mpilecol, base_stats, ('C',50))
+
+    def test_issue_1012_calls_n(self, mpilecol):
+        base_stats = {
+            'C': {'baseq':[40]*45}, # 48%, removed below minth on 2nd call
+            '*': {'baseq':[40]*50}, # 52%
+            'G': {'baseq':[40]*1},  # Removed below minth
+            'A': {'baseq':[40]*1},  # Removed below minth
+            'N': {'baseq':[0]*1},   # Removed lq
+            'T': {'baseq':[20]*1}   # Removed lq
+        }
+        self.tst_stats(mpilecol, base_stats, ('N',50))
+
+@attr('current')
+@patch('ngs_mapper.base_caller.MPileupColumn')
+class TestUnitGenerateVcfRowInsertions(GenerateVcfRowBase):
     def test_less_than_50pct_support_insertion(self, mpilecol):
-        self.tst_stats(
-            mpilecol,
-            {
-                'A-': {'baseq': 60*[40]},
-                'A': {'baseq': 20*[40]},
-                'AT': {'baseq': 20*[40]}
-            },
-            ('A', 100)
-        )
+        base_stats = {
+            'A-': {'baseq': 60*[40]},
+            'A':  {'baseq': 20*[40]},
+            'AT': {'baseq': 20*[40]}
+        }
+        self.tst_stats(mpilecol, base_stats, ('A',100))
 
     def test_single_base_insertion_under_80pct(self, mpilecol):
-        self.tst_stats(
-            mpilecol,
-            {
-                'A-': {'baseq': 20*[40]},
-                'A': {'baseq': 20*[40]},
-                'AT': {'baseq': 60*[40]},
-            },
-            ('AT', 60)
-        )
+        base_stats = {
+            'A-': {'baseq': 20*[40]},
+            'A': {'baseq': 20*[40]},
+            'AT': {'baseq': 60*[40]},
+        }
+        self.tst_stats(mpilecol, base_stats, ('AT', 60))
 
     def test_single_base_insertion_over_80pct(self, mpilecol):
-        self.tst_stats(
-            mpilecol,
-            {
-                'A-': {'baseq': 10*[40]},
-                'A': {'baseq': 20*[40]},
-                'AT': {'baseq': 70*[40]},
-            },
-            ('AT', 70)
-        )
+        base_stats = {
+            'A-': {'baseq': 10*[40]},
+            'A': {'baseq': 20*[40]},
+            'AT': {'baseq': 70*[40]},
+        }
+        self.tst_stats(mpilecol, base_stats, ('AT', 70))
 
     def test_single_base_insertion_majority_T(self, mpilecol):
-        self.tst_stats(
-            mpilecol,
-            {
-                'A': {'baseq': 20*[40]},
-                'AT': {'baseq': 70*[40]},
-                'AG': {'baseq': 10*[40]},
-            },
-            ('AT', 70)
-        )
+        base_stats = {
+            'A': {'baseq': 20*[40]},
+            'AT': {'baseq': 70*[40]},
+            'AG': {'baseq': 10*[40]},
+        }
+        self.tst_stats(mpilecol, base_stats, ('AT', 70))
 
     def test_single_base_insertion_degenerate_base(self, mpilecol):
-        self.tst_stats(
-            mpilecol,
-            {
-                'A': {'baseq': 10*[40]},
-                'AT': {'baseq': 70*[40]},
-                'AG': {'baseq': 20*[40]},
-            },
-            ('AY', 90) #T/G == Y?
-        )
-
-
-#'A--', 'ATG', 'A', 'AT-', 'ATT', 'A--', 'AT-' == 'AT'
-#'A--', 'ATG', 'A', 'ATT', 'ATT', 'A--', 'ATT' == 'ATY' #t/g == y
-#'A--', 'ATT', 'ATT', 'A', 'ATG', 'ATT', 'A--', 'ATT' == 'ATT'
-
-
-
-
-
-
-#class TestUnitGenerateVCF(Base):
-#    # Hard to test each thing without generating sam files and vcf manually so
-#    # just going to let the integration tests do it...
-#    pass
+        base_stats = {
+            'A': {'baseq': 10*[40]},
+            'AT': {'baseq': 70*[40]},
+            'AG': {'baseq': 20*[40]},
+        }
+        self.tst_stats(mpilecol, base_stats, ('AK', 90))
 
 class TestUnitInfoStats(Base):
     functionname = 'info_stats'
@@ -1360,7 +1313,6 @@ class TestUnitMain(BaseInty):
             margparse.return_value = args
             return main()
 
-    @attr('current')
     def test_noregion_emptypileup(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
