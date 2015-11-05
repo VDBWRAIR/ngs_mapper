@@ -576,72 +576,21 @@ class TestUnitPileStats(MpileBase):
         r = self._C(mpilecol, 'T', 25, 10, 50, 10)
         eq_(23, r['depth'])
 
-@patch('ngs_mapper.base_caller.MPileupColumn')
-class TestUnitGenerateVcfRow(MpileBase):
+class GenerateVcfRowBase(MpileBase):
     functionname = 'generate_vcf_row'
 
-    def test_issue_1012_calls_alt_or_ref(self, mpilecol):
-        base_stats = {
-            'C': {'baseq':[40]*50+[1]*10},
-            '*': {'baseq':[40]*45},
-            'G': {'baseq':[40]*1},
-            'A': {'baseq':[40]*1},
-            'N': {'baseq':[0]*1},
-            'T': {'baseq':[20]*1}
-        }
+    def tst_stats(self, mpilecol, base_stats, expected,
+            refseq='C', minbq=25, maxd=1000, mind=10,
+            minth=0.8, biasth=50, bias=10):
+        ''' Runs standardized tests '''
         stats = self.make_stats(base_stats)
         self.setup_mpileupcol(mpilecol, stats=stats)
+        r = self._C(mpilecol, refseq, minbq, maxd, mind, minth, biasth, bias)
+        eq_(expected[0], r.INFO['CB'])
+        eq_(expected[1], r.INFO['CBD'])
 
-        # Ensure Reference is called
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('C', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
-        # Ensure Alt is called
-        r = self._C(mpilecol, 'G', 25, 1000, 10, 0.8, 50, 10)
-        eq_('C', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
-    def test_issue_1012_calls_n(self, mpilecol):
-        base_stats = {
-            'C': {'baseq':[40]*45},
-            '*': {'baseq':[40]*50},
-            'G': {'baseq':[40]*1},
-            'A': {'baseq':[40]*1},
-            'N': {'baseq':[0]*1},
-            'T': {'baseq':[20]*1}
-        }
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('N', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
-    def test_99_1_deletion(self, mpilecol):
-        # Gap and other base depth == 50% as well, but still should call C
-        base_stats = {
-            'C': {'baseq':[40]*1},
-            '*': {'baseq':[40]*99}
-        }
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('N', r.INFO['CB'])
-        eq_(99, r.INFO['CBD'])
-
-    def test_issue_1012_alt_count_sum_50_ref_50(self, mpilecol):
-        # Gap and other base depth == 50% as well, but still should call C
-        base_stats = {
-            'C': {'baseq':[40]*50},
-            '*': {'baseq':[40]*25},
-            'G': {'baseq':[40]*25},
-        }
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_('C', r.INFO['CB'])
-        eq_(50, r.INFO['CBD'])
-
+@patch('ngs_mapper.base_caller.MPileupColumn')
+class TestUnitGenerateVcfRow(GenerateVcfRowBase):
     def test_thing(self, mpilecol):
         base_stats = {
             'T': {'baseq':[29, 35, 37, 32]}
@@ -691,11 +640,6 @@ class TestUnitGenerateVcfRow(MpileBase):
         self.setup_mpileupcol(mpilecol, stats=stats)
         r = self._C(mpilecol, 'G', 25, 1000, 10, 0.8)
         eq_('.', r.ALT)
-
-    #@timed(EXPECTED_TIME_PER_BASE)
-    def test_runs_quickly(self, mpilecol):
-        self.setup_mpileupcol(mpilecol)
-        r = self._C(mpilecol, 'ACGT'*100, 25, 1000, 10, 0.8)
 
     def test_bias_works(self, mpilecol):
         stats = self.mock_stats()
@@ -891,35 +835,134 @@ class TestUnitGenerateVcfRow(MpileBase):
         eq_([100], r.INFO['PAC'])
         eq_(['C'], r.ALT)
 
+@attr('current')
+@patch('ngs_mapper.base_caller.MPileupColumn')
+class TestUnitGenerateVcfRowDeletions(GenerateVcfRowBase):
+    functionname = 'generate_vcf_row'
 
-    def test_stats(self, mpilecol, base_stats, expected, msg='testing insertison'):
-        stats = self.make_stats(base_stats)
-        self.setup_mpileupcol(mpilecol, stats=stats)
-        r = self._C(mpilecol, 'C', 25, 1000, 10, 0.8, 50, 10)
-        eq_(expected[0], r.INFO['CB'], msg)
-        eq_(expected[1], r.INFO['CBD'], msg)
+    def test_issue_1012_calls_alt_or_ref(self, mpilecol):
+        base_stats = {
+            'C': {'baseq':[40]*50}, # 52%
+            '*': {'baseq':[40]*45}, # 48%, removed below minth on 2nd call
+            'G': {'baseq':[40]*1},  #Removed below minth
+            'A': {'baseq':[40]*1},  #Removed below minth
+            'N': {'baseq':[0]*1},   #Removed lq
+            'T': {'baseq':[20]*1}   #Removed lq
+        }
+        # Ensure Reference is called
+        self.tst_stats(mpilecol, base_stats, ('C',50))
+        # Ensure Alt is called
+        self.tst_stats(mpilecol, base_stats, ('C',50), refseq='G')
 
-    def test_insertions(self, mpilecol):
-        test_stats(mpilecol, {'A-' : 60, 'A' : 20, 'AT' : 20} , ('A', 100) , "less than 50% support insertion")
-        test_stats(mpilecol, {'A-' : 20, 'A' : 20, 'AT' : 60} , ('AT', 60), "single base insertion under 80%")
-        test_stats(mpilecol, {'A-' : 10, 'A' : 20, 'AT' : 70} , ('AT', 70), "single base insertion over 80%")
-        test_stats(mpilecol, {'A' : 20, 'AT' : 70, 'AG' : 10} , ('AT', 70), "single base insertion majority T")
-        test_stats(mpilecol, {'A' : 10, 'AT' : 70, 'AG' : 20} , ('AY', 90), "single base insertion degenerate base") #T/G == Y?)
+    def test_deletion_is_n_even_if_major_majority(self, mpilecol):
+        # Even though 99% gap, we sill call N for investigator to
+        # review
+        base_stats = {
+            'C': {'baseq':[40]*1}, #Removed below minth
+            '*': {'baseq':[40]*99} #100%
+        }
+        self.tst_stats(mpilecol, base_stats, ('N',99))
 
+    def test_issue_1012_alt_count_sum_50_ref_50(self, mpilecol):
+        # Gap and other base depth == 50% as well, but still should call C
+        base_stats = {
+            'C': {'baseq':[40]*50}, # 50%, Called C on 2nd call
+            '*': {'baseq':[40]*25}, # 25%, removed below minth on 2nd call
+            'G': {'baseq':[40]*25}, # 25%, removed below minth on 2nd call
+        }
+        self.tst_stats(mpilecol, base_stats, ('C',50))
 
-#'A--', 'ATG', 'A', 'AT-', 'ATT', 'A--', 'AT-' == 'AT'
-#'A--', 'ATG', 'A', 'ATT', 'ATT', 'A--', 'ATT' == 'ATY' #t/g == y
-#'A--', 'ATT', 'ATT', 'A', 'ATG', 'ATT', 'A--', 'ATT' == 'ATT'
+    def test_issue_1012_calls_n(self, mpilecol):
+        base_stats = {
+            'C': {'baseq':[40]*45}, # 48%, removed below minth on 2nd call
+            '*': {'baseq':[40]*50}, # 52%
+            'G': {'baseq':[40]*1},  # Removed below minth
+            'A': {'baseq':[40]*1},  # Removed below minth
+            'N': {'baseq':[0]*1},   # Removed lq
+            'T': {'baseq':[20]*1}   # Removed lq
+        }
+        self.tst_stats(mpilecol, base_stats, ('N',50))
 
+@attr('current')
+@patch('ngs_mapper.base_caller.MPileupColumn')
+class TestUnitGenerateVcfRowInsertions(GenerateVcfRowBase):
+    def test_less_than_50pct_support_insertion(self, mpilecol):
+        base_stats = {
+            'A-': {'baseq': 55*[40]}, # - 58%
+            'A':  {'baseq': 5*[40]},  # Removed below minth
+            'AT': {'baseq': 20*[40]}, # T 21%
+            'AC': {'baseq': 20*[40]}, # C 21%
+        }
+        self.tst_stats(mpilecol, base_stats, ('A',100))
 
+    def test_single_base_insertion_under_80pct(self, mpilecol):
+        base_stats = {
+            'A-': {'baseq': 20*[40]}, # - 21%, not considered for T/C calling
+            'A':  {'baseq': 5*[40]},  # Removed below minth
+            'AT': {'baseq': 55*[40]}, # T 73%
+            'AC': {'baseq': 20*[40]}, # C 27%
+        }
+        self.tst_stats(mpilecol, base_stats, ('AY', 55)) # CT == Y
 
+    def test_single_base_insertion_over_80pct(self, mpilecol):
+        base_stats = {
+            'A-': {'baseq': 1*[40]},  # Removed below minth
+            'A':  {'baseq': 1*[40]},  # Removed below minth
+            'AT': {'baseq': 78*[40]}, # T 86%
+            'AC': {'baseq': 20*[40]}, # C 14%, removed 2nd call below 50%
+        }
+        self.tst_stats(mpilecol, base_stats, ('AT', 78))
 
+    def test_single_base_insertion_ambiguous_base(self, mpilecol):
+        base_stats = {
+            'A-': {'baseq': 48*[40]}, # - 50%
+            'A':  {'baseq': 4*[40]},  # Removed below minth
+            'AT': {'baseq': 48*[40]}, # T 50%
+        }
+        self.tst_stats(mpilecol, base_stats, ('AN', 96))
 
+    def test_insertion_at_low_depth_no_majority(self, mpileupcol):
+        base_stats = {
+            # Ends up, 2 A-, 1 A, 4 AC due to mark_lq biasing reference of 'C'
+            'A-': {'baseq': [40,40,1,1]}, # A- 29% , - 33%
+            'A':  {'baseq': 1*[40]}, # A 14%, removed below minth
+            'AC': {'baseq': [40,40,1,1]}  # AC 57%, C 66%
+        }
+        self.tst_stats(mpilecol, base_stats, ('AC',6))
 
-#class TestUnitGenerateVCF(Base):
-#    # Hard to test each thing without generating sam files and vcf manually so
-#    # just going to let the integration tests do it...
-#    pass
+    def test_insertion_multiple_bases(self, mpileupcol):
+        base_stats = {
+            'AAAA': {'baseq': [40]*20},
+            'AAA-': {'baseq': [40]*20},
+            'AA--': {'baseq': [40]*20},
+            'A---': {'baseq': [40]*20},
+            'A':    {'baseq': [40]*20}
+        }
+        self.tst_stats(mpilecol, base_stats, ('AAA',80))
+
+    def test_insertion_multiple_bases_ambiguous(self, mpileupcol):
+        base_stats = {
+            'AAAA': {'baseq': [40]*100},
+            'AAA-': {'baseq': [40]*100},
+            'AA--': {'baseq': [40]*100},
+            'A---': {'baseq': [40]*100},
+            'A':    {'baseq': [40]*100}
+            'CCCC': {'baseq': [40]*100},
+            'CCC-': {'baseq': [40]*100},
+            'CC--': {'baseq': [40]*100},
+            'C---': {'baseq': [40]*100},
+            'C':    {'baseq': [40]*100}
+        }
+        self.tst_stats(mpilecol, base_stats, ('MMM',80))
+
+    def test_insertion_and_deletion(self, mpileupcol):
+        base_stats = {
+            '*':  {'baseq': [40]*25},
+            '*-': {'baseq': [40]*25},
+            'A':  {'baseq': [40]*25},
+            'AC': {'baseq': [40]*25},
+        }
+        self.tst_stats(mpilecol, base_stats, ('NN', 50))
 
 class TestUnitInfoStats(Base):
     functionname = 'info_stats'
@@ -1308,7 +1351,6 @@ class TestUnitMain(BaseInty):
             margparse.return_value = args
             return main()
 
-    @attr('current')
     def test_noregion_emptypileup(self):
         tbam, tbai = self.temp_bam(self.bam, self.bai)
         out_vcf = join(self.tempdir, tbam + '.vcf')
@@ -1463,20 +1505,3 @@ class TestIntegrate(BaseInty):
 #    line = 'KC807175.1_Houston	284	N	297	T+1At+1aT+1AT+1AT+1AT+1At+1aT+1AT+1At+1at+1at+1aT$T$T$T$t$t$t$T+1AT+1AT$t+1at+1at$T+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1AT+1AT+1AT+1At+1at+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1ATT+1AT+1AT+1AT+1AT+1AT+1At+1at+1aT+1AT+1ATT+1AT+1AT+1AtT+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1At+1aT+1AT+1At+1aT+1At+1at+1aT+1At+1at+1at+1aT+1AT$T+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1AT+1AT+1AT$T+1AT+1AT+1At+1at+1at+1at+1at+1at$t+1at+1at$t+1aT+1AT+1At+1at+1at+1at+1at+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1at+1at+1at+1at+1at+1at+1aT+1AT$T+1At+1at$T+1At+1at+1aT+1At+1aT+1AT+1AT+1At+1aT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1At+1at+1at+1aT+1AT+1AT+1At+1aT+1AT+1At+1at+1at+1aT+1At+1aT+1AT+1At+1aT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1AT+1At+1aT+1AT+1AT+1AT+1At+1at+1aT+1AT+1At+1at+1at+1aT+1At+1aT$T+1At+1at+1aT+1AT+1At+1aT+1AT+1AT+1AT+1At+1aT+1AT+1At+1aT+1At+1aT+1AT+1At+1aT+1AT+1AT+1At+1at+1aT+1AT+1AT+1At+1at+1aT+1At+1aT+1AT+1AT+1At+1aT+1At+1a^]A	6GCG?GGE4GCG?GGFCCCGGDGGCG2FGGCFC>FGCF?FFGGGF9DGGGGGFGF4GGFFCGEFFGGGFGFCGGC9?FF647DFGCCGCGGFGGCGGGCCGGCEFFGGGGEFFGGFGGGGGFGGGGGGG9FG?GGGGGFFGGGGGGFGGCG9CFGGGGGEGGFGGGGGGFCGGGG<FGGGGGCGDFGGGFGGGGGEGGGGGGGDF9GGGGGGGGGGGGGGEGGGGG=G<GGGCGDGGGCGGGGGGGGGGGGGGF9GG;FG;ADFFGGGG6GGFGFGG@GGGF=GGG7=F:FGGFC76'
 #    line2 = 'KC807175.1_Houston	18379	N	237	tTt+3ataT+3ATATt+3atat+3ataT+3ATAT+3ATAtt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATATt+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATATt+3atat+3ataT+3ATAt+3atat+3atat+3ataT+3ATAT+3ATAt+3ataTt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3atat+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATATT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATATT+3ATAT+3ATAt+3atat+3ataT+3ATAT+3ATAt+3ataT+3ATAt+3ataT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAt+3ataT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAT+3ATAttT^]T	BFG7AGD9FG@8FFGGD>G>@GGGFFGCGGGG9CGGGGFGGGGGDGECGGGBFGGDGFFGGEGGEGAGGGG?GGGCGEFGFG:GGGGGFGGEGGGDG>EFGGGFGFGGCGGEFGGGGGGGFFG>GGGGCD@GGGG;GFGGG9GGGGGGGGCGGGDFGFGGGGGGFGGGGGGF:GGFGFGFFGFFGGGGGGGACGGGCGCFGGGGGFGGGGGEGGGGGGF7GGGGGGGGGGGGG53CG'
 #    multi_inserts = 'KC807175.1_Houston	354	N	252	ggGGGGGGGGGGGGGGGGGGGggGgggGgggGGgGGGGGGgGGGGGGGGGGGGGGGGGGggggggGggggGGGGGGGGggggggGGgGggGGGgGGggGgGGg+2acGGGGG+1AGGG+3CCCggGGGgGGgggGgGGgGGgGGGGGgGGGGgGGggGGgggGGggGGgGGGGgGGgGgGgGgGGGggGGGgggGgGGGgGgGGGgGGGGGGGGGGGGGGGgGGGggGggGGgGGGGGggGGGGGGgGgGgGGGGGGCgGG	CC3;:7F>F>F?>>.38>2>=GGFCAG5G@GFFGF5FFGFGECG6FDFGDGGCGGGGF?GGGGGGGGGGGG8FFEGG6GGGGGGGCFCGGFGGG@G@FFGFDGG@FAG@GGGGGGGCGGG=FGFGGEF@GFGFFGFGGGGGFDG?GGGF7AGGGGD?GGDGFCGGGGGGGGCFFGGGFCGDGGG6FGGGGGG<FG6GGFFGGGGGFGGGGGG2FFCC4G56GG0GGGGGC8GGGGCGGG4@9GGGGFGC9CG'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

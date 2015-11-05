@@ -613,8 +613,8 @@ def caller(stats2, minbq, maxd, mind=10, minth=0.8):
     base position('refname':N-N). The base is determined by first labeling all bases less than minbq as N and then
     determining if the depth is < mind or >= mind.
     
-    If < and the % of N is > minth then call it an N as it is the majority.
-    If >= 10 then remove all N
+    If < mind and the % of N is > minth then call it an N as it is the majority.
+    If >= mind then remove all N
 
     The final stage is to call call_on_pct with the remaining statistics
 
