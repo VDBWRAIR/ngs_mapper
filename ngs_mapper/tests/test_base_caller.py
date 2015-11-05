@@ -888,43 +888,47 @@ class TestUnitGenerateVcfRowDeletions(GenerateVcfRowBase):
 class TestUnitGenerateVcfRowInsertions(GenerateVcfRowBase):
     def test_less_than_50pct_support_insertion(self, mpilecol):
         base_stats = {
-            'A-': {'baseq': 60*[40]},
-            'A':  {'baseq': 20*[40]},
-            'AT': {'baseq': 20*[40]}
+            'A-': {'baseq': 55*[40]}, # - 58%
+            'A':  {'baseq': 5*[40]},  # Removed below minth
+            'AT': {'baseq': 20*[40]}, # T 21%
+            'AC': {'baseq': 20*[40]}, # C 21%
         }
         self.tst_stats(mpilecol, base_stats, ('A',100))
 
     def test_single_base_insertion_under_80pct(self, mpilecol):
         base_stats = {
-            'A-': {'baseq': 20*[40]},
-            'A': {'baseq': 20*[40]},
-            'AT': {'baseq': 60*[40]},
+            'A-': {'baseq': 20*[40]}, # - 21%, not considered for T/C calling
+            'A':  {'baseq': 5*[40]},  # Removed below minth
+            'AT': {'baseq': 55*[40]}, # T 73%
+            'AC': {'baseq': 20*[40]}, # C 27%
         }
-        self.tst_stats(mpilecol, base_stats, ('AT', 60))
+        self.tst_stats(mpilecol, base_stats, ('AY', 55)) # CT == Y
 
     def test_single_base_insertion_over_80pct(self, mpilecol):
         base_stats = {
-            'A-': {'baseq': 10*[40]},
-            'A': {'baseq': 20*[40]},
-            'AT': {'baseq': 70*[40]},
+            'A-': {'baseq': 1*[40]},  # Removed below minth
+            'A':  {'baseq': 1*[40]},  # Removed below minth
+            'AT': {'baseq': 78*[40]}, # T 86%
+            'AC': {'baseq': 20*[40]}, # C 14%, removed 2nd call below 50%
         }
-        self.tst_stats(mpilecol, base_stats, ('AT', 70))
+        self.tst_stats(mpilecol, base_stats, ('AT', 78))
 
-    def test_single_base_insertion_majority_T(self, mpilecol):
+    def test_single_base_insertion_ambiguous_base(self, mpilecol):
         base_stats = {
-            'A': {'baseq': 20*[40]},
-            'AT': {'baseq': 70*[40]},
-            'AG': {'baseq': 10*[40]},
+            'A-': {'baseq': 48*[40]}, # - 50%
+            'A':  {'baseq': 4*[40]},  # Removed below minth
+            'AT': {'baseq': 48*[40]}, # T 50%
         }
-        self.tst_stats(mpilecol, base_stats, ('AT', 70))
+        self.tst_stats(mpilecol, base_stats, ('AN', 96))
 
-    def test_single_base_insertion_degenerate_base(self, mpilecol):
+    def test_insertion_at_low_depth_no_majority(self, mpileupcol):
         base_stats = {
-            'A': {'baseq': 10*[40]},
-            'AT': {'baseq': 70*[40]},
-            'AG': {'baseq': 20*[40]},
+            # Ends up, 2 A-, 1 A, 4 AC due to mark_lq biasing reference of 'C'
+            'A-': {'baseq': [40,40,1,1]}, # A- 29% , - 33%
+            'A':  {'baseq': 1*[40]}, # A 14%, removed below minth
+            'AC': {'baseq': [40,40,1,1]}  # AC 57%, C 66%
         }
-        self.tst_stats(mpilecol, base_stats, ('AK', 90))
+        self.tst_stats(mpilecol, base_stats, ('AC',6))
 
 class TestUnitInfoStats(Base):
     functionname = 'info_stats'
