@@ -196,6 +196,29 @@ def char_to_qual( qual_char ):
 
 
 def get_base_list(bases, refbase ):
+    '''
+        Returns the bases with the inserts, deletions, $ and ^qual removed.
+        This means it returns just the bases that are really of interest.
+        it also includes the * which indicates a deletion.
+    '''
+    # could use instaparse
+    #    '.' : ref, ',' : ref, dict(zip('ACGTNacgtn*', 'ACGTNACGTN*'))
+    #    '%' : '', '>'
+    #    r'+[0-9]+[ACGTNacgtn]+
+    #    r'-[0-9]+[ACGTNacgtn]+
+    #    . (dot) means a base that matched the reference on the forward strand
+    #    , (comma) means a base that matched the reference on the reverse strand
+    #    AGTCN denotes a base that did not match the reference on the forward strand
+    #    agtcn denotes a base that did not match the reference on the reverse strand
+    #    A sequence matching the regular expression \+[0-9]+[ACGTNacgtn]+ denotes an insertion of one or more bases
+    #    A sequence matching the regular expression -[0-9]+[ACGTNacgtn]+ denotes a deletion of one or more bases
+    #    ^ (caret) marks the start of a read segment and the ASCII of the character following `^' minus 33 gives the mapping quality
+    #    $ (dollar) marks the end of a read segment
+    #    * (asterisk) is a placeholder for a deleted base in a multiple basepair deletion that was mentioned in a previous line by the -[0-9]+[ACGTNacgtn]+ notation
+    #    < (less-than sign) reference skip
+    #    > (greater-than sign) reference skip
+    #'''
+    # # # # # # # # #use a regex instead
     cleaned = []
     # The counter
     i = 0
@@ -203,18 +226,18 @@ def get_base_list(bases, refbase ):
     while i < len( bases ):
         x = bases[i]
         if (i + 1) < len(bases) and bases[i+1] == '$':
-            x += '$' #indicates end of read
+            cleaned.append(x + '$') #indicates end of read
             i += 2
         # Skip this position and the next quality scores
         elif x == '^': # start of a read followed by MAPQ
             i += 2
         # Add any normal base, but make it uppercase
         elif x.upper() in ('ACTGN*'):
-            cleaned += x.upper()
+            cleaned.append(x.upper())
             i += 1
         # . and , mean a match to the reference base
         elif x in ('.,'):
-            cleaned += refbase
+            cleaned.append(refbase)
             i += 1
         # We are on an indel number now so can just skip them
         else:
@@ -229,7 +252,7 @@ def get_base_list(bases, refbase ):
                 n = int(n_str)
                 if x == '+': # insertion
                     # Grab [atgcn]+[0-9]+[atgcn]+
-                    if (i + 1 + n ) < len(bases) and bases[i+1+n] == '$':
+                    if (i + 1 + n ) < len(bases) and bases[i+n] == '$':
                         n += 1
                         #insert = bases[i+len
                         pass
@@ -296,76 +319,6 @@ class MPileupColumn(object):
     @property
     def bases( self ):
         return get_base_list(self._bases, self.refbase)
-        #what does a hyphen mean?
-        # grep and then remove insertions
-        # have to do regex's but maintain order
-        # could use instaparse
-        # - is a deltion
-        # just fix this
-        # and make vcf handle deletion
-        # ugh have to discriminate between deletions and inserts
-        #    '.' : ref, ',' : ref, dict(zip('ACGTNacgtn*', 'ACGTNACGTN*'))
-        #    '%' : '', '>'
-        #    r'+[0-9]+[ACGTNacgtn]+
-        #    r'-[0-9]+[ACGTNacgtn]+
-        #
-        # remove  ^ + the next character
-        #
-        #    . (dot) means a base that matched the reference on the forward strand
-        #    , (comma) means a base that matched the reference on the reverse strand
-        #    AGTCN denotes a base that did not match the reference on the forward strand
-        #    agtcn denotes a base that did not match the reference on the reverse strand
-        #    A sequence matching the regular expression \+[0-9]+[ACGTNacgtn]+ denotes an insertion of one or more bases
-        #    A sequence matching the regular expression -[0-9]+[ACGTNacgtn]+ denotes a deletion of one or more bases
-        #    ^ (caret) marks the start of a read segment and the ASCII of the character following `^' minus 33 gives the mapping quality
-        #    $ (dollar) marks the end of a read segment
-        #    * (asterisk) is a placeholder for a deleted base in a multiple basepair deletion that was mentioned in a previous line by the -[0-9]+[ACGTNacgtn]+ notation
-        #    < (less-than sign) reference skip
-        #    > (greater-than sign) reference skip
-        #'''
-        # # # # # # # # #use a regex instead
-        '''
-            Returns the bases with the inserts, deletions, $ and ^qual removed.
-            This means it returns just the bases that are really of interest.
-            it also includes the * which indicates a deletion.
-        '''
-        # Will contain the cleaned base
-        cleaned = []
-        # The counter
-        i = 0
-        # Iterate every position
-        while i < len( self._bases ):
-            x = self._bases[i]
-            if (i + 1) < len(self._bases) and self._bases[i+1] == '$':
-                x += '$' #indicates end of read
-                i += 2
-            # Skip this position and the next quality scores
-            elif x == '^': # start of a read followed by MAPQ
-                i += 2
-            # Add any normal base, but make it uppercase
-            elif x.upper() in ('ACTGN*'):
-                cleaned += x.upper()
-                i += 1
-            # . and , mean a match to the reference base
-            elif x in ('.,'):
-                cleaned += self.refbase
-                i += 1
-            # We are on an indel number now so can just skip them
-            else:
-                if not x in '+-':
-                    print "unexpected character %s" % x
-                    raise ValueError("Unexpected character %s" % x)
-                # Build the integer that will tell us how many
-                # indel bases to skip
-                n_str = ''.join(takewhile(str.isdigit, self._bases[i+1:]))
-                i += len(n_str) + 1
-                if n_str: #this skips solo hyphens
-                    n = int(n_str)
-                    if x == '+': # insertion
-                        # Grab [atgcn]+[0-9]+[atgcn]+
-                        cleaned.append(self._bases[i+len(n_str):i+n])
-                    i += n
-        return cleaned
 
     @property
     def bquals( self ):
