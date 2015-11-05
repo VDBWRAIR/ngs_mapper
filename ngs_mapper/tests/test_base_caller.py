@@ -930,6 +930,40 @@ class TestUnitGenerateVcfRowInsertions(GenerateVcfRowBase):
         }
         self.tst_stats(mpilecol, base_stats, ('AC',6))
 
+    def test_insertion_multiple_bases(self, mpileupcol):
+        base_stats = {
+            'AAAA': {'baseq': [40]*20},
+            'AAA-': {'baseq': [40]*20},
+            'AA--': {'baseq': [40]*20},
+            'A---': {'baseq': [40]*20},
+            'A':    {'baseq': [40]*20}
+        }
+        self.tst_stats(mpilecol, base_stats, ('AAA',80))
+
+    def test_insertion_multiple_bases_ambiguous(self, mpileupcol):
+        base_stats = {
+            'AAAA': {'baseq': [40]*100},
+            'AAA-': {'baseq': [40]*100},
+            'AA--': {'baseq': [40]*100},
+            'A---': {'baseq': [40]*100},
+            'A':    {'baseq': [40]*100}
+            'CCCC': {'baseq': [40]*100},
+            'CCC-': {'baseq': [40]*100},
+            'CC--': {'baseq': [40]*100},
+            'C---': {'baseq': [40]*100},
+            'C':    {'baseq': [40]*100}
+        }
+        self.tst_stats(mpilecol, base_stats, ('MMM',80))
+
+    def test_insertion_and_deletion(self, mpileupcol):
+        base_stats = {
+            '*':  {'baseq': [40]*25},
+            '*-': {'baseq': [40]*25},
+            'A':  {'baseq': [40]*25},
+            'AC': {'baseq': [40]*25},
+        }
+        self.tst_stats(mpilecol, base_stats, ('NN', 50))
+
 class TestUnitInfoStats(Base):
     functionname = 'info_stats'
 
