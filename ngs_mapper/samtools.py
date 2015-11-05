@@ -194,7 +194,6 @@ def char_to_qual( qual_char ):
     '''
     return ord( qual_char ) - 33
 
-
 def get_base_list(bases, refbase ):
     '''
         Returns the bases with the inserts, deletions, $ and ^qual removed.
@@ -260,6 +259,21 @@ def get_base_list(bases, refbase ):
                     cleaned.append(x+bases[i:i+n])
                 i += n
     return cleaned
+
+def fix_gaps(base_list):
+    # read of form +3AAA$ is probably possible.
+    #from itertools import izip_longest
+    #map ifilter(None, izip_longest( zip(*bases[::-1])
+    #import itertools
+    #itertools.izip_longest
+    strip_d = lambda x: x.strip('$')
+    longest_insert = max(imap(len, imap(strip_d, base_list)))
+    is_end = lambda x: x.endswith('$')
+    gap_fill = lambda s: s + (longest_insert - len(s))*'-'
+    return [gap_fill(s) if (not is_end(s)) else strip_d(s) for s  in base_list ]
+
+compose = lambda f, g: lambda *x: f(g(*x))
+get_gapped_bases = compose(fix_gaps, get_base_list)
 class MPileupColumn(object):
     '''
     Represents a single Mpileup column
@@ -303,17 +317,6 @@ class MPileupColumn(object):
         self.__dict__['pos'] = int(value)
 
 
-    def fix_gaps(base_list):
-        # read of form +3AAA$ is probably possible.
-        #from itertools import izip_longest
-        #map ifilter(None, izip_longest( zip(*bases[::-1])
-        #import itertools
-        #itertools.izip_longest
-        strip_d = lambda x: x.strip('$')
-        longest_insert = max(imap(len, imap(strip_d, base_list)))
-        is_end = lambda x: x.endswith('$')
-        gap_fill = lambda s: s + (longest_insert - len(s))*'-'
-        return [gap_fill(s) if (not is_end(s)) else strip_d(s) for s  in base_list ]
 
 
     @property

@@ -7,7 +7,7 @@ from mock import MagicMock, patch, Mock, call
 
 from os.path import *
 import os
-from ngs_mapper.samtools import get_base_list
+from ngs_mapper.samtools import get_base_list, get_gapped_bases
 class Base(common.BaseBaseCaller):
     modulepath = 'ngs_mapper.samtools'
 
@@ -310,22 +310,24 @@ class TestGetBaseList(Base):
         res = sorted(get_base_list("A+1TA+2TAA+2TT", 'C'))
         eq_(sorted(["AT", "ATA", "ATT"]), res) #order?
 
-#    def test_read_end(self):
-#        res = sorted(get_base_list("A$AA+1TA+1TT+1T", 'C'))
-#        eq_(sorted(["A-", "A", "AT", "AT", "TT"]), res) #order?
-#
-##use Counter to get the counts of each afterwards
-#    def test_insertion_read(self):
-#        res = sorted(get_base_list("A$AA+1T", 'C'))
-#        eq_(sorted(["A-", "A", "AT"]), res) #order?
-#
-#    def test_insertion_is_end_of_read_has_no_gap(self):
-#        res = sorted(get_base_list("A+1T$A+2TAA+2TT", 'C'))
-#        eq_(sorted(["AT", "ATA", "ATT"]), res) #order?
-#
-#    def test_insertion_not_end_has_gap(self):
-#        res = sorted(get_base_list("A+1TA+2TAA+2TT", 'C'))
-#        eq_(sorted(["AT-", "ATA", "ATT"]), res) #order?
+class TestGetGappedBases(Base):
+    def test_read_end(self):
+        res = sorted(get_gapped_bases("A$AA+1TA+1TT+1T", 'C'))
+        eq_(sorted(["A-", "A", "AT", "AT", "TT"]), res) #order?
+
+#use Counter to get the counts of each afterwards
+    def test_insertion_read(self):
+        res = sorted(get_gapped_bases("A$AA+1T", 'C'))
+        eq_(sorted(["A-", "A", "AT"]), res) #order?
+
+    def test_insertion_is_end_of_read_has_no_gap(self):
+        res = sorted(get_gapped_bases("A+1T$A+2TAA+2TT", 'C'))
+        eq_(sorted(["AT", "ATA", "ATT"]), res) #order?
+
+    def test_insertion_not_end_has_gap(self):
+        res = sorted(get_gapped_bases("A+1TA+2TAA+2TT", 'C'))
+        eq_(sorted(["AT-", "ATA", "ATT"]), res) #order?
+
 class TestUnitBases(MpileupBase):
 
     def test_lowercaseuppercase( self ):
