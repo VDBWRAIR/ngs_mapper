@@ -11,17 +11,18 @@
 Installation
 ------------
 
-[install](doc/source/install.rst)
+
+`install <doc/source/install.rst>`_
 
 Upgrading
 ---------
   
-[upgrade](doc/source/upgrade.rst)
+`upgrade <doc/source/upgrade.rst>`_
 
 Changelog
 ---------
 
-[changelog](CHANGELOG.rst)
+`changelog <CHANGELOG.rst>`_
 
 Running the pipeline
 --------------------
