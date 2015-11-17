@@ -3,15 +3,15 @@
 import sys
 import os
 import pprint
-
+#ignore again
 # ngs_mapper should be first in the PATH
 sys.path.insert( 0, os.environ['PATH'].split( ':' )[0] )
-import samtools
+from ngs_mapper import samtools
 
 def main( args ):
     for col in cols( args.bamfile, args.regionstr, args.minmq, args.minbq ):
         stats = col.base_stats()
-        print "{}:".format(col.pos)
+        print "{0}:".format(col.pos)
         pprint.pprint(stats)
 
 def cols( bamfile, regionstr, *args, **kwargs ):

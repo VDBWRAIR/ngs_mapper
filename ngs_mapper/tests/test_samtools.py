@@ -7,7 +7,7 @@ from mock import MagicMock, patch, Mock, call
 
 from os.path import *
 import os
-
+from ngs_mapper.samtools import get_base_list, get_gapped_bases
 class Base(common.BaseBaseCaller):
     modulepath = 'ngs_mapper.samtools'
 
@@ -78,7 +78,7 @@ Options: -b       output BAM
         eq_( os.stat(self.bam).st_size, os.stat('new.bam').st_size )
 
     def test_regionstring( self ):
-        # Returns all reads for Ref2 since the test sam file 
+        # Returns all reads for Ref2 since the test sam file
         # has reads under every base(reads for ref 2 start at 10 and go to 20
         res = self._C( self.bam, 'Ref2:3-5' )
         i = 0
@@ -292,26 +292,68 @@ class TestUnitCharToQual(Base):
 class MpileupBase(Base):
     functionname = 'MPileupColumn'
 
+class TestGetBaseList(Base):
+    def test_read_end(self):
+        res = sorted(get_base_list("A$AA+1TA+1TT+1T", 'C'))
+        eq_(sorted(["A", "A$", "AT", "AT", "TT"]), res) #order?
+
+#use Counter to get the counts of each afterwards
+    def test_insertion_read(self):
+        res = sorted(get_base_list("A$AA+1T", 'C'))
+        eq_(sorted(["A", "A$", "AT"]), res) #order?
+
+    def test_insertion_is_end_of_read_has_no_gap(self):
+        res = sorted(get_base_list("A+1T$A+2TAA+2TT", 'C'))
+        eq_(sorted(["AT$", "ATA", "ATT"]), res) #order?
+
+    def test_insertion_not_end_has_gap(self):
+        res = sorted(get_base_list("A+1TA+2TAA+2TT", 'C'))
+        eq_(sorted(["AT", "ATA", "ATT"]), res) #order?
+
+class TestGetGappedBases(Base):
+    def test_read_end(self):
+        res = sorted(get_gapped_bases("A$AA+1TA+1TT+1T", 'C'))
+        eq_(sorted(["A-", "A", "AT", "AT", "TT"]), res) #order?
+
+#use Counter to get the counts of each afterwards
+    def test_insertion_read(self):
+        res = sorted(get_gapped_bases("A$AA+1T", 'C'))
+        eq_(sorted(["A-", "A", "AT"]), res) #order?
+
+    def test_insertion_is_end_of_read_has_no_gap(self):
+        res = sorted(get_gapped_bases("A+1T$A+2TAA+2TT", 'C'))
+        eq_(sorted(["AT", "ATA", "ATT"]), res) #order?
+
+    def test_insertion_not_end_has_gap(self):
+        res = sorted(get_gapped_bases("A+1TA+2TAA+2TT", 'C'))
+        eq_(sorted(["AT-", "ATA", "ATT"]), res) #order?
+
 class TestUnitBases(MpileupBase):
+
     def test_lowercaseuppercase( self ):
         str = 'Ref1	1	N	10	AaCcGgTtNn	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'AACCGGTTNN', r.bases )
+        eq_( list('AACCGGTTNN'), r.bases )
 
     def test_dotcomma( self ):
         str = 'Ref1	1	A	12	.,CcGgTtNn.,	IIIIIIIIIIII	]]]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'AACCGGTTNNAA', r.bases )
+        eq_( list('AACCGGTTNNAA'), r.bases )
 
-    def test_insertdelete( self ):
-        str = 'Ref1	1	A	10	G+2AA-2AA*.G,.....	IIIIIIIIII	]]]]]]]]]]'
+    def test_delete( self ):
+        str = 'Ref1	1	A	10	G-2AA*.G,.....	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'G*AGAAAAAA', r.bases )
+        eq_( list('G*AGAAAAAA'), r.bases )
 
     def test_endreadbeginread( self ):
         str = 'Ref1	1	N	10	A^]A$AAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
-        eq_( 'AAAAAAAAAA', r.bases )
+        eq_( ['A', 'A$'] + list('AAAAAAAA'), r.bases )
+
+    def test_insert(self):
+        str = 'Ref1	1	A	10	G+2AA.G,.....	IIIIIIIIII	]]]]]]]]]]'
+        r = self._C(str)
+        eq_(['GAA'] + list('AGAAAAAA'), r.bases)
 
 class TestUnitBQuals(MpileupBase):
     pass
@@ -321,7 +363,7 @@ class TestUnitMQuals(MpileupBase):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( [60]*10, r.mquals )
-    
+
     def test_mquals_ne_bquals_len_same( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]]'
         r = self._C( str )
@@ -445,44 +487,44 @@ class TestUnitPileupColumnInit(MpileupBase):
         str = 'Ref1	1	N	10	AAAAAAAAAA	IIIIIIIIII'
         r = self._C( str )
         eq_( [], r.mquals )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
         eq_( [40]*10, r.bquals )
 
     def test_insert_start( self ):
-        str = 'Ref1	1	N	10	+2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
+        str = 'Ref1	1	N	10	A+2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( ['ANN'] + list('A'*10), r.bases )
 
     def test_insert_end( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA+2NN	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*9) + ['ANN'], r.bases )
 
     def test_insert_middle( self ):
         str = 'Ref1	1	N	10	AAAAA+2NNAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*4) + ['ANN'] + list('AAAAA'), r.bases )
 
     def test_delete_start( self ):
         str = 'Ref1	1	N	10	-2NNAAAAAAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_delete_end( self ):
         str = 'Ref1	1	N	10	AAAAAAAAAA-2NN	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_delete_middle( self ):
         str = 'Ref1	1	N	10	AAAAA-2NNAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_other_characters( self ):
         str = 'Ref1	1	N	10	A$.,aAA^]AA*A	IIIIIIIIII	]]]]]]]]]]'
@@ -490,13 +532,13 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( 10, r.depth )
         eq_( 'I'*10, r._bquals )
         eq_( ']'*10, r._mquals )
-        eq_( 'ANNAAAAA*A', r.bases )
+        eq_( ['A$'] + list('NNAAAAA*A'), r.bases )
 
     def test_indel_gt_9( self ):
         str = 'Ref1	1	N	10	AAAAA-10NNNNNNNNNNAAAAA	IIIIIIIIII	]]]]]]]]]]'
         r = self._C( str )
         eq_( 10, r.depth )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
     def test_gap( self ):
         # Guess gaps don't have quality scores
@@ -505,7 +547,7 @@ class TestUnitPileupColumnInit(MpileupBase):
         eq_( 10, r.depth )
         eq_( 'I'*10, r._bquals )
         eq_( ']'*10, r._mquals )
-        eq_( 'A'*10, r.bases )
+        eq_( list('A'*10), r.bases )
 
 class TestUnitParseRegionString(Base):
     functionname = 'parse_regionstring'
@@ -548,3 +590,9 @@ class TestUnitParseRegionString(Base):
     def test_correct_multibase( self ):
         r = self._C( 'ref:1-2' )
         eq_( ('ref',1,2), r )
+
+
+
+class TesUnitInsertions(Base):
+    pass
+

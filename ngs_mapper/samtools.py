@@ -1,8 +1,9 @@
 from subprocess import Popen, PIPE
-import numpy as np
+from itertools import takewhile, imap
+#import numpy as np
 import itertools
 import re
-
+def mean(A): return sum(A)/float(len(A))
 def view( infile, *args, **kwargs ):
     '''
         A simple wrapper around samtools view command that will just return the stdout iterator
@@ -11,7 +12,7 @@ def view( infile, *args, **kwargs ):
         would just be the same as what the samtools view command accepts
 
         @param infile - The sam|bam file to read or an open file-like object to read
-        
+
         @returns file like object representing the output of view
     '''
     # The base command
@@ -62,7 +63,7 @@ class Prop(object):
 class SamRow(object):
     '''
     Represents a single sam row
-    
+
     Object is instantiated by supplying it with a valid sam row string
 
     @param samrow_str - Sam row string
@@ -108,7 +109,7 @@ class SamRow(object):
                 raise ValueError("{0} is not a supported field type".format(typ))
 
             t.append( (name,value) )
-            
+
         return t
 
     @property
@@ -186,13 +187,93 @@ def nogap_mpileup(*args, **kwargs):
 def char_to_qual( qual_char ):
     '''
     Converts a given quality character to the phred - 33 integer
-    
+
     @param qual_char - Quality character to convert to a phred - 33 integer quality
 
     @return phred - 33 quality integer
     '''
     return ord( qual_char ) - 33
 
+def get_base_list(bases, refbase ):
+    '''
+        Returns the bases with the inserts, deletions, $ and ^qual removed.
+        This means it returns just the bases that are really of interest.
+        it also includes the * which indicates a deletion.
+    '''
+    # could use instaparse
+    #    '.' : ref, ',' : ref, dict(zip('ACGTNacgtn*', 'ACGTNACGTN*'))
+    #    '%' : '', '>'
+    #    r'+[0-9]+[ACGTNacgtn]+
+    #    r'-[0-9]+[ACGTNacgtn]+
+    #    . (dot) means a base that matched the reference on the forward strand
+    #    , (comma) means a base that matched the reference on the reverse strand
+    #    AGTCN denotes a base that did not match the reference on the forward strand
+    #    agtcn denotes a base that did not match the reference on the reverse strand
+    #    A sequence matching the regular expression \+[0-9]+[ACGTNacgtn]+ denotes an insertion of one or more bases
+    #    A sequence matching the regular expression -[0-9]+[ACGTNacgtn]+ denotes a deletion of one or more bases
+    #    ^ (caret) marks the start of a read segment and the ASCII of the character following `^' minus 33 gives the mapping quality
+    #    $ (dollar) marks the end of a read segment
+    #    * (asterisk) is a placeholder for a deleted base in a multiple basepair deletion that was mentioned in a previous line by the -[0-9]+[ACGTNacgtn]+ notation
+    #    < (less-than sign) reference skip
+    #    > (greater-than sign) reference skip
+    #'''
+    # # # # # # # # #use a regex instead
+    cleaned = []
+    # The counter
+    i = 0
+    # Iterate every position
+    while i < len( bases ):
+        x = bases[i]
+        if (i + 1) < len(bases) and bases[i+1] == '$':
+            cleaned.append(x + '$') #indicates end of read
+            i += 2
+        # Skip this position and the next quality scores
+        elif x == '^': # start of a read followed by MAPQ
+            i += 2
+        # Add any normal base, but make it uppercase
+        elif x.upper() in ('ACTGN*'):
+            cleaned.append(x.upper())
+            i += 1
+        # . and , mean a match to the reference base
+        elif x in ('.,'):
+            cleaned.append(refbase)
+            i += 1
+        # We are on an indel number now so can just skip them
+        else:
+            if not x in '+-':
+                print "unexpected character %s" % x
+                raise ValueError("Unexpected character %s" % x)
+            # Build the integer that will tell us how many
+            # indel bases to skip
+            n_str = ''.join(takewhile(str.isdigit, bases[i+1:]))
+            i = i + len(n_str) + 1
+            if n_str: #this skips solo hyphens
+                n = int(n_str)
+                if x == '+': # insertion
+                    # Grab [atgcn]+[0-9]+[atgcn]+
+                    if (i + 1 + n ) < len(bases) and bases[i+n] == '$':
+                        n += 1
+                        #insert = bases[i+len
+                        pass
+                    x = cleaned.pop()
+                    cleaned.append(x+bases[i:i+n])
+                i += n
+    return cleaned
+
+def fix_gaps(base_list):
+    # read of form +3AAA$ is probably possible.
+    #from itertools import izip_longest
+    #map ifilter(None, izip_longest( zip(*bases[::-1])
+    #import itertools
+    #itertools.izip_longest
+    strip_d = lambda x: x.strip('$')
+    longest_insert = max(imap(len, imap(strip_d, base_list)))
+    is_end = lambda x: x.endswith('$')
+    gap_fill = lambda s: s + (longest_insert - len(s))*'-'
+    return [gap_fill(s) if (not is_end(s)) else strip_d(s) for s  in base_list ]
+
+compose = lambda f, g: lambda *x: f(g(*x))
+get_gapped_bases = compose(fix_gaps, get_base_list)
 class MPileupColumn(object):
     '''
     Represents a single Mpileup column
@@ -201,7 +282,7 @@ class MPileupColumn(object):
     Note that if older samtools is used that does not contain the fix with respect to mapping quality length != base quality length
     then the bquals list will be None
 
-    It is assumed that minimum base quality and mapping quality have already been applied to the mpileup string that is 
+    It is assumed that minimum base quality and mapping quality have already been applied to the mpileup string that is
     provided to the constructor.
 
     @param mpileup_str - Mpileup string
@@ -220,7 +301,7 @@ class MPileupColumn(object):
     @property
     def depth( self ):
         return self.__dict__['depth']
-    
+
     @depth.setter
     def depth( self, value ):
         ''' Depth is an integer '''
@@ -229,59 +310,18 @@ class MPileupColumn(object):
     @property
     def pos( self ):
         return self.__dict__['pos']
-    
+
     @pos.setter
     def pos( self, value ):
         ''' Position is an integer '''
         self.__dict__['pos'] = int(value)
 
+
+
+
     @property
     def bases( self ):
-        '''
-            Returns the bases with the inserts, deletions, $ and ^qual removed.
-            This means it returns just the bases that are really of interest.
-            it also includes the * which indicates a deletion.
-        '''
-        # Will contain the cleaned base
-        cleaned = ''
-        # The counter
-        i = 0
-        # Iterate every position
-        while i < len( self._bases ):
-            x = self._bases[i]
-            # Just skip - and +
-            if x in '-+$':
-                i += 1
-                continue
-            # Skip this position and the next quality scores
-            if x == '^':
-                i += 2
-                continue
-            # Add any normal base, but make it uppercase
-            if x.upper() in ('ACTGN*'):
-                cleaned += x.upper()
-                i += 1
-            # . and , mean a match to the reference base
-            elif x in ('.,'):
-                cleaned += self.refbase
-                i += 1
-            # We are on an indel number now so can just skip them
-            else:
-                try:
-                    # Build the integer that will tell us how many
-                    # indel bases to skip
-                    n = ''
-                    while True:
-                        # Just try it if it fails the try except will grab it
-                        int(x)
-                        n += x
-                        # Increment i
-                        i += 1
-                        # Get new base
-                        x = self._bases[i]
-                except ValueError as e:
-                    i += int( n )
-        return cleaned
+        return get_base_list(self._bases, self.refbase)
 
     @property
     def bquals( self ):
@@ -295,7 +335,7 @@ class MPileupColumn(object):
         '''
             Returns the mapping qualities as a phred - 33 integer
             Truncates mquals to the same length as base qualities as older samtools
-            had a bug where it would return all mapping qualities regardless of the -q and -Q 
+            had a bug where it would return all mapping qualities regardless of the -q and -Q
             thresholds being set.
             It will return the empty list if it would otherwise truncate due to the reason above, but
             all the values are not the same since there would be no way to tell what qual values
@@ -313,11 +353,11 @@ class MPileupColumn(object):
 
     def bqual_avg( self ):
         ''' Returns the mean of the base qualities rounded to 2 places '''
-        return round( np.mean( self.bquals ), 2 )
+        return round( mean( self.bquals ), 2 )
 
     def mqual_avg( self ):
         ''' Returns the mean of the mquals rounded to 2 places '''
-        return round( np.mean( self.mquals ), 2 )
+        return round( mean( self.mquals ), 2 )
 
     def __iter__( self ):
         '''
