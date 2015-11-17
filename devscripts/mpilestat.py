@@ -3,7 +3,7 @@
 import sys
 import os
 import pprint
-#ignore
+#ignore again
 # ngs_mapper should be first in the PATH
 sys.path.insert( 0, os.environ['PATH'].split( ':' )[0] )
 from ngs_mapper import samtools
