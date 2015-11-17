@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/VDBWRAIR/ngs_mapper.svg?branch=master)](https://travis-ci.org/VDBWRAIR/ngs_mapper)
 # Installation
 
   [install](doc/source/install.rst)
