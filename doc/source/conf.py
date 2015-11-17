@@ -16,13 +16,6 @@ import sys
 import os
 from os.path import dirname, abspath
 
-# Fix for skipping C modules builds
-import mock
- 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate']
-for mod_name in MOCK_MODULES:
-sys.modules[mod_name] = mock.Mock()
-
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 

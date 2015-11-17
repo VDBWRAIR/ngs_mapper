@@ -1,3 +1,13 @@
+.. image:: https://readthedocs.org/projects/ngs_mapper/badge/?version=latest
+    :target: http://ngs_mapper.readthedocs.org/en/latest/
+    :alt: Documentation Status
+
+.. image:: https://travis-ci.org/VDBWRAIR/ngs_mapper.svg
+    :target: https://travis-ci.org/VDBWRAIR/ngs_mapper
+
+.. image:: https://coveralls.io/repos/VDBWRAIR/ngs_mapper/badge.svg
+    :target: https://coveralls.io/r/VDBWRAIR/ngs_mapper
+
 # Installation
 
   [install](doc/source/install.rst)
