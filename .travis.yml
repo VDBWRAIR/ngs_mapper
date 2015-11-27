@@ -11,7 +11,7 @@ before_install:
     - sed 's%/path/to/NGSDATA%/ngsdata%' ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
 install:
     - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2 ordereddict; fi
-      #- sudo bash -c "umask 0002" ######
+      #- sudo bash -c "umask 0002" #######
     - sudo python setup.py install_system_packages
     - python setup.py install ###
 script:
