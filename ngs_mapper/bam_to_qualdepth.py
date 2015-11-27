@@ -7,6 +7,7 @@ import json
 import bam
 import bqd
 import samtools
+import itertools 
 
 def main():
     args = parse_args()
@@ -16,7 +17,16 @@ def print_json( args ):
     pileup = samtools.nogap_mpileup(args.bamfile)
     pileup = bqd.parse_pileup( pileup )
     set_unmapped_mapped_reads( args.bamfile, pileup )
+    #pileup['paired'], pileup['unpaired'] = paired_unpaired(args.bamfile)
     print json.dumps( pileup )
+
+#NOTE: currently not used
+#def paired_unpaired(bamfile):
+#    def ilen(iter): return sum(1 for _ in iter)
+#    def is_paired(line): return 'P' in line.split('\t')[1] 
+#    view = samtools.view(bamfile, X=True) #X flag converts hex flag to letters
+#    unpaired, paired = itertools.partition(is_paired, view)
+#    return ilen(paired), ilen(unpaired) 
 
 def set_unmapped_mapped_reads( bamfile, pileup ):
     ''' add mapped/unmapped reads to json for each reference '''
