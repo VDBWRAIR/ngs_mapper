@@ -14,7 +14,7 @@ def setUpPackage():
     before = glob( '/dev/shm/*' )# + glob( '/tmp/*' )
 
 def tearDownPackage():
-    shutil.rmtree(tdir)
+#    shutil.rmtree(tdir)
     shmcontents = glob( '/dev/shm/*' )
     tmpcontents = glob( '/tmp/*' )
 
@@ -22,10 +22,10 @@ def tearDownPackage():
     for df in shmcontents:# + tmpcontents:
         if df not in before:
             print "Removing {0}".format(df)
-            if isdir( df ):
-                shutil.rmtree(df)
-            else:
-                os.unlink(df)
+#            if isdir( df ):
+#                shutil.rmtree(df)
+#            else:
+#                os.unlink(df)
 
 def setUp( self ):
     super(Base,self).setUp()

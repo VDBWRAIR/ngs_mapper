@@ -33,6 +33,7 @@ These are scripts that you can run manually, however, they are run automatically
 * :py:mod:`base_caller <ngs_mapper.base_caller>`
 * :py:mod:`graph_times <ngs_mapper.graph_times>`
 * :py:mod:`trim_reads <ngs_mapper.trim_reads>`
+* :py:mod:`ngs_filter <ngs_mapper.nfilter>`
 * :py:mod:`fqstats <ngs_mapper.fqstats>`
 * :py:mod:`sample_coverage <ngs_mapper.coverage>`
 

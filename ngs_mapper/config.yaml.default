@@ -5,6 +5,25 @@ NGSDATA: &NGSDATA /path/to/NGSDATA
 # All scripts by name should be top level items
 # Sub items then are the option names(the dest portion of the add_arugment for the script)
 # Each option needs to define the default as well as the help message
+ngs_filter:
+    dropNs:
+        default: False
+        help: 'Drop all reads that have Ns.'
+    indexQualityMin:
+        default: 1
+        help: 'The index for each associated MiSeq read must be equal or above this value.'
+    platforms:
+        choices:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        default:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        help: 'List of platforms to include data for[Default: %(default)s]'
 trim_reads:
     q:
         default: 20

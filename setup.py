@@ -1,6 +1,6 @@
 from ngs_mapper.ez_setup import use_setuptools
 use_setuptools()
- 
+
 from glob import glob
 import sys
 from os.path import join, expanduser
@@ -140,6 +140,10 @@ setup(
     scripts = glob('bin/*'),
     entry_points = {
         'console_scripts': [
+            'is_sanger = ngs_mapper.scripts:is_sanger',
+            'convert_sangers = ngs_mapper.scripts:convert_sangers',
+            'sff_to_fastq = ngs_mapper.sff_to_fastq:main',
+            'ngs_filter = ngs_mapper.nfilter:main',
             'roche_sync = ngs_mapper.roche_sync:main',
             'sample_coverage = ngs_mapper.coverage:main',
             'make_example_config = ngs_mapper.config:main',
