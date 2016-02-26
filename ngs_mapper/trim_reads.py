@@ -225,7 +225,7 @@ def run_trimmomatic( *args, **kwargs ):
     # Set all options
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
     # Jarpath is in virtualenv's lib directory
-    jarpath = join(expandvars('$VIRTUAL_ENV'), 'lib', 'Trimmo*', '*.jar' )
+    jarpath = join(sys.prefix, 'lib', 'Trimmo*', '*.jar' )
     try:
         jarpath = glob( jarpath )[0]
     except IndexError as e:
