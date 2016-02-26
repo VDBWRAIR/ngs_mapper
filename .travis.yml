@@ -17,3 +17,10 @@ install:
 script:
     - nosetests ngs_mapper/tests -v --nologcapture -a '!slow' -I '.*test_functional.py$'
     - travis_wait nosetests -v ngs_mapper/tests/test_functional.py
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/733ce26f5af2ec9f2503
+    on_success: change
+    on_failure: always
+    on_start: never
