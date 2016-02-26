@@ -253,18 +253,6 @@ class TestFunctional(Base):
         assert isdir( 'outdir' )
         self._ensure_expected_output_files( 'outdir', 'tests' )
 
-    def test_missing_executables_exit_1( self ):
-        # Change path so tempdir is first in lookup and then duplicate
-        # some of the pipeline scripts and just have them return 1
-        with open(join(self.tempdir,'samtools'),'w') as fh:
-            fh.write( '#!/bin/bash\nexit 1\n' )
-        os.chmod( join(self.tempdir,'samtools'), 0755 )
-        import subprocess
-        script = 'runsample'
-        cmd = 'export PATH={0}:$PATH; {1} {2} {3} {4} -od {5}'.format( self.tempdir, script, self.reads_by_sample, self.ref, 'tests', 'outdir' )
-        ret = subprocess.call( cmd, shell=True )
-        assert ret != 0, "Return code was 0 even though some executables returned 1"
-
     def test_ensure_proper_log( self ):
         # Just check that logfile gets stuff in it
         outdir = 'outdir'
