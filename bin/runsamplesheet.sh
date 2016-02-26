@@ -1,10 +1,8 @@
 #!/bin/bash
 
-if [ -z "$VIRTUAL_ENV" ]
+if [ -z "$VIRTUAL_ENV" ] && [ -z "$CONDA_ENV_PATH" ]
 then
     echo "Please activate a virtual environment"
-    echo "Usually you do this as follows:"
-    echo ". /path/to/bin/activate"
     exit 1
 fi
 
