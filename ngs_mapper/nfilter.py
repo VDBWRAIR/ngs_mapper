@@ -210,7 +210,6 @@ def main():
          })
 
     raw_args = docopt(__doc__, version='Version 1.0')
-    print raw_args
     args = scheme.validate(raw_args)
     print args
     mkdir_p(args['--outdir'])

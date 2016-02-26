@@ -3,11 +3,11 @@ from os.path import *
 import os
 import sys
 import re
-import logging
+import log
 from Bio import SeqIO
 import gzip
 
-logger = logging.getLogger(__name__)
+logger = log.setup_logger(__name__, log.get_config())
 
 ROCHE_FILE = '\S+?(?:__[0-9]){0,1}__(?:TI|RL)\d+__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)'
 '''
