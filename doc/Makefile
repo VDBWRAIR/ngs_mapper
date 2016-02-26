@@ -51,7 +51,7 @@ clean:
 	rm -rf source/ngs_mapper
 
 html:
-	sphinx-apidoc -o source/ngs_mapper ../ngs_mapper ../ngs_mapper/tests ../ngs_mapper/samtools.py
+	sphinx-apidoc -o source/ngs_mapper ../ngs_mapper ../ngs_mapper/tests ../ngs_mapper/samtools.py ../ngs_mapper/dictconfig.py
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

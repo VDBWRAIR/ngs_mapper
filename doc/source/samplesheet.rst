@@ -34,11 +34,9 @@ Remember: If you are running you samples against a concatenated set of reference
 Generate Samplesheeet from MiSeq run
 ------------------------------------
 
-Pulls out every samplename from a MiSeq SampleSheet.csv and creates a file that has samplename<TAB>REFPATH<NEWLINE>
+Pulls out every samplename from a MiSeq SampleSheet.csv and creates a file that has samplename<TAB>REFPATH<NEWLINE>::
 
-    .. code-block:: bash
-
-        awk -F',' '/^[0-9][0-9][0-9],/ {printf("%s\tREFPATH\n",$2);} /path/to/miseqrun/SampleSheet.csv > samplesheet.tsv
+	awk -F',' '/^[0-9][0-9][0-9],/ {printf("%s\tREFPATH\n",$2);} /path/to/miseqrun/SampleSheet.csv > samplesheet.tsv
 
 Command to generate a samplesheet from a 454 Run File
 -----------------------------------------------------
