@@ -93,7 +93,7 @@ class PipelineInstallCommand(_install):
     def pip_install( self, reqfile ):
         ''' Just run pip install pkg '''
         from subprocess import check_call, PIPE
-        check_call( ['pip', 'install', '-r', reqfile] )
+        check_call( ['pip', 'install', '--upgrade', '-r', reqfile] )
 
     def _install_external_dependencies(self):
         # URLs for dependencies
