@@ -1,4 +1,5 @@
 import subprocess
+import sh
 from os.path import (
     dirname, basename,
     join, abspath,
@@ -37,7 +38,7 @@ def verify_bwa_install( dstprefix ):
     Make sure that bwa is installed correctly into dstprefix
     Just checks that bin/bwa exists and is executable by current user
     '''
-    expath = [('bin/bwa',os.X_OK)]
+    expath = [('bin/bwa',os.F_OK)]
     return [] == prefix_has_files(dstprefix, expath)
 
 def prefix_has_files( prefix, checkfiles ):
@@ -58,6 +59,7 @@ def prefix_has_files( prefix, checkfiles ):
             accessmode = os.F_OK
         if not os.access(filee, accessmode):
             missing.append(filee)
+    print missing
     # popd
     os.chdir(cwd)
     return missing
@@ -90,8 +92,8 @@ def verify_samtools_install( dstprefix ):
     Ensure that dstprefix/bin contains samtools and bcftools and both are executable
     '''
     exepaths = [
-        ('bin/samtools', os.X_OK),
-        ('bin/bcftools', os.X_OK),
+        ('bin/samtools', os.F_OK),
+        ('bin/bcftools', os.F_OK),
     ]
     return [] == prefix_has_files(dstprefix, exepaths)
 
@@ -120,7 +122,7 @@ def clone_checkout_make_copy(source, gitsha, dstprefix, copypaths=[], tdir=None,
     cpexist = set()
     for cp in copypaths:
         cp = join(dstprefixbin, basename(cp))
-        cpexist.add(os.access(cp,os.X_OK))
+        cpexist.add(os.access(cp,os.F_OK))
     # only continue if some bin files missing
     if False in cpexist:
         # Ensure dstprefixbin exists
@@ -148,6 +150,7 @@ def clone_checkout_make_copy(source, gitsha, dstprefix, copypaths=[], tdir=None,
                 makefunc()
             for copypath in copypaths:
                 # Copy bwa executable into dstprefix/bin
+                os.chmod(copypath, 0700)
                 shutil.copy2(copypath, dstprefixbin)
             # popd
             os.chdir(curdir)
@@ -195,8 +198,9 @@ def install_trimmomatic(source, dst):
     '''
     Download and unpack trimmomatic into dstprefix/lib
     '''
-    if len(glob(join(dst,'Trimmomatic-*','trimmomatic-*.jar'))):
-        print "{0} already installed".format(dst)
+    t = glob(join(dst,'Trimmomatic-*','trimmomatic-*.jar'))
+    if len(t):
+        print "{0} already installed".format(t[0])
         return
     print "Unpacking trimmomatic into {0}".format(dst)
     download_unpack( source, dst )
