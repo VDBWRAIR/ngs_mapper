@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+Version 1.3.0
++++++++++++++
+
+- Added ngs_filter stage/script that can filter based on index fastq files as well
+  as reads that contain an N. This stage is off by default.
+- Fixed a bug where some scripts were not logging properly
+
 Version 1.2.4
 +++++++++++++
 
