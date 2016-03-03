@@ -269,7 +269,7 @@ class TestFunctional(Base):
         ok_( 7 <= len(loglines), "Should be at least 7 loglines in log file" )
 
 import mock
-import unittest2 as unittest
+import unittest
 
 from ngs_mapper import runsample
 @attr('current')

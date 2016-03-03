@@ -1,13 +1,13 @@
 import os.path
 from os.path import *
 
-from unittest2 import TestCase
+import unittest
 import mock
 
 from .. import util
 
 @mock.patch.object(util, 'os')
-class TestBuildDatafiles(TestCase):
+class TestBuildDatafiles(unittest.TestCase):
     def setUp(self):
         # For os.walk
         self.walk = [
