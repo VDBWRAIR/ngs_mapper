@@ -224,13 +224,7 @@ def run_trimmomatic( *args, **kwargs ):
     steps = [':'.join([str(x) for x in s]) for s in steps]
     # Set all options
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
-    # Jarpath is in virtualenv's lib directory
-    jarpath = join(sys.prefix, 'lib', 'Trimmo*', '*.jar' )
-    try:
-        jarpath = glob( jarpath )[0]
-    except IndexError as e:
-        raise Exception('missing trimmomatic')
-    cmd = ['java', '-jar', jarpath, args[0]] + options + inputs + outputs + steps
+    cmd = ['trimmomatic', args[0]] + options + inputs + outputs + steps
 
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
