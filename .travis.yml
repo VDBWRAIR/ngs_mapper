@@ -30,7 +30,6 @@ install:
     - pip install -r requirements-pip.txt
     - python setup.py install
 script:
-    - test -e $HOME/miniconda/docs/ngs_mapper/index.html || (echo "Docs not built and installed"; exit 1) # Ensure #76
     - nosetests ngs_mapper/tests -v --nologcapture -a '!slow' -I '.*test_functional.py$'
     - travis_wait nosetests -v ngs_mapper/tests/test_functional.py
 notifications:

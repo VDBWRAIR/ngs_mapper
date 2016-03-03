@@ -8,19 +8,6 @@ import setuptools
 import ngs_mapper
 from ngs_mapper import util
 
-from setuptools.command.install import install as _install
-from setuptools.command.develop import develop as _develop
-
-class install(_install):
-    def run(self):
-        self.run_command('build_sphinx')
-        _install.run(self)
-
-class develop(_develop):
-    def run(self):
-        self.run_command('build_sphinx')
-        _develop.run(self)
-
 # Run setuptools setup
 setup(
     name = ngs_mapper.__projectname__,
@@ -63,10 +50,4 @@ setup(
     license = ngs_mapper.__license__,
     keywords = 'miseq iontorrent roche 454 fastq vcf',
     url = ngs_mapper.__url__,
-    data_files = [
-    ] + util.build_datafiles(join(sys.prefix,'docs/ngs_mapper'), 'doc/build/html'),
-    cmdclass = {
-        'install': install,
-        'develop': develop
-    }
 )
