@@ -1,3 +1,4 @@
+PyVCF==0.6.6
 python-dateutil==2.1
 pyBWA>=0.2.4
 tempdir
