@@ -1,2 +1,0 @@
-	ID:ga	SM:hs	LB:ga	PL:Illumina
-	ID:454	SM:hs	LB:454	PL:454
