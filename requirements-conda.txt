@@ -1,0 +1,15 @@
+numpy
+PyVCF
+matplotlib
+biopython
+cutadapt
+bwa
+samtools
+trimmomatic
+nose
+mock
+pyyaml
+sphinx
+sphinx_rtd_theme
+sh
+docopt
