@@ -45,19 +45,15 @@ class BaseFunctional(BaseClass):
 
     @classmethod
     def run_fixtures( klass, fixtures ):
-        samplesheet = 'ss.tsv'
+        samplesheet = abspath('ss.tsv')
         klass.make_samplesheet(fixtures,'ss.tsv')
         runsh_sh = TestRunPipeline.script_path( 'runsamplesheet.sh' )
         # All fixtures should be in same dir, so just grab the dirname of the first
         rbsdir = dirname( fixtures[0][0] )
         cmd = '{0} {1} {2}'.format(runsh_sh,rbsdir,samplesheet)
-        fh = open('/tmp/thingy','w')
-        fh.write(cmd)
         ret,out = TestRunPipeline.run_script( cmd )
-        fh.write(out)
-        fh.close()
 
-        return samplesheet,ret,out
+        return samplesheet,ret,out,cmd
 
 class TestRunPipeline(BaseFunctional):
     @classmethod
@@ -65,7 +61,7 @@ class TestRunPipeline(BaseFunctional):
         klass.fixtures = klass.compile_functional_fixtures( join(fixtures.FIXDIR,'functional') )
         fh = open('/tmp/thingy2','w')
         fh.close()
-        klass.samplesheet, klass.ret, klass.out = klass.run_fixtures( klass.fixtures )
+        klass.samplesheet, klass.ret, klass.out, klass.cmd = klass.run_fixtures( klass.fixtures )
         #klass.samplesheet, klass.ret, klass.out = 'ss.tsv',0,''
 
     def setUp( self ):
@@ -73,6 +69,7 @@ class TestRunPipeline(BaseFunctional):
         self.samplesheet = self.__class__.samplesheet
         self.returncode = self.__class__.ret
         self.output = self.__class__.out
+        print self.cmd
 
     def test_return_code_and_output(self):
         eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )

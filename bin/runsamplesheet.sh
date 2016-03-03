@@ -1,11 +1,5 @@
 #!/bin/bash
 
-if [ -z "$VIRTUAL_ENV" ] && [ -z "$CONDA_ENV_PATH" ]
-then
-    echo "Please activate a virtual environment"
-    exit 1
-fi
-
 # We actually want the full path to scripts
 scripts=$(cd $(dirname $0) && pwd)
 
