@@ -5,9 +5,9 @@ python:
 before_install:
     - "export DISPLAY=:99.0" # Should fix matplotlib errors
     - "sh -e /etc/init.d/xvfb start"
-    - sudo mkdir -p /ngsdata
-    - sudo chmod 777 /ngsdata
-    - sed 's%/path/to/NGSDATA%/ngsdata%' ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
+    - mkdir -p ngsdata
+    - chmod 777 ngsdata
+    - sed "s%/path/to/NGSDATA%$PWD/ngsdata%" ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
 install:
     # We do this conditionally because it saves us some downloading if the
     # version is the same.
