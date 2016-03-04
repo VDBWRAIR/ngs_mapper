@@ -226,10 +226,10 @@ def run_trimmomatic( *args, **kwargs ):
     # Change all steps to strings of STEPNAME:VALUE
     steps = [':'.join([str(x) for x in s]) for s in steps]
     # Set all options
+    primer_info = kwargs.pop('primer_info')
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
     cmd = ['trimmomatic', args[0]] + options + inputs + outputs + steps
 
-    primer_info = kwargs.get('primer_info')
     if primer_info:
         cmd += ':'.join(['ILLUMINACLIP'] + primer_info)
 
