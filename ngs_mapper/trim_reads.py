@@ -238,7 +238,6 @@ def run_trimmomatic( *args, **kwargs ):
     # Allow us to read stderr which should be stats from cutadapt
     logger.debug( "Running {0}".format(' '.join(cmd)) )
     try:
-        print cmd
         output = compat.check_output( cmd, stderr=subprocess.STDOUT )
         return output
     except subprocess.CalledProcessError as e:
