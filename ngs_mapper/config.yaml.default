@@ -34,6 +34,18 @@ trim_reads:
     outputdir:
         default: trimmed_reads
         help: 'Where to output the resulting files[Default: %(default)s]'
+    primerfile:
+        default:
+        help:  'Primer File'
+    primerseed:
+        default: 2
+        help:   'seed mismatches'
+    palindromeclip:
+        default: 30
+        help: 'palindrome clip threshold'
+    simpleclip:
+        default: 20
+        help: 'simple clip threshold' 
     platforms:
         choices:
         - MiSeq

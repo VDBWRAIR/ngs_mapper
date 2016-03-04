@@ -219,7 +219,7 @@ def run_trimmomatic( *args, **kwargs ):
         steps = args[7:]
     else:
         raise ValueError( 'SE or PE need to be supplied' )
-    
+
     # Change all steps to strings of STEPNAME:VALUE
     steps = [':'.join([str(x) for x in s]) for s in steps]
     # Set all options
@@ -239,7 +239,7 @@ def run_trimmomatic( *args, **kwargs ):
 def run_cutadapt( *args, **kwargs ):
     '''
         Runs cutadapt with the given arguments and kwargs
-        
+
         @param - fastq file to trim
         @param - output file location
         @param q - Quality threshold
@@ -304,6 +304,34 @@ def parse_args( args=sys.argv[1:] ):
         choices=defaults['platforms']['choices'],
         default=defaults['platforms']['default'],
         help=defaults['platforms']['help']
+    )
+
+    parser.add_argument(
+        '--primer-file',
+        dest='primer_file',
+        default=defaults['primerfile']['default'],
+        help=defaults['primerfile']['help']
+    )
+
+    parser.add_argument(
+        '--primer-seed',
+        dest='primer_seed',
+        default=defaults['primerseed']['default'],
+        help=defaults['primerseed']['help']
+    )
+
+    parser.add_argument(
+        '--palindrome-clip',
+        dest='palindrom_clip',
+        default=defaults['palindromeclip']['default'],
+        help=defaults['palindromeclip']['help']
+    )
+
+    parser.add_argument(
+        '--simple-clip',
+        dest='simple_clip',
+        default=defaults['simpleclip']['default'],
+        help=defaults['simpleclip']['help']
     )
 
     return parser.parse_args( args )
