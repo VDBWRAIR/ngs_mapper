@@ -172,14 +172,14 @@ def trim_read( *args, **kwargs ):
         output = run_trimmomatic(
             'SE', readpaths[0], out_paths[0],
             ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
-            threads=1, trimlog=stats_file
+            threads=1, trimlog=stats_file, primer_info=primer_info
         )
     else:
         retpaths = [out_paths[0],out_paths[0]+'.unpaired',out_paths[1],out_paths[1]+'.unpaired']
         output = run_trimmomatic(
             'PE', readpaths[0], readpaths[1], out_paths[0], out_paths[0]+'.unpaired', out_paths[1], out_paths[1]+'.unpaired',
             ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
-            threads=1, trimlog=stats_file, primer_info=primer_info #NOTE: only run primer on paired read files
+            threads=1, trimlog=stats_file, primer_info=primer_info
         )
 
     # Prepend stats file with stdout from trimmomatic
@@ -226,18 +226,19 @@ def run_trimmomatic( *args, **kwargs ):
     # Change all steps to strings of STEPNAME:VALUE
     steps = [':'.join([str(x) for x in s]) for s in steps]
     # Set all options
-    primer_info = kwargs.pop('primer_info')
+    primer_info = kwargs.pop('primer_info', None)
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
     cmd = ['trimmomatic', args[0]] + options + inputs + outputs + steps
 
     if primer_info:
-        cmd += ':'.join(['ILLUMINACLIP'] + primer_info)
+        cmd += [':'.join(['ILLUMINACLIP'] + primer_info)]
 
 
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
     logger.debug( "Running {0}".format(' '.join(cmd)) )
     try:
+        print cmd
         output = compat.check_output( cmd, stderr=subprocess.STDOUT )
         return output
     except subprocess.CalledProcessError as e:
