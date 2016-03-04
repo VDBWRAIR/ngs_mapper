@@ -10,7 +10,7 @@ install:
     - chmod 777 ngsdata
     - sed "s%/path/to/NGSDATA%$PWD/ngsdata%" ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
     - ./install.sh miniconda
-    - export PATH=$PWD/miniconda:$PATH
+    - export PATH=$PWD/miniconda/bin:$PATH
 script:
     - ngs_mapper/tests/fast_tests.sh
     - travis_wait ngs_mapper/tests/slow_tests.sh
