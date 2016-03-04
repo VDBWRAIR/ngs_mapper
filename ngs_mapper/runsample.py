@@ -168,6 +168,34 @@ def parse_args( args=sys.argv[1:] ):
         help=_config['trim_reads']['headcrop']['help'],
     )
 
+    parser.add_argument(
+        '--primer-file',
+        dest='primer_file',
+        default=_config['trim_reads']['primerfile']['default'],
+        help=_config['trim_reads']['primerfile']['help']
+    )
+
+    parser.add_argument(
+        '--primer-seed',
+        dest='primer_seed',
+        default=_config['trim_reads']['primerseed']['default'],
+        help=_config['trim_reads']['primerseed']['help']
+    )
+
+    parser.add_argument(
+        '--palindrome-clip',
+        dest='palindrom_clip',
+        default=_config['trim_reads']['palindromeclip']['default'],
+        help=_config['trim_reads']['palindromeclip']['help']
+    )
+
+    parser.add_argument(
+        '--simple-clip',
+        dest='simple_clip',
+        default=_config['trim_reads']['simpleclip']['default'],
+        help=_config['trim_reads']['simpleclip']['help']
+    )
+
     minth_default=0.8
     parser.add_argument(
         '-minth',
