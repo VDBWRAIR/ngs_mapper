@@ -5,33 +5,15 @@ python:
 before_install:
     - "export DISPLAY=:99.0" # Should fix matplotlib errors
     - "sh -e /etc/init.d/xvfb start"
+install:
     - mkdir -p ngsdata
     - chmod 777 ngsdata
     - sed "s%/path/to/NGSDATA%$PWD/ngsdata%" ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
-install:
-    # We do this conditionally because it saves us some downloading if the
-    # version is the same.
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-        wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-      else
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      fi
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - hash -r
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update -q conda
-    # Useful for debugging any issues with conda
-    - conda info -a
-    # Add bioconda channels(r is required for bioconda)
-    - conda config --add channels r
-    - conda config --add channels bioconda
-    - conda install --file requirements-conda.txt
-    - pip install -r requirements-pip.txt
-    - python setup.py install
+    - ./install.sh miniconda
+    - export PATH=$PWD/miniconda:$PATH
 script:
-    - nosetests ngs_mapper/tests -v --nologcapture -a '!slow' -I '.*test_functional.py$'
-    - travis_wait nosetests -v ngs_mapper/tests/test_functional.py
+    - ngs_mapper/tests/fast_tests.sh
+    - travis_wait ngs_mapper/tests/slow_tests.sh
 notifications:
   webhooks:
     urls:
