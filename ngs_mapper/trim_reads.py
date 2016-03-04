@@ -25,7 +25,8 @@ def main():
         args.q,
         args.outputdir,
         head_crop=args.headcrop,
-        platforms=args.platforms
+        platforms=args.platforms,
+        primer_info=[args.primer_file, args.primer_seed, args.palindrom_clip, args.simple_clip]
     )
 
 def trim_reads_in_dir( *args, **kwargs ):
@@ -44,6 +45,7 @@ def trim_reads_in_dir( *args, **kwargs ):
     out_path = args[2]
     headcrop = kwargs.get('head_crop', 0)
     platforms = kwargs.get('platforms', None)
+    primer_info = kwargs.get('primer_info')
     logger.info(
         "Only accepting the following platform's read files: {0}".format(
             platforms
@@ -77,7 +79,7 @@ def trim_reads_in_dir( *args, **kwargs ):
                 if inreads is None:
                     continue
                 try:
-                    r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
+                    r = trim_read( inreads, qual_th, outreads, head_crop=headcrop, primer_info=primer_info )
                     logger.debug("Output from trim_read {0}".format(r))
                     unpaired += r[1::2]
                     logger.debug("Added {0} to unpaired list".format(r[1::2]))
@@ -131,6 +133,7 @@ def trim_read( *args, **kwargs ):
     else:
         out_paths = (None,None)
     headcrop = kwargs.get('head_crop', 0)
+    primer_info = kwargs.get('primer_info')
 
     from Bio import SeqIO
     tfile = None
@@ -176,7 +179,7 @@ def trim_read( *args, **kwargs ):
         output = run_trimmomatic(
             'PE', readpaths[0], readpaths[1], out_paths[0], out_paths[0]+'.unpaired', out_paths[1], out_paths[1]+'.unpaired',
             ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
-            threads=1, trimlog=stats_file
+            threads=1, trimlog=stats_file, primer_info=primer_info #NOTE: only run primer on paired read files
         )
 
     # Prepend stats file with stdout from trimmomatic
@@ -225,6 +228,11 @@ def run_trimmomatic( *args, **kwargs ):
     # Set all options
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
     cmd = ['trimmomatic', args[0]] + options + inputs + outputs + steps
+
+    primer_info = kwargs.get('primer_info')
+    if primer_info:
+        cmd += ':'.join(['ILLUMINACLIP'] + primer_info)
+
 
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
