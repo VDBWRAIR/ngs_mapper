@@ -19,24 +19,6 @@ Hardware
       
       If you are analyzing a 24 sample run then you will probably need about 4GB per CPU core since there will be more data
 
-Python Packages
----------------
-
-The pipeline comes with all of the necessary python packages already defined 
-inside of `requirements.txt`_ as well as `requirements-py26.txt`_
-
-.. _requirements.txt: ../../../requirements.txt
-.. _requirements-py26.txt: ../../../requirements-py26.txt
-
-System Packages
----------------
-
-The pipeline requires some system level packages(software installed via your 
-Linux distribution's package manager). The installer looks for 
-`system_packages.lst <../../../system_packages.lst>`_ and installs the correct 
-packages using that file. This file is a simple json formatted file that defines 
-packages for some common Linux distrubutions(CentOS, Red Hat and Ubuntu).
-
 Roche Utilities
 ^^^^^^^^^^^^^^^
 
@@ -60,20 +42,11 @@ Installation
 
 1. Clone/Download the version you want
 
-    Assumes you already have git installed. If not you will need to get it 
-    installed by your system administrator.
-
-   #. Set your github username
-   
-      .. code-block:: bash
-      
-          githubuser='mygithubusername'
-
    #. Clone the code
 
       .. code-block:: bash
 
-        git clone https://${githubuser}@github.com/VDBWRAIR/ngs_mapper.git
+        git clone https://github.com/VDBWRAIR/ngs_mapper.git
         cd ngs_mapper
         
    #. Check which versions are available
@@ -88,26 +61,7 @@ Installation
       
          git checkout -b vX.Y.Z vX.Y.Z
 
-.. _install-system-packages:
-
-2. Install System Packages
-
-    This is the only part of the installation process that you should need to 
-    become the super user
-
-    - Red Hat/CentOS(Requires the root password)
-  
-        .. code-block:: bash
-
-            su -c 'python setup.py install_system_packages'
-  
-    - Ubuntu
-  
-        .. code-block:: bash
-
-            sudo python setup.py install_system_packages
-
-3. Configure the defaults
+2. Configure the defaults
 
     You need to configure the ngs_mapper/:doc:`config` file.
 
@@ -129,81 +83,32 @@ Installation
 
             mkdir -p /path/to/NGSDATA
 
-4. Python
+3. Install
 
-    The ngs_mapper requires python 2.6 or 2.7
+    The project now comes with a much more simplified installer which is based
+    on miniconda.
 
-    - Quick verify that the correct version of Python is installed
-
-        The following should return python 2.6.x or 2.7.x
-
-        .. code-block:: bash
-
-            python --version
-
-    - Install supported Python version into your home directory
-
-        This is only needed if you do not have python 2.6.x or 2.7.x already.
-        Red Hat/CentOS comes pre-shipped with Python 2.6.6 and the latest versions
-        of Ubuntu come with 2.7.x so this is likely not needed.
-
-        If the above command does not return 2.6.x or 2.7.x and you think it should,
-        there is a chance that the system installed python is not first in your
-        environment's PATH.
-
-        Here we specify to install into our home directory and to install Python
-        version 2.7.10. You can specify anywhere you want and any version(less than
-        3.0), but you will need to then specify the path to that python later on.
-
-        .. code-block:: bash
-
-            python setup.py install_python --prefix $HOME --version 2.7.10
-
-5. Setup virtualenv
-  
-    1. Where do you want the pipeline to install? 
-       *Don't forget this path, you will need it every time you want to activate 
-       the pipeline*
-
-        .. code-block:: bash
-
-            venvpath=$HOME/.ngs_mapper
-
-    2. Install the virtualenv to the path you specified
-
-        .. code-block:: bash
-
-            wget --no-check-certificate https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz#md5=f61cdd983d2c4e6aeabb70b1060d6f49 -O- | tar xzf -
-            python virtualenv-1.11.6/virtualenv.py --prompt="(ngs_mapper) " $venvpath 
-
-        If you had to install your own version of python above, you will need to use
-        $HOME/bin/python instead of just python in the command above.
-
-    3. Activate the virtualenv. You need to do this any time you want to start 
-       using the pipeline
-
-         .. code-block:: bash
-
-            . ${venvpath}/bin/activate
-
-6. Install the pipeline into virtualenv
+    The following will install the project into the current directory that you
+    are in.
 
     .. code-block:: bash
 
-        python setup.py install
+        ./install.sh miniconda
 
-    It should be safe to run this more than once in case some dependencies do not 
-    fully install.
+4. PATH Setup
 
-Build and view complete documentation
--------------------------------------
+    Once the project is installed you will need to setup your PATH environmental
+    variable to include the 
 
-.. code-block:: bash
+    .. code-block:: bash
 
-    cd doc
-    make clean && make html
-    firefox build/html/install.html#build-and-view-complete-documentation
-    cd ..
+        export PATH=$PWD/miniconda/bin:$PATH
+
+    You can put this into your .bashrc file inside your home directory so that any
+    time you open a new terminal it automatically is run.
+    
+    If you don't setup your .bashrc you will have to run the export command from
+    above every time you open a new terminal.
 
 Verify install
 --------------
@@ -212,4 +117,4 @@ You can pseudo test the installation of the pipeline by running the functional t
 
 .. code-block:: bash
 
-    nosetests ngs_mapper/tests/test_functional.py
+    ngs_mapper/tests/slow_tests.sh
