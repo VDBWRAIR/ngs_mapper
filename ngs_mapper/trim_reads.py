@@ -25,7 +25,8 @@ def main():
         args.q,
         args.outputdir,
         head_crop=args.headcrop,
-        platforms=args.platforms
+        platforms=args.platforms,
+        primer_info=[args.primer_file, args.primer_seed, args.palindrom_clip, args.simple_clip]
     )
 
 def trim_reads_in_dir( *args, **kwargs ):
@@ -44,6 +45,7 @@ def trim_reads_in_dir( *args, **kwargs ):
     out_path = args[2]
     headcrop = kwargs.get('head_crop', 0)
     platforms = kwargs.get('platforms', None)
+    primer_info = kwargs.get('primer_info')
     logger.info(
         "Only accepting the following platform's read files: {0}".format(
             platforms
@@ -77,7 +79,7 @@ def trim_reads_in_dir( *args, **kwargs ):
                 if inreads is None:
                     continue
                 try:
-                    r = trim_read( inreads, qual_th, outreads, head_crop=headcrop )
+                    r = trim_read( inreads, qual_th, outreads, head_crop=headcrop, primer_info=primer_info )
                     logger.debug("Output from trim_read {0}".format(r))
                     unpaired += r[1::2]
                     logger.debug("Added {0} to unpaired list".format(r[1::2]))
@@ -131,6 +133,7 @@ def trim_read( *args, **kwargs ):
     else:
         out_paths = (None,None)
     headcrop = kwargs.get('head_crop', 0)
+    primer_info = kwargs.get('primer_info')
 
     from Bio import SeqIO
     tfile = None
@@ -169,14 +172,14 @@ def trim_read( *args, **kwargs ):
         output = run_trimmomatic(
             'SE', readpaths[0], out_paths[0],
             ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
-            threads=1, trimlog=stats_file
+            threads=1, trimlog=stats_file, primer_info=primer_info
         )
     else:
         retpaths = [out_paths[0],out_paths[0]+'.unpaired',out_paths[1],out_paths[1]+'.unpaired']
         output = run_trimmomatic(
             'PE', readpaths[0], readpaths[1], out_paths[0], out_paths[0]+'.unpaired', out_paths[1], out_paths[1]+'.unpaired',
             ('LEADING',qual_th), ('TRAILING',qual_th), ('HEADCROP',headcrop),
-            threads=1, trimlog=stats_file
+            threads=1, trimlog=stats_file, primer_info=primer_info
         )
 
     # Prepend stats file with stdout from trimmomatic
@@ -219,17 +222,23 @@ def run_trimmomatic( *args, **kwargs ):
         steps = args[7:]
     else:
         raise ValueError( 'SE or PE need to be supplied' )
-    
+
     # Change all steps to strings of STEPNAME:VALUE
     steps = [':'.join([str(x) for x in s]) for s in steps]
     # Set all options
+    primer_info = kwargs.pop('primer_info', None)
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
     cmd = ['trimmomatic', args[0]] + options + inputs + outputs + steps
+
+    if primer_info:
+        cmd += [':'.join(['ILLUMINACLIP'] + primer_info)]
+
 
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt
     logger.debug( "Running {0}".format(' '.join(cmd)) )
     try:
+        print cmd
         output = compat.check_output( cmd, stderr=subprocess.STDOUT )
         return output
     except subprocess.CalledProcessError as e:
@@ -239,7 +248,7 @@ def run_trimmomatic( *args, **kwargs ):
 def run_cutadapt( *args, **kwargs ):
     '''
         Runs cutadapt with the given arguments and kwargs
-        
+
         @param - fastq file to trim
         @param - output file location
         @param q - Quality threshold
@@ -304,6 +313,34 @@ def parse_args( args=sys.argv[1:] ):
         choices=defaults['platforms']['choices'],
         default=defaults['platforms']['default'],
         help=defaults['platforms']['help']
+    )
+
+    parser.add_argument(
+        '--primer-file',
+        dest='primer_file',
+        default=defaults['primerfile']['default'],
+        help=defaults['primerfile']['help']
+    )
+
+    parser.add_argument(
+        '--primer-seed',
+        dest='primer_seed',
+        default=defaults['primerseed']['default'],
+        help=defaults['primerseed']['help']
+    )
+
+    parser.add_argument(
+        '--palindrome-clip',
+        dest='palindrom_clip',
+        default=defaults['palindromeclip']['default'],
+        help=defaults['palindromeclip']['help']
+    )
+
+    parser.add_argument(
+        '--simple-clip',
+        dest='simple_clip',
+        default=defaults['simpleclip']['default'],
+        help=defaults['simpleclip']['help']
     )
 
     return parser.parse_args( args )
