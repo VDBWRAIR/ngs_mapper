@@ -75,7 +75,7 @@ class TestRunPipeline(BaseFunctional):
         for reads, config in self.fixtures:
             sn = basename(reads)
             # Retreive log file location
-            p = 'Please check the logfile (.*?\.log)'
+            p = 'Please check the log\s{0,1}file (.*?\.log)'
             m = re.search( p, self.output, re.S|re.M )
             if m:
                 bwalog = m.group(1)
