@@ -72,17 +72,27 @@ class TestRunPipeline(BaseFunctional):
         print self.cmd
 
     def test_return_code_and_output(self):
-        eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
         for reads, config in self.fixtures:
             sn = basename(reads)
-            p = 'Please check the logfile (/tmp/\w+/{0}.log)'.format(sn)
+            # Retreive log file location
+            p = 'Please check the logfile (.*?\.log)'
             m = re.search( p, self.output, re.S|re.M )
             if m:
-                print m.group(1)
-                print open(m.group(1)).read()
+                bwalog = m.group(1)
+                projdir_tdir = dirname(bwalog)
+                stdlog = glob(join(projdir_tdir, '*.std.log'))[0]
+                print "--- LOG({0}) ---".format(bwalog)
+                print open(bwalog).read()
+                print "--- END BWA LOG ---"
+                print "--- STDLOG({0}) ---".format(stdlog)
+                print open(stdlog).read()
+                print "--- END STDLOG ---"
+            print "--- Standard output ---"
             print self.output
+            print "--- End standard output ---"
             ok_( 'Starting {0}'.format(sn) in self.output, "Did not start {0}".format(sn) )
             ok_( 'Finished {0}'.format(sn) in self.output, "Did not finish {0}".format(sn) )
+        eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
 
     def check_sample_project_files( self, projdir, fixture ):
         # Files defined that should exist
