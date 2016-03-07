@@ -230,7 +230,7 @@ def run_trimmomatic( *args, **kwargs ):
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
     cmd = ['trimmomatic', args[0]] + options + inputs + outputs + steps
 
-    if primer_info:
+    if primer_info and primer_info[0]: # primer file was passed
         cmd += [':'.join(['ILLUMINACLIP'] + primer_info)]
 
 
