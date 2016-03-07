@@ -20,12 +20,13 @@ then
 fi
 
 # How many CPUS does the computer have(Some ugly stuff here but it works)
-CPUS=$(for pid in $(awk '/physical id/ {print $4}' /proc/cpuinfo | sort | uniq); do egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo; done | awk '/cpu cores/ {print $4}' | paste -sd+ | bc)
+CPUS=$(grep '^processor' /proc/cpuinfo | wc -l)
 # If CPUS comes back empty just use 1
 if [ -z "$CPUS" ]
 then
     CPUS=1
 fi
+echo "Using $CPUS cpus"
 
 # Where to place all analysis output directories
 PROJDIR=Projects
