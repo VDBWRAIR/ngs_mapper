@@ -80,12 +80,11 @@ def run_montage( *args, **kwargs ):
     for k,v in kwargs.items():
         cmd += ['-{0}'.format(k),str(v)]
     cmd += args
-    logger.debug( 'Running {0}'.format( ' '.join(cmd) ) )
+    logger.info( 'Running {0}'.format( ' '.join(cmd) ) )
     try:
         subprocess.check_call( cmd )
     except subprocess.CalledProcessError as e:
         logger.critical('Could not build montage image because {0}'.format(e))
-        raise e
     except OSError as e:
         logger.critical('Montage command is missing')
         raise MissingCommandError(
