@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Fail if anything fails
+set -e
+
 # ngs_mapper dir
 THIS=$(cd $(dirname $0) && pwd)
 
