@@ -95,6 +95,9 @@ class TestRunPipeline(BaseFunctional):
         eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
 
     def check_sample_project_files( self, projdir, fixture ):
+        print "--- Standard output ---"
+        print self.output
+        print "--- End standard output ---"
         # Files defined that should exist
         efiles = self.__class__.parse_conf( fixture[1] )['files'].split()
         failed = [join(projdir,ef) for ef in efiles if not exists(join(projdir,ef))]
@@ -108,6 +111,9 @@ class TestRunPipeline(BaseFunctional):
             ok_( False )
 
     def test_pipeline_produced_expected_files_dirs( self ):
+        print "--- Standard output ---"
+        print self.output
+        print "--- End standard output ---"
         f = 'file'
         d = 'directory'
         expected = [
@@ -125,6 +131,9 @@ class TestRunPipeline(BaseFunctional):
             ok_( exists( e ), 'Pipeline did not produce {0}'.format(e) )
 
     def test_project_directories_have_expected_files( self ):
+        print "--- Standard output ---"
+        print self.output
+        print "--- End standard output ---"
         # Ensure each project has correct files too
         for fixture in self.fixtures:
             sn = basename(fixture[0])
@@ -132,6 +141,9 @@ class TestRunPipeline(BaseFunctional):
             self.check_sample_project_files( projdir, fixture )
 
     def test_vcf_consensus_has_symlink_consensuses( self ):
+        print "--- Standard output ---"
+        print self.output
+        print "--- End standard output ---"
         for pdir in glob( join('Projects','*') ):
             sn = basename(pdir)
             consensus_file = join( pdir, sn + '.bam.consensus.fasta' )
@@ -162,6 +174,9 @@ class TestRunPipeline(BaseFunctional):
 
     @attr('current')
     def test_consensus_mutations( self ):
+        print "--- Standard output ---"
+        print self.output
+        print "--- End standard output ---"
         for reads,config in self.fixtures:
             sn = basename(reads)
             consensus_file = join( 'vcf_consensus', sn + '.fasta' )
