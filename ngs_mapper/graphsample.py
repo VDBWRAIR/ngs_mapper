@@ -63,6 +63,7 @@ def normalize_ref( refname ):
             name += c
     return name
 
+class MissingCommandError(Exception): pass
 def run_montage( *args, **kwargs ):
     '''
         Runs montage on all the images to create the
@@ -84,8 +85,12 @@ def run_montage( *args, **kwargs ):
         subprocess.check_call( cmd )
     except subprocess.CalledProcessError as e:
         logger.critical('Could not build montage image because {0}'.format(e))
+        raise e
     except OSError as e:
         logger.critical('Montage command is missing')
+        raise MissingCommandError(
+            "Missing montage command from ImageMagick tools. Is ImageMagick installed?"
+        )
     return args[-1]
     
 def handle_args( args ):

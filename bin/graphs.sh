@@ -24,9 +24,9 @@ for p in Projects/*
 do
     if [ "$1" == "-norecreate" ]
     then
-        echo /usr/bin/time ${THIS}/graphsample ${p}/$(basename $p).bam -od $p -qualdepth ${p}/$(basename $p).bam.qualdepth.json
+        echo time ${THIS}/graphsample ${p}/$(basename $p).bam -od $p -qualdepth ${p}/$(basename $p).bam.qualdepth.json
     else
-        echo /usr/bin/time ${THIS}/graphsample ${p}/$(basename $p).bam -od $p
+        echo time ${THIS}/graphsample ${p}/$(basename $p).bam -od $p
     fi
 done | xargs -n 5 -P $CPUS -I CMD bash -c CMD
 
