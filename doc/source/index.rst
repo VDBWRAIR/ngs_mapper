@@ -24,6 +24,7 @@ Contents:
     upgrade
     Configure <config>
     ngsdata
+    primer file <primerfile>
     Running the Pipeline <analysis>
     help
     pipeline
