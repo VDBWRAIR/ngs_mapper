@@ -88,6 +88,9 @@ class TestRunPipeline(BaseFunctional):
         print "--- Standard output ---"
         print self.output
         print "--- End standard output ---"
+        print "--- Graphsample log ---"
+        print open('graphsample.log').read()
+        print "--- End Graphsample log ---"
 
     def test_return_code_and_output(self):
         for reads, config in self.fixtures:
