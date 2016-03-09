@@ -35,6 +35,12 @@ graph_mapunmap Projects/*/*.qualdepth.json -o MapUnmapReads.png
 # Create the Sample Coverage graphic
 sample_coverage Projects/* --output SampleCoverage.png
 # Create one graphic for all QualDepth graphics
-convert -quality 25 -compress JPEG Projects/*/*.qualdepth.png QualDepth.pdf
+# convert may exit non 0 but actually work
+convert -quality 25 -compress JPEG Projects/*/*.qualdepth.png QualDepth.pdf || true
+if [ ! -e QualDepth.pdf ]
+then
+    echo "QualDepth.pdf not created"
+    exit 1
+fi
 # Get a graphic to see how long it took to run each sample
 graph_times
