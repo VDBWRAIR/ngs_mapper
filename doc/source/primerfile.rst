@@ -1,6 +1,9 @@
+Primer File
+===========
+
 You can set the primer file and the the primer options in the config.yaml file. You'll want to change the fields under trim_reads. To learn more about the options, see the help fields below, and see the documentation at http://www.usadellab.org/cms/?page=trimmomatic
 
-.. code-block:: 
+.. code-block:: yaml 
 
     trim_reads:
         primerfile:
