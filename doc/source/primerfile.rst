@@ -28,6 +28,6 @@ The available options are:
 .. code-block:: yaml 
 
     primerfile: path to the primer file
-    seedMismatches: specifies the maximum mismatch count which will still allow a full match to be performed
-    palindromeClipThreshold: specifies how accurate the match between the two 'adapter ligated' reads must be for PE palindrome read alignment.
-    simpleClipThreshold: specifies how accurate the match between any adapter etc. sequence must be against a read.
+    primerseed: specifies the maximum mismatch count which will still allow a full match to be performed
+    palindromeclip: specifies how accurate the match between the two 'adapter ligated' reads must be for PE palindrome read alignment.
+    simpleclip: specifies how accurate the match between any adapter etc. sequence must be against a read.
