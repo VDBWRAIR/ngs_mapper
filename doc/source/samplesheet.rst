@@ -4,7 +4,7 @@
 Samplesheet
 ===========
 
-You just need to make a file somewhere that is space or tab delimited with the first column being the sample name and the second column being the path to the reference to use to map that sample.
+You just need to make a file somewhere that is space or tab delimited with the first column being the sample name and the second column being the path to the reference to use to map that sample. The third column is optionally the primer file.
 An easy way to get all the samplenames is by looking inside the MiSeq output directory where you will find a SampleSheet.csv file that you can open with excel/libreoffice
 
 The resulting file should look very similar to this::
@@ -16,6 +16,13 @@ The resulting file should look very similar to this::
 Note: This file does not contain any headers, but any line that starts with a # will be ignored so you could make the first line as follows if you want to::
 
     # Samplename Reference
+
+Primer File
+-----------
+If you want to use a primer file in any of your runs, simply specify the path as the third field. Example::
+
+	780 ngs_mapper/tests/fixtures/functional/780.ref.fasta ngs_mapper/tests/fixtures/functional/780.primer.fasta 
+	947 ngs_mapper/tests/fixtures/functional/947.ref.fasta
 
 Concatenate References
 ----------------------
