@@ -1,5 +1,5 @@
 __projectname__ = 'ngs_mapper'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 __authors__ = 'Tyghe Vallard, Melanie Melendrez'
 __authoremails__ = 'vallardt@gmail.com, mmelendrez@gmail.com'
 __description__ = 'Pipeline that combines sff and fastq from multiple platforms'

@@ -27,15 +27,10 @@ Changelog
 Running the pipeline
 --------------------
 
-Before you use the pipeline you always need to ensure that you have the virtualenv activated that you installed into. Activating a virtualenv more than once is fine as it is smart enough to know if you already have done it. So if you are unsure, just do it anyways.
+Before you use the pipeline you always need to ensure that the miniconda environment
+is in your environment's path. You will want to look at the
+`install <doc/source/install.rst>`_ for more details
 
-If you copy pasted the installation instructions verbatim, then you can activate as follows:
-
-.. code-block:: bash
-
-    . $HOME/.ngs_mapper/bin/activate
-
-If you changed the venvpath in the installation then you will need to use that path instead of the above.
 
 Running a single sample
 ^^^^^^^^^^^^^^^^^^^^^^^
