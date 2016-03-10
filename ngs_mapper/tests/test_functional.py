@@ -41,7 +41,11 @@ class BaseFunctional(BaseClass):
             for readsdir, conf in fixtures:
                 c = klass.parse_conf( conf )
                 ref = join( dirname(readsdir), c['reference'] )
-                fh.write( '{0}\t{1}\n'.format(basename(readsdir),ref) )
+                fh.write( '{0}\t{1}'.format(basename(readsdir),ref) )
+                if 'primer' in c:
+                    primer = join(dirname(readsdir), c['primer'])
+                    fh.write('\t{0}'.format(primer))
+                fh.write('\n')
 
     @classmethod
     def run_fixtures( klass, fixtures ):
