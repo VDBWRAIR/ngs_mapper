@@ -18,6 +18,7 @@ def setup_logger( name, config ):
     }
     #logging.config.dictConfig( config )
     logconfig.from_dict(config)
+    logging.getLogger("sh").setLevel(logging.WARNING)
     log = logging.getLogger( name )
     return log
 
