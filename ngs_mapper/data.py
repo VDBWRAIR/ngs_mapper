@@ -3,11 +3,11 @@ from os.path import *
 import os
 import sys
 import re
-import log
 from Bio import SeqIO
 import gzip
 
-logger = log.setup_logger(__name__, log.get_config())
+import logging
+logger = logging.getLogger(__name__)
 
 ROCHE_FILE = '\S+?(?:__[0-9]){0,1}__(?:TI|RL)\d+__\d{4}_\d{2}_\d{2}__\w+.(sff|fastq)'
 '''
@@ -94,7 +94,7 @@ def filter_reads_by_platform( path, platform ):
             pfr = platform_for_read( f )
         except NoPlatformFound as e:
             logger.warning(
-                "{0} was skipped as the platform cannot be determined".format(f)
+                "{0} was skipped as the platform cannot be determined({1})".format(f,str(e))
             )
             continue
         except IOError as e:
@@ -105,6 +105,7 @@ def filter_reads_by_platform( path, platform ):
             continue
         if pfr == platform:
             files.append( f )
+    logger.debug('Found {0} reads for {1}'.format(files, platform))
     return files
 
 def platform_for_read( filepath ):

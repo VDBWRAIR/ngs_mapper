@@ -11,12 +11,12 @@ from glob import glob
 import tempfile
 import reads
 import shlex
-import data
-from ngs_mapper import compat
 
 import log
-lconfig = log.get_config()
-logger = log.setup_logger( 'trim_reads', lconfig )
+logger = log.setup_logger(__name__, log.get_config())
+
+import data
+from ngs_mapper import compat
 
 def main():
     args = parse_args()
@@ -55,6 +55,7 @@ def trim_reads_in_dir( *args, **kwargs ):
     # Only sff and fastq files
     #reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
     platreads = data.reads_by_plat( readdir )
+    logger.debug("Found the following reads by platform: " + str(platreads))
     # Make out_path
     if not isdir( out_path ):
         os.mkdir( out_path )
@@ -228,11 +229,12 @@ def run_trimmomatic( *args, **kwargs ):
     # Set all options
     primer_info = kwargs.pop('primer_info', None)
     options = shlex.split( ' '.join( ['-{0} {1}'.format(k,v) for k,v in kwargs.items()] ) )
+
+    # Primer trimming should come first before anything else
+    if primer_info and primer_info[0]:
+        steps = [':'.join(map(str, ['ILLUMINACLIP'] + primer_info))] + steps
+
     cmd = ['trimmomatic', args[0]] + options + inputs + outputs + steps
-
-    if primer_info and primer_info[0]: # primer file was passed
-        cmd += [':'.join(['ILLUMINACLIP'] + primer_info)]
-
 
     # Write stdout to output argument(should be fastq)
     # Allow us to read stderr which should be stats from cutadapt

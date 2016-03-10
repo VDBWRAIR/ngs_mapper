@@ -11,14 +11,8 @@ def setup_logger( name, config ):
 
         @returns a logging.getLogger instance that is configured
     '''
-    # Add name as a logger
-    config['loggers'][name] = {
-        'level': 'DEBUG',
-        'handlers': config['handlers'].keys()
-    }
-    #logging.config.dictConfig( config )
     logconfig.from_dict(config)
-    log = logging.getLogger( name )
+    log = logging.getLogger(name)
     return log
 
 def get_config( filename='pipeline.log', format='%(asctime)-15s -- %(levelname)s -- %(name)-15s %(message)s' ):
@@ -33,6 +27,7 @@ def get_config( filename='pipeline.log', format='%(asctime)-15s -- %(levelname)s
     '''
     log_config = {
         'version': 1,
+        'disable_existing_loggers': False,
         'handlers': {
             'console': {
                 'class': 'logging.StreamHandler',
@@ -53,10 +48,10 @@ def get_config( filename='pipeline.log', format='%(asctime)-15s -- %(levelname)s
             }
         },
         'loggers': {
-            'root': {
-                'level': 'DEBUG',
-                'handlers': ['console','file']
-            }
+        },
+        'root': {
+            'level': 'DEBUG',
+            'handlers': ['console','file']
         }
     }
 

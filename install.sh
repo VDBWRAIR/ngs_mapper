@@ -20,14 +20,21 @@ then
 else
     PYTHON_VERSION="$TRAVIS_PYTHON_VERSION"
 fi
-if [[ "$PYTHON_VERSION" == "2.7" ]]; then
-    wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-else
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+if [ ! -e miniconda.sh ]
+then
+    if [[ "$PYTHON_VERSION" == "2.7" ]]
+    then
+        wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
 fi
 
 # Install miniconda here
-bash miniconda.sh -b -p "$INSTALL_PATH"
+if [ ! -d $INSTALL_PATH ]
+then
+    bash miniconda.sh -b -p "$INSTALL_PATH"
+fi
 
 # Set path
 export PATH="${INSTALL_PATH}/bin:$PATH"
