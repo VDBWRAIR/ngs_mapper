@@ -50,8 +50,8 @@ You can use runsample.py on them as follows:
 .. code-block:: bash
 
     mkdir -p tdir && cd tdir
-    runsample.py -od 780 ../ngs_mapper/tests/fixtures/functional/780{,.ref.fasta} 780
-    runsample.py -od 947 ../ngs_mapper/tests/fixtures/functional/947{,.ref.fasta} 947
+    runsample -od 780 ../ngs_mapper/tests/fixtures/functional/780{,.ref.fasta} 780
+    runsample -od 947 ../ngs_mapper/tests/fixtures/functional/947{,.ref.fasta} 947
 
 This will create a temporary directory called tdir and cd into it then run both sample 780 as well as 947
 and put their results inside of their own directory named after themselves.
