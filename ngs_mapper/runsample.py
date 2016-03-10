@@ -168,6 +168,34 @@ def parse_args( args=sys.argv[1:] ):
         help=_config['trim_reads']['headcrop']['help'],
     )
 
+    parser.add_argument(
+        '--primer-file',
+        dest='primer_file',
+        default=_config['trim_reads']['primerfile']['default'],
+        help=_config['trim_reads']['primerfile']['help']
+    )
+
+    parser.add_argument(
+        '--primer-seed',
+        dest='primer_seed',
+        default=_config['trim_reads']['primerseed']['default'],
+        help=_config['trim_reads']['primerseed']['help']
+    )
+
+    parser.add_argument(
+        '--palindrome-clip',
+        dest='palindrom_clip',
+        default=_config['trim_reads']['palindromeclip']['default'],
+        help=_config['trim_reads']['palindromeclip']['help']
+    )
+
+    parser.add_argument(
+        '--simple-clip',
+        dest='simple_clip',
+        default=_config['trim_reads']['simpleclip']['default'],
+        help=_config['trim_reads']['simpleclip']['help']
+    )
+
     minth_default=0.8
     parser.add_argument(
         '-minth',
@@ -309,6 +337,7 @@ def main():
             'platforms': args.platforms,
             'drop_ns': args.drop_ns,
             'index_min': args.index_min,
+            'primer_info' : (args.primer_file, args.primer_seed, args.palindrom_clip, args.simple_clip)
         }
 
         # Best not to run across multiple cpu/core/threads on any of the pipeline steps
@@ -342,6 +371,9 @@ def main():
         cmd = 'trim_reads {filtered_dir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
         if cmd_args['config']:
             cmd += ' -c {config}'
+        primer_info = cmd_args['primer_info']
+        if primer_info[0]:
+            cmd += " --primer-file %s --primer-seed %s --palindrome-clip %s --simple-clip %s " % primer_info
         p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
         rets.append( p.wait() )
         if rets[-1] != 0:

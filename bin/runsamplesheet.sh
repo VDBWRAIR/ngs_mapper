@@ -1,11 +1,5 @@
 #!/bin/bash
 
-if [ -z "$VIRTUAL_ENV" ] && [ -z "$CONDA_ENV_PATH" ]
-then
-    echo "Please activate a virtual environment"
-    exit 1
-fi
-
 # We actually want the full path to scripts
 scripts=$(cd $(dirname $0) && pwd)
 
@@ -26,12 +20,13 @@ then
 fi
 
 # How many CPUS does the computer have(Some ugly stuff here but it works)
-CPUS=$(for pid in $(awk '/physical id/ {print $4}' /proc/cpuinfo | sort | uniq); do egrep -xA 12 "processor[[:space:]]: $pid" /proc/cpuinfo; done | awk '/cpu cores/ {print $4}' | paste -sd+ | bc)
+CPUS=$(grep '^processor' /proc/cpuinfo | wc -l)
 # If CPUS comes back empty just use 1
 if [ -z "$CPUS" ]
 then
     CPUS=1
 fi
+echo "Using $CPUS cpus"
 
 # Where to place all analysis output directories
 PROJDIR=Projects

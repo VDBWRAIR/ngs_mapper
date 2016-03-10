@@ -186,10 +186,3 @@ class TestRunMontage(unittest.TestCase):
         outfile = '/path/bar.png'
         kwargs = {'foo':'bar', 'baz':1}
         r = graphsample.run_montage(infile, outfile, **kwargs)
-
-    def test_missing_montage_command(self):
-        self.m_subprocess.check_call.side_effect = OSError('missing montage')
-        infile = '/path/foo.png'
-        outfile = '/path/bar.png'
-        kwargs = {'foo':'bar', 'baz':1}
-        r = graphsample.run_montage(infile, outfile, **kwargs)

@@ -74,7 +74,7 @@ class TestUnitSetupLogger(LogBase):
 
 
 import mock
-import unittest2 as unittest
+import unittest
 
 from os.path import *
 
