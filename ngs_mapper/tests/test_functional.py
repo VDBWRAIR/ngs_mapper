@@ -41,7 +41,11 @@ class BaseFunctional(BaseClass):
             for readsdir, conf in fixtures:
                 c = klass.parse_conf( conf )
                 ref = join( dirname(readsdir), c['reference'] )
-                fh.write( '{0}\t{1}\n'.format(basename(readsdir),ref) )
+                fh.write( '{0}\t{1}'.format(basename(readsdir),ref) )
+                if 'primer' in c:
+                    primer = join(dirname(readsdir), c['primer'])
+                    fh.write('\t{0}'.format(primer))
+                fh.write('\n')
 
     @classmethod
     def run_fixtures( klass, fixtures ):
@@ -59,8 +63,6 @@ class TestRunPipeline(BaseFunctional):
     @classmethod
     def setUpClass( klass ):
         klass.fixtures = klass.compile_functional_fixtures( join(fixtures.FIXDIR,'functional') )
-        fh = open('/tmp/thingy2','w')
-        fh.close()
         klass.samplesheet, klass.ret, klass.out, klass.cmd = klass.run_fixtures( klass.fixtures )
         #klass.samplesheet, klass.ret, klass.out = 'ss.tsv',0,''
 
@@ -169,6 +171,21 @@ class TestRunPipeline(BaseFunctional):
         counts = c['mutations']
         counts = json.loads( counts )
         return counts
+
+    def test_ran_primer_trimming(self):
+        self.printlog()
+        # Pattern that should show in trim_stats/*.trim_stats
+        for readdir, config in self.fixtures:
+            c = self.__class__.parse_conf(config)
+            sn = basename(readdir)
+            projdir = join(os.getcwd(), 'Projects', sn)
+            trim_dir = join(projdir, 'trim_stats')
+            cmd = sh.grep('ILLUMINACLIP', sh.glob(join(trim_dir, '*.trim_stats')), _ok_code=[0,1])
+            if 'primer' in c:
+                assert 0 == cmd.exit_code, "Did not find 'ILLUMINACLIP' in trim_stats"
+            else:
+                assert 1 == cmd.exit_code, "Found 'ILLUMINACLIP' in trim_stats files," \
+                    " even though no primer was specified"
 
     @attr('current')
     def test_consensus_mutations( self ):

@@ -40,7 +40,7 @@ mkdir -p $PROJDIR
 # Run in parallel
 # Ignore lines beginning with #
 # Remove windows newlines
-grep -v '^#' $sample_ref_map_file | sed 's/\r//' | while read sample reference
+grep -v '^#' $sample_ref_map_file | sed 's/\r//' | while read sample reference primer
 do
     # Make sure that sample was set
     if [ -z "${sample}" ]
@@ -58,6 +58,16 @@ do
         echo "${reference} is not a file that can be read. Skipping ${sample}" >&2
         continue
     fi
+    if [ ! -z "${primer}" ]
+    then
+        if [ -f "${primer}" ]
+        then
+            primer="--primer-file ${primer}"
+        else
+            echo "${primer} cannot be read. Skipping ${sample}" >&2
+            continue
+        fi
+    fi
     # If the sample already has been run
     #  then don't rerun it
     if [ -d ${PROJDIR}/${sample} ]
@@ -66,7 +76,9 @@ do
         continue
     fi
 
-    echo runsample ${reads_by_sample}/${sample} ${reference} ${sample} -od ${PROJDIR}/${sample} $RUNSAMPLEOPTIONS
+    cmd="runsample ${reads_by_sample}/${sample} ${reference} ${sample} -od ${PROJDIR}/${sample} ${primer} $RUNSAMPLEOPTIONS"
+    echo $cmd
+    echo $cmd >&2
 done | xargs -n 6 -P $CPUS -I CMD bash -c CMD
 
 # Graph all samples

@@ -148,6 +148,25 @@ Let's tell runsample to put our analysis into a directory called 947 and also te
 
 You can see from the output that the sample started and finished. If there were errors, they would show up in between those two lines and you would have to view the :doc:`help` documentation.
 
+Specifying a primer file 
+^^^^^^^^^^^^^^^^^^^^^^^^
+If you want to include a primer file for primer trimming, you must also include the following options:
+
+.. code-block:: yaml 
+
+    primerfile: path to the primer file
+    primerseed: specifies the maximum mismatch count which will still allow a full match to be performed
+    palindromeclip: specifies how accurate the match between the two 'adapter ligated' reads must be for PE palindrome read alignment.
+    simpleclip: specifies how accurate the match between any adapter etc. sequence must be against a read.
+
+These options should be specified in the :doc:`config` . These options can also be specified on the commandline: 
+
+.. code-block:: bash
+
+    $> runsample 947.ref.fasta -od 947 947 --primer-file primer.fasta --primerseed 2 --palindromeclip 30 --simpleclip 20
+    
+Find more information at :doc:`primerfile`. 
+    
 Specifying specific platforms to map
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

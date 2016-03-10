@@ -44,7 +44,7 @@ trim_reads:
         default: 30
         help: 'palindrome clip threshold'
     simpleclip:
-        default: 20
+        default: 10
         help: 'simple clip threshold' 
     platforms:
         choices:
