@@ -114,7 +114,7 @@ import shutil
 import glob
 from ngs_mapper import compat
 import sh
-
+from data import fastas_to_40s_fastqs
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
 # Ideally the entire sample would be run inside of a prefix directory under
@@ -241,6 +241,13 @@ def parse_args( args=sys.argv[1:] ):
         help='The output directory for all files to be put[Default: {0}]'.format(default_outdir)
     )
 
+    parser.add_argument(
+        '--fasta',
+        action='store_true',
+        default=False,
+        help='Input is fasta format. Default is False.'
+    )
+
     args, rest = parser.parse_known_args(args)
     args.config = configfile
     return args,rest
@@ -352,6 +359,10 @@ def main():
         #Filter
         def select_keys(d, keys):
             return dict( ((k, v) for k, v in d.items() if k in keys))
+
+        if args.fasta:
+            fastas = glob(os.path.join(cmd_args['readsdir'], '*.fasta'))
+            fastas_to_40s_fastqs(fastas)
 
         #convert sffs to fastq
 
