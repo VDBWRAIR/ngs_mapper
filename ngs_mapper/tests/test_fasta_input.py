@@ -1,7 +1,7 @@
 import sh
 import unittest
 from glob import glob
-from import tempfile
+import tempfile
 from os.path import join
 
 def runsample(indir, outdir):
