@@ -116,7 +116,7 @@ def platform_for_read( filepath ):
     which the file belongs too
 
     You can look through the regular expressions above for how they are determined
-    
+
     This function is able to open .gz files
 
     :param str filepath: Path to read to determine platform for
@@ -138,7 +138,7 @@ def platform_for_read( filepath ):
         except ValueError as e:
             logger.debug('{0} is not a parseable type by Biopython\'s Seqio.parse: {1}'.format(filepath, str(e)))
             raise NoPlatformFound("No platform found for invalid read file {0}".format(filepath))
-            
+
         # Find first platform that matches
         for p, plat in READ_ID_MAPPING:
             if re.match(p, first_record.id):
@@ -195,7 +195,7 @@ def pair_reads( readlist ):
         Specific to MiSeq filenames at this point
 
         @param readlist - List of read file paths
-        
+
         @returns the readlist with any reads that are paired end inside of a 2 item tuple with the first(forward) in [0]
             and the second(reverse) in [1]
     '''
@@ -229,7 +229,7 @@ def find_mate( filepath, readlist ):
     '''
         Finds the index of the mate file for filepath given a readlist
         Just looks for _R[12]_ and looks for identical filename but with the opposite of whatever R? is found
-    
+
         @param filepath - Path to a read file
         @param readlist - List of paths to reads
 
@@ -245,7 +245,7 @@ def find_mate( filepath, readlist ):
         return -1
     else:
         found_r = m.group(1)
-        
+
         # Look for opposite index
         if found_r == '1':
             mate_r = '2'
@@ -267,3 +267,19 @@ def find_mate( filepath, readlist ):
                 readlist, filepath
             ))
             return -1
+
+
+
+def fastas_to_40s_fastqs(fastas):
+    def to_fq_rec(seq):
+        s = str(seq.seq)
+        qual = ']'*len(s)
+        id = str(seq.id)
+        return "@{}\n{}\n{}\n{}\n".format(id, s, '+', qual)
+    swap_ext = lambda s, ext: '.'.join(s.split('.')[:-1] + [ext])
+    for f in fastas:
+        with open(swap_ext(f), 'w') as out:
+            for seq in SeqIO.parse(f, 'fasta'):
+                out.write(to_fq_rec(seq))
+
+
