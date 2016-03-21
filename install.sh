@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
+# Log installation
+exec > >(tee install.log) 2>&1
+
 # Allow user to specify install path
 # or default to current directory
 INSTALL_PATH="$PWD/miniconda"
 if [ ! -z "$1" ]
 then
     INSTALL_PATH="$1"
+    INSTALL_PATH="$(cd $(dirname "$1") && pwd)/$1"
 fi
 
 # Fail if any command fails
@@ -20,14 +24,32 @@ then
 else
     PYTHON_VERSION="$TRAVIS_PYTHON_VERSION"
 fi
-if [[ "$PYTHON_VERSION" == "2.7" ]]; then
-    wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+
+# Don't redownload miniconda.sh
+if [ ! -e miniconda.sh ]
+then
+    if [[ "$PYTHON_VERSION" == "2.7" ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
 else
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    echo "Reusing existing miniconda.sh"
 fi
 
 # Install miniconda here
-bash miniconda.sh -b -p "$INSTALL_PATH"
+if [ ! -d "$INSTALL_PATH" ]
+then
+    bash miniconda.sh -b -p "$INSTALL_PATH"
+else
+    if [ -e "${INSTALL_PATH}/bin/conda" ]
+    then
+        echo "Will attempt to reuse existing miniconda install in $INSTALL_PATH"
+    else
+        echo "$INSTALL_PATH already exists but is not a miniconda installation?"
+        exit 1
+    fi
+fi
 
 # Set path
 export PATH="${INSTALL_PATH}/bin:$PATH"
