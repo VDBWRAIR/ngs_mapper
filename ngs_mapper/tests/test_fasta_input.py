@@ -2,7 +2,7 @@ import sh
 import unittest
 from glob import glob
 import tempfile
-from os.path import join
+from os.path import join, dirname
 
 def runsample(indir, outdir):
     sh.runsample(indir, "tests/fixtures/functional/947.ref.fasta", "947", od=outdir)
@@ -12,8 +12,8 @@ class TestFastaInput(unittest.TestCase):
     def setUp(self):
         self.fastaInputDir = tempfile.mkdtemp()
         self.fastqInputDir = tempfile.mkdtemp()
-        self.fastaOutputDir = tempfile.mkdtemp()
-        self.fastqOutputDir = tempfile.mkdtemp()
+        self.fastaOutputDir = join(dirname(self.fastaInputDir), 'fastaout')
+        self.fastqOutputDir = join(dirname(self.fastqInputDir), 'fastqout')
 
     def tearDown(self):
        shutil.rmtree(self.fastaInputDir )
