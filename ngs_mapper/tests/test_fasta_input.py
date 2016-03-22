@@ -4,6 +4,7 @@ from glob import glob
 import tempfile
 from os.path import join, dirname
 import shutil
+from Bio import SeqIO
 
 def runsample(indir, outdir):
     sh.runsample(indir, "tests/fixtures/functional/947.ref.fasta", "947", od=outdir)
@@ -15,6 +16,10 @@ class TestFastaInput(unittest.TestCase):
         self.fastqInputDir = tempfile.mkdtemp()
         self.fastaOutputDir = join(dirname(self.fastaInputDir), 'fastaout')
         self.fastqOutputDir = join(dirname(self.fastqInputDir), 'fastqout')
+        fq = "tests/fixtures/functional/947/947_S32_L001_R1_001_2013_12_17.fastq"
+        fa = "R1.fasta"
+        shutil.copy(fq, self.fastqInputDir)
+        SeqIO.convert(fq, 'fastq', join(self.fastaInputDir, fa), 'fasta')
 
     def tearDown(self):
        shutil.rmtree(self.fastaInputDir )
