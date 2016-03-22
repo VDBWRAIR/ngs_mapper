@@ -3,6 +3,7 @@ import unittest
 from glob import glob
 import tempfile
 from os.path import join, dirname
+import shutil
 
 def runsample(indir, outdir):
     sh.runsample(indir, "tests/fixtures/functional/947.ref.fasta", "947", od=outdir)
