@@ -2,12 +2,12 @@ import sh
 import unittest
 from glob import glob
 import tempfile
-from os.path import join, dirname
+from os.path import join, dirname, abspath
 import shutil
 from Bio import SeqIO
 from functools import partial
 
-THISD = os.path.dirname(os.path.abspath(__file__))
+THISD = os.path.dirname(abspath(__file__))
 here = partial(join, THISD)
 def runsample(indir, outdir):
     sh.runsample(indir, here("fixtures/functional/947.ref.fasta"), "947", od=outdir)
