@@ -111,10 +111,11 @@ import os.path
 import tempfile
 import logging
 import shutil
-import glob
+from glob import glob
 from ngs_mapper import compat
 import sh
 from data import fastas_to_40s_fastqs
+import nfilter
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
 # Ideally the entire sample would be run inside of a prefix directory under
@@ -214,6 +215,7 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '--index-min',
         dest='index_min',
+        type=int,
         default=_config['ngs_filter']['indexQualityMin']['default'],
         help=_config['ngs_filter']['indexQualityMin']['help'],
     )
@@ -221,6 +223,7 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '--drop-ns',
         dest='drop_ns',
+        action='store_true',
         default=_config['ngs_filter']['dropNs']['default'],
         help=_config['ngs_filter']['dropNs']['help'],
     )
@@ -368,12 +371,17 @@ def main():
 
         print sh.sff_to_fastq(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
         try:
+            nfilter.mkdir_p(cmd_args['filtered_dir'])
             if cmd_args['config']:
-                __result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
+                nfilter.run_from_config(cmd_args['readsdir'], cmd_args['filtered_dir'], cmd_args['config'], False)
+                #__result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
             else:
-                filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
-                __result = sh.ngs_filter(cmd_args['readsdir'], outdir=cmd_args['filtered_dir'], **filter_args)
-            logger.debug( 'ngs_filter: %s' % __result )
+                #filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
+                #__result = sh.ngs_filter(cmd_args['readsdir'], outdir=cmd_args['filtered_dir'], **filter_args)
+                nfilter.write_post_filter(cmd_args['readsdir'], cmd_args["index_min"], cmd_args["drop_ns"],
+                                  cmd_args["platforms"], cmd_args['filtered_dir'], False)
+#            logger.debug( 'ngs_filter: %s' % __result )
+#            print __result
         except sh.ErrorReturnCode, e:
                 logger.error(e.stderr)
                 sys.exit(1)
