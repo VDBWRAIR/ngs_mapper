@@ -1,16 +1,19 @@
 import sh
 import unittest
-from glob import glob
 import tempfile
 from os.path import join, dirname, abspath
 import shutil
 from Bio import SeqIO
 from functools import partial
-
+import plumbum
 THISD = dirname(abspath(__file__))
 here = partial(join, THISD)
 def runsample(indir, outdir):
-    sh.runsample(indir, here("fixtures/functional/947.ref.fasta"), "947", od=outdir)
+
+    plumbum.local['runsample'][indir, here("fixtures/functional/947.ref.fasta"), \
+                 "947", "--index-min", '0', "-od", outdir, "--fasta"]()
+#    sh.runsample(indir, here("fixtures/functional/947.ref.fasta"), \
+#                 "947", index_min=0, outdir=outdir, fasta=True)
 
 class TestFastaInput(unittest.TestCase):
 
@@ -29,6 +32,7 @@ class TestFastaInput(unittest.TestCase):
        shutil.rmtree(self.fastqInputDir )
        shutil.rmtree(self.fastaOutputDir)
        shutil.rmtree(self.fastqOutputDir)
+       pass
 
     def test_run_stats_with_fasta_equals_run_with_fastq_40s(self):
         runsample(self.fastaInputDir, self.fastaOutputDir)
