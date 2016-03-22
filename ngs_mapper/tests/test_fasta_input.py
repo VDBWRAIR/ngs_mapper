@@ -5,9 +5,12 @@ import tempfile
 from os.path import join, dirname
 import shutil
 from Bio import SeqIO
+from functools import partial
 
+THISD = os.path.dirname(os.path.abspath(__file__))
+here = partial(join, THISD)
 def runsample(indir, outdir):
-    sh.runsample(indir, "tests/fixtures/functional/947.ref.fasta", "947", od=outdir)
+    sh.runsample(indir, here("fixtures/functional/947.ref.fasta"), "947", od=outdir)
 
 class TestFastaInput(unittest.TestCase):
 
@@ -16,7 +19,7 @@ class TestFastaInput(unittest.TestCase):
         self.fastqInputDir = tempfile.mkdtemp()
         self.fastaOutputDir = join(dirname(self.fastaInputDir), 'fastaout')
         self.fastqOutputDir = join(dirname(self.fastqInputDir), 'fastqout')
-        fq = "tests/fixtures/functional/947/947_S32_L001_R1_001_2013_12_17.fastq"
+        fq = here("fixtures/functional/947/947_S32_L001_R1_001_2013_12_17.fastq")
         fa = "R1.fasta"
         shutil.copy(fq, self.fastqInputDir)
         SeqIO.convert(fq, 'fastq', join(self.fastaInputDir, fa), 'fasta')
