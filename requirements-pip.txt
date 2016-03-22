@@ -6,3 +6,5 @@ logconfig
 filehandle
 counter
 schema
+plumbum
+sh
