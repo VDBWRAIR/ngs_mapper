@@ -29,9 +29,9 @@ class TestFastaInput(unittest.TestCase):
 
     def test_run_stats_with_fasta_equals_run_with_fastq_40s(self):
         runsample(self.fastaInputDir, self.fastaOutputDir)
-        runsample(self.fastqInputDir, self.fastaOutputDir)
+        runsample(self.fastqInputDir, self.fastqOutputDir)
         fastaStats = join(self.fastaOutputDir, "flagstats.txt")
-        fastqStats = join(self.fastaOutputDir, "flagstats.txt")
+        fastqStats = join(self.fastqOutputDir, "flagstats.txt")
         fastaStats = open(fastaStats).read()
         fastqStats = open(fastqStats).read()
         self.assertEquals(fastqStats, fastaStats)
