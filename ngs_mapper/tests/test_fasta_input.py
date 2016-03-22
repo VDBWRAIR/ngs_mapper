@@ -11,7 +11,7 @@ here = partial(join, THISD)
 def runsample(indir, outdir):
 
     plumbum.local['runsample'][indir, here("fixtures/functional/947.ref.fasta"), \
-                 "947", "--index-min", '0', "-od", outdir, "--fasta"]()
+                 "947", "-od", outdir, "--fasta"]()
 #    sh.runsample(indir, here("fixtures/functional/947.ref.fasta"), \
 #                 "947", index_min=0, outdir=outdir, fasta=True)
 
