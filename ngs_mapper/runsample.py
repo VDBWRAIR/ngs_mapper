@@ -373,15 +373,15 @@ def main():
         try:
             nfilter.mkdir_p(cmd_args['filtered_dir'])
             if cmd_args['config']:
-                nfilter.run_from_config(cmd_args['readsdir'], cmd_args['filtered_dir'], cmd_args['config'], False)
-                #__result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
+                #nfilter.run_from_config(cmd_args['readsdir'], cmd_args['filtered_dir'], cmd_args['config'], False)
+                __result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
             else:
-                #filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
-                #__result = sh.ngs_filter(cmd_args['readsdir'], outdir=cmd_args['filtered_dir'], **filter_args)
-                nfilter.write_post_filter(cmd_args['readsdir'], cmd_args["index_min"], cmd_args["drop_ns"],
-                                  cmd_args["platforms"], cmd_args['filtered_dir'], False)
-#            logger.debug( 'ngs_filter: %s' % __result )
-#            print __result
+                filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
+                __result = sh.ngs_filter(cmd_args['readsdir'], outdir=cmd_args['filtered_dir'], **filter_args)
+                #nfilter.write_post_filter(cmd_args['readsdir'], cmd_args["index_min"], cmd_args["drop_ns"],
+                #                  cmd_args["platforms"], cmd_args['filtered_dir'], False)
+            logger.debug( 'ngs_filter: %s' % __result )
+            print __result
         except sh.ErrorReturnCode, e:
                 logger.error(e.stderr)
                 sys.exit(1)
