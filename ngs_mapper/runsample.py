@@ -111,7 +111,7 @@ import os.path
 import tempfile
 import logging
 import shutil
-from glob import glob
+import glob
 from ngs_mapper import compat
 import sh
 from data import fastas_to_40s_fastqs
@@ -364,7 +364,7 @@ def main():
             return dict( ((k, v) for k, v in d.items() if k in keys))
 
         if args.fasta:
-            fastas = glob(os.path.join(cmd_args['readsdir'], '*.fasta'))
+            fastas = glob.glob(os.path.join(cmd_args['readsdir'], '*.fasta'))
             fastas_to_40s_fastqs(fastas)
 
         #convert sffs to fastq
