@@ -24,7 +24,6 @@ import os
 import sys
 import warnings
 from data import reads_by_plat
-import shutil
 from ngs_mapper.config import load_config
 
 ALLPLATFORMS = 'Roche454','IonTorrent','MiSeq', 'Sanger'
@@ -132,7 +131,7 @@ def make_filtered(readpath, idxQualMin, dropNs):
     Raises an AssertionError if the index-quality filter drops all reads. '''
     index = has_index(readpath)
     if idxQualMin and not index:
-        sys.stderr.write("Specified Non-null index quality minimum {0}, but index for file {1} does not exist.\n".format(idxQualMin, readpath))
+        sys.stderr.write("Specified Non-null index quality minimum, but index for file {0} does not exist.\n".format(readpath))
     #NOTE: this will fail if the reads have an index stored in a different format (ie reads in FASTA, index in FASTQ) but that should never happen
     format = getformat(readpath)
     # right now this silently skips
@@ -161,31 +160,26 @@ def make_filtered(readpath, idxQualMin, dropNs):
 def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     '''write the results to the new directory.
     Also writes a stats file to outdir/ngs_filter_stats.txt, with basic information about how many reads were filtered.'''
+    results, total, badIndex, hadN = make_filtered(readpath, idxQualMin, dropNs)
     outpath = name_filtered(readpath, outdir)
-    if not idxQualMin and not dropNs:
-        shutil.copy(readpath, outpath)
-        msg = "Index Quality was %s and dropNs was set to %s, so file %s was copied to %s without filtering" % (idxQualMin, dropNs, readpath, outpath)
-    else:
-        results, total, badIndex, hadN = make_filtered(readpath, idxQualMin, dropNs)
-        msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
-                          stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
-        print msg
-        try:
-            num_written = SeqIO.write(results, outpath, 'fastq')
-            print "filtered reads from %s will be written to %s" % (readpath, outpath)
-            print "%s reads left after filtering." % num_written
-            if  num_written <= 0:
-                warnings.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
-        except AssertionError, E:
-            print "skipping biopython assertion error"
-            #sys.stderr.write(str(E))
+    msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
+                      stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
+    print msg
+    try:
+        num_written = SeqIO.write(results, outpath, 'fastq')
+        print "filtered reads from %s will be written to %s" % (readpath, outpath)
+        print "%s reads left after filtering." % num_written
+        if  num_written <= 0:
+            warnings.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
+    except AssertionError, E:
+        print "skipping biopython assertion error"
+        #sys.stderr.write(str(E))
     with open(os.path.join(outdir, STATSFILE_NAME), 'w') as statfile:
         statfile.write(msg)
     return outpath
 
 def write_post_filter(readsdir, idxQualMin, dropNs, platforms, outdir=None, parallel=False):
     '''execute write_filtered on the whole directory'''
-    assert isinstance(idxQualMin, int)
     write_filters = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)#, parallel=parallel)
     return map_to_dir(readsdir, write_filters, platforms, parallel)
 
@@ -217,6 +211,7 @@ def main():
 
     raw_args = docopt(__doc__, version='Version 1.0')
     args = scheme.validate(raw_args)
+    print args
     mkdir_p(args['--outdir'])
     if args['--config']:
         run_from_config(args['<readdir>'], args['--outdir'], args['--config'], args['--parallel'])
