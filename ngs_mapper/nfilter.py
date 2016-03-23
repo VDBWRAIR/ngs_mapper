@@ -165,7 +165,6 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     if not idxQualMin and not dropNs:
         shutil.copy(readpath, outpath)
         msg = "Index Quality was %s and dropNs was set to %s, so file %s was copied to %s without filtering" % (idxQualMin, dropNs, readpath, outpath)
-        return outpath
     else:
         results, total, badIndex, hadN = make_filtered(readpath, idxQualMin, dropNs)
         msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),

@@ -75,9 +75,9 @@ class TestNGSFilter(unittest.TestCase):
 
     def test_stat_file_none_filtered(self):
         write_filtered(self.inputfn, 0, False, outdir=self.outdir)
-        expected = '''ngs_filter found %s reads in file %s, and filtered out %s reads.''' % (4, self.inputfn, 0)
+        expected = "Index Quality was 0 and dropNs was set to False, so file %s was copied" % self.inputfn
         actual = open(self.statsfile).readlines()[0].strip()
-        self.assertEquals(actual, expected)
+        self.assertTrue(actual.startswith(expected))
 
     def test_stat_file_two_filtered(self):
         write_post_filter(self.inputdir, 32, True, ['Sanger'], self.outdir)
