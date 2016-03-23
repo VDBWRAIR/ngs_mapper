@@ -48,6 +48,7 @@ conda info -a
 conda config --add channels r
 conda config --add channels bioconda
 conda config --add channels vdbwrair
+conda config --add channels BioBuilds
 
 # Install dependencies
 ## Conda deps first
