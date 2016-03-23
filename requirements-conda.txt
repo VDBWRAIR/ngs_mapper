@@ -14,3 +14,4 @@ bwa==0.7.12 # Previous version was 0.7.6a from setup.py
 samtools==0.1.19 # Previous version was 0.1.19+ (commit: ccf1da91b) from setup.py
 trimmomatic==0.35 # Previous version was 0.32 from setup.py
 imagemagick==6.9.3
+igv==2.3.65
