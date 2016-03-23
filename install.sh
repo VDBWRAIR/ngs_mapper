@@ -67,10 +67,13 @@ conda update -q conda
 conda info -a
 
 # Add bioconda channels(r is required for bioconda)
+# these need to be in reverse order of preference
+# Aka, laast one listed becomes highest priority when same
+# package exists in multiple repos
 conda config --add channels r
 conda config --add channels bioconda
-conda config --add channels vdbwrair
 conda config --add channels BioBuilds
+conda config --add channels vdbwrair
 
 # Install dependencies
 ## Conda deps first
