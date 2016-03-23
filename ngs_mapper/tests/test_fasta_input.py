@@ -8,7 +8,7 @@ from functools import partial
 import plumbum
 THISD = dirname(abspath(__file__))
 here = partial(join, THISD)
-inputFastq = "fixtures/functional/other/780_S12_L001_R1_001_2014_04_16.fastq"
+inputFastq = "fixtures/fasta/780_S12_L001_R1_001_2014_04_16.fastq"
 def runsample(indir, outdir):
 
     plumbum.local['runsample'][indir, here("fixtures/functional/780.ref.fasta"), \
