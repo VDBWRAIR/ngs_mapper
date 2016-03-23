@@ -135,7 +135,8 @@ def make_filtered(readpath, idxQualMin, dropNs):
     format = getformat(readpath)
     # right now this silently skips
     fq_open = partial(SeqIO.parse, format=format)
-    def filterRead((total, badIndex, hadNCount, keptReads), (read, idxRead)):
+    def filterRead(acc, elem):
+        (total, badIndex, hadNCount, keptReads), (read, idxRead) = (acc, elem)
         if idxRead:
             indexIsBad = min(idxRead._per_letter_annotations['phred_quality']) < idxQualMin
             badIndex += int(indexIsBad)
