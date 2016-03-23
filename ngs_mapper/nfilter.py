@@ -164,21 +164,22 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     outpath = name_filtered(readpath, outdir)
     if not idxQualMin and not dropNs:
         shutil.copy(readpath, outpath)
-        print "Index Quality was %s and dropNs was set to %s, so file %s was copied to %s without filtering" % (idxQualMin, dropNs, readpath, outpath)
+        msg = "Index Quality was %s and dropNs was set to %s, so file %s was copied to %s without filtering" % (idxQualMin, dropNs, readpath, outpath)
         return outpath
-    results, total, badIndex, hadN = make_filtered(readpath, idxQualMin, dropNs)
-    msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
-                      stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
-    print msg
-    try:
-        num_written = SeqIO.write(results, outpath, 'fastq')
-        print "filtered reads from %s will be written to %s" % (readpath, outpath)
-        print "%s reads left after filtering." % num_written
-        if  num_written <= 0:
-            warnings.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
-    except AssertionError, E:
-        print "skipping biopython assertion error"
-        #sys.stderr.write(str(E))
+    else:
+        results, total, badIndex, hadN = make_filtered(readpath, idxQualMin, dropNs)
+        msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
+                          stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
+        print msg
+        try:
+            num_written = SeqIO.write(results, outpath, 'fastq')
+            print "filtered reads from %s will be written to %s" % (readpath, outpath)
+            print "%s reads left after filtering." % num_written
+            if  num_written <= 0:
+                warnings.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
+        except AssertionError, E:
+            print "skipping biopython assertion error"
+            #sys.stderr.write(str(E))
     with open(os.path.join(outdir, STATSFILE_NAME), 'w') as statfile:
         statfile.write(msg)
     return outpath
