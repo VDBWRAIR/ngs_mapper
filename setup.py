@@ -145,6 +145,7 @@ setup(
             'is_sanger = ngs_mapper.scripts:is_sanger',
             'convert_sangers = ngs_mapper.scripts:convert_sangers',
             'sff_to_fastq = ngs_mapper.sff_to_fastq:main',
+            'convert_formats = ngs_mapper.convert_formats:main',
             'ngs_filter = ngs_mapper.nfilter:main',
             'roche_sync = ngs_mapper.roche_sync:main',
             'sample_coverage = ngs_mapper.coverage:main',

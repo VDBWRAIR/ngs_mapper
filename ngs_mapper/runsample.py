@@ -326,7 +326,8 @@ def main():
 
         #convert sffs to fastq
 
-        print sh.sff_to_fastq(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
+        print sh.convert_formats(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
+        #print sh.sff_to_fastq(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
         try:
             if cmd_args['config']:
                 __result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
