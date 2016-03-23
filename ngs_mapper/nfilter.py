@@ -18,7 +18,7 @@ from operator import methodcaller
 from Bio import SeqIO
 from docopt import docopt
 from schema import Schema, Use, Optional, Or
-from itertools import ifilterfalse, izip, chain
+from itertools import ifilterfalse, izip, chain, izip_longest
 import re
 import os
 import sys
@@ -119,7 +119,6 @@ def map_to_dir(readsdir, func, platforms, parallel=False):
 def idx_filter(read, idxread, thresh):
     ''' AT or ABOVE threshold.'''
     return min(idxread._per_letter_annotations['phred_quality']) >= thresh
-
 formats={ 'sff' : 'sff', 'fq' : 'fastq', 'fastq' : 'fastq', 'fa' : 'fasta', 'fasta' : 'fasta' }
 extension = lambda s: s.split('.')[-1]
 compose = lambda f, g: lambda x: f(g(x))
@@ -136,25 +135,41 @@ def make_filtered(readpath, idxQualMin, dropNs):
     format = getformat(readpath)
     # right now this silently skips
     fq_open = partial(SeqIO.parse, format=format)
-    reads = []
+    def filterRead((total, badIndex, hadNCount, keptReads), (read, idxRead)):
+        if idxRead:
+            indexIsBad = min(idxRead._per_letter_annotations['phred_quality']) < idxQualMin
+            badIndex += int(indexIsBad)
+        hasN = False
+        if dropNs:
+            hasN = 'N' in str(read.seq).upper()
+            hadNCount += int(hasN)
+        dropRead = hasN or indexIsBad
+        total += 1
+        if not dropRead:
+            keptReads = chain([read], keptReads)
+        return (total, badIndex, hadNCount, keptReads)
     try:
-        reads = list(fq_open(readpath))
+        indexReads = [] if not index else fq_open(index)
+        reads = fq_open(readpath)
     except AssertionError, E:
         print "skipping biopython assertion error"
         print readpath
         #sys.stderr.write(str(E))
-    if index and idxQualMin:
-         idxreads = fq_open(index)
-         intermediate = [r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) ]
-    else:
-        intermediate = reads
-    if dropNs:
-        hasNs = lambda rec: 'N' in str(rec.seq).upper()
-        filtered = list(ifilterfalse(hasNs, intermediate))
-    else:
-        filtered = intermediate
-    total, badIndex, hadN = len(reads), len(reads) - len(intermediate), \
-        len(intermediate) - len(filtered)
+    readsWithMaybeIndex = izip_longest(reads, indexReads, fillvalue=None)
+    total, badIndex, hadN, filtered = reduce(filterRead, readsWithMaybeIndex, (0, 0, 0, []))
+    return filtered, total, badIndex, hadN
+#    if index and idxQualMin:
+#         idxreads = fq_open(index)
+#         intermediate = [r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) ]
+#    else:
+#        intermediate = reads
+#    if dropNs:
+#        hasNs = lambda rec: 'N' in str(rec.seq).upper()
+#        filtered = list(ifilterfalse(hasNs, intermediate))
+#    else:
+#        filtered = intermediate
+#    total, badIndex, hadN = len(reads), len(reads) - len(intermediate), \
+#        len(intermediate) - len(filtered)
     return filtered, total, badIndex, hadN
 
 def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
