@@ -1,3 +1,6 @@
+.. image:: https://badge.waffle.io/VDBWRAIR/ngs_mapper.png?label=ready&title=Ready 
+ :target: https://waffle.io/VDBWRAIR/ngs_mapper
+ :alt: 'Stories in Ready'
 .. image:: https://readthedocs.org/projects/ngs_mapper/badge/?version=latest
     :target: http://ngs_mapper.readthedocs.org/en/latest/
     :alt: Documentation Status
