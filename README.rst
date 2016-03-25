@@ -1,6 +1,10 @@
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.46716.svg
+   :target: http://dx.doi.org/10.5281/zenodo.46716
+
 .. image:: https://badge.waffle.io/VDBWRAIR/ngs_mapper.png?label=ready&title=Ready 
- :target: https://waffle.io/VDBWRAIR/ngs_mapper
- :alt: 'Stories in Ready'
+    :target: https://waffle.io/VDBWRAIR/ngs_mapper
+    :alt: 'Stories in Ready'
+
 .. image:: https://readthedocs.org/projects/ngs_mapper/badge/?version=latest
     :target: http://ngs_mapper.readthedocs.org/en/latest/
     :alt: Documentation Status
