@@ -126,7 +126,7 @@ def platform_for_read( filepath ):
     fh, ext = file_handle(filepath)
     # fix sanger abi extension issue
     if ext == 'ab1':
-        ext = 'abi'
+        return 'Sanger'
     try:
         # First record in readfile
         try:
