@@ -97,8 +97,6 @@ def map_to_dir(readsdir, func, platforms, parallel=False):
     #947__1__TI86__2012_08_06__Unk.sff
     #947__2__TI86__2012_08_06__Unk.sff
 
-#    def is_valid(fn):
-#        return is_fastq(fn) and not is_index(fn)
     def is_valid(fn):
         return not is_index(fn) and is_fastq(fn)
     files = filter(is_valid, plat_files)
@@ -160,21 +158,6 @@ def make_filtered(readpath, idxQualMin, dropNs):
         #sys.stderr.write(str(E))
     readsWithMaybeIndex = izip_longest(reads, indexReads, fillvalue=None)
     return filterReads(readsWithMaybeIndex)
-    #total, badIndex, hadN, filtered = accumulate(filterRead, readsWithMaybeIndex, (0, 0, 0, []))
-    #return accumulate(filterRead, readsWithMaybeIndex, (0, 0, 0, None))
-    #return filtered, total, badIndex, hadN
-#    if index and idxQualMin:
-#         idxreads = fq_open(index)
-#         intermediate = [r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) ]
-#    else:
-#        intermediate = reads
-#    if dropNs:
-#        hasNs = lambda rec: 'N' in str(rec.seq).upper()
-#        filtered = list(ifilterfalse(hasNs, intermediate))
-#    else:
-#        filtered = intermediate
-#    total, badIndex, hadN = len(reads), len(reads) - len(intermediate), \
-#        len(intermediate) - len(filtered)
 
 def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     '''write the results to the new directory.
