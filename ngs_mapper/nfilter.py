@@ -25,7 +25,7 @@ import sys
 import warnings
 from data import reads_by_plat
 from ngs_mapper.config import load_config
-
+from cytoolz.itertoolz import accumulate
 ALLPLATFORMS = 'Roche454','IonTorrent','MiSeq', 'Sanger'
 #TODO: should guarantee that there is an index file or allow there not to be one
 STATSFILE_NAME='ngs_filter_stats.txt'
@@ -134,7 +134,7 @@ def make_filtered(readpath, idxQualMin, dropNs):
     # right now this silently skips
     fq_open = partial(SeqIO.parse, format=format)
     def filterRead(acc, elem):
-        (total, badIndex, hadNCount, keptReads), (read, idxRead) = (acc, elem)
+        (total, badIndex, hadNCount, _), (read, idxRead) = (acc, elem)
         indexIsBad = False
         if idxRead:
             indexIsBad = min(idxRead._per_letter_annotations['phred_quality']) < idxQualMin
@@ -145,9 +145,9 @@ def make_filtered(readpath, idxQualMin, dropNs):
             hadNCount += int(hasN)
         dropRead = hasN or indexIsBad
         total += 1
-        if not dropRead:
-            keptReads = chain([read], keptReads)
-        return (total, badIndex, hadNCount, keptReads)
+        if dropRead:
+            read = None
+        return (total, badIndex, hadNCount, read)
     try:
         indexReads = [] if not index else fq_open(index)
         reads = fq_open(readpath)
@@ -156,19 +156,34 @@ def make_filtered(readpath, idxQualMin, dropNs):
         print readpath
         #sys.stderr.write(str(E))
     readsWithMaybeIndex = izip_longest(reads, indexReads, fillvalue=None)
-    total, badIndex, hadN, filtered = reduce(filterRead, readsWithMaybeIndex, (0, 0, 0, []))
-    return filtered, total, badIndex, hadN
+    #total, badIndex, hadN, filtered = accumulate(filterRead, readsWithMaybeIndex, (0, 0, 0, []))
+    return accumulate(filterRead, readsWithMaybeIndex, (0, 0, 0, None))
+    #return filtered, total, badIndex, hadN
+#    if index and idxQualMin:
+#         idxreads = fq_open(index)
+#         intermediate = [r for r, idx in izip(reads, idxreads) if idx_filter(r, idx, idxQualMin) ]
+#    else:
+#        intermediate = reads
+#    if dropNs:
+#        hasNs = lambda rec: 'N' in str(rec.seq).upper()
+#        filtered = list(ifilterfalse(hasNs, intermediate))
+#    else:
+#        filtered = intermediate
+#    total, badIndex, hadN = len(reads), len(reads) - len(intermediate), \
+#        len(intermediate) - len(filtered)
 
 def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     '''write the results to the new directory.
     Also writes a stats file to outdir/ngs_filter_stats.txt, with basic information about how many reads were filtered.'''
-    results, total, badIndex, hadN = make_filtered(readpath, idxQualMin, dropNs)
+    results = make_filtered(readpath, idxQualMin, dropNs)
     outpath = name_filtered(readpath, outdir)
-    msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
-                      stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
-    print msg
     try:
-        num_written = SeqIO.write(results, outpath, 'fastq')
+        num_written = 0
+        with open(outpath, 'w') as outfile:
+            for total, badIndex, hadN, read in results:
+                if read:
+                    SeqIO.write(read, outfile, 'fastq')
+                    num_written += 1
         print "filtered reads from %s will be written to %s" % (readpath, outpath)
         print "%s reads left after filtering." % num_written
         if  num_written <= 0:
@@ -176,6 +191,9 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     except AssertionError, E:
         print "skipping biopython assertion error"
         #sys.stderr.write(str(E))
+    msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
+                      stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
+    print msg
     with open(os.path.join(outdir, STATSFILE_NAME), 'w') as statfile:
         statfile.write(msg)
     return outpath
