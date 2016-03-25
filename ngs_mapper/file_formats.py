@@ -29,7 +29,7 @@ def convert_sff(dir):
     return sum(map(wrapped_conv, sff_paths, outnames))
 
 def convert_ab1(dir):
-    for abi in find_ext('gz')(dir):
+    for abi in find_ext('ab1')(dir):
         SeqIO.convert(abi, 'abi', swap_ext('fastq')(abi), 'fastq')
 
 def convert_gzips(dir):
