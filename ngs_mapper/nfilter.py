@@ -25,7 +25,6 @@ import sys
 import warnings
 from data import reads_by_plat
 from ngs_mapper.config import load_config
-from cytoolz.itertoolz import accumulate
 ALLPLATFORMS = 'Roche454','IonTorrent','MiSeq', 'Sanger'
 #TODO: should guarantee that there is an index file or allow there not to be one
 STATSFILE_NAME='ngs_filter_stats.txt'
@@ -133,21 +132,23 @@ def make_filtered(readpath, idxQualMin, dropNs):
     format = getformat(readpath)
     # right now this silently skips
     fq_open = partial(SeqIO.parse, format=format)
-    def filterRead(acc, elem):
-        (total, badIndex, hadNCount, _), (read, idxRead) = (acc, elem)
-        indexIsBad = False
-        if idxRead:
-            indexIsBad = min(idxRead._per_letter_annotations['phred_quality']) < idxQualMin
-            badIndex += int(indexIsBad)
-        hasN = False
-        if dropNs:
-            hasN = 'N' in str(read.seq).upper()
-            hadNCount += int(hasN)
-        dropRead = hasN or indexIsBad
-        total += 1
-        if dropRead:
-            read = None
-        return (total, badIndex, hadNCount, read)
+    def filterReads(readsWithMaybeIndex):
+        total = badIndex = hadNCount = 0
+        read, idxRead = None, None
+        for read, idxRead in readsWithMaybeIndex:
+            indexIsBad = False
+            if idxRead:
+                indexIsBad = min(idxRead._per_letter_annotations['phred_quality']) < idxQualMin
+                badIndex += int(indexIsBad)
+            hasN = False
+            if dropNs:
+                hasN = 'N' in str(read.seq).upper()
+                hadNCount += int(hasN)
+            dropRead = hasN or indexIsBad
+            total += 1
+            if dropRead:
+                read = None
+            yield (total, badIndex, hadNCount, read)
     try:
         indexReads = [] if not index else fq_open(index)
         reads = fq_open(readpath)
@@ -156,8 +157,9 @@ def make_filtered(readpath, idxQualMin, dropNs):
         print readpath
         #sys.stderr.write(str(E))
     readsWithMaybeIndex = izip_longest(reads, indexReads, fillvalue=None)
+    return filterReads(readsWithMaybeIndex)
     #total, badIndex, hadN, filtered = accumulate(filterRead, readsWithMaybeIndex, (0, 0, 0, []))
-    return accumulate(filterRead, readsWithMaybeIndex, (0, 0, 0, None))
+    #return accumulate(filterRead, readsWithMaybeIndex, (0, 0, 0, None))
     #return filtered, total, badIndex, hadN
 #    if index and idxQualMin:
 #         idxreads = fq_open(index)
