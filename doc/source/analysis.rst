@@ -148,6 +148,15 @@ Let's tell runsample to put our analysis into a directory called 947 and also te
 
 You can see from the output that the sample started and finished. If there were errors, they would show up in between those two lines and you would have to view the :doc:`help` documentation.
 
+Run with fasta files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Simply run runsample with the --fasta argument: 
+
+ $> runsample -od 947 --fasta path/to/fasta/files ngs_mapper/tests/fixtures/functional/947.ref.fasta 947 
+
+This will fill in your fasta files with dummy quality values of 40. You can mix fastq and fasta files within the folder, but be mindful of the dummy quality values added to the fasta files.
+
 Specifying specific platforms to map
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
