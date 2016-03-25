@@ -19,4 +19,3 @@ argparse
 counter
 schema
 docopt
-cytoolz
