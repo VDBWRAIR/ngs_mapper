@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+Version 1.4.2
++++++++++++++
+
+- Pipeline now handles gzip(.gz) input files
+- Pipeline now handles ab1 input files
+- Added Zenodo badge
+
 Version 1.4.1
 +++++++++++++
 
