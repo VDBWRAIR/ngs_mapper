@@ -25,6 +25,9 @@ import sys
 import warnings
 from data import reads_by_plat
 from ngs_mapper.config import load_config
+import log
+logger = log.setup_logger(__name__, log.get_config())
+
 ALLPLATFORMS = 'Roche454','IonTorrent','MiSeq', 'Sanger'
 #TODO: should guarantee that there is an index file or allow there not to be one
 STATSFILE_NAME='ngs_filter_stats.txt'
@@ -75,13 +78,11 @@ def map_to_dir(readsdir, func, platforms, parallel=False):
     plat_files_dict = reads_by_plat(readsdir)
     #_nested_files = map(plat_files_dict.get, platforms)
     _nested_files = filter(None, map(plat_files_dict.get, platforms))
-    print _nested_files
     if not _nested_files:
         raise ValueError("No fastq files found in directory %s matching platforms. \
                           Files %s that were not within chosen platforms %s" % ( readsdir, os.listdir(readsdir), platforms) )
     #plat_files = list(chain(*chain(*_nested_files)))
     plat_files =flatten(_nested_files)
-    print plat_files
     is_index = partial(re.search, r'_I[12]_')
     # also this currently skips ab1 files
     # The problem seems to be that of the  below reads, only uses _R1_.
@@ -110,7 +111,7 @@ def map_to_dir(readsdir, func, platforms, parallel=False):
         pool.join()
         return outpaths
     else:
-        print "mapping filters over read files %s in directory %s" % (files, readsdir)
+        logger.debug("mapping filters over read files %s in directory %s" % (files, readsdir))
         return map(func, files)
 
 def idx_filter(read, idxread, thresh):
@@ -153,9 +154,7 @@ def make_filtered(readpath, idxQualMin, dropNs):
         indexReads = [] if not index else fq_open(index)
         reads = fq_open(readpath)
     except AssertionError, E:
-        print "skipping biopython assertion error"
-        print readpath
-        #sys.stderr.write(str(E))
+        logger.debug("skipping biopython assertion error in file %s " % readpath)
     readsWithMaybeIndex = izip_longest(reads, indexReads, fillvalue=None)
     return filterReads(readsWithMaybeIndex)
 
@@ -171,16 +170,16 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
                 if read:
                     SeqIO.write(read, outfile, 'fastq')
                     num_written += 1
-        print "filtered reads from %s will be written to %s" % (readpath, outpath)
-        print "%s reads left after filtering." % num_written
+        logger.info("filtered reads from %s will be written to %s" % (readpath, outpath))
+        logger.info("%s reads left after filtering." % num_written)
         if  num_written <= 0:
+            logger.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
             warnings.warn("No reads left after filtering! Quality controls eliminated all reads. Drop-Ns was set to %s; maybe try again with lower quality min than %s. " %(dropNs, idxQualMin))
     except AssertionError, E:
-        print "skipping biopython assertion error"
+        logger.debug("skipping biopython assertion error")
         #sys.stderr.write(str(E))
     msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
                       stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
-    print msg
     with open(os.path.join(outdir, STATSFILE_NAME), 'w') as statfile:
         statfile.write(msg)
     return outpath
@@ -218,7 +217,6 @@ def main():
 
     raw_args = docopt(__doc__, version='Version 1.0')
     args = scheme.validate(raw_args)
-    print args
     mkdir_p(args['--outdir'])
     if args['--config']:
         run_from_config(args['<readdir>'], args['--outdir'], args['--config'], args['--parallel'])
@@ -227,7 +225,6 @@ def main():
     minmin, minmax = 1, 50
     if not (dropNs or (minmin <= idxMin <=minmax)):
         raise ValueError("No filter specified, drop Ns:%s, Index Quality Min:%s" % (dropNs, idxMin))
-    status = "\nfiltering with specifications, drop Ns:%s, Index Quality Min:%s\nfrom folder %s to folder %s" % (dropNs, idxMin, args['<readdir>'], args['--outdir'])
-    print status
-    outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs, args['--platforms'], args['--outdir'], args['--parallel'])
+    outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs,
+                                 args['--platforms'], args['--outdir'], args['--parallel'])
     return 0
