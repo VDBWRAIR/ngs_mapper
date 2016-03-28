@@ -155,7 +155,7 @@ Simply run runsample with the --fasta argument:
 
 .. code-block:: bash
 
-     $> runsample -od 947 --fasta path/to/fasta/files ngs_mapper/tests/fixtures/functional/947.ref.fasta 947 
+     $> runsample --fasta -od 947 ngs_mappers/tests/fixtures/fasta/ ngs_mapper/tests/fixtures/functional/947.ref.fasta 947 
     
 This will fill in your fasta files with dummy quality values of 40. You can mix fastq and fasta files within the folder, but be mindful of the dummy quality values added to the fasta files.
 
