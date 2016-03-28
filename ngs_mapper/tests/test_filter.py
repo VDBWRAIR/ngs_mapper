@@ -98,10 +98,11 @@ class TestNGSFilter(unittest.TestCase):
         mfig = { 'ngs_filter' :
                 {'platforms' : { 'default' : ['Sanger'] },
                  'dropNs' : { 'default' : True },
-                 'indexQualityMin' : {'default' : 32}}
+                 'indexQualityMin' : {'default' : 32},
+                 'threads' : {'default' : 2}}
          }
         mload_config.return_value = mfig
-        run_from_config(self.inputdir,self.outdir, '_', False)
+        run_from_config(self.inputdir,self.outdir, '_')
         actual = open(self.actualfn)
         expected = open(self.expectedfn)
         self.assertFilesEqual(expected, actual)
