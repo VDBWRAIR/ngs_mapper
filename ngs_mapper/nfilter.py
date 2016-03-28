@@ -229,7 +229,7 @@ def main():
     scheme = Schema(
         { '<readdir>' : os.path.isdir,
          Optional('--drop-ns') : bool,
-         Optional('--parallel') : bool,
+         Optional('--threads') : Use(int),
          Optional('--index-min') : Use(lambda x: int(x) if x else x, error="--index-min expects an integer"),
          Optional('--platforms') : Use(picked_platforms),
          Optional('--config') : Or(str, lambda x: x is None),
