@@ -210,7 +210,7 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
         #sys.stderr.write(str(E))
     msg = '\n'.join( [stat_header.format(total, readpath, badIndex + hadN),
                       stat_body.format(readpath, badIndex, idxQualMin, hadN) ])
-    with open(os.path.join(outdir, STATSFILE_NAME), 'w') as statfile:
+    with open(os.path.join(outdir, STATSFILE_NAME), 'a') as statfile:
         statfile.write(msg)
     return outpath
 
