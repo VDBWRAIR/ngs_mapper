@@ -5,16 +5,12 @@ from os.path import join, dirname, abspath
 import shutil
 from Bio import SeqIO
 from functools import partial
-import plumbum
 THISD = dirname(abspath(__file__))
 here = partial(join, THISD)
 inputFastq = "fixtures/fasta/780_S12_L001_R1_001_2014_04_16.fastq"
 def runsample(indir, outdir):
-
-    plumbum.local['runsample'][indir, here("fixtures/functional/780.ref.fasta"), \
-                 "780", "-od", outdir, "--fasta"]()
-#    sh.runsample(indir, here("fixtures/functional/947.ref.fasta"), \
-#                 "947", index_min=0, outdir=outdir, fasta=True)
+    sh.runsample(indir, here("fixtures/functional/780.ref.fasta"), \
+                 "780", outdir=outdir, fasta=True)
 
 class TestFastaInput(unittest.TestCase):
 
