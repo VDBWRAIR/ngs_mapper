@@ -157,7 +157,7 @@ Simply run runsample with the --fasta argument:
 
      $> runsample --fasta -od 947 ngs_mappers/tests/fixtures/fasta/ ngs_mapper/tests/fixtures/functional/947.ref.fasta 947 
     
-This will fill in your fasta files with dummy quality values of 40. You can mix fastq and fasta files within the folder, but be mindful of the dummy quality values added to the fasta files.
+This will allow the pipeline to read fasta files as well as other input files inside of the readsdir directory. Without --fasta, all fasta files inside readsdir would be skipped. When you use this option, fasta files are converted to fastq files with dummy quality of 40 in the first step of the pipeline.
 
 Specifying specific platforms to map
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
