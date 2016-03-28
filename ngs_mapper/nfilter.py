@@ -1,10 +1,10 @@
 '''
-Usage: ngs_filter <readdir> [--parallel]  [--drop-ns ] [--index-min=<index_min>] [--platforms <PLATFORMS>] [--outdir <DIR>] [--config <CONFIG>]
+Usage: ngs_filter <readdir> [--threads=<threads>]  [--drop-ns ] [--index-min=<index_min>] [--platforms <PLATFORMS>] [--outdir <DIR>] [--config <CONFIG>]
 
 Options:
     --outdir=<DIR>,-o=<DIR>   outupt directory [Default: filtered]
     --config=<CONFIG>,-c=<CONFIG>  Derive options from provided YAML file instead of commandline
-    --parallel                Use python's multiprocessing to run on multiple cores
+    --threads=<threads>            Number of files to filter in parallel. [Default: 1]
     --platforms=<PLATFORMS>   Only accept reads from specified machines. Choices: 'Roche454','IonTorrent','MiSeq', 'Sanger', 'All', [Default: All]
 
 Help:
@@ -71,7 +71,7 @@ def flatten(container):
                 yield j
         else:
             yield i
-def map_to_dir(readsdir, func, platforms, parallel=False):
+def map_to_dir(readsdir, idxQualMin, dropNs, platforms, outdir, threads):
     '''maps *func* to all fastq/sff files which are not indexes.
     fetch the fastqs and indexes of the directory and write the filtered results.'''
     #no_index_fqs = fqs_excluding_indices(readsdir)
@@ -104,14 +104,25 @@ def map_to_dir(readsdir, func, platforms, parallel=False):
     msg= "Skipped files %s that were not within chosen platforms %s" % ( plat_files, platforms)
     if not files:
         raise ValueError("No fastq or sff files found in directory %s" % readsdir + '\n' + msg)
-    if parallel:
+    if threads > 1:
+        iter_func = partial(write_groups, idxQualMin=idxQualMin,
+                            dropNs=dropNs, outdir=outdir)
+        def make_groups(numGroups, seq):
+            groups = [[] for _ in xrange(numGroups)]
+            i = 0
+            for x in seq:
+                groups[i] = [x] + groups[i]
+                i = (i + 1) % numGroups
+            return groups
+        groups = make_groups(threads, files)
         pool = multiprocessing.Pool()
-        outpaths = pool.map(func, files)
+        outpaths = list(chain(*pool.map(iter_func, groups)))
         pool.close()
         pool.join()
         return outpaths
     else:
         logger.debug("mapping filters over read files %s in directory %s" % (files, readsdir))
+        func = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)
         return map(func, files)
 
 def idx_filter(read, idxread, thresh):
@@ -203,10 +214,14 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
         statfile.write(msg)
     return outpath
 
-def write_post_filter(readsdir, idxQualMin, dropNs, platforms, outdir=None, parallel=False):
+def write_groups(paths, idxQualMin, dropNs, outdir):
+     func = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)
+     return map(func, paths)
+
+def write_post_filter(readsdir, idxQualMin, dropNs, platforms, outdir=None, threads=0):
     '''execute write_filtered on the whole directory'''
-    write_filters = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)#, parallel=parallel)
-    return map_to_dir(readsdir, write_filters, platforms, parallel)
+    return map_to_dir(readsdir, idxQualMin=idxQualMin, dropNs=dropNs,
+                      platforms=platforms, outdir=outdir, threads=threads)#, parallel=parallel)
 
 def mkdir_p(dir):
     ''' emulate bash command  $ mkdir -p '''
@@ -218,10 +233,12 @@ def picked_platforms(rawarg):
     return [ p for p in ALLPLATFORMS if p.lower() in rawarg.lower()]
 
 
-def run_from_config(readsdir, outdir, config_path, parallel):
+def run_from_config(readsdir, outdir, config_path):
     _config = load_config(config_path)
     defaults = _config['ngs_filter']
-    return write_post_filter(readsdir, defaults['indexQualityMin']['default'], defaults['dropNs']['default'], defaults['platforms']['default'], outdir, parallel)
+    return write_post_filter(readsdir, defaults['indexQualityMin']['default'],
+                             defaults['dropNs']['default'], defaults['platforms']['default'],
+                             outdir, defaults['threads']['default'])
 
 def main():
     scheme = Schema(
@@ -238,10 +255,10 @@ def main():
     args = scheme.validate(raw_args)
     mkdir_p(args['--outdir'])
     if args['--config']:
-        run_from_config(args['<readdir>'], args['--outdir'], args['--config'], args['--parallel'])
+        run_from_config(args['<readdir>'], args['--outdir'], args['--config'])
         return 0
     dropNs, idxMin = args['--drop-ns'], args['--index-min']
     minmin, minmax = 0, 50
     outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs,
-                                 args['--platforms'], args['--outdir'], args['--parallel'])
+                                 args['--platforms'], args['--outdir'], args['--threads'])
     return 0

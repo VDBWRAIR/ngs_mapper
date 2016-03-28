@@ -12,6 +12,9 @@ ngs_filter:
     indexQualityMin:
         default: 0
         help: 'The index for each associated MiSeq read must be equal or above this value.'
+    threads:
+        default: 1
+        help: 'How many threads to use for bwa[Default: %(default)s]'
     platforms:
         choices:
         - MiSeq
