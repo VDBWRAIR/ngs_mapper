@@ -163,6 +163,10 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     Also writes a stats file to outdir/ngs_filter_stats.txt, with basic information about how many reads were filtered.'''
     results = make_filtered(readpath, idxQualMin, dropNs)
     outpath = name_filtered(readpath, outdir)
+    if not idxQualMin and not dropNs:
+        os.symlink(readpath, outpath)
+        logger.warn("Index Quality was %s and dropNs was set to %s, so file %s was copied to %s without filtering" % (idxQualMin, dropNs, readpath, outpath))
+        return outpath
     try:
         num_written = 0
         with open(outpath, 'w') as outfile:
@@ -222,9 +226,7 @@ def main():
         run_from_config(args['<readdir>'], args['--outdir'], args['--config'], args['--parallel'])
         return 0
     dropNs, idxMin = args['--drop-ns'], args['--index-min']
-    minmin, minmax = 1, 50
-    if not (dropNs or (minmin <= idxMin <=minmax)):
-        raise ValueError("No filter specified, drop Ns:%s, Index Quality Min:%s" % (dropNs, idxMin))
+    minmin, minmax = 0, 50
     outpaths = write_post_filter(args['<readdir>'], idxMin, dropNs,
                                  args['--platforms'], args['--outdir'], args['--parallel'])
     return 0
