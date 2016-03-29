@@ -104,26 +104,16 @@ def map_to_dir(readsdir, idxQualMin, dropNs, platforms, outdir, threads):
     msg= "Skipped files %s that were not within chosen platforms %s" % ( plat_files, platforms)
     if not files:
         raise ValueError("No fastq or sff files found in directory %s" % readsdir + '\n' + msg)
-    if threads > 1:
-        iter_func = partial(write_groups, idxQualMin=idxQualMin,
-                            dropNs=dropNs, outdir=outdir)
-        def make_groups(numGroups, seq):
-            groups = [[] for _ in xrange(numGroups)]
-            i = 0
-            for x in seq:
-                groups[i] = [x] + groups[i]
-                i = (i + 1) % numGroups
-            return groups
-        groups = make_groups(threads, files)
-        pool = multiprocessing.Pool()
-        outpaths = list(chain(*pool.map(iter_func, groups)))
-        pool.close()
-        pool.join()
-        return outpaths
-    else:
-        logger.debug("mapping filters over read files %s in directory %s" % (files, readsdir))
-        func = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)
-        return map(func, files)
+    logger.debug(
+        "Using {0} threads to map filters over read files {1} in directory {2}"
+        .format(threads, files, readsdir)
+    )
+    func = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)
+    pool = multiprocessing.Pool(threads)
+    outpaths = pool.map(func, files)
+    pool.close()
+    pool.join()
+    return outpaths
 
 def idx_filter(read, idxread, thresh):
     ''' AT or ABOVE threshold.'''
@@ -203,7 +193,7 @@ def write_groups(paths, idxQualMin, dropNs, outdir):
      func = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)
      return map(func, paths)
 
-def write_post_filter(readsdir, idxQualMin, dropNs, platforms, outdir=None, threads=0):
+def write_post_filter(readsdir, idxQualMin, dropNs, platforms, outdir=None, threads=1):
     '''execute write_filtered on the whole directory'''
     return map_to_dir(readsdir, idxQualMin=idxQualMin, dropNs=dropNs,
                       platforms=platforms, outdir=outdir, threads=threads)#, parallel=parallel)
