@@ -110,7 +110,7 @@ def map_to_dir(readsdir, idxQualMin, dropNs, platforms, outdir, threads):
     )
     func = partial(write_filtered, idxQualMin=idxQualMin, dropNs=dropNs, outdir=outdir)
     pool = multiprocessing.Pool(threads)
-    outpaths = pool.map(func)
+    outpaths = pool.map(func, files)
     pool.close()
     pool.join()
     return outpaths
