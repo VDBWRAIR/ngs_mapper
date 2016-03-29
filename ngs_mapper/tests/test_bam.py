@@ -223,7 +223,7 @@ class TestIntegrate(Base):
 
 ### Begin better testing stuff haha
 import mock
-import unittest2 as unittest
+import unittest
 import types
 
 from .. import bam

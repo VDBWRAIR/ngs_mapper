@@ -1,6 +1,44 @@
 Changelog
 ---------
 
+Version 1.4.2
++++++++++++++
+
+- Pipeline now handles gzip(.gz) input files
+- Pipeline now handles ab1 input files
+- Added Zenodo badge
+
+Version 1.4.1
++++++++++++++
+
+- IGV is installed with pipeline
+- samtools version reverted back to same version as pre-1.4.0
+
+Version 1.4.0
++++++++++++++
+
+- Installation now utilizes miniconda to handle system dependencies such as
+  bwa, samtools, trimmomatic, imagemagick. This is a substantial difference and will
+  require a complete reinstall of the pipeline to upgrade.
+  Miniconda installation removes a lot of code that needed to be maintained and
+  streamlines the installation and makes it much faster.
+- Added install.sh that makes installing/upgrading much easier.
+  The tests also use this so the installation is tested much better now.
+- Pipeline utilizes requirements-conda.txt to determine python+system software
+  dependencies. This allows specifying versions and removes need for a
+  system administrator to install.
+- runsample now supports --primer-file option and other primer trimming options
+  which will utilize trimmomatic's ILLUMINACLIP option
+- runsamplesheet.sh supports an optional additional column in a given samplesheet
+  that represents the primer fasta file to use to find sequences to trim out.
+- Pipeline now looks for amount of threads instead of cpu cores. This will mean that
+  on systems with hyperthreading that 2x more samples will run in parallel than before.
+- Fixed bug where some parts of pipeline were not logging at all
+- Fixed bug where graphs.sh could fail, yet pipeline would continue as if nothing
+  was wrong
+- Updated functional tests to include primer test
+- Updated functional tests to output more information
+
 Version 1.3.0
 +++++++++++++
 

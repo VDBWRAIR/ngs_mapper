@@ -259,7 +259,7 @@ class TestMain(Base):
                 json.dump(qd, fh)
             self._C()
 
-import unittest2 as unittest
+import unittest
 import mock
 
 from .. import coverage

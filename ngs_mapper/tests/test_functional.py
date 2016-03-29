@@ -45,19 +45,15 @@ class BaseFunctional(BaseClass):
 
     @classmethod
     def run_fixtures( klass, fixtures ):
-        samplesheet = 'ss.tsv'
+        samplesheet = abspath('ss.tsv')
         klass.make_samplesheet(fixtures,'ss.tsv')
         runsh_sh = TestRunPipeline.script_path( 'runsamplesheet.sh' )
         # All fixtures should be in same dir, so just grab the dirname of the first
         rbsdir = dirname( fixtures[0][0] )
         cmd = '{0} {1} {2}'.format(runsh_sh,rbsdir,samplesheet)
-        fh = open('/tmp/thingy','w')
-        fh.write(cmd)
         ret,out = TestRunPipeline.run_script( cmd )
-        fh.write(out)
-        fh.close()
 
-        return samplesheet,ret,out
+        return samplesheet,ret,out,cmd
 
 class TestRunPipeline(BaseFunctional):
     @classmethod
@@ -65,7 +61,7 @@ class TestRunPipeline(BaseFunctional):
         klass.fixtures = klass.compile_functional_fixtures( join(fixtures.FIXDIR,'functional') )
         fh = open('/tmp/thingy2','w')
         fh.close()
-        klass.samplesheet, klass.ret, klass.out = klass.run_fixtures( klass.fixtures )
+        klass.samplesheet, klass.ret, klass.out, klass.cmd = klass.run_fixtures( klass.fixtures )
         #klass.samplesheet, klass.ret, klass.out = 'ss.tsv',0,''
 
     def setUp( self ):
@@ -73,21 +69,39 @@ class TestRunPipeline(BaseFunctional):
         self.samplesheet = self.__class__.samplesheet
         self.returncode = self.__class__.ret
         self.output = self.__class__.out
+        print self.cmd
+
+    def printlog(self):
+        # Retreive log file location
+        p = 'Please check the log\s{0,1}file (.*?\.log)'
+        m = re.search( p, self.output, re.S|re.M )
+        if m:
+            bwalog = m.group(1)
+            projdir_tdir = dirname(bwalog)
+            stdlog = glob(join(projdir_tdir, '*.std.log'))[0]
+            print "--- LOG({0}) ---".format(bwalog)
+            print open(bwalog).read()
+            print "--- END BWA LOG ---"
+            print "--- STDLOG({0}) ---".format(stdlog)
+            print open(stdlog).read()
+            print "--- END STDLOG ---"
+        print "--- Standard output ---"
+        print self.output
+        print "--- End standard output ---"
+        print "--- Graphsample log ---"
+        print open('graphsample.log').read()
+        print "--- End Graphsample log ---"
 
     def test_return_code_and_output(self):
-        eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
         for reads, config in self.fixtures:
             sn = basename(reads)
-            p = 'Please check the logfile (/tmp/\w+/{0}.log)'.format(sn)
-            m = re.search( p, self.output, re.S|re.M )
-            if m:
-                print m.group(1)
-                print open(m.group(1)).read()
-            print self.output
+            self.printlog()
             ok_( 'Starting {0}'.format(sn) in self.output, "Did not start {0}".format(sn) )
             ok_( 'Finished {0}'.format(sn) in self.output, "Did not finish {0}".format(sn) )
+        eq_( 0, self.returncode, 'Return code from running runsamplesheet.sh was not 0' )
 
     def check_sample_project_files( self, projdir, fixture ):
+        self.printlog()
         # Files defined that should exist
         efiles = self.__class__.parse_conf( fixture[1] )['files'].split()
         failed = [join(projdir,ef) for ef in efiles if not exists(join(projdir,ef))]
@@ -101,6 +115,7 @@ class TestRunPipeline(BaseFunctional):
             ok_( False )
 
     def test_pipeline_produced_expected_files_dirs( self ):
+        self.printlog()
         f = 'file'
         d = 'directory'
         expected = [
@@ -118,6 +133,7 @@ class TestRunPipeline(BaseFunctional):
             ok_( exists( e ), 'Pipeline did not produce {0}'.format(e) )
 
     def test_project_directories_have_expected_files( self ):
+        self.printlog()
         # Ensure each project has correct files too
         for fixture in self.fixtures:
             sn = basename(fixture[0])
@@ -125,6 +141,7 @@ class TestRunPipeline(BaseFunctional):
             self.check_sample_project_files( projdir, fixture )
 
     def test_vcf_consensus_has_symlink_consensuses( self ):
+        self.printlog()
         for pdir in glob( join('Projects','*') ):
             sn = basename(pdir)
             consensus_file = join( pdir, sn + '.bam.consensus.fasta' )
@@ -155,6 +172,7 @@ class TestRunPipeline(BaseFunctional):
 
     @attr('current')
     def test_consensus_mutations( self ):
+        self.printlog()
         for reads,config in self.fixtures:
             sn = basename(reads)
             consensus_file = join( 'vcf_consensus', sn + '.fasta' )

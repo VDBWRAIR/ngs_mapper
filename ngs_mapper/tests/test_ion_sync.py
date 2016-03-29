@@ -10,7 +10,7 @@ from StringIO import StringIO
 import tempfile
 
 import mock
-from unittest2 import TestCase
+import unittest
 from nose.plugins.attrib import attr
 
 from .. import ion_sync
@@ -18,7 +18,7 @@ from .. import ion_sync
 FILE = mock.Mock()
 seqrec = '@read\nATGC\n+\n!!!!\n'
 
-class Base(TestCase):
+class Base(unittest.TestCase):
     def setUp(self):
         self.barcoded_samples = {
             'sample1': {

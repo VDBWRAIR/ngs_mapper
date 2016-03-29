@@ -25,11 +25,11 @@ ends with ngs_mapper:
 
     $> pwd
 
-For both examples below, as always when running the pipeline, you need to ensure your installation is activated:
+For both examples below, as always when running the pipeline, you need to ensure 
+your installation is in your environments PATH.
 
-.. code-block:: bash
+See the :doc:`install` for how to setup your PATH
 
-    $> . ~/.ngs_mapper/bin/activate
 
 The location of our data sets are under ngs_mapper/tests/fixtures/functional
 
@@ -43,31 +43,33 @@ Here you can see we have 2 data sets to play with.
 * 780 is an H3N2 data set
 * 947 is a Dengue 4 data set
 
-You will notice that there is a 780/947 directory and a 780/947.ref.fasta file. The 780/947 directory contains all the read files for the 780/947 sample while the 780/947.ref.fasta is the reference to map to.
+You will notice that there is a 780 and a/947 directory
+There is also a 780.ref.fasta and 947.ref.fasta file.
+The 780 and 947 directory contain all the read files for the 780 and 947 samples
+while the 780.ref.fasta and 947.ref.fasta is the reference to map to for each project.
 You can ignore the .conf files, they are used by the automated tests.
 
-Quick note about your files
----------------------------
+Quick note about platform identification
+----------------------------------------
 
-In previous versions of the pipeline the names of your read files were used to identify which platform the reads came from.
-
-Now the reads are identified via the way the first identifier in each file is named.
+Reads are identified by the way the first identifier in each file is named.
 
 You can read more about this :ref:`here <platformidentification>`
 
 Using runsample to run a single sample
 -----------------------------------------
 
-Some times you just need to run a single sample. Here we will use runsample to run the 947 example data set and have the analysis be put into a directory called 947 in the current directory
+Some times you just need to run a single sample. Here we will use the `runsample` script to run the 947 example data set and have the analysis be put into a directory called 947 in the current directory.
 
 First, let's see what options there are available for the :py:mod:`runsample <ngs_mapper.runsample>` script to use
+
+This is just an example output and may not match your exact output.
 
 .. code-block:: bash
 
     $> runsample 
     usage: runsample [-h] [--config CONFIG] [-trim_qual TRIM_QUAL]
-                        [-head_crop HEAD_CROP] [-minth MINTH] [--CN CN]
-                        [-od OUTDIR]
+                        ...
                         readsdir reference prefix
     runsample: error: too few arguments
 
@@ -79,7 +81,7 @@ What you can take from this is:
 Simplest form of runsample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-So to run the project with the fewest amount of arguments would be as follows(don't run this, just an example):
+To run the project with the fewest amount of arguments would be as follows(don't run this, just an example):
 
 .. code-block:: bash
 
@@ -162,7 +164,8 @@ can use it in this example to only map the MiSeq read files
         make_example_config
 
 #. Now edit the config.yaml file generated in the current directory
-   #. Find the trim_reads section and change the default under platforms to be
+
+   Find the trim_reads section and change the default under platforms to be
 
         .. code-block:: text
 
@@ -190,8 +193,8 @@ can use it in this example to only map the MiSeq read files
                     #- IonTorrent
                     help: 'List of platforms to include data for[Default: %(default)s]'
 
-    Notice Sanger, Roche454 and IonTorrent are commented out. You can either
-    comment them out or completely delete them.
+    Notice that we have commented out(put # before them) Sanger, Roche454 and IonTorrent.
+    You can either comment them out or completely delete them. It is up to you.
 #. Then you can run ``runsample`` with the ``-c config.yaml`` argument and it
    will only use MiSeq reads
 
