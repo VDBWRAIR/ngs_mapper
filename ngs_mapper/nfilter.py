@@ -165,7 +165,7 @@ def write_filtered(readpath, idxQualMin, dropNs, outdir='.'):
     results = make_filtered(readpath, idxQualMin, dropNs)
     outpath = name_filtered(readpath, outdir)
     if not idxQualMin and not dropNs:
-        os.symlink(readpath, outpath)
+        os.symlink(os.path.abspath(readpath), os.path.abspath(outpath))
         logger.warn("Index Quality was %s and dropNs was set to %s, so file %s was copied to %s without filtering" % (idxQualMin, dropNs, readpath, outpath))
         return outpath
     try:
