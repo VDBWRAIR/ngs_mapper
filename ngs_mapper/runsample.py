@@ -243,7 +243,32 @@ def parse_args( args=sys.argv[1:] ):
 
     args, rest = parser.parse_known_args(args)
     args.config = configfile
-    return args,rest
+
+    # Parse qsub args if found
+    if rest and rest[0].startswith('--qsub'):
+        qsub_parser = argparse.ArgumentParser(add_help=False)
+        qsub_parser.add_argument(
+            '--qsub-help',
+            default=False,
+            action='store_true'
+        )
+        qsub_parser.add_argument(
+            '--qsub_l',
+            default='nodes=1:ppn=1',
+        )
+        qsub_parser.add_argument(
+            '--qsub_M',
+            default=None
+        )
+
+        qsub_args = qsub_parser.parse_args(rest)
+
+        if qsub_args.qsub_help:
+            qsub_parser.print_help()
+            sys.exit(1)
+        rest = qsub_args
+
+    return args, rest
 
 def make_project_repo( projpath ):
     '''
@@ -274,10 +299,9 @@ def run_cmd( cmdstr, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, scri
         raise MissingCommand( "{0} is not an executable?".format(cmd[0]) )
 
 def main():
-    args,rest = parse_args()
+    args,qsubargs = parse_args()
     # Qsub job?
-    if rest and rest[0].startswith('--qsub'):
-        args, qsubargs = split_args(' '.join(sys.argv[1:]))
+    if qsubargs:
         print pbs_job(args, qsubargs)
         sys.exit(1)
     # So we can set the global logger
@@ -479,37 +503,18 @@ def pbs_job(runsampleargs, pbsargs):
 
     :param string runsampleargs: args that are for runsample that originaly came
                                from sys.argv(any non --qsub\_)
-    :param string pbsargs: args for qsub(any --qsub\_)
+    :param Namespace pbsargs: parsed --qsub_* args
     :return: pbs job file string
     '''
-    qsub_parser = argparse.ArgumentParser(add_help=False)
-    qsub_parser.add_argument(
-        '--qsub-help',
-        default=False,
-        action='store_true'
-    )
-    qsub_parser.add_argument(
-        '--qsub_l',
-        default='nodes=1:ppn=1',
-    )
-    qsub_parser.add_argument(
-        '--qsub_M',
-        default=None
-    )
-    qsub_args = qsub_parser.parse_args(pbsargs)
-
-    if qsub_args.qsub_help:
-        qsub_parser.print_help()
-        return ''
-
+    runsampleargs, _ = split_args(' '.join(sys.argv[1:]))
     samplename = runsampleargs[2]
     template = '#!/bin/bash\n' \
         '#PBS -N {samplename}-ngs_mapper\n' \
         '#PBS -j oe\n' \
         '#PBS -l {qsub_l}\n'
-    if qsub_args.qsub_M is not None:
+    if pbsargs.qsub_M is not None:
         template += '#PBS -m abe\n' \
-            '#PBS -M ' + qsub_args.qsub_M + '\n'
+            '#PBS -M ' + pbsargs.qsub_M + '\n'
 
     template += '\n' \
         'cd $PBS_O_WORKDIR\n' \
@@ -517,7 +522,7 @@ def pbs_job(runsampleargs, pbsargs):
 
     return template.format(
         samplename=samplename,
-        qsub_l=qsub_args.qsub_l,
+        qsub_l=pbsargs.qsub_l,
         runsampleargs=' '.join(runsampleargs)
     )
 

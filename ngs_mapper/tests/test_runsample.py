@@ -32,34 +32,6 @@ class Base(common.BaseBamRef):
             print e.output
             return False
 
-@attr('current')
-class TestUnitArgs(Base):
-    functionname = 'parse_args'
-
-    def test_defaults( self ):
-        args = ['ReadsBySample','Reference.fasta','Sample1']
-        res = self._C( args )
-        eq_( 'ReadsBySample', res[0].readsdir )
-        eq_( 'Reference.fasta', res[0].reference )
-        eq_( 'Sample1', res[0].prefix )
-        eq_( os.getcwd(), res[0].outdir )
-
-    def test_set_outdir( self ):
-        args = ['ReadsBySample','Reference.fasta','Sample1','-od','outdir']
-        res = self._C( args )
-        eq_( 'ReadsBySample', res[0].readsdir )
-        eq_( 'Reference.fasta', res[0].reference )
-        eq_( 'Sample1', res[0].prefix )
-        eq_( 'outdir', res[0].outdir )
-
-    def test_parses_only_known(self):
-        args = [
-            'ReadsBySample','Reference.fasta','Sample1',
-            '-od','outdir', '--qsub_X', 'foo'
-        ]
-        res = self._C(args)
-        eq_(['--qsub_X','foo'], res[1])
-
 @patch('ngs_mapper.runsample.logger',Mock())
 class TestUnitRunCMD(object):
     from ngs_mapper import runsample
@@ -270,6 +242,8 @@ class TestFunctional(Base):
 
 import mock
 import unittest
+import sh
+from nose import tools
 
 from ngs_mapper import runsample
 @attr('current')
@@ -285,3 +259,46 @@ class TestSplitArgs(unittest.TestCase):
             r[1],
             ['--qsub_l','foo','--qsub-help']
         )
+
+@attr('current')
+class TestUnitArgs(unittest.TestCase):
+
+    def test_defaults( self ):
+        args = ['ReadsBySample','Reference.fasta','Sample1']
+        res = runsample.parse_args( args )
+        eq_( 'ReadsBySample', res[0].readsdir )
+        eq_( 'Reference.fasta', res[0].reference )
+        eq_( 'Sample1', res[0].prefix )
+        eq_( os.getcwd(), res[0].outdir )
+
+    def test_set_outdir( self ):
+        args = ['ReadsBySample','Reference.fasta','Sample1','-od','outdir']
+        res = runsample.parse_args( args )
+        eq_( 'ReadsBySample', res[0].readsdir )
+        eq_( 'Reference.fasta', res[0].reference )
+        eq_( 'Sample1', res[0].prefix )
+        eq_( 'outdir', res[0].outdir )
+
+    def test_parses_qsub_args(self):
+        args = [
+            'ReadsBySample','Reference.fasta','Sample1',
+            '-od','outdir', '--qsub_M', 'foo'
+        ]
+        res = runsample.parse_args(args)
+        args, qsub_args = res
+        eq_(args.outdir, 'outdir')
+        eq_(qsub_args.qsub_M, 'foo')
+
+    def test_parser_exception_when_incorrect_argument_given(self):
+        args = [
+            'ReadsBySample','Reference.fasta','Sample1',
+            '-od','outdir', '--qsub_missing'
+        ]
+        self.assertRaises(SystemExit, runsample.parse_args, args)
+
+    def test_qsub_help_exits_and_displays_help(self):
+        args = [
+            'ReadsBySample','Reference.fasta','Sample1',
+            '-od','outdir', '--qsub-help'
+        ]
+        self.assertRaises(SystemExit, runsample.parse_args, args)
