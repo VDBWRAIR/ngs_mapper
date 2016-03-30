@@ -221,6 +221,7 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '--drop-ns',
         dest='drop_ns',
+        action='store_true',
         default=_config['ngs_filter']['dropNs']['default'],
         help=_config['ngs_filter']['dropNs']['help'],
     )

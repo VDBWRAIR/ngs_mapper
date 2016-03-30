@@ -302,3 +302,12 @@ class TestUnitArgs(unittest.TestCase):
             '-od','outdir', '--qsub-help'
         ]
         self.assertRaises(SystemExit, runsample.parse_args, args)
+
+    def test_drop_ns_bool(self):
+        args = [
+            'ReadsBySample','Reference.fasta','Sample1',
+            '-od','outdir', '--drop-ns'
+        ]
+        res = runsample.parse_args(args)
+        args, qsub_args = res
+        eq_(args.drop_ns, True)
