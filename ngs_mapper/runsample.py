@@ -303,7 +303,8 @@ def main():
     args,qsubargs = parse_args()
     # Qsub job?
     if qsubargs:
-        print pbs_job(args, qsubargs)
+        runsampleargs, _ = split_args(' '.join(sys.argv[1:]))
+        print pbs_job(runsampleargs, qsubargs)
         sys.exit(1)
     # So we can set the global logger
     global logger
@@ -507,7 +508,6 @@ def pbs_job(runsampleargs, pbsargs):
     :param Namespace pbsargs: parsed --qsub_* args
     :return: pbs job file string
     '''
-    runsampleargs, _ = split_args(' '.join(sys.argv[1:]))
     samplename = runsampleargs[2]
     template = '#!/bin/bash\n' \
         '#PBS -N {samplename}-ngs_mapper\n' \
