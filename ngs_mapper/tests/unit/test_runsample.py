@@ -10,10 +10,11 @@ class TestPBSJob(unittest.TestCase):
             '-trim_qual', '25', '-head_crop', '0',
             '-minth', '0', '--CN', 'bar', '-od', 'outdir'
         ]
-        self.qsub_args = self.qa = [
-            '--qsub_M', 'email@example.com',
-            '--qsub_l', 'nodes=1:ppn=1'
-        ]
+        class Namespace(object):
+            pass
+        self.qsub_args = self.qa = Namespace()
+        self.qa.qsub_M = 'email@example.com'
+        self.qa.qsub_l = 'nodes=1:ppn=1'
         self.args = [
             self.runsample_args,
             self.qsub_args
@@ -51,7 +52,7 @@ class TestPBSJob(unittest.TestCase):
         )
 
     def test_omits_email_if_not_in_args(self):
-        self.args[1] = ['--qsub_l', 'nodes=1:ppn=1']
+        self.args[1].qsub_M = None
         r = runsample.pbs_job(*self.args)
         self.assertNotIn('#PBS -M', r)
         self.assertNotIn('#PBS -m', r)
