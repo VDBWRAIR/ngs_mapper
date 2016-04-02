@@ -114,7 +114,8 @@ import shutil
 import glob
 from ngs_mapper import compat
 import sh
-
+from data import fastas_to_40s_fastqs
+import nfilter
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
 # Ideally the entire sample would be run inside of a prefix directory under
@@ -214,6 +215,7 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '--index-min',
         dest='index_min',
+        type=int,
         default=_config['ngs_filter']['indexQualityMin']['default'],
         help=_config['ngs_filter']['indexQualityMin']['help'],
     )
@@ -240,6 +242,13 @@ def parse_args( args=sys.argv[1:] ):
         dest='outdir',
         default=default_outdir,
         help='The output directory for all files to be put[Default: {0}]'.format(default_outdir)
+    )
+
+    parser.add_argument(
+        '--fasta',
+        action='store_true',
+        default=False,
+        help='Input is fasta format. Default is False.'
     )
 
     args, rest = parser.parse_known_args(args)
@@ -379,17 +388,26 @@ def main():
         def select_keys(d, keys):
             return dict( ((k, v) for k, v in d.items() if k in keys))
 
+        if args.fasta:
+            fastas = glob.glob(os.path.join(cmd_args['readsdir'], '*.fasta'))
+            fastas_to_40s_fastqs(fastas)
+
         #convert sffs to fastq
 
         print sh.convert_formats(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
         #print sh.sff_to_fastq(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
         try:
+            nfilter.mkdir_p(cmd_args['filtered_dir'])
             if cmd_args['config']:
+                #nfilter.run_from_config(cmd_args['readsdir'], cmd_args['filtered_dir'], cmd_args['config'], False)
                 __result = sh.ngs_filter(cmd_args['readsdir'], config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
             else:
                 filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
                 __result = sh.ngs_filter(cmd_args['readsdir'], outdir=cmd_args['filtered_dir'], **filter_args)
+                #nfilter.write_post_filter(cmd_args['readsdir'], cmd_args["index_min"], cmd_args["drop_ns"],
+                #                  cmd_args["platforms"], cmd_args['filtered_dir'], False)
             logger.debug( 'ngs_filter: %s' % __result )
+            print __result
         except sh.ErrorReturnCode, e:
                 logger.error(e.stderr)
                 sys.exit(1)
