@@ -16,7 +16,7 @@ logger = log.setup_logger(__name__, log.get_config())
 drop_ext = lambda s: '.'.join(s.split('.')[:-1])
 swap_ext = lambda ext: lambda s:  drop_ext(s) + '.' + ext
 find_ext = lambda ext: lambda dir: glob("%s/*%s" % (dir, ext))
-swap_dir = lambda dir: lambda p: os.path.join(dir, basename(p))
+swap_dir = lambda dir: lambda p: os.path.join(dir, os.path.basename(p))
 
 def convert_sff(dir, outdir):
     sff_paths = find_ext('sff')(dir)
@@ -57,6 +57,7 @@ def get_dir_args():
     if os.path.isdir(sys.argv[1]):
         indir, outdir = sys.argv[1], sys.argv[2]
         os.mkdir(outdir)
+        return indir, outdir
     else:
         raise ValueError("Path %s or %s is not a directory" % (sys.argv[1], sys.argv[2]))
 
