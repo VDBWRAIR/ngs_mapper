@@ -67,3 +67,8 @@ This will create a temporary directory called tdir and cd into it then run both 
 and put their results inside of their own directory named after themselves.
 
 From there you can explore them on your own
+
+
+.. image:: https://badges.gitter.im/VDBWRAIR/ngs_mapper.svg
+   :alt: Join the chat at https://gitter.im/VDBWRAIR/ngs_mapper
+   :target: https://gitter.im/VDBWRAIR/ngs_mapper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
