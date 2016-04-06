@@ -47,11 +47,16 @@ def convert_gzips(dir, outdir):
             with open(dest, 'w') as output:
                 logger.info('Unpacking {0} to {1}'.format(gz, dest))
                 output.write(input.read())
+def link_fastqs(dir, outdir): 
+    for fq in find_ext('fastq')(dir):
+        dest = swap_dir(outdir)(fq)
+        os.symlink(os.path.abspath(fq), os.path.abspath(dest))
 
 def convert_formats(dir, outdir):
     convert_gzips(dir, outdir)
     convert_ab1(dir, outdir)
     convert_sff(dir, outdir)
+    link_fastqs(dir, outdir)
 
 def get_dir_args():
     if os.path.isdir(sys.argv[1]):
