@@ -395,7 +395,7 @@ def main():
                 logger.error(e.stderr)
                 sys.exit(1)
 
-        sh.rm(convert_dir, r=True)
+        #sh.rm(convert_dir, r=True)
 
         #Trim reads
         cmd = 'trim_reads {filtered_dir} -q {trim_qual} -o {trim_outdir} --head-crop {head_crop}'
