@@ -384,16 +384,19 @@ def main():
 
         print sh.convert_formats(cmd_args['readsdir'], convert_dir, _out=sys.stdout, _err=sys.stderr)
         #print sh.sff_to_fastq(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
-        try:
-            if cmd_args['config']:
-                __result = sh.ngs_filter(convert_dir, config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
-            else:
-                filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
-                __result = sh.ngs_filter(convert_dir, outdir=cmd_args['filtered_dir'], **filter_args)
-            logger.debug( 'ngs_filter: %s' % __result )
-        except sh.ErrorReturnCode, e:
-                logger.error(e.stderr)
-                sys.exit(1)
+        if cmd_args["drop_ns"] or cm_args["index_min"]:
+            try:
+                if cmd_args['config']:
+                    __result = sh.ngs_filter(convert_dir, config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
+                else:
+                    filter_args = select_keys(cmd_args, ["drop_ns", "platforms", "index_min"])
+                    __result = sh.ngs_filter(convert_dir, outdir=cmd_args['filtered_dir'], **filter_args)
+                logger.debug( 'ngs_filter: %s' % __result )
+            except sh.ErrorReturnCode, e:
+                    logger.error(e.stderr)
+                    sys.exit(1)
+        else:
+            cmd_args['filtered_dir'] = convert_dir
 
         #sh.rm(convert_dir, r=True)
 
