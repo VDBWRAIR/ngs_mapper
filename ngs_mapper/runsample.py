@@ -373,6 +373,7 @@ def main():
         shutil.copy( args.reference, cmd_args['reference'] )
 
         # Return code list
+        zipfile = sh.gnuzip
         rets = []
         logger.debug(cmd_args)
         #Filter
@@ -395,6 +396,7 @@ def main():
             except sh.ErrorReturnCode, e:
                     logger.error(e.stderr)
                     sys.exit(1)
+            zipfile(convert_dir)
         else:
             cmd_args['filtered_dir'] = convert_dir
 
@@ -411,6 +413,8 @@ def main():
         rets.append( p.wait() )
         if rets[-1] != 0:
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+
+        zipfile(cmd_args['filtered_dir'])
 
         # Filter on index quality and Ns
 
@@ -476,6 +480,8 @@ def main():
         if r != 0:
             logger.critical( "{0} did not exit sucessfully".format(cmd) )
         rets.append( r )
+
+        zipfile(cmd_args['trim_outdir'])
 
         # Consensus
         cmd = 'vcf_consensus {vcf} -i {samplename} -o {consensus}'
