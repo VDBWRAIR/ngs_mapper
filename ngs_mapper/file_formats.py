@@ -54,8 +54,9 @@ def convert_formats(dir, outdir):
     convert_sff(dir, outdir)
 
 def get_dir_args():
-    if os.path.isdir(sys.argv[1]) and  os.path.isdir(sys.argv[2]):
-        return sys.argv[1], sys.argv[2]
+    if os.path.isdir(sys.argv[1]):
+        indir, outdir = sys.argv[1], sys.argv[2]
+        os.mkdir(outdir)
     else:
         raise ValueError("Path %s or %s is not a directory" % (sys.argv[1], sys.argv[2]))
 
@@ -63,8 +64,8 @@ def main_convert_formats():
     convert_formats(*get_dir_args())
 
 
-def main_sff_convert():
-        convert_sff(*get_dir_args())
+def main_sff_convert(): 
+   convert_sff(*get_dir_args())
 
 #        sff_names = filter(lambda x: x.endswith('sff'), os.listdir(dir))
 #        sff_paths = map(partial(os.path.join, dir), sff_names)
