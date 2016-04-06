@@ -36,7 +36,7 @@ def convert_sff(dir, outdir):
 def convert_ab1(dir, outdir):
     for abi in find_ext('ab1')(dir):
         dest = swap_ext('fastq')(abi)
-        dest = swap_dir('outdir')(dest)
+        dest = swap_dir(outdir)(dest)
         logger.info('Converting {0} to {1}'.format(abi, dest))
         SeqIO.convert(abi, 'abi', dest, 'fastq')
 
