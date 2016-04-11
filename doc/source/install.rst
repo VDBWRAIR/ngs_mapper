@@ -118,3 +118,16 @@ You can pseudo test the installation of the pipeline by running the functional t
 .. code-block:: bash
 
     ngs_mapper/tests/slow_tests.sh
+
+Documentation
+-------------
+The documentation is available to view online at http://ngs-mapper.readthedocs.org/en/latest/ By default this site always shows the latest documentation; you can select your verion by clicking `v:latest` in the bottom left menu, then selecting your version number from `Versions.`
+
+If for any reason you need to use the documentation locally, you can build it:
+
+.. code-block:: bash
+
+    cd doc
+    make clean && make html
+    firefox build/html/install.html#build-and-view-complete-documentation
+    cd ..

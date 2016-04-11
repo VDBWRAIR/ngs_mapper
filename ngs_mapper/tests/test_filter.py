@@ -20,7 +20,7 @@ class TestNGSFilter(unittest.TestCase):
     def setUp(self):
         fixpath = join(fixtures.THIS,'fixtures')
         fix = partial(join, fixpath)
-        self.actualfn = 'testoutput/filtered.1900_S118_L001_R2_001_2015_04_24.fastq'
+        self.actualfn = 'testoutput/1900_S118_L001_R2_001_2015_04_24.fastq'
         self.expectedfn = fix('expected__R2__.fastq')
         self.inputfn = fix('1900/1900_S118_L001_R2_001_2015_04_24.fastq')
         self.inputdir = fix('1900')
@@ -73,11 +73,9 @@ class TestNGSFilter(unittest.TestCase):
             self.assertEquals(len(w), 1)
         #with self.assertRaises(ValueError):
 
-    def test_stat_file_none_filtered(self):
+    def test_symlink_file_none_filtered(self):
         write_filtered(self.inputfn, 0, False, outdir=self.outdir)
-        expected = '''ngs_filter found %s reads in file %s, and filtered out %s reads.''' % (4, self.inputfn, 0)
-        actual = open(self.statsfile).readlines()[0].strip()
-        self.assertEquals(actual, expected)
+        self.assertTrue(os.path.islink(self.actualfn))
 
     def test_stat_file_two_filtered(self):
         write_post_filter(self.inputdir, 32, True, ['Sanger'], self.outdir)
@@ -100,10 +98,11 @@ class TestNGSFilter(unittest.TestCase):
         mfig = { 'ngs_filter' :
                 {'platforms' : { 'default' : ['Sanger'] },
                  'dropNs' : { 'default' : True },
-                 'indexQualityMin' : {'default' : 32}}
+                 'indexQualityMin' : {'default' : 32},
+                 'threads' : {'default' : 2}}
          }
         mload_config.return_value = mfig
-        run_from_config(self.inputdir,self.outdir, '_', False)
+        run_from_config(self.inputdir,self.outdir, '_')
         actual = open(self.actualfn)
         expected = open(self.expectedfn)
         self.assertFilesEqual(expected, actual)
