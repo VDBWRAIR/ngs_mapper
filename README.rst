@@ -21,6 +21,14 @@ Installation
 
 `install <doc/source/install.rst>`_
 
+
+Documentation
+------------
+
+
+`Documentation <https://github.com/VDBWRAIR/ngs_mapper/blob/master/doc/source/install.rst#documentation>`_
+
+
 Upgrading
 ---------
   
