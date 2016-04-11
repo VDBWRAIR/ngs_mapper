@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 1.4.3
++++++++++++++
+
+- Continuous Delivery support added for travis
+
 Version 1.4.2
 +++++++++++++
 
