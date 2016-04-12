@@ -236,10 +236,7 @@ class TestIntegration(Base):
 # Better practices here
 
 import mock
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 from os.path import *
 import os
@@ -314,10 +311,8 @@ class TestPlatformForRead(unittest.TestCase):
             mock.Mock(id='aZ_09-', seq='ATGC')
         ]
         for record in records:
-            mseqio.parse.return_value = iter([record])
             r = data.platform_for_read('/path/to/read.ab1')
             self.assertEqual('Sanger', r)
-            self.assertEqual('abi', mseqio.parse.call_args[0][1])
 
     def test_identifies_miseq_reads(self, mseqio):
         #@<instrument>:<run number>:<flowcell ID>:<lane>:<tile>:<x-pos>:<y-pos> <read>:<is filtered>:<control number>:<index sequence>
