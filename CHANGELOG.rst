@@ -1,10 +1,13 @@
 Changelog
 ---------
 
-Version 1.4.3
-+++++++++++++
+Version X
++++++++++
 
 - Continuous Delivery support added for travis
+- nfilter will now simply symlink if no options are supplied essentially skipping
+  itself
+- nfilter utilizes threads from config file
 
 Version 1.4.2
 +++++++++++++

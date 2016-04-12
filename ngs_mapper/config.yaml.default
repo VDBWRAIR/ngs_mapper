@@ -10,8 +10,11 @@ ngs_filter:
         default: False
         help: 'Drop all reads that have Ns.'
     indexQualityMin:
-        default: 1
+        default: 0
         help: 'The index for each associated MiSeq read must be equal or above this value.'
+    threads:
+        default: 1
+        help: 'How many threads to use for bwa[Default: %(default)s]'
     platforms:
         choices:
         - MiSeq
