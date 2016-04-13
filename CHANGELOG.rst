@@ -1,7 +1,10 @@
 Changelog
 ---------
+Version 1.5.0
++++++++++++++
+- Pipeline now works with fasta files using the --fasta flag
 
-Version X
+Version 1.4.3
 +++++++++
 
 - Continuous Delivery support added for travis
@@ -13,6 +16,7 @@ Version X
 - convert functions now support output directory
 - bug fix for nfilter symlinking
 - fix for qsub job output from runsample
+- no longer name files with filtered. prefix
 
 Version 1.4.2
 +++++++++++++
