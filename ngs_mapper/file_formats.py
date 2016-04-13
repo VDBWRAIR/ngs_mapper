@@ -50,7 +50,18 @@ def convert_gzips(dir, outdir):
 def link_fastqs(dir, outdir): 
     for fq in find_ext('fastq')(dir):
         dest = swap_dir(outdir)(fq)
-        os.symlink(os.path.abspath(fq), os.path.abspath(dest))
+        src = os.path.abspath(fq)
+        dst = os.path.abspath(dest)
+        if os.path.exists(dst):
+            logger.warning(
+                'Skipping symlink of {0} because {1} already exists.' \
+                'This can happen if you have the file compressed and also not ' \
+                'compressed in the input directory'.format(
+                    src, dst
+            ))
+        else:
+            logger.debug('Symlinking {0} to {1}'.format(src, dst))
+            os.symlink(src, dst)
 
 def convert_formats(dir, outdir):
     convert_gzips(dir, outdir)
