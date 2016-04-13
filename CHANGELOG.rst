@@ -8,6 +8,8 @@ Version X
 - nfilter will now simply symlink if no options are supplied essentially skipping
   itself
 - nfilter utilizes threads from config file
+- Froze versions of all dependencies to remove issues when authors update
+  dependencies that cause unwanted side-effects
 
 Version 1.4.2
 +++++++++++++

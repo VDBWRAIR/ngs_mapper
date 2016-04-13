@@ -1,17 +1,43 @@
-numpy
-matplotlib
-biopython
-cutadapt
-nose
-mock
-pyyaml
-sphinx
-sphinx_rtd_theme
-sh
-docopt
+alabaster==0.7.7
+anaconda-client==1.2.2
+Babel==2.2.0
+biopython==1.66
+clyent==1.2.1
+conda==4.0.5
+conda-build==1.19.0
+conda-env==2.4.5
+cutadapt==1.9.1
+cycler==0.10.0
+docopt==0.6.2
+docutils==0.12
+funcsigs==1.0.0
+Jinja2==2.8
+MarkupSafe==0.23
+matplotlib==1.5.1
+mock==2.0.0
+nose==1.3.7
+numpy==1.11.0
+pbr==1.3.0
+pycairo==1.10.0
+pycosat==0.6.1
+pycrypto==2.6.1
+Pygments==2.1.1
+pyparsing==2.0.3
+pytz==2015.7
+PyYAML==3.11
+requests==2.9.1
+sh==1.11
+six==1.10.0
+snowballstemmer==1.2.1
+Sphinx==1.3.5
 # Non python packages
+ncurses=5.9=4
+java-jdk=8.0.45=0
+libpng=1.6.17=0
+zlib=1.2.8=0
 bwa==0.7.12 # Previous version was 0.7.6a from setup.py
 samtools==0.1.19_ccf1da91b # See issue #202
 trimmomatic==0.35 # Previous version was 0.32 from setup.py
 imagemagick==6.9.3
 igv==2.3.65
+
