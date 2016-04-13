@@ -278,7 +278,7 @@ def fastas_to_40s_fastqs(outdir, fastas):
         return "@{}\n{}\n{}\n{}\n".format(id, s, '+', qual)
     swap_ext = lambda s, ext: '.'.join(s.split('.')[:-1] + [ext])
     for f in fastas:
-        outname = join(outdir, swap_ext(f, 'fastq'))
+        outname = join(outdir, basename(swap_ext(f, 'fastq')))
         with open(outname, 'w') as out:
             for seq in SeqIO.parse(f, 'fasta'):
                 out.write(to_fq_rec(seq))
