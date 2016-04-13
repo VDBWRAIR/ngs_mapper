@@ -13,6 +13,7 @@ Version X
 - convert functions now support output directory
 - bug fix for nfilter symlinking
 - fix for qsub job output from runsample
+- no longer name files with filtered. prefix
 
 Version 1.4.2
 +++++++++++++
