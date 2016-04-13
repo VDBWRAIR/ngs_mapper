@@ -31,6 +31,10 @@ six==1.10.0
 snowballstemmer==1.2.1
 Sphinx==1.3.5
 # Non python packages
+ncurses=5.9=4
+java-jdk=8.0.45=0
+libpng=1.6.17=0
+zlib=1.2.8=0
 bwa==0.7.12 # Previous version was 0.7.6a from setup.py
 samtools==0.1.19_ccf1da91b # See issue #202
 trimmomatic==0.35 # Previous version was 0.32 from setup.py
