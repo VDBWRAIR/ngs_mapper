@@ -2,6 +2,9 @@
 # Does not need the trailing /
 NGSDATA: &NGSDATA /path/to/NGSDATA
 
+# Default threads to use for any stage that supports it
+THREADS: &THREADS 1
+
 # All scripts by name should be top level items
 # Sub items then are the option names(the dest portion of the add_arugment for the script)
 # Each option needs to define the default as well as the help message
@@ -13,8 +16,8 @@ ngs_filter:
         default: 0
         help: 'The index for each associated MiSeq read must be equal or above this value.'
     threads:
-        default: 1
-        help: 'How many threads to use for bwa[Default: %(default)s]'
+        default: *THREADS
+        help: 'How many threads to use[Default: %(default)s]'
     platforms:
         choices:
         - MiSeq
@@ -81,7 +84,7 @@ run_bwa_on_samplename:
         default: False
         help: 'Flag to indicate that you want the temporary files kept instead of removing them[Default: %(default)s]'
     threads:
-        default: 1
+        default: *THREADS
         help: 'How many threads to use for bwa[Default: %(default)s]'
 tagreads:
     SM:
@@ -113,7 +116,7 @@ base_caller:
         default: 10
         help: 'What factor to bias high quality bases by. Must be an integer >= 1[Default: %(default)s]'
     threads:
-        default: 1
+        default: *THREADS
         help: 'How many threads to use when running base_caller.py[Default: %(default)s]'
 miseq_sync:
     ngsdata:
