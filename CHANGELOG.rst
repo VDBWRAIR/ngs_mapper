@@ -8,6 +8,11 @@ Version X
 - nfilter will now simply symlink if no options are supplied essentially skipping
   itself
 - nfilter utilizes threads from config file
+- config file now has THREADS default
+- fix for bug where some miseq reads were not identified correctly in tagreads
+- convert functions now support output directory
+- bug fix for nfilter symlinking
+- fix for qsub job output from runsample
 
 Version 1.4.2
 +++++++++++++
