@@ -270,7 +270,7 @@ def find_mate( filepath, readlist ):
 
 
 
-def fastas_to_40s_fastqs(fastas):
+def fastas_to_40s_fastqs(outdir, fastas):
     def to_fq_rec(seq):
         s = str(seq.seq)
         qual = ']'*len(s)
@@ -278,7 +278,8 @@ def fastas_to_40s_fastqs(fastas):
         return "@{}\n{}\n{}\n{}\n".format(id, s, '+', qual)
     swap_ext = lambda s, ext: '.'.join(s.split('.')[:-1] + [ext])
     for f in fastas:
-        with open(swap_ext(f, 'fastq'), 'w') as out:
+        outname = join(outdir, swap_ext(f, 'fastq'))
+        with open(outname, 'w') as out:
             for seq in SeqIO.parse(f, 'fasta'):
                 out.write(to_fq_rec(seq))
 
