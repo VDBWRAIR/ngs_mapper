@@ -43,10 +43,10 @@ get_index = partial(re.sub, r'_R([12])_', r'_I\1_')
 is_fastq = methodcaller('endswith', ('fq', 'fastq'))
 def name_filtered(path, outdir):
     ''' rename with 'fitered.' prefix and inside the new path directory. '''
-    rename = "filtered.{0}".format
+    #rename = "filtered.{0}".format
     dirpath, filename = os.path.split(path)
-    renamed = rename(filename)
-    renamed = renamed[:-3] + 'fastq' if renamed.endswith('sff') else renamed
+    #renamed = rename(filename)
+    renamed = filename[:-3] + 'fastq' if filename.endswith('sff') else filename
     return os.path.join(outdir, renamed)
 
 def has_index(fn):

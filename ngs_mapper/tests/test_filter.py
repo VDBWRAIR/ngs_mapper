@@ -20,7 +20,7 @@ class TestNGSFilter(unittest.TestCase):
     def setUp(self):
         fixpath = join(fixtures.THIS,'fixtures')
         fix = partial(join, fixpath)
-        self.actualfn = 'testoutput/filtered.1900_S118_L001_R2_001_2015_04_24.fastq'
+        self.actualfn = 'testoutput/1900_S118_L001_R2_001_2015_04_24.fastq'
         self.expectedfn = fix('expected__R2__.fastq')
         self.inputfn = fix('1900/1900_S118_L001_R2_001_2015_04_24.fastq')
         self.inputdir = fix('1900')
