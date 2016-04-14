@@ -1,8 +1,8 @@
 Changelog
 ---------
 
-Version X
-+++++++++
+Version 1.5.0
++++++++++++++
 
 - Continuous Delivery support added for travis
 - nfilter will now simply symlink if no options are supplied essentially skipping
