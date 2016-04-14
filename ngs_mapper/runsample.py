@@ -114,7 +114,8 @@ import shutil
 import glob
 from ngs_mapper import compat
 import sh
-
+from data import fastas_to_40s_fastqs
+import nfilter
 # Everything to do with running a single sample
 # Geared towards running in a Grid like universe(HTCondor...)
 # Ideally the entire sample would be run inside of a prefix directory under
@@ -214,6 +215,7 @@ def parse_args( args=sys.argv[1:] ):
     parser.add_argument(
         '--index-min',
         dest='index_min',
+        type=int,
         default=_config['ngs_filter']['indexQualityMin']['default'],
         help=_config['ngs_filter']['indexQualityMin']['help'],
     )
@@ -240,6 +242,13 @@ def parse_args( args=sys.argv[1:] ):
         dest='outdir',
         default=default_outdir,
         help='The output directory for all files to be put[Default: {0}]'.format(default_outdir)
+    )
+
+    parser.add_argument(
+        '--fasta',
+        action='store_true',
+        default=False,
+        help='Input is fasta format. Default is False.'
     )
 
     args, rest = parser.parse_known_args(args)
@@ -379,11 +388,17 @@ def main():
         def select_keys(d, keys):
             return dict( ((k, v) for k, v in d.items() if k in keys))
 
+
         #convert sffs to fastq
         convert_dir = os.path.join(tdir,'converted')
 
         print sh.convert_formats(cmd_args['readsdir'], convert_dir, _out=sys.stdout, _err=sys.stderr)
         #print sh.sff_to_fastq(cmd_args['readsdir'], _out=sys.stdout, _err=sys.stderr)
+
+        if args.fasta:
+            fastas = glob.glob(os.path.join(cmd_args['readsdir'], '*.fasta'))
+            fastas_to_40s_fastqs(convert_dir, fastas)
+
         try:
             if cmd_args['config']:
                 __result = sh.ngs_filter(convert_dir, config=cmd_args['config'], outdir=cmd_args['filtered_dir'])
