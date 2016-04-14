@@ -10,6 +10,13 @@ Version X
 - nfilter utilizes threads from config file
 - Froze versions of all dependencies to remove issues when authors update
   dependencies that cause unwanted side-effects
+- config file now has THREADS default
+- fix for bug where some miseq reads were not identified correctly in tagreads
+- convert functions now support output directory
+- bug fix for nfilter symlinking
+- fix for qsub job output from runsample
+- no longer name files with filtered. prefix
+- Pipeline now works with fasta files using the --fasta flag
 
 Version 1.4.2
 +++++++++++++
