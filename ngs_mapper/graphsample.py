@@ -76,7 +76,7 @@ def run_montage( *args, **kwargs ):
 
         @returns the output file path which should be outprefix + '.png'
     '''
-    cmd = ['montage']
+    cmd = ['montage', '-font', 'Liberation-Sans', '-pointsize', '1']
     for k,v in kwargs.items():
         cmd += ['-{0}'.format(k),str(v)]
     cmd += args
