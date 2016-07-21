@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg') 
 import argparse
 from collections import defaultdict
 import sys
