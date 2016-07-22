@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+Version 1.5.1
++++++++++++++
+
+- Bugfix for X Display being require for Matplotlib graphics
+- Bugfix for ImageMagick missing fonts issue
+- Bugfix for pip/conda setuptools conflict
+
 Version 1.5.0
 +++++++++++++
 
