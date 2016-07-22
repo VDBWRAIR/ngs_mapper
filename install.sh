@@ -79,11 +79,12 @@ conda config --add channels vdbwrair
 ## Conda deps first
 conda install --file requirements-conda.txt
 ## Pip specific deps next
-pip install -r requirements-pip.txt
+pip install --ignore-installed -r requirements-pip.txt
 
+# https://github.com/ContinuumIO/anaconda-issues/issues/542
 # Fix matplotlib global rc file to use Agg backend so should not
 # require X Display
- sed -i 's/backend\s\+:\s\+.*/backend : Agg/' $(python -c 'import matplotlib; f=matplotlib.matplotlib_fname(); print f;')
+sed -i 's/backend\s\+:\s\+.*/backend : Agg/' $(python -c 'import matplotlib; f=matplotlib.matplotlib_fname(); print f;')
 
 # Install package
 python setup.py install
