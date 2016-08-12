@@ -90,7 +90,7 @@ You will probably want to be able to run an entire samplesheet with a custom con
 
     .. code-block:: bash
 
-        $> RUNSAMPLEOPTIONS"-c config.yaml" runsamplesheet.sh /path/to/NGSData/ReadsBySample samplesheet.tsv
+        $> RUNSAMPLEOPTIONS="-c config.yaml" runsamplesheet.sh /path/to/NGSData/ReadsBySample samplesheet.tsv
 
 Editing config.yaml
 ===================
