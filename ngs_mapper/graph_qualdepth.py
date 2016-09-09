@@ -13,17 +13,17 @@ def main( args ):
         title = args.title
     make_graphic( args.jsonfile, args.outfile, args.ref, titleprefix=title )
 
-def plot_depths( ax, xvals, yvals, maxdepth, color, title ):
+def plot_depths( ax, xvals, yvals, maxdepth, ref_length, color, title ):
     ax.set_title( "{0} Depth/Qual".format(title) )
     ax.set_xlabel( "Reference Position" )
     ax.set_ylabel( "Depth" )
     ax.fill_between( xvals, yvals, facecolor=color, alpha=0.5 )
     #ax.plot( xvals, yvals, c=color )
-    ax.set_xlim([0,xvals[-1]])
+    ax.set_xlim([0,ref_length])
     ax.set_ylim([0,maxdepth])
     ax.minorticks_on()
 
-def plot_quals( ax, xvals, yvals, color ):
+def plot_quals( ax, xvals, yvals, ref_length, color ):
     from matplotlib.ticker import MultipleLocator
     from matplotlib.ticker import LinearLocator
     ticks = None
@@ -38,7 +38,7 @@ def plot_quals( ax, xvals, yvals, color ):
     #ax.plot( xvals, yvals, c=color )
     ax.fill_between( xvals, yvals, facecolor=color, alpha=0.2 )
     ax.set_ylabel( "Quality" )
-    ax.set_xlim([0,xvals[-1]])
+    ax.set_xlim([0,ref_length])
     ax.set_ylim([0,40])
     ax.minorticks_on()
     ax.axhline( y=37, color='g', linestyle=':' )
@@ -85,7 +85,7 @@ def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_
         @param ref - Which reference to do the image for
         @param titleprefix - What to put in title before the Qual/Depth text
         @param compress_data - How many ref positions to skip between each data point
-        
+
         NOTE: This works for single reference mapped only!!
     '''
     import matplotlib.pyplot as plt
@@ -120,8 +120,9 @@ def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_
     unmapped_reads = j['unmapped_reads']
     xvals = range(0,len(j[ref]['depths']), compress_data)
 
-    plot_depths( ax1, xvals, depths, max_depth, title=titleprefix, color='blue' )
-    plot_quals( ax3, xvals, quals, color='green' )
+    ref_length = j[ref]['reflen']
+    plot_depths( ax1, xvals, depths, max_depth, ref_length, title=titleprefix, color='blue' )
+    plot_quals( ax3, xvals, quals, ref_length, color='green' )
     plot_mapunmap( ax2, mapped_reads, unmapped_reads )
 
     fig.savefig( outputfile, bbox_inches='tight', dpi=100, pad_inches=0.1 )
