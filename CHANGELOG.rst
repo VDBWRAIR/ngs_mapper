@@ -8,6 +8,7 @@ Version 1.5.1
 - Bugfix for ImageMagick missing fonts issue
 - Bugfix for pip/conda setuptools conflict
 - Bugfix: qualdepth graph no longer cuts off ends
+- Added lofreq
 
 Version 1.5.0
 +++++++++++++
