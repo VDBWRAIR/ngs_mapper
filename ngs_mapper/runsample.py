@@ -449,16 +449,25 @@ def main():
         if r != 0:
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
-
         # Variant Calling
-        cmd = 'base_caller {bamfile} {reference} {vcf} -minth {minth}'
-        if cmd_args['config']:
-            cmd += ' -c {config}'
-        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        r = p.wait()
-        if r != 0:
-            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
-        rets.append( r )
+        if lofreq:
+            cmd1 = 'lofreq call -f {reference} {bamfile} -o {vcf} ' + lofreq_options
+            r1 = run_cmd( cmd1.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT ).wait()
+            if r1 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd1.format(**cmd_args)) )
+
+            cmd2 = 'lf_consensus --ref {reference} --vcf {vcf} --minbq 30 --mind 10 --bam {bamfile} > {consensus}'
+            r2 = run_cmd( cmd2.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT ).wait()
+            if r2 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd2.format(**cmd_args)) )
+            rets += [r1, r2]
+        else:
+            cmd = 'base_caller {bamfile} {reference} {vcf} -minth {minth}'
+            if cmd_args['config']:
+                cmd += ' -c {config}'
+            p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+            r = p.wait()
+            if r != 0:
+                logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            rets.append( r )
         if rets[-1] != 0:
             cmd = cmd.format(**cmd_args)
             logger.critical( '{0} failed to complete successfully'.format(cmd.format(**cmd_args)) )
@@ -490,12 +499,13 @@ def main():
         rets.append( r )
 
         # Consensus
-        cmd = 'vcf_consensus {vcf} -i {samplename} -o {consensus}'
-        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        r = p.wait()
-        if r != 0:
-            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
-        rets.append( r )
+        if not lofreq:
+             cmd = 'vcf_consensus {vcf} -i {samplename} -o {consensus}'
+             p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+             r = p.wait()
+             if r != 0:
+                 logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+             rets.append( r )
 
         # If sum is > 0 then one of the commands failed
         if sum(rets) != 0:
