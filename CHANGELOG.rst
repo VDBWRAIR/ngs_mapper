@@ -1,6 +1,10 @@
 Changelog
 ---------
 
+Version 1.5.2
++++++++++++++
+- Bugfix for install not being able to find ncurses
+
 Version 1.5.1
 +++++++++++++
 
