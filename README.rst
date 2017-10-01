@@ -59,3 +59,17 @@ This will create a temporary directory called tdir and cd into it then run both 
 and put their results inside of their own directory named after themselves.
 
 From there you can explore them on your own
+
+Running via Docker
+^^^^^^^^^^^^^^^^^^
+
+In the below command we are instructing docker to mount the 
+`ngs_mapper/tests/fixtures/functional` directory from your local computer to 
+`/data` inside of the docker container when it runs.
+It is also mounting the current directory you are running the command from as
+`/output` inside the container.
+
+.. code-block:: bash
+
+    mkdir -p output
+    docker run -it -v $PWD/output:/output -v NGSData:/NGSDATA -v $PWD/ngs_mapper/tests/fixtures/functional:/data ngs_mapper:1.5 runsample /data/947 /data/947.ref.fasta -od /output/947 947

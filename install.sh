@@ -74,6 +74,7 @@ conda config --add channels r
 conda config --add channels bioconda
 conda config --add channels BioBuilds
 conda config --add channels vdbwrair
+conda config --add channels conda-forge
 
 # Install dependencies
 ## Conda deps first
