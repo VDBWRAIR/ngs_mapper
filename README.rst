@@ -15,6 +15,9 @@
 .. image:: https://coveralls.io/repos/VDBWRAIR/ngs_mapper/badge.svg
     :target: https://coveralls.io/r/VDBWRAIR/ngs_mapper
 
+.. image:: https://img.shields.io/docker/build/tyghe/ngs_mapper.svg?style=plastic
+    :target: https://hub.docker.com/r/tyghe/ngs_mapper
+
 Installation
 ------------
 
