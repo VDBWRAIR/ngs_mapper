@@ -72,7 +72,24 @@ In the below command we are instructing docker to mount the
 It is also mounting the current directory you are running the command from as
 `/output` inside the container.
 
+You can then see that it is running the runsample command the same as you would
+normally run it and pointing to the /data/947 directory to read samples data
+from(as well as the reference file) and then sending all the output to the
+/output/947 directory.
+
+After the pipeline is finished running you would find the 947 directory under
+the output directory in your local computer.
+
+The `vdbwrair/ngs_mapper:latest` instructs docker to use the latest version
+of ngs_mapper from dockerhub. 
+
+If you want to use a different version you can replace `latest` with any tag
+listed under https://hub.docker.com/r/vdbwrair/ngs_mapper/tags/
+
+For example: `vdbwrair/ngs_mapper:v1.5.4` would use the `v1.5.4` version of
+ngs_mapper.
+
 .. code-block:: bash
 
     mkdir -p output
-    docker run -it -v $PWD/output:/output -v NGSData:/NGSDATA -v $PWD/ngs_mapper/tests/fixtures/functional:/data ngs_mapper:1.5 runsample /data/947 /data/947.ref.fasta -od /output/947 947
+    docker run -it -v $PWD/output:/output -v NGSData:/NGSDATA -v $PWD/ngs_mapper/tests/fixtures/functional:/data vdbwrair/ngs_mapper:latest runsample /data/947 /data/947.ref.fasta -od /output/947 947
