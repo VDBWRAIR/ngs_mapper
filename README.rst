@@ -66,6 +66,7 @@ From there you can explore them on your own
 Running via Docker
 ^^^^^^^^^^^^^^^^^^
 
+<<<<<<< HEAD
 The following requires that you have docker installed on your computer.
 You can get docker from visiting https://www.docker.com/ and clicking on the
 Operating System from the 'Get Docker' dropdown.
@@ -89,6 +90,10 @@ Once you have cloned the repo you can then run through the following.
 In the below command we are instructing docker to mount the 
 `ngs_mapper/tests/fixtures/functional` directory from your local computer to 
 `/NGSDATA` inside of the docker container when it runs.
+
+In the below command we are instructing docker to mount the 
+`ngs_mapper/tests/fixtures/functional` directory from your local computer to 
+`/data` inside of the docker container when it runs.
 
 It is also mounting the current directory you are running the command from as
 `/output` inside the container.
@@ -117,15 +122,12 @@ ngs_mapper.
 
 Once you have completed this you should have a better understanding of how
 to use docker to run ngs_mapper. To run your own data you can replace
+`$PWD/ngs_mapper/tests/fixtures/functional`
 
-.. code-block:: bash
-
-    $PWD/ngs_mapper/tests/fixtures/functional
-
-with the path to your data and then change the /NGSDATA/947 to reference
+with the path to your data and then change the `/NGSDATA/947` to reference
 where your samples would reside.
 
-For example, if your samples were in /some/path/sampledata/sample1, then 
+For example, if your samples were in `/some/path/sampledata/sample1`, then 
 you would use something like the following:
 
 .. code-block:: bash
@@ -133,8 +135,8 @@ you would use something like the following:
     mkdir -p output
     docker run -it -v $PWD/output:/output -v /some/path/sampledata:/NGSDATA vdbwrair/ngs_mapper:latest runsample /NGSDATA/sample1 /NGSDATA/ref.fasta -od /output/947 947
 
-If your reference file exists somewhere outside of /some/path/sampledata you
-can use another -v option for docker to make it available within the docker
+If your reference file exists somewhere outside of `/some/path/sampledata` you
+can use another `-v` option for docker to make it available within the docker
 container when it runs
 
 .. code-block:: bash
