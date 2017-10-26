@@ -1,6 +1,10 @@
 Changelog
 ---------
 
+Version 1.5.3
++++++++++++++
+- Fixing readme for docker usage
+
 Version 1.5.2
 +++++++++++++
 - Bugfix for install not being able to find ncurses

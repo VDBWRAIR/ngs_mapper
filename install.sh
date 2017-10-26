@@ -8,8 +8,11 @@ exec > >(tee install.log) 2>&1
 INSTALL_PATH="$PWD/miniconda"
 if [ ! -z "$1" ]
 then
-    INSTALL_PATH="$1"
-    INSTALL_PATH="$(cd $(dirname "$1") && pwd)/$1"
+  INSTALL_PATH="$(dirname $1)"
+  INSTALL_DIR="$(basename $1)"
+  mkdir -p $INSTALL_PATH
+  INSTALL_PATH="$(cd $INSTALL_PATH && pwd)/$INSTALL_DIR"
+  echo "Installing to $INSTALL_PATH"
 fi
 
 # Fail if any command fails
