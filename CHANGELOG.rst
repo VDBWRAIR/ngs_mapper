@@ -1,6 +1,14 @@
 Changelog
 ---------
 
+Version 1.5.3
++++++++++++++
+- Fixing readme for docker usage
+
+Version 1.5.2
++++++++++++++
+- Bugfix for install not being able to find ncurses
+
 Version 1.5.1
 +++++++++++++
 
@@ -9,6 +17,7 @@ Version 1.5.1
 - Bugfix for pip/conda setuptools conflict
 - Bugfix: qualdepth graph no longer cuts off ends
 - Added lofreq
+
 
 Version 1.5.0
 +++++++++++++
