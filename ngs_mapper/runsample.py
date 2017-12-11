@@ -427,8 +427,9 @@ def main():
         # Filter on index quality and Ns
 
         # Mapping
+        cmd_args['tmp_bam'] = os.path.join( tdir, 'tmp.bam' )
         with open(bwalog, 'wb') as blog:
-            cmd = 'run_bwa_on_samplename {trim_outdir} {reference} -o {bamfile}'
+            cmd = 'run_bwa_on_samplename {trim_outdir} {reference} -o {tmp_bam}'
             if cmd_args['config']:
                 cmd += ' -c {config}'
             p = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
@@ -440,6 +441,13 @@ def main():
                 logger.critical( "{0} failed to complete sucessfully. Please check the log file {1} for more details".format(cmd,bwalog) )
                 sys.exit(1)
 
+        tcmd = "samtools view -F 2048 -b {tmp_bam} > {bamfile}"
+        p = run_cmd( tcmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+        r = p.wait()
+        if r != 0:
+            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+        rets.append( r )
+
         # Tag Reads
         cmd = 'tagreads {bamfile} -CN {CN}'
         if cmd_args['config']:
@@ -449,16 +457,29 @@ def main():
         if r != 0:
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
-
         # Variant Calling
-        cmd = 'base_caller {bamfile} {reference} {vcf} -minth {minth}'
-        if cmd_args['config']:
-            cmd += ' -c {config}'
-        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        r = p.wait()
-        if r != 0:
-            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
-        rets.append( r )
+        from ngs_mapper.config import load_config
+        bc_cfg = load_config(cmd_args['config'])['base_caller']
+        lofreq = bc_cfg['lofreq']['default']
+        lofreq_options = bc_cfg['lofreq_options']['default'] or ''
+        if lofreq:
+            cmd1 = 'lofreq call -f {reference} {bamfile} -o {vcf} ' + lofreq_options
+            r1 = run_cmd( cmd1.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT ).wait()
+            if r1 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd1.format(**cmd_args)) )
+            with open(cmd_args['consensus'], 'w') as cons_out:
+                cmd2 = 'lf_consensus --ref {reference} --vcf {vcf} --minbq 30 --mind 10 --bam {bamfile}'
+                r2 = run_cmd( cmd2.format(**cmd_args), stdout=cons_out, stderr=subprocess.STDOUT ).wait()
+                if r2 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd2.format(**cmd_args)) )
+                rets += [r1, r2]
+        else:
+            cmd = 'base_caller {bamfile} {reference} {vcf} -minth {minth}'
+            if cmd_args['config']:
+                cmd += ' -c {config}'
+            p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+            r = p.wait()
+            if r != 0:
+                logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            rets.append( r )
         if rets[-1] != 0:
             cmd = cmd.format(**cmd_args)
             logger.critical( '{0} failed to complete successfully'.format(cmd.format(**cmd_args)) )
@@ -490,12 +511,13 @@ def main():
         rets.append( r )
 
         # Consensus
-        cmd = 'vcf_consensus {vcf} -i {samplename} -o {consensus}'
-        p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        r = p.wait()
-        if r != 0:
-            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
-        rets.append( r )
+        if not lofreq:
+             cmd = 'vcf_consensus {vcf} -i {samplename} -o {consensus}'
+             p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+             r = p.wait()
+             if r != 0:
+                 logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+             rets.append( r )
 
         # If sum is > 0 then one of the commands failed
         if sum(rets) != 0:

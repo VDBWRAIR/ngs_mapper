@@ -40,6 +40,7 @@ setup(
             'trim_reads = ngs_mapper.trim_reads:main',
             'vcf_consensus = ngs_mapper.vcf_consensus:main',
             'vcf_diff = ngs_mapper.vcf_diff:main',
+            'lf_consensus = ngs_mapper.lofreq_consensus:main'
         ]
     },
     package_data = {
