@@ -106,12 +106,14 @@ def call_base_multi_alts(min_depth, majority_percentage, dp, alts, ref):
     else:
         alts_without_insert = alts
     over_depth = lambda x: lambda depth: depth/float(dp) > x
-    picked_alt = valfilter(over_depth(min_depth), alts_without_insert) # min_depth was hardcoded 0.8
+    #picked_alt = valfilter(over_depth(min_depth), alts_without_insert) # min_depth was hardcoded 0.8
+    picked_alt = valfilter(over_depth(majority_percentage), alts_without_insert) # min_depth was hardcoded 0.8
     if picked_alt:
         return picked_alt.keys()[0]
     #add ref so that it will be considered in creating ambiguous base
     alts_with_ref = merge(alts_without_insert, ({ref : (dp - total_ao()) } if ref else {}))
-    over20 = valfilter(over_depth(0.2), alts_with_ref)
+    #over20 = valfilter(over_depth(0.2), alts_with_ref) # CHANGE to use majority_percentage
+    over20 = valfilter(over_depth(1 - majority_percentage), alts_with_ref) # CHANGE to use majority_percentage
     as_ambiguous = ''.join(sorted(over20.keys()))
     # this could return a single base, (including the reference), becuase i.e.  A => A in the ambiguity table
     return AMBIGUITY_TABLE[as_ambiguous] if as_ambiguous != '' else ''
@@ -285,14 +287,14 @@ def main(): # type: () -> None
           '--ref' : os.path.isfile,
          Optional('--sample') : lambda x: True,
          Optional('--bam') : lambda x: True,
-          '--majority' : Use(int),
+          '--majority' : Use(float),
           '--mind' : Use(int),
           '--minbq' : Use(int),
           '--output' : Use(lambda x: sys.stdout if not x else open(x, 'w'))})
     raw_args = docopt(__doc__, version='Version 1.0')
     args = scheme.validate(raw_args)
     run(args['--ref'], args['--vcf'], args['--output'],
-        args['--mind'], args['--minbq'], args['--output'], args['--sample'], args['--bam'])
+        args['--mind'], args['--minbq'], args['--majority'], args['--sample'], args['--bam'])
 
 if __name__ == '__main__':
     main()

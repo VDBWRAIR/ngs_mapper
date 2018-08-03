@@ -429,7 +429,8 @@ def main():
         # Mapping
         cmd_args['tmp_bam'] = os.path.join( tdir, 'tmp.bam' )
         with open(bwalog, 'wb') as blog:
-            cmd = 'run_bwa_on_samplename {trim_outdir} {reference} -o {tmp_bam}'
+            #cmd = 'run_bwa_on_samplename {trim_outdir} {reference} -o {tmp_bam}'
+            cmd = 'run_bwa_on_samplename {trim_outdir} {reference} -o {bamfile}'
             if cmd_args['config']:
                 cmd += ' -c {config}'
             p = run_cmd( cmd.format(**cmd_args), stdout=blog, stderr=subprocess.STDOUT )
@@ -441,12 +442,12 @@ def main():
                 logger.critical( "{0} failed to complete sucessfully. Please check the log file {1} for more details".format(cmd,bwalog) )
                 sys.exit(1)
 
-        tcmd = "samtools view -F 2048 -b {tmp_bam} > {bamfile}"
-        p = run_cmd( tcmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
-        r = p.wait()
-        if r != 0:
-            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
-        rets.append( r )
+#        tcmd = "samtools view -F 2048 -b {tmp_bam}"
+#        p = run_cmd( tcmd.format(**cmd_args), stdout=bamfile, stderr=subprocess.STDOUT )
+#        r = p.wait()
+#        if r != 0:
+#            logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+#        rets.append( r )
 
         # Tag Reads
         cmd = 'tagreads {bamfile} -CN {CN}'
@@ -458,16 +459,22 @@ def main():
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
         # Variant Calling
-        from ngs_mapper.config import load_config
-        bc_cfg = load_config(cmd_args['config'])['base_caller']
+        from ngs_mapper.config import load_config, load_default_config
+        if cmd_args['config']:
+            bc_cfg = load_config(cmd_args['config'])['base_caller']
+        else:
+            bc_cfg = load_default_config()['base_caller']
         lofreq = bc_cfg['lofreq']['default']
         lofreq_options = bc_cfg['lofreq_options']['default'] or ''
+        minbq = bc_cfg['minbq']['default']
+        mind = bc_cfg['mind']['default']
         if lofreq:
             cmd1 = 'lofreq call -f {reference} {bamfile} -o {vcf} ' + lofreq_options
             r1 = run_cmd( cmd1.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT ).wait()
             if r1 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd1.format(**cmd_args)) )
             with open(cmd_args['consensus'], 'w') as cons_out:
-                cmd2 = 'lf_consensus --ref {reference} --vcf {vcf} --minbq 30 --mind 10 --bam {bamfile}'
+                #cmd2 = 'lf_consensus --ref {reference} --vcf {vcf} --minbq 30 --mind 10 --bam {bamfile}'
+                cmd2 = 'lf_consensus --ref {reference} --vcf {vcf} --minbq %s --mind %s --bam {bamfile} --majority {minth}' % (minbq, mind)
                 r2 = run_cmd( cmd2.format(**cmd_args), stdout=cons_out, stderr=subprocess.STDOUT ).wait()
                 if r2 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd2.format(**cmd_args)) )
                 rets += [r1, r2]
