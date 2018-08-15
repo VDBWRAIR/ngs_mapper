@@ -20,6 +20,7 @@ Installation
 
 
 `install <https://ngs-mapper.readthedocs.io/en/latest/install.html>`_
+
 If you already have a conda environment installed, it is advised that NGS_Mapper not be installed in the same location  
 
 Upgrading
