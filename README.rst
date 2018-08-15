@@ -19,12 +19,13 @@ Installation
 ------------
 
 
-`install <doc/source/install.rst>`_
+`install <https://ngs-mapper.readthedocs.io/en/latest/install.html>`_
+If you already have a conda environment installed, it is advised that NGS_Mapper not be installed in the same location  
 
 Upgrading
 ---------
   
-`upgrade <doc/source/upgrade.rst>`_
+`upgrade <https://ngs-mapper.readthedocs.io/en/latest/upgrade.html>`_
 
 Changelog
 ---------
@@ -36,7 +37,7 @@ Running the pipeline
 
 Before you use the pipeline you always need to ensure that the miniconda environment
 is in your environment's path. You will want to look at the
-`install <doc/source/install.rst>`_ for more details
+`install <https://ngs-mapper.readthedocs.io/en/latest/install.html>`_ for more details
 
 
 Running a single sample
