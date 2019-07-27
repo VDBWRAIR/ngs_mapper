@@ -1,0 +1,150 @@
+# Make sure to set this to the absolute path of your NGS Data structure
+# Does not need the trailing /
+NGSDATA: &NGSDATA /path/to/NGSDATA
+
+# Default threads to use for any stage that supports it
+THREADS: &THREADS 1
+
+# All scripts by name should be top level items
+# Sub items then are the option names(the dest portion of the add_arugment for the script)
+# Each option needs to define the default as well as the help message
+ngs_filter:
+    dropNs:
+        default: False
+        help: 'Drop all reads that have Ns.'
+    indexQualityMin:
+        default: 0
+        help: 'The index for each associated MiSeq read must be equal or above this value.'
+    threads:
+        default: *THREADS
+        help: 'How many threads to use[Default: %(default)s]'
+    platforms:
+        choices:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        default:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        help: 'List of platforms to include data for[Default: %(default)s]'
+trim_reads:
+    q:
+        default: 20
+        help: 'Quality threshold to trim[Default: %(default)s]'
+    headcrop:
+        default: 0
+        help: 'How many bases to crop off the beginning of the reads after quality trimming[Default: %(default)s]'
+    outputdir:
+        default: trimmed_reads
+        help: 'Where to output the resulting files[Default: %(default)s]'
+    primerfile:
+        default:
+        help:  'Primer File'
+    primerseed:
+        default: 2
+        help:   'seed mismatches'
+    palindromeclip:
+        default: 30
+        help: 'palindrome clip threshold'
+    simpleclip:
+        default: 20
+        help: 'simple clip threshold' 
+    platforms:
+        choices:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        default:
+        - MiSeq
+        - Sanger
+        - Roche454
+        - IonTorrent
+        help: 'List of platforms to include data for[Default: %(default)s]'
+run_bwa_on_samplename:
+    platforms:
+        choices:
+            - MiSeq
+            - Sanger
+            - Roche454
+            - IonTorrent
+        default:
+            - MiSeq
+            - Sanger
+            - Roche454
+            - IonTorrent
+        help: 'List of platforms to include data for[Default: %(default)s]'
+    output:
+        default: bwa_mem.bam
+        help: 'Where the output bam should be placed[Default: %(default)s]'
+    keep_temp:
+        default: False
+        help: 'Flag to indicate that you want the temporary files kept instead of removing them[Default: %(default)s]'
+    threads:
+        default: *THREADS
+        help: 'How many threads to use for bwa[Default: %(default)s]'
+tagreads:
+    SM:
+        default:
+        help: 'Sets the SM tag value inside of each read group. Default is the portion of the filname that preceeds the .bam[Default: %(default)s]'
+    CN:
+        default:
+        help: 'Sets the CN tag inside of each read group to the value specified.[Default: %(default)s]'
+base_caller:
+    lofreq: 
+        default: False
+        help: 'Use lofreq instead of base_caller.py to call variants. Off by default.' 
+    lofreq_options:
+        default: 
+        help: "Command line arguments to use with lofreq. See lofreq's documentation at http://csb5.github.io/lofreq/commands/#call"
+
+    regionstr:
+        default:
+        help: 'Specify a region string in the format of REFERENCE:START-STOP. See samtools documentation for more information.[Default: %(default)s]'
+    minbq:
+        default: 25
+        help: 'The minimum base quality to be considered high quality[Default: %(default)s]'
+    maxd:
+        default: 100000
+        help: 'The maximum depth to use for the pileup[Default: %(default)s]'
+    mind:
+        default: 10
+        help: 'Minimum depth for base trimming. Below this depth low quality bases will be called N[Default: %(default)s]'
+    minth:
+        default: 0.8
+        help: 'Minimum fraction of all remaining bases after trimming/N calling that will trigger a base to be called[Default: %(default)s]'
+    biasth:
+        default: 50
+        help: 'Minimum base quality threshold to bias towards. Will increase the amount of bases that have >= this value by a factor of what bias is set to[Default: %(default)s]'
+    bias:
+        default: 10
+        help: 'What factor to bias high quality bases by. Must be an integer >= 1[Default: %(default)s]'
+    threads:
+        default: *THREADS
+        help: 'How many threads to use when running base_caller.py[Default: %(default)s]'
+miseq_sync:
+    ngsdata:
+        default: *NGSDATA
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+roche_sync:
+    ngsdata:
+        default: *NGSDATA
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+    midparse:
+        # Leave this blank to use the installed version
+        default:
+        help: 'Path to your MidParse.conf file [Default: %(default)s]'
+sanger_sync:
+    ngsdata:
+        default: *NGSDATA
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+ion_sync:
+    ngsdata:
+        default: *NGSDATA
+        help: 'Path to the root of the NGSData structure [Default: %(default)s]'
+    min_fastq_size:
+        default: 1000000
+        help: 'Minimum file size to determine if a fastq is a ghost read [Default: %(default)s]'

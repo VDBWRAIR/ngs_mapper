@@ -1,0 +1,31 @@
+sudo: false
+language: python
+python:
+  - "2.7"
+before_install:
+    - "export DISPLAY=:99.0" # Should fix matplotlib errors
+    - "sh -e /etc/init.d/xvfb start"
+install:
+    - mkdir -p ngsdata
+    - chmod 777 ngsdata
+    - sed "s%/path/to/NGSDATA%$PWD/ngsdata%" ngs_mapper/config.yaml.default > ngs_mapper/config.yaml
+    - ./install.sh miniconda
+    - export PATH=$PWD/miniconda/bin:$PATH
+before_script:
+    - 'echo "TRAVIS_BRANCH: $TRAVIS_BRANCH"'
+    - 'echo "TRAVIS_TAG: $TRAVIS_TAG"'
+    - 'echo "TRAVIS_PULL_REQUEST: $TRAVIS_PULL_REQUEST"'
+    - '.travis/master.sh'
+    - '.travis/develop.sh'
+script:
+    - ngs_mapper/tests/fast_tests.sh
+    - travis_wait ngs_mapper/tests/slow_tests.sh
+after_success:
+    - .travis/push_release_tag.sh
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/733ce26f5af2ec9f2503
+    on_success: change
+    on_failure: always
+    on_start: never

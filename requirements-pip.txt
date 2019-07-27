@@ -1,0 +1,15 @@
+PyVCF==0.6.6
+python-dateutil==2.1
+pyBWA>=0.2.4
+tempdir==0.7.1
+logconfig==0.4.0
+logutils==0.3.3
+sphinx-rtd-theme==0.1.9
+filehandle==0.0.9
+Counter==1.0.0
+schema==0.4.0
+PyVCF==0.6.6
+python-dateutil==2.1
+docopt
+plumbum
+toolz
