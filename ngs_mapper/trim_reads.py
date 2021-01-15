@@ -51,7 +51,7 @@ def trim_reads_in_dir( *args, **kwargs ):
             platforms
         )
     )
-
+    #import ipdb; ipdb.set_trace();
     # Only sff and fastq files
     #reads = [f for f in os.listdir(readdir) if f.endswith('sff') or f.endswith('fastq')]
     platreads = data.reads_by_plat( readdir )

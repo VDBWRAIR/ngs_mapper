@@ -67,7 +67,9 @@ def make_consensus(reference, muts):
     def _do_build(t1, t2): # type: (Tuple[int,str,int], Tuple[str,str,int]) -> Tuple[str,str,int]
         (accString, string, lastPos), (x, y, bigPos) = t1, t2
         pos = bigPos - lastPos
-        return (accString + (string[:pos] + y), string[pos+len(x):],  bigPos+len(x))
+        #print bigPos, lastPos, x, y, len(accString), len(string)
+        res = (accString + (string[:pos] + y), string[pos+len(x):],  bigPos+len(x))
+        return res
     result, remaining, _ = reduce(_do_build, muts, ('', reference, 0))
     return result + remaining, muts
 
@@ -110,13 +112,19 @@ def call_base_multi_alts(min_depth, majority_percentage, dp, alts, ref):
     picked_alt = valfilter(over_depth(majority_percentage), alts_without_insert) # min_depth was hardcoded 0.8
     if picked_alt:
         return picked_alt.keys()[0]
+    # ref might itself be ambiguous
+    if not (ref.upper() in 'ACTG'):
+        REV_TABLE = dict((v, k) for (k, v) in AMBIGUITY_TABLE.items())
+        ref = REV_TABLE[ref.upper()]
     #add ref so that it will be considered in creating ambiguous base
     alts_with_ref = merge(alts_without_insert, ({ref : (dp - total_ao()) } if ref else {}))
     #over20 = valfilter(over_depth(0.2), alts_with_ref) # CHANGE to use majority_percentage
     over20 = valfilter(over_depth(1 - majority_percentage), alts_with_ref) # CHANGE to use majority_percentage
-    as_ambiguous = ''.join(sorted(over20.keys()))
+    #as_ambiguous = ''.join(sorted(over20.keys()))
+    as_ambiguous = ''.join(sorted(set(''.join((over20.keys())))))
     # this could return a single base, (including the reference), becuase i.e.  A => A in the ambiguity table
     return AMBIGUITY_TABLE[as_ambiguous] if as_ambiguous != '' else ''
+
 
 #@contract(min_depth='number,>=0', majority_percentage='number,>=0,<=100', rec='dict', returns='tuple(string, string, int)')
 def call_many(min_depth, majority_percentage, rec):
@@ -188,6 +196,30 @@ def group_muts_by_refs(references, muts):
 ###############
 # Runner      #
 ###############
+def collapse_muts_by_position(xs):
+    acc = None
+    out = []
+    i = 0
+    def combine(ys):
+        bases = [y[0] for y in ys]
+        base = AMBIGUITY_TABLE[ ''.join(sorted(set(bases))) ]
+        return (base, ys[0][1], ys[0][2])
+    def add(acc):
+        if len(acc) == 1:
+            out.append(acc[0])
+        else: out.append(combine(acc))
+    while i < len(xs):
+        e = xs[i]
+        if acc is None:
+            acc = [e]
+        elif e[2] in [a[2] for a in acc]: # [2] --> POS
+            acc += [e]
+        else:
+            add(acc)
+            acc = [e]
+        i += 1
+    add(acc)
+    return out
 
 #@contract(references='SeqRecord', muts='seq(dict)', mind=int, majority=int)
 def all_consensuses(references, muts, mind, majority):
@@ -197,6 +229,7 @@ def all_consensuses(references, muts, mind, majority):
     then builds the consensus using these calls and `make_consensus`'''
     muts_by_ref = group_muts_by_refs(references, muts)
     def single_consensus(muts, ref):
+        #import ipdb; ipdb.set_trace()
         # type: (List[VCFRow], SeqRecord) -> Tuple[str, List[Mut]]
         #the_muts = map(partial(call_many, mind, majority), muts)
         the_muts = map(lambda x: call_many(mind, majority, x), muts)
@@ -204,7 +237,8 @@ def all_consensuses(references, muts, mind, majority):
         # vcf is index-starting-at-1
         #real_muts = map(lambda (a,b,pos): (a,b,pos-1), filter(ref_and_alt_differ, the_muts))
         real_muts = map(lambda x: (x[0], x[1], x[2] - 1), filter(ref_and_alt_differ, the_muts))
-        return make_consensus(str(ref.seq), real_muts)
+        collapsed_muts = collapse_muts_by_position(real_muts)
+        return make_consensus(str(ref.seq), collapsed_muts)
     return references, imap(single_consensus, muts_by_ref, references)
 
 
@@ -232,6 +266,7 @@ def trim_ref(ref, positions): # type: (str, Iterator[int]) -> str
 
 def samtoolsDepth(ref_id, bam, minbq):
     lines = samtools['depth'][bam, '-r', ref_id, '-q', minbq]().split('\n')
+    #lines = open('depth.txt')
     lines = filter(lambda x: x.strip(), lines)
     lines = map(lambda x: x.split('\t'), lines)
     stats = map(lambda x: { 'pos' : int(x[1]), 'depth' : int(x[2]) }, lines)

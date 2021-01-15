@@ -11,7 +11,7 @@ def view( infile, *args, **kwargs ):
         would just be the same as what the samtools view command accepts
 
         @param infile - The sam|bam file to read or an open file-like object to read
-        
+
         @returns file like object representing the output of view
     '''
     # The base command
@@ -62,7 +62,7 @@ class Prop(object):
 class SamRow(object):
     '''
     Represents a single sam row
-    
+
     Object is instantiated by supplying it with a valid sam row string
 
     @param samrow_str - Sam row string
@@ -108,7 +108,7 @@ class SamRow(object):
                 raise ValueError("{0} is not a supported field type".format(typ))
 
             t.append( (name,value) )
-            
+
         return t
 
     @property
@@ -140,7 +140,7 @@ def mpileup( bamfile, regionstr=None, minmq=20, minbq=25, maxd=100000 ):
     @returns file like object representing the output of mpileup
     '''
     # The command that will be executed
-    cmd = ['samtools','mpileup','-s','-q',str(minmq),'-Q',str(minbq),'-d','{0}'.format(maxd)]
+    cmd = ['samtools','mpileup','-A','-s','-q',str(minmq),'-Q',str(minbq),'-d','{0}'.format(maxd)]
     # Only include -r if regionstr is set
     if regionstr:
         cmd += ['-r',regionstr]
@@ -186,7 +186,7 @@ def nogap_mpileup(*args, **kwargs):
 def char_to_qual( qual_char ):
     '''
     Converts a given quality character to the phred - 33 integer
-    
+
     @param qual_char - Quality character to convert to a phred - 33 integer quality
 
     @return phred - 33 quality integer
@@ -201,7 +201,7 @@ class MPileupColumn(object):
     Note that if older samtools is used that does not contain the fix with respect to mapping quality length != base quality length
     then the bquals list will be None
 
-    It is assumed that minimum base quality and mapping quality have already been applied to the mpileup string that is 
+    It is assumed that minimum base quality and mapping quality have already been applied to the mpileup string that is
     provided to the constructor.
 
     @param mpileup_str - Mpileup string
@@ -220,7 +220,7 @@ class MPileupColumn(object):
     @property
     def depth( self ):
         return self.__dict__['depth']
-    
+
     @depth.setter
     def depth( self, value ):
         ''' Depth is an integer '''
@@ -229,7 +229,7 @@ class MPileupColumn(object):
     @property
     def pos( self ):
         return self.__dict__['pos']
-    
+
     @pos.setter
     def pos( self, value ):
         ''' Position is an integer '''
@@ -295,7 +295,7 @@ class MPileupColumn(object):
         '''
             Returns the mapping qualities as a phred - 33 integer
             Truncates mquals to the same length as base qualities as older samtools
-            had a bug where it would return all mapping qualities regardless of the -q and -Q 
+            had a bug where it would return all mapping qualities regardless of the -q and -Q
             thresholds being set.
             It will return the empty list if it would otherwise truncate due to the reason above, but
             all the values are not the same since there would be no way to tell what qual values

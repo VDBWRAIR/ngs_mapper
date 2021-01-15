@@ -76,6 +76,7 @@ def map_to_dir(readsdir, idxQualMin, dropNs, platforms, outdir, threads):
     fetch the fastqs and indexes of the directory and write the filtered results.'''
     #no_index_fqs = fqs_excluding_indices(readsdir)
     plat_files_dict = reads_by_plat(readsdir)
+    # import ipdb; ipdb.set_trace()
     #_nested_files = map(plat_files_dict.get, platforms)
     _nested_files = filter(None, map(plat_files_dict.get, platforms))
     if not _nested_files:

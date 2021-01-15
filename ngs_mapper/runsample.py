@@ -461,15 +461,21 @@ def main():
         # Variant Calling
         from ngs_mapper.config import load_config, load_default_config
         if cmd_args['config']:
-            bc_cfg = load_config(cmd_args['config'])['base_caller']
+            cfg = load_config(cmd_args['config'])
         else:
-            bc_cfg = load_default_config()['base_caller']
+            cfg = load_default_config()
+
+        bc_cfg = cfg['base_caller']
         lofreq = bc_cfg['lofreq']['default']
         lofreq_options = bc_cfg['lofreq_options']['default'] or ''
         minbq = bc_cfg['minbq']['default']
         mind = bc_cfg['mind']['default']
+        lofreq_options += (" --min-bq {0} --min-alt-bq {1} ".format(minbq, minbq))
+        threads = cfg['THREADS']
         if lofreq:
-            cmd1 = 'lofreq call -f {reference} {bamfile} -o {vcf} ' + lofreq_options
+            r0 = run_cmd( "lofreq faidx {reference}".format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT ).wait()
+            cmd1 = 'lofreq call-parallel --pp-threads ' + str(threads) + ' -f {reference} {bamfile} -o {vcf} ' + lofreq_options
+            #cmd1 = 'lofreq call -f {reference} {bamfile} -o {vcf} ' + lofreq_options
             r1 = run_cmd( cmd1.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT ).wait()
             if r1 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd1.format(**cmd_args)) )
             with open(cmd_args['consensus'], 'w') as cons_out:
