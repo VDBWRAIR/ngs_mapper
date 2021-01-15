@@ -458,8 +458,11 @@ def main():
             logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
         rets.append( r )
         # Variant Calling
-        from ngs_mapper.config import load_config
-        bc_cfg = load_config(cmd_args['config'])['base_caller']
+        from ngs_mapper.config import load_config, load_default_config
+        if cmd_args['config']:
+            bc_cfg = load_config(cmd_args['config'])['base_caller']
+        else:
+            bc_cfg = load_default_config()['base_caller']
         lofreq = bc_cfg['lofreq']['default']
         lofreq_options = bc_cfg['lofreq_options']['default'] or ''
         if lofreq:
