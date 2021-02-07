@@ -532,6 +532,16 @@ def main():
                  logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
              rets.append( r )
 
+
+        pilon = bc_cfg['pilon']['default']
+        pilon_options = bc_cfg['pilon_options']['default'] or ''
+        PILON_JAR = '/media/VD_Research/Admin/PBS/Software/ngs_mapper/pilon/pilon-1.23.jar'
+
+        if pilon:
+            cmd1 = "java -Xmx50G -jar " + PILON_JAR + " --bam {bamfile} --output pilon_consensus_correction_{samplename} --outdir {tdir} --changes --vcf --genome {reference} " + pilon_options
+            r1 = run_cmd( cmd1.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT ).wait()
+            if r1 != 0: logger.critical( "{0} did not exit sucessfully".format(cmd1.format(**cmd_args)) )
+
         # If sum is > 0 then one of the commands failed
         if sum(rets) != 0:
             logger.critical( "!!! There was an error running part of the pipeline !!!" )
