@@ -94,6 +94,13 @@ tagreads:
         default:
         help: 'Sets the CN tag inside of each read group to the value specified.[Default: %(default)s]'
 base_caller:
+    lofreq: 
+        default: False
+        help: 'Use lofreq instead of base_caller.py to call variants. Off by default.' 
+    lofreq_options:
+        default: 
+        help: "Command line arguments to use with lofreq. See lofreq's documentation at http://csb5.github.io/lofreq/commands/#call"
+
     regionstr:
         default:
         help: 'Specify a region string in the format of REFERENCE:START-STOP. See samtools documentation for more information.[Default: %(default)s]'

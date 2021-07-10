@@ -40,4 +40,3 @@ samtools==0.1.19_ccf1da91b # See issue #202
 trimmomatic==0.35 # Previous version was 0.32 from setup.py
 imagemagick==6.9.3
 igv==2.3.65
-
