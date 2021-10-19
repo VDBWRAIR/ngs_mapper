@@ -460,6 +460,22 @@ def main():
         rets.append( r )
         # Variant Calling
         from ngs_mapper.config import load_config, load_default_config
+        DO_INDEL = True
+        cmd_args['indelbam'] = bamfile + ".indel.bam"
+        if DO_INDEL:
+            cmd = "lofreq indelqual --dindel -f {reference} {bamfile} -o {indelbam}"
+            p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+            r = p.wait()
+            if r != 0:
+                logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            rets.append( r )
+            cmd = "samtools index {indelbam}"
+            p = run_cmd( cmd.format(**cmd_args), stdout=lfile, stderr=subprocess.STDOUT )
+            r = p.wait()
+            if r != 0:
+                logger.critical( "{0} did not exit sucessfully".format(cmd.format(**cmd_args)) )
+            rets.append( r )
+            bamfile = cmd_args['indelbam']
         if cmd_args['config']:
             cfg = load_config(cmd_args['config'])
         else:
@@ -534,6 +550,8 @@ def main():
 
 
         pilon = bc_cfg['pilon']['default']
+        pbam = cmd_args['bamfile'] + '.paired.bam'
+
         pilon_options = bc_cfg['pilon_options']['default'] or ''
         PILON_JAR = '/media/VD_Research/Admin/PBS/Software/ngs_mapper/pilon/pilon-1.23.jar'
 
