@@ -6,6 +6,8 @@ import sys
 from os.path import basename
 import numpy as np
 
+from matplotlib import pyplot as plt
+
 def main( args ):
     if args.title is None:
         title = basename(args.outfile)
@@ -21,7 +23,17 @@ def plot_depths( ax, xvals, yvals, maxdepth, ref_length, color, title ):
     #ax.plot( xvals, yvals, c=color )
     ax.set_xlim([0,ref_length])
     ax.set_ylim([0,maxdepth])
+    twenty_thousand = 20000
+    # ax.setp(ax.get_xticklabels(), fontsize=10, rotation='vertical')
+    ax.tick_params(labelsize=6.0)
+#    ax.ticklabel_format(style='sci', scilimits=(4, 100))
     ax.minorticks_on()
+    if ref_length > twenty_thousand:
+        ax.xaxis.set_major_locator(plt.MultipleLocator(5000))
+#    if ref_length > thirty_thousand:
+#        ax.setp(ax.get_xticklabels(), fontsize=10, rotation='vertical')
+#    else:
+#        ax.minorticks_on()
 
 def plot_quals( ax, xvals, yvals, ref_length, color ):
     from matplotlib.ticker import MultipleLocator
@@ -40,7 +52,16 @@ def plot_quals( ax, xvals, yvals, ref_length, color ):
     ax.set_ylabel( "Quality" )
     ax.set_xlim([0,ref_length])
     ax.set_ylim([0,40])
+    twenty_thousand = 20000
+    ax.tick_params(labelsize=6.0)
+    # ax.ticklabel_format(style='sci', scilimits=(4, 100))
+    if ref_length > twenty_thousand:
+        ax.xaxis.set_major_locator(plt.MultipleLocator(5000))
     ax.minorticks_on()
+#    if ref_length > twenty_thousand:
+#        ax.setp(ax.get_xticklabels(), fontsize=10, rotation='vertical')
+#    else:
+#        ax.minorticks_on()
     ax.axhline( y=37, color='g', linestyle=':' )
 
 def plot_mapunmap( ax, mapped, unmapped, mapped_color='g', unmapped_color='r', mapped_read_text_color='black', unmapped_read_text_color='white' ):
