@@ -7,18 +7,26 @@ from os.path import basename
 import numpy as np
 
 from matplotlib import pyplot as plt
+import matplotlib.ticker as mticker
 
 def main( args ):
     if args.title is None:
         title = basename(args.outfile)
     else:
         title = args.title
-    make_graphic( args.jsonfile, args.outfile, args.ref, titleprefix=title )
+    
+    log_title = 'log_' + title
+    log_out = 'log_' + args.outfile
+    make_graphic( args.jsonfile, args.outfile, args.ref, titleprefix=title)
+    make_graphic( args.jsonfile, log_out, args.ref, titleprefix=log_title , depth_scale = 'log')
 
-def plot_depths( ax, xvals, yvals, maxdepth, ref_length, color, title ):
+def plot_depths( ax, xvals, yvals, maxdepth, ref_length, color, title, depth_scale):
     ax.set_title( "{0} Depth/Qual".format(title) )
     ax.set_xlabel( "Reference Position" )
     ax.set_ylabel( "Depth" )
+    if(depth_scale == 'log'):
+        ax.set_yscale('log')
+        ax.get_yaxis().set_major_formatter(mticker.ScalarFormatter())
     ax.fill_between( xvals, yvals, facecolor=color, alpha=0.5 )
     #ax.plot( xvals, yvals, c=color )
     ax.set_xlim([0,ref_length])
@@ -97,16 +105,14 @@ def plot_mapunmap( ax, mapped, unmapped, mapped_color='g', unmapped_color='r', m
     autolabel( mr, bottom=unmapped )
     autolabel( ur, text_under=True, color=unmapped_read_text_color )
 
-def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_data=50 ):
+def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_data=50 , depth_scale='linear'):
     '''
         Makes a graphic for a reference showing depth and avg qualities
-
         @param qualdepthfile - Should be qualdepth.json file
         @param outputfile - Where to save the image
         @param ref - Which reference to do the image for
         @param titleprefix - What to put in title before the Qual/Depth text
         @param compress_data - How many ref positions to skip between each data point
-
         NOTE: This works for single reference mapped only!!
     '''
     import matplotlib.pyplot as plt
@@ -142,7 +148,7 @@ def make_graphic( qualdepthfile, outputfile, ref=None, titleprefix='', compress_
     xvals = range(0,len(j[ref]['depths']), compress_data)
 
     ref_length = j[ref]['reflen']
-    plot_depths( ax1, xvals, depths, max_depth, ref_length, title=titleprefix, color='blue' )
+    plot_depths( ax1, xvals, depths, max_depth, ref_length, title=titleprefix, color='blue' , depth_scale=depth_scale)
     plot_quals( ax3, xvals, quals, ref_length, color='green' )
     plot_mapunmap( ax2, mapped_reads, unmapped_reads )
 
@@ -182,6 +188,13 @@ def parse_args( args=sys.argv[1:] ):
         default=None,
         help='Title of the graphic[Default: basename of outfile argument]'
     )
+    
+    #parser.add_argument(
+    #    '--depth_scale',
+    #    dest='depth_scale',
+    #    default='linear',
+    #    help='What y-scale of depth graph should be. Default linear. "log" for log scale'
+    #)
 
     return parser.parse_args( args )
 
