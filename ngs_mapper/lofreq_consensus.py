@@ -107,11 +107,24 @@ def call_base_multi_alts(min_depth, majority_percentage, dp, alts, ref):
         alts_without_insert = dissoc(alts, '-')
     else:
         alts_without_insert = alts
-    over_depth = lambda x: lambda depth: depth/float(dp) > x
+    # over_depth = lambda x: lambda depth: depth/float(dp) > x
+    # print("majority percentage: %s" % majority_percentage)
     #picked_alt = valfilter(over_depth(min_depth), alts_without_insert) # min_depth was hardcoded 0.8
-    picked_alt = valfilter(over_depth(majority_percentage), alts_without_insert) # min_depth was hardcoded 0.8
-    if picked_alt:
-        return picked_alt.keys()[0]
+
+    #NOTE: majority percentage is x out of 100, i.e. 80.0 for 80%
+    # picked_alt = valfilter(over_depth(majority_percentage), alts_without_insert) # min_depth was hardcoded 0.8
+    majority_decimal = majority_percentage / 100.0
+    alts_over_majority = [x[0] for x in alts_without_insert.items() if \
+                                       x[1] > (majority_decimal * dp)]  # can really only be one alt base over a majority percentage
+    print("alts: %s   ref: %s   min_depth: %s   dp:  %s" % (alts, ref, min_depth, dp))
+    print("majority_decimal: %s  :  (majority_decimal * dp)  = %s  AF estimate = %s " % (majority_decimal, (majority_decimal * dp), "N/A"))
+    print("alts_over: %s" % alts_over_majority)
+    # print("picked alt: %s" % picked_alt)
+    if len(alts_over_majority) > 0:
+        picked_alt = alts_over_majority[0]
+        return picked_alt
+#    if picked_alt:
+#        return picked_alt.keys()[0]
     # ref might itself be ambiguous
     if not (ref.upper() in 'ACTG'):
         REV_TABLE = dict((v, k) for (k, v) in AMBIGUITY_TABLE.items())
@@ -119,10 +132,16 @@ def call_base_multi_alts(min_depth, majority_percentage, dp, alts, ref):
     #add ref so that it will be considered in creating ambiguous base
     alts_with_ref = merge(alts_without_insert, ({ref : (dp - total_ao()) } if ref else {}))
     #over20 = valfilter(over_depth(0.2), alts_with_ref) # CHANGE to use majority_percentage
-    over20 = valfilter(over_depth(1 - majority_percentage), alts_with_ref) # CHANGE to use majority_percentage
+    # over20 = valfilter(over_depth(1.0 - majority_decimal), alts_with_ref) # CHANGE to use majority_percentage
+    minority_decimal = 1.0 - majority_decimal
+    over20 = [x[0] for x in alts_with_ref.items() if \
+                                       x[1] > (minority_decimal * dp)]  # can really only be one alt base over a majority percentage
     #as_ambiguous = ''.join(sorted(over20.keys()))
-    as_ambiguous = ''.join(sorted(set(''.join((over20.keys())))))
+    # as_ambiguous = ''.join(sorted(set(''.join((over20.keys())))))
+    as_ambiguous = ''.join(sorted(set(''.join((over20)))))
     # this could return a single base, (including the reference), becuase i.e.  A => A in the ambiguity table
+    # print("1 - major %s " % (1 - majority_percentage))
+    print(("alts with ref: %s" % alts_with_ref) + ("   as_ambig: %s : %s" % (as_ambiguous, (AMBIGUITY_TABLE.get(as_ambiguous) ))))
     return AMBIGUITY_TABLE[as_ambiguous] if as_ambiguous != '' else ''
 
 
